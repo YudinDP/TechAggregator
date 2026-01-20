@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Профиль пользователя - TechAggregator</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" sizes="180x180" href="sources/logo.png">
+    <style>
+        /* Стили для страницы профиля */
+        .profile-container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 20px;
+        }
+
+        .profile-header {
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+            margin-bottom: 2rem;
+            padding: 2rem;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .profile-avatar-container {
+            position: relative;
+            width: 120px;
+            height: 120px;
+        }
+
+        .profile-avatar {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 4px solid #e5e7eb;
+        }
+
+        .avatar-upload-btn {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            background: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            transition: background-color 0.3s;
+        }
+
+        .avatar-upload-btn:hover {
+            background: #1d4ed8;
+        }
+
+        .profile-info {
+            flex: 1;
+        }
+
+        .profile-info h2 {
+            font-size: 1.8rem;
+            margin-bottom: 0.5rem;
+            color: #1f2937;
+        }
+
+        .profile-info p {
+            color: #6b7280;
+            margin-bottom: 0.5rem;
+        }
+
+        .profile-stats {
+            display: flex;
+            gap: 2rem;
+            margin-top: 1rem;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #2563eb;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: #6b7280;
+        }
+
+        .profile-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .profile-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 2rem;
+        }
+
+        .profile-card h3 {
+            font-size: 1.3rem;
+            margin-bottom: 1.5rem;
+            color: #1f2937;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .favorites-preview,
+        .comparisons-preview {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .favorite-item,
+        .comparison-group {
+            padding: 0.75rem;
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+            background: #f9fafb;
+            transition: background-color 0.3s;
+        }
+
+        .favorite-item:hover,
+        .comparison-group:hover {
+            background: #f3f4f6;
+        }
+
+        .favorite-item img {
+            width: 50px;
+            height: 50px;
+            object-fit: contain;
+            background: #f8f9fa;
+            padding: 0.25rem;
+            border-radius: 4px;
+        }
+
+        .favorite-item-info {
+            flex: 1;
+        }
+
+        .favorite-item-name {
+            font-weight: 500;
+            margin-bottom: 0.25rem;
+        }
+
+        .favorite-item-price {
+            color: #2563eb;
+            font-weight: bold;
+        }
+
+        .comparison-title {
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+
+        .comparison-items {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .comparison-item {
+            background: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            border: 1px solid #e5e7eb;
+        }
+
+        .view-all-btn {
+            display: block;
+            width: 100%;
+            padding: 0.75rem;
+            background: #f3f4f6;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            text-align: center;
+            color: #4b5563;
+            text-decoration: none;
+            font-weight: 500;
+            margin-top: 1rem;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .view-all-btn:hover {
+            background: #e5e7eb;
+            color: #1f2937;
+        }
+
+        .profile-actions {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: #2563eb;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #1d4ed8;
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: #2563eb;
+            border: 1px solid #2563eb;
+        }
+
+        .btn-outline:hover {
+            background: #eff6ff;
+        }
+
+        @media (max-width: 768px) {
+            .profile-header {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .profile-content {
+                grid-template-columns: 1fr;
+            }
+
+            .profile-stats {
+                justify-content: center;
+            }
+
+            .profile-actions {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <div class="logo">
+                <h1><a href="index.html" style="color: inherit; text-decoration: none; padding-right: 20%;">TechAggregator</a></h1>
+            </div>
+            <nav class="nav">
+                <a href="index.html" class="nav-link" style="padding-left: 5%;">Главная</a>
+                <a href="catalog.html" class="nav-link">Каталог</a>
+                <a href="comparison.html" class="nav-link">Сравнение<span class="comparison-counter">0</span></a>
+                <a href="recommendations.html" class="nav-link">Рекомендации</a>
+            </nav>
+            <div class="nav-search-container">
+                <input type="text" class="nav-search" id="navSearch"
+                       placeholder="Поиск товаров..."
+                       oninput="showNavSearchSuggestions()"
+                       onkeypress="handleNavSearchEnter(event)">
+                <button class="nav-search-btn" onclick="navSearchProducts()">
+                    🔍
+                </button>
+                <div id="navSearchSuggestions" class="nav-search-suggestions"></div>
+            </div>
+            <div class="auth-buttons">
+                <a href="profile.html" class="btn btn-outline">Профиль</a>
+                <a href="#" class="btn btn-primary" onclick="logout()">Выйти</a>
+            </div>
+        </div>
+    </header>
+
+    <main class="main">
+        <div class="profile-container">
+            <div class="profile-header">
+                <div class="profile-avatar-container">
+                    <img src="https://via.placeholder.com/120x120/cccccc/666666?text=АВ" alt="Аватар" class="profile-avatar" id="profileAvatar">
+                    <button class="avatar-upload-btn" onclick="uploadAvatar()">+</button>
+                </div>
+                <div class="profile-info">
+                    <h2 id="userName">Иван Петров</h2>
+                    <p id="userEmail">ivan@example.com</p>
+                    <p id="userJoinDate">Дата регистрации: 15 января 2024</p>
+                    <div class="profile-stats">
+                        <div class="stat-item">
+                            <div class="stat-number" id="statFavorites">0</div>
+                            <div class="stat-label">Избранное</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-number" id="statComparisons">0</div>
+                            <div class="stat-label">Сравнения</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-number">156</div>
+                            <div class="stat-label">Просмотры</div>
+                        </div>
+                    </div>
+                    <div class="profile-actions">
+                        <button class="btn btn-primary" onclick="editProfile()">Редактировать профиль</button>
+                        <button class="btn btn-outline" onclick="changePassword()">Сменить пароль</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="profile-content">
+                <div class="profile-card">
+                    <h3>❤️ Избранные товары</h3>
+                    <div class="favorites-preview" id="favoritesPreview">
+                        <!-- Сюда будут добавлены избранные товары -->
+                        <div id="noFavoritesMessage" class="empty-preview-message" style="display: none;">Нет избранных товаров</div>
+                    </div>
+                    <a href="favorites.html" class="view-all-btn">Просмотреть все избранные</a>
+                </div>
+
+                <div class="profile-card">
+                    <h3>📋 Мои сравнения</h3>
+                    <div class="comparisons-preview" id="comparisonsPreview">
+                        <!-- Сюда будут добавлены группы сравнений -->
+                        <div id="noComparisonsMessage" class="empty-preview-message" style="display: none;">Нет созданных сравнений</div>
+                    </div>
+                    <a href="comparison.html" class="view-all-btn">Просмотреть все сравнения</a>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024 TechAggregator. Все права защищены.</p>
+        </div>
+    </footer>
+
+    <script>
+        // --- Функции для работы с данными из localStorage ---
+
+        // Функция для получения списка избранного из localStorage
+        function getFavorites() {
+            const favorites = localStorage.getItem('techAggregatorFavorites');
+            return favorites ? JSON.parse(favorites) : [];
+        }
+
+        // Функция для получения списка сравнений из localStorage
+        function getComparisons() {
+    const comparisonIds = localStorage.getItem('techAggregatorComparison');
+    const ids = comparisonIds ? JSON.parse(comparisonIds) : [];
+    if (ids.length > 0) {
+        // Возвращаем массив с одной "виртуальной" группой
+        return [{
+            id: 'current',
+            name: 'Текущее сравнение',
+            items: ids
+        }];
+    }
+    return []; // Пустой массив, если список сравнения пуст
+}
+
+        // Функция для получения русского названия категории
+        function getCategoryName(categoryKey) {
+            const categoryTranslations = {
+                'smartphones': 'Смартфоны',
+                'laptops': 'Ноутбуки',
+                'tv': 'Телевизоры',
+                'headphones': 'Наушники'
+            };
+            return categoryTranslations[categoryKey] || categoryKey;
+        }
+
+        // Функция для форматирования цены
+        function formatPrice(price) {
+            return price.toLocaleString('ru-RU');
+        }
+
+        // Функция для отображения превью избранного
+        function renderFavoritesPreview(favorites) {
+            const previewContainer = document.getElementById('favoritesPreview');
+            const noFavMessage = document.getElementById('noFavoritesMessage');
+            previewContainer.innerHTML = ''; // Очистка перед заполнением
+
+            if (favorites.length === 0) {
+                noFavMessage.style.display = 'block';
+                previewContainer.appendChild(noFavMessage);
+                return;
+            }
+
+            noFavMessage.style.display = 'none'; // Скрыть сообщение, если есть товары
+
+            favorites.slice(0, 3).forEach(fav => { // Показываем только первые 3
+                const itemElement = document.createElement('div');
+                itemElement.className = 'favorite-item';
+                itemElement.onclick = () => window.location.href = `product.html?id=${fav.id}`;
+                itemElement.innerHTML = `
+                    <img src="${fav.image}" alt="${fav.name}">
+                    <div class="favorite-item-info">
+                        <div class="favorite-item-name">${fav.name}</div>
+                        <div class="favorite-item-price">${formatPrice(fav.price)} ₽</div>
+                    </div>
+                `;
+                previewContainer.appendChild(itemElement);
+            });
+        }
+
+        // Функция для отображения превью сравнений
+        // Функция для отображения превью сравнений
+function renderComparisonsPreview(comparisons) {
+    const previewContainer = document.getElementById('comparisonsPreview');
+    const noCompMessage = document.getElementById('noComparisonsMessage');
+    previewContainer.innerHTML = ''; // Очистка перед заполнением
+
+    if (comparisons.length === 0) {
+        noCompMessage.style.display = 'block';
+        // previewContainer.appendChild(noCompMessage); // Не нужно, если стиль inline
+        return;
+    }
+
+    noCompMessage.style.display = 'none'; // Скрыть сообщение, если есть сравнения
+
+    // Показываем только первую группу (или все, если их несколько в будущем)
+    // comparisons.slice(0, 3).forEach(comp => { // Показываем только первые 3 - закомментировано, покажем все или хотя бы текущую
+    comparisons.forEach(comp => { // Показываем все группы
+        const groupElement = document.createElement('div');
+        groupElement.className = 'comparison-group';
+        // Используем параметр 'group=current' для ссылки на текущий список
+        groupElement.onclick = () => window.location.href = `comparison.html`; // Переход на основную страницу сравнения, где отобразится текущий список
+        groupElement.innerHTML = `
+            <div class="comparison-title">${comp.name || `Сравнение ${comp.id}`}</div>
+            <div class="comparison-items">
+                ${comp.items.map(itemId => {
+                    const product = getProductById(itemId); // Нужна функция для поиска продукта по ID
+                    return `<div class="comparison-item">${product ? product.name : 'Товар'}</div>`;
+                }).join('')}
+            </div>
+        `;
+        previewContainer.appendChild(groupElement);
+    });
+}
+
+        // Функция для получения продукта по ID (предполагается, что данные доступны)
+        // В реальности это может быть запрос к API или глобальному массиву данных
+        // Здесь используем демо-данные из основного script.js, если они доступны, или заглушку
+        function getProductById(id) {
+            // Проверяем, есть ли глобальная переменная demoProducts (из script.js)
+            if (typeof demoProducts !== 'undefined') {
+                return demoProducts.find(p => p.id === id);
+            }
+            // Заглушка, если данные недоступны
+            console.warn(`Данные для товара ID ${id} недоступны.`);
+            return null;
+        }
+
+
+        // Функция для обновления статистики
+        function updateStats() {
+            const favorites = getFavorites();
+            const comparisons = getComparisons();
+
+            document.getElementById('statFavorites').textContent = favorites.length;
+            document.getElementById('statComparisons').textContent = comparisons.length;
+
+            // Обновляем счетчик в хедере (если он используется для избранного)
+            // const headerCounter = document.querySelector('.header .favorites-counter'); // Создайте класс, если нужно отдельно для избранного
+            // if (headerCounter) {
+            //     headerCounter.textContent = favorites.length;
+            // }
+
+             // Обновляем счетчик сравнений в хедере
+             const comparisonHeaderCounter = document.querySelector('.header .comparison-counter');
+             if (comparisonHeaderCounter) {
+                 // Счетчик сравнений в хедере может отражать общее количество товаров в сравнении или количество групп
+                 // Для согласованности с предыдущей логикой, пусть будет количество групп
+                 comparisonHeaderCounter.textContent = comparisons.length;
+             }
+        }
+
+        // Основная функция загрузки данных профиля
+        function loadProfileData() {
+            // Здесь можно загрузить дополнительные данные пользователя с сервера
+            // Пока используем статичные данные
+            const user = {
+                name: 'Иван Петров',
+                email: 'ivan@example.com',
+                joinDate: '15 января 2024'
+            };
+
+            document.getElementById('userName').textContent = user.name;
+            document.getElementById('userEmail').textContent = user.email;
+            document.getElementById('userJoinDate').textContent = user.joinDate;
+
+            // Загружаем и отображаем превью
+            const favorites = getFavorites();
+            const comparisons = getComparisons();
+
+            renderFavoritesPreview(favorites);
+            renderComparisonsPreview(comparisons);
+
+            // Обновляем статистику
+            updateStats();
+        }
+
+        // Пример функций для профиля
+        function uploadAvatar() {
+            alert('Функция загрузки аватара будет реализована позже');
+        }
+
+        function editProfile() {
+            alert('Функция редактирования профиля будет реализована позже');
+        }
+
+        function changePassword() {
+            alert('Функция смены пароля будет реализована позже');
+        }
+
+        function logout() {
+            alert('Вы вышли из системы');
+            window.location.href = 'index.html';
+        }
+
+        // Загружаем данные при загрузке страницы
+        document.addEventListener('DOMContentLoaded', function() {
+            loadProfileData();
+        });
+    </script>
+    <script src="script.js"></script>
+</body>
+</html>

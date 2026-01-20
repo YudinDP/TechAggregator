@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Сравнение товаров - TechAggregator</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" sizes="180x180" href="sources/logo.png">
+  <style>
+    .comparison-container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+      padding-bottom: 20px;
+      border-bottom: 2px solid #e5e7eb;
+    }
+    .controls {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+    }
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      background: #f8f9fa;
+      border-radius: 12px;
+      border: 2px dashed #e5e7eb;
+      margin: 40px 0;
+    }
+    .visible {
+      display: block !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+    }
+    .hidden {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+<header class="header">
+  <div class="container">
+    <div class="logo">
+      <h1><a href="index.html" style="color: inherit; text-decoration: none; padding-right: 20%;">TechAggregator</a></h1>
+    </div>
+    <nav class="nav">
+      <a href="index.html" class="nav-link" style="padding-left: 5%;">Главная</a>
+      <a href="catalog.html" class="nav-link">Каталог</a>
+      <a href="comparison.html" class="nav-link active">Сравнение<span class="comparison-counter">0</span></a>
+      <a href="recommendations.html" class="nav-link">Рекомендации</a>
+    </nav>
+    <!-- Поиск -->
+    <div class="nav-search-container">
+      <input type="text" class="nav-search" id="navSearch"
+        placeholder="Поиск товаров..."
+        oninput="showNavSearchSuggestions()"
+        onkeypress="handleNavSearchEnter(event)">
+      <button class="nav-search-btn" onclick="navSearchProducts()">🔍</button>
+      <div id="navSearchSuggestions" class="nav-search-suggestions"></div>
+    </div>
+    <div class="auth-buttons">
+      <!-- Будет обновлено через script.js -->
+      <a href="auth.html" class="btn btn-outline">Войти</a>
+      <a href="auth.html?tab=register" class="btn btn-primary">Регистрация</a>
+    </div>
+  </div>
+</header>
+
+<main class="main">
+  <div class="comparison-container">
+    <!-- Заголовок -->
+    <div class="header-row">
+      <div>
+        <h1 style="margin: 0 0 10px 0;">Сравнение товаров</h1>
+        <p id="comparisonCategory" style="color: #6b7280; margin: 0;">Выберите товары для сравнения</p>
+      </div>
+      <div style="display: flex; align-items: center; gap: 15px;">
+        <button class="btn btn-secondary" onclick="clearComparison()">Очистить все</button>
+        <div style="font-weight: 600; color: #2563eb; font-size: 18px;">
+          Товаров: <span id="comparisonCount">0</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Кнопки управления -->
+    <div class="controls">
+      <button class="btn btn-outline" id="toggleBtn" disabled>Развернуть характеристики</button>
+      <button class="btn btn-outline" id="exportBtn" onclick="exportToCSV()">📥 Экспорт</button>
+      <button class="btn btn-outline" id="printBtn" onclick="window.print()">🖨️ Печать</button>
+    </div>
+
+    <!-- Пустое состояние -->
+    <div id="emptyState" class="empty-state hidden">
+      <h3 style="margin: 0 0 15px 0; color: #374151;">Нет товаров для сравнения</h3>
+      <p style="color: #6b7280; margin: 0 0 25px 0; max-width: 400px; margin-left: auto; margin-right: auto;">
+        Добавьте товары из каталога, чтобы сравнить их характеристики и цены
+      </p>
+      <a href="catalog.html" class="btn btn-primary">Перейти в каталог</a>
+    </div>
+
+    <!-- Таблица сравнения -->
+    <div id="comparisonTable" class="hidden">
+      <div class="comparison-table-wrapper" id="tableContent">
+        <!-- Содержимое будет сгенерировано через script.js -->
+      </div>
+
+      <!-- Примечания -->
+      <div class="notes" style="background: #fef3c7; padding: 20px; border-radius: 8px; border: 1px solid #fbbf24; margin-top: 30px;">
+        <h4 style="margin: 0 0 15px 0; color: #92400e;">Примечания:</h4>
+        <ul style="margin: 0; padding-left: 20px; color: #92400e;">
+          <li>Можно сравнивать до 4 товаров одновременно</li>
+          <li>Сравнивать можно только товары одной категории</li>
+          <li>Знак "—" означает, что характеристика отсутствует</li>
+          <li>Цены актуальны на текущий момент</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer class="footer">
+  <div class="container">
+    <p>&copy; 2024 TechAggregator. Все права защищены.</p>
+  </div>
+</footer>
+
+<!-- Подключаем основной скрипт -->
+<script src="script.js"></script>
+
+<script>
+  // Экспорт в CSV (использует comparisonList из script.js)
+  function exportToCSV() {
+    const products = window.comparisonList || [];
+    if (products.length === 0) {
+      alert('Нет товаров для экспорта');
+      return;
+    }
+    let csv = 'Товар;Цена;Рейтинг;Категория\n';
+    products.forEach(p => {
+      csv += `"${p.name}";${p.price};${p.rating};${p.category}\n`;
+    });
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'сравнение_товаров.csv';
+    link.click();
+    alert('✅ Данные экспортированы в CSV');
+  }
+
+  // Полная очистка (уже есть в script.js, но вызываем её явно)
+  function clearComparison() {
+    if (typeof window.clearComparison === 'function') {
+      window.clearComparison();
+    } else {
+      // fallback
+      localStorage.removeItem('techAggregatorComparison');
+      location.reload();
+    }
+  }
+</script>
+</body>
+</html>
