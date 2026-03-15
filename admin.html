@@ -3,15 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Панель администратора - TechAggregator</title>
+    <title>Админ-панель - TechAggregator</title>
     <link rel="stylesheet" href="style.css">
     <link rel="icon" sizes="180x180" href="sources/logo.png">
     <style>
+        /* Стили для админ-панели */
         .admin-page {
             padding: 2rem 0;
             min-height: calc(100vh - 200px);
         }
-        
         .admin-header {
             display: flex;
             justify-content: space-between;
@@ -20,85 +20,12 @@
             padding-bottom: 1.5rem;
             border-bottom: 2px solid #e5e7eb;
         }
-        
         .admin-welcome {
             color: #6b7280;
         }
-        
         .admin-welcome strong {
             color: #2563eb;
         }
-        
-        .admin-stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: 1.5rem;
-            margin-bottom: 3rem;
-        }
-        
-        .stat-card-enhanced {
-            background: white;
-            border-radius: 12px;
-            padding: 1.5rem;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-            border-left: 4px solid;
-            transition: transform 0.3s, box-shadow 0.3s;
-        }
-        
-        .stat-card-enhanced:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 20px rgba(0,0,0,0.12);
-        }
-        
-        .stat-card-enhanced.primary {
-            border-left-color: #2563eb;
-        }
-        
-        .stat-card-enhanced.success {
-            border-left-color: #10b981;
-        }
-        
-        .stat-card-enhanced.warning {
-            border-left-color: #f59e0b;
-        }
-        
-        .stat-card-enhanced.danger {
-            border-left-color: #ef4444;
-        }
-        
-        .stat-icon {
-            font-size: 2rem;
-            margin-bottom: 1rem;
-            display: inline-block;
-        }
-        
-        .stat-title {
-            font-size: 0.9rem;
-            color: #6b7280;
-            margin-bottom: 0.5rem;
-        }
-        
-        .stat-value {
-            font-size: 2rem;
-            font-weight: 700;
-            margin-bottom: 0.5rem;
-        }
-        
-        .stat-change {
-            font-size: 0.85rem;
-            display: flex;
-            align-items: center;
-            gap: 0.25rem;
-        }
-        
-        .stat-change.positive {
-            color: #10b981;
-        }
-        
-        .stat-change.negative {
-            color: #ef4444;
-        }
-        
         .admin-tabs-container {
             background: white;
             border-radius: 12px;
@@ -106,14 +33,12 @@
             overflow: hidden;
             margin-bottom: 2rem;
         }
-        
         .admin-tabs-header {
             display: flex;
             background: #f8f9fa;
             border-bottom: 1px solid #e5e7eb;
             overflow-x: auto;
         }
-        
         .admin-tab-btn {
             padding: 1.25rem 2rem;
             background: none;
@@ -126,17 +51,14 @@
             position: relative;
             transition: all 0.3s;
         }
-        
         .admin-tab-btn:hover {
             background: #f1f5f9;
             color: #2563eb;
         }
-        
         .admin-tab-btn.active {
             color: #2563eb;
             background: white;
         }
-        
         .admin-tab-btn.active::after {
             content: '';
             position: absolute;
@@ -146,269 +68,215 @@
             height: 3px;
             background: #2563eb;
         }
-        
         .admin-tab-content {
             padding: 2rem;
             display: none;
             animation: fadeIn 0.3s ease;
         }
-        
         .admin-tab-content.active {
             display: block;
         }
-        
-        .tab-actions {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 2rem;
-            padding-bottom: 1rem;
-            border-bottom: 1px solid #e5e7eb;
-        }
-        
-        .search-box-admin {
-            display: flex;
-            gap: 0.5rem;
-            max-width: 400px;
-            flex: 1;
-        }
-        
-        .search-box-admin input {
-            flex: 1;
-            padding: 0.75rem 1rem;
-            border: 2px solid #e5e7eb;
-            border-radius: 8px;
-            font-size: 1rem;
-        }
-        
-        .search-box-admin input:focus {
-            outline: none;
-            border-color: #2563eb;
-        }
-        
-        .table-container {
-            overflow-x: auto;
-            border-radius: 8px;
-            border: 1px solid #e5e7eb;
-        }
-        
-        .admin-table-enhanced {
-            width: 100%;
-            border-collapse: collapse;
-            min-width: 1000px;
-        }
-        
-        .admin-table-enhanced thead {
-            background: #f8f9fa;
-        }
-        
-        .admin-table-enhanced th {
-            padding: 1.25rem 1rem;
-            text-align: left;
-            font-weight: 600;
-            color: #374151;
-            border-bottom: 2px solid #e5e7eb;
-        }
-        
-        .admin-table-enhanced td {
-            padding: 1rem;
-            border-bottom: 1px solid #e5e7eb;
-            vertical-align: middle;
-        }
-        
-        .admin-table-enhanced tbody tr {
-            transition: background 0.2s;
-        }
-        
-        .admin-table-enhanced tbody tr:hover {
-            background: #f9fafb;
-        }
-        
-        .product-cell {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-        
-        .product-cell img {
-            width: 60px;
-            height: 60px;
-            object-fit: contain;
-            background: #f8f9fa;
-            border-radius: 6px;
-            padding: 0.25rem;
-        }
-        
-        .status-badge {
-            display: inline-block;
-            padding: 0.4rem 0.8rem;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            font-weight: 500;
-        }
-        
-        .status-active {
-            background: #d1fae5;
-            color: #065f46;
-        }
-        
-        .status-pending {
-            background: #fef3c7;
-            color: #92400e;
-        }
-        
-        .status-inactive {
-            background: #f3f4f6;
-            color: #4b5563;
-        }
-        
-        .status-error {
-            background: #fee2e2;
-            color: #991b1b;
-        }
-        
-        .action-buttons {
-            display: flex;
-            gap: 0.5rem;
-        }
-        
-        .btn-icon {
-            width: 36px;
-            height: 36px;
-            border-radius: 6px;
-            border: none;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1rem;
-            transition: all 0.2s;
-        }
-        
-        .btn-edit {
-            background: #dbeafe;
-            color: #1d4ed8;
-        }
-        
-        .btn-edit:hover {
-            background: #bfdbfe;
-        }
-        
-        .btn-delete {
-            background: #fee2e2;
-            color: #dc2626;
-        }
-        
-        .btn-delete:hover {
-            background: #fecaca;
-        }
-        
-        .btn-view {
-            background: #dcfce7;
-            color: #16a34a;
-        }
-        
-        .btn-view:hover {
-            background: #bbf7d0;
-        }
-        
-        .ai-controls-panel {
-            background: #f0f9ff;
-            border: 1px solid #bae6fd;
-            border-radius: 10px;
-            padding: 1.5rem;
-            margin-bottom: 2rem;
-        }
-        
-        .ai-controls-row {
-            display: flex;
-            gap: 1rem;
-            margin-bottom: 1rem;
-            align-items: flex-end;
-        }
-        
-        .ai-controls-row input {
-            flex: 1;
-            padding: 0.75rem 1rem;
-            border: 2px solid #bae6fd;
-            border-radius: 8px;
-            font-size: 1rem;
-        }
-        
-        .ai-progress {
-            margin-top: 1rem;
-        }
-        
-        .progress-bar {
-            height: 8px;
-            background: #e5e7eb;
-            border-radius: 4px;
-            overflow: hidden;
-            margin-bottom: 0.5rem;
-        }
-        
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #2563eb, #7c3aed);
-            border-radius: 4px;
-            transition: width 0.3s;
-        }
-        
-        .progress-info {
-            display: flex;
-            justify-content: space-between;
-            font-size: 0.9rem;
-            color: #6b7280;
-        }
-        
-        .ai-results-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 1.5rem;
-            margin-top: 2rem;
-        }
-        
-        .ai-result-card {
+        .moderation-item {
             background: white;
-            border: 1px solid #e5e7eb;
-            border-radius: 10px;
             padding: 1.5rem;
-            transition: all 0.3s;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            border: 1px solid #e5e7eb;
         }
-        
-        .ai-result-card:hover {
-            border-color: #2563eb;
-            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.1);
-        }
-        
-        .ai-result-header {
+        .moderation-header {
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
             margin-bottom: 1rem;
         }
-        
-        .ai-confidence {
-            background: #d1fae5;
-            color: #065f46;
-            padding: 0.25rem 0.75rem;
+        .moderation-info h4 {
+            margin: 0 0 0.25rem 0;
+            font-size: 1.1rem;
+        }
+        .moderation-info p {
+            margin: 0;
+            color: #6b7280;
+            font-size: 0.9rem;
+        }
+        .status-badge {
+            padding: 0.4rem 0.8rem;
             border-radius: 20px;
             font-size: 0.85rem;
             font-weight: 500;
         }
-        
-        .user-avatar {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+        .status-pending {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        .status-approved {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        .status-rejected {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        .moderation-actions {
             display: flex;
-            align-items: center;
-            justify-content: center;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+        .btn-action {
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+        .btn-approve {
+            background: #10b981;
+            color: white;
+        }
+        .btn-reject {
+            background: #ef4444;
+            color: white;
+        }
+        .btn-view {
+            background: #3b82f6;
+            color: white;
+        }
+        textarea.admin-notes {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+            resize: vertical;
+        }
+        .crud-container {
+            margin-top: 1.5rem;
+        }
+        .crud-header {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            align-items: end;
+        }
+        .crud-controls {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        .crud-table-selector {
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+        .crud-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+        .crud-table th, .crud-table td {
+            padding: 0.75rem;
+            border: 1px solid #e5e7eb;
+            text-align: left;
+        }
+        .crud-table th {
+            background: #f8f9fa;
             font-weight: 600;
         }
-        
+        .crud-actions-cell {
+            display: flex;
+            gap: 0.25rem;
+        }
+        .btn-crud {
+            padding: 0.25rem 0.5rem;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+        .btn-edit-crud { background: #f59e0b; color: white; }
+        .btn-delete-crud { background: #ef4444; color: white; }
+        .btn-save-crud { background: #10b981; color: white; }
+        .btn-cancel-crud { background: #6b7280; color: white; }
+        .parse-form-container {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+        .form-actions {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1.5rem;
+            justify-content: flex-end;
+        }
+        .btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        .btn-primary { background: #2563eb; color: white; }
+        .btn-outline { background: transparent; color: #2563eb; border: 1px solid #2563eb; }
+        .btn-secondary { background: #6b7280; color: white; }
+        .btn-danger { background: #ef4444; color: white; }
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: #6b7280;
+        }
+        .error-message {
+            color: #ef4444;
+            text-align: center;
+            padding: 2rem;
+        }
+        .admin-stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+        .stat-card-enhanced {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            border-left: 4px solid;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        .stat-card-enhanced:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+        }
+        .stat-card-enhanced.primary { border-left-color: #2563eb; }
+        .stat-card-enhanced.success { border-left-color: #10b981; }
+        .stat-card-enhanced.warning { border-left-color: #f59e0b; }
+        .stat-card-enhanced.danger { border-left-color: #ef4444; }
+        .stat-icon { font-size: 2rem; margin-bottom: 1rem; display: inline-block; }
+        .stat-title { font-size: 0.9rem; color: #6b7280; margin-bottom: 0.5rem; }
+        .stat-value { font-size: 2rem; font-weight: 700; margin-bottom: 0.5rem; }
+        .stat-change { font-size: 0.85rem; display: flex; align-items: center; gap: 0.25rem; }
+        .stat-change.positive { color: #10b981; }
+        .stat-change.negative { color: #ef4444; }
         .pagination {
             display: flex;
             justify-content: center;
@@ -416,7 +284,6 @@
             gap: 0.5rem;
             margin-top: 2rem;
         }
-        
         .pagination-btn {
             width: 40px;
             height: 40px;
@@ -429,468 +296,364 @@
             justify-content: center;
             transition: all 0.2s;
         }
-        
-        .pagination-btn:hover {
-            border-color: #2563eb;
-            color: #2563eb;
-        }
-        
-        .pagination-btn.active {
-            background: #2563eb;
-            border-color: #2563eb;
-            color: white;
-        }
-        
-        .pagination-btn.disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-        
-        .quick-stats {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 1rem;
-            margin-top: 1rem;
-        }
-        
-        .quick-stat {
-            text-align: center;
-            padding: 1rem;
-            background: #f8f9fa;
+        .pagination-btn:hover:not(.disabled):not(.active) { border-color: #2563eb; color: #2563eb; }
+        .pagination-btn.active { background: #2563eb; border-color: #2563eb; color: white; }
+        .pagination-btn.disabled { opacity: 0.5; cursor: not-allowed; }
+        .message-form-container {
+            background: white;
+            padding: 1.5rem;
             border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            margin-top: 1.5rem;
         }
-        
-        @media (max-width: 768px) {
-            .admin-header {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 1rem;
-            }
-            
-            .admin-tabs-header {
-                flex-direction: column;
-            }
-            
-            .admin-tab-btn {
-                text-align: left;
-                border-bottom: 1px solid #e5e7eb;
-            }
-            
-            .tab-actions {
-                flex-direction: column;
-                gap: 1rem;
-                align-items: stretch;
-            }
-            
-            .search-box-admin {
-                max-width: 100%;
-            }
-            
-            .admin-stats-grid {
-                grid-template-columns: 1fr;
-            }
+        .message-input-group {
+            margin-bottom: 1rem;
+        }
+        .message-input-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+        .message-input-group textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            resize: vertical;
+        }
+        .message-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
         }
     </style>
 </head>
 <body>
     <header class="header">
-    <div class="container">
-        <div class="logo">
-            <h1><a href="index.html" style="color: inherit; text-decoration: none; padding-right: 20%;">TechAggregator</a></h1>
-        </div>
-        <nav class="nav">
-            <a href="index.html" class="nav-link" style="padding-left: 5%;">Главная</a>
-            <a href="catalog.html" class="nav-link">Каталог</a>
-            <a href="comparison.html" class="nav-link">Сравнение<span class="comparison-counter">0</span></a>
-            <a href="recommendations.html" class="nav-link">Рекомендации</a>
-        </nav>
-        
-        <!-- Добавляем поиск здесь -->
-        <div class="nav-search-container">
-            <input type="text" class="nav-search" id="navSearch" 
-                   placeholder="Поиск товаров..." 
-                   oninput="showNavSearchSuggestions()"
-                   onkeypress="handleNavSearchEnter(event)">
-            <button class="nav-search-btn" onclick="navSearchProducts()">
-                🔍
-            </button>
-            <div id="navSearchSuggestions" class="nav-search-suggestions"></div>
-        </div>
-        
-        <div class="auth-buttons">
+        <div class="container">
+            <div class="logo">
+                <h1><a href="index.html" style="color: inherit; text-decoration: none; padding-right: 20%;">TechAggregator</a></h1>
+            </div>
+            <nav class="nav">
+                <a href="index.html" class="nav-link" style="padding-left: 5%;">Главная</a>
+                <a href="catalog.html" class="nav-link">Каталог</a>
+                <a href="comparison.html" class="nav-link">Сравнение<span class="comparison-counter">0</span></a>
+                <a href="recommendations.html" class="nav-link">Рекомендации</a>
+            </nav>
+            <!-- Поиск -->
+            <div class="nav-search-container">
+                <input type="text" class="nav-search" id="navSearch"
+                       placeholder="Поиск товаров..."
+                       oninput="showNavSearchSuggestions()"
+                       onkeypress="handleNavSearchEnter(event)">
+                <button class="nav-search-btn" onclick="navSearchProducts()">🔍</button>
+                <div id="navSearchSuggestions" class="nav-search-suggestions"></div>
+            </div>
+            <div class="auth-buttons">
                 <span class="admin-welcome">👑 <strong>Администратор</strong></span>
                 <button class="btn btn-outline" onclick="logout()">Выйти</button>
             </div>
         </div>
     </header>
-        
 
     <main class="main">
-        <div class="container admin-page">
-            <div class="admin-header">
-                <div>
-                    <h1>Панель администратора</h1>
-                    <p class="admin-welcome">Управление каталогом, модерация и аналитика</p>
-                </div>
-                <div class="quick-stats">
-                    <div class="quick-stat">
-                        <div style="font-size: 0.9rem; color: #6b7280;">Онлайн</div>
-                        <div style="font-size: 1.2rem; font-weight: 600; color: #10b981;">247</div>
-                    </div>
-                    <div class="quick-stat">
-                        <div style="font-size: 0.9rem; color: #6b7280;">Загрузка</div>
-                        <div style="font-size: 1.2rem; font-weight: 600; color: #2563eb;">42%</div>
-                    </div>
-                </div>
+    <div class="container admin-page">
+        <div class="admin-header">
+            <div>
+                <h1>Панель администратора</h1>
+                <p class="admin-welcome">Управление каталогом, модерация и аналитика</p>
             </div>
-
-            <div class="admin-stats-grid">
-                <div class="stat-card-enhanced primary">
-                    <div class="stat-icon">📊</div>
-                    <div class="stat-title">Всего товаров</div>
-                    <div class="stat-value" id="totalProducts">0</div>
-                    <div class="stat-change positive">+12 за неделю</div>
+            <div class="quick-stats">
+                <div class="quick-stat">
+                    <div style="font-size: 0.9rem; color: #6b7280;">Онлайн</div>
+                    <div style="font-size: 1.2rem; font-weight: 600; color: #10b981;">247</div>
                 </div>
-                
-                <div class="stat-card-enhanced warning">
-                    <div class="stat-icon">⏳</div>
-                    <div class="stat-title">На модерации</div>
-                    <div class="stat-value" id="pendingProducts">0</div>
-                    <div class="stat-change negative">-3 за день</div>
-                </div>
-                
-                <div class="stat-card-enhanced success">
-                    <div class="stat-icon">💬</div>
-                    <div class="stat-title">Новых отзывов</div>
-                    <div class="stat-value" id="newReviews">0</div>
-                    <div class="stat-change positive">+5 за день</div>
-                </div>
-                
-                <div class="stat-card-enhanced danger">
-                    <div class="stat-icon">📝</div>
-                    <div class="stat-title">Запросы на добавление</div>
-                    <div class="stat-value" id="addRequests">0</div>
-                    <div class="stat-change positive">+2 за день</div>
-                </div>
-            </div>
-
-            <div class="admin-tabs-container">
-                <div class="admin-tabs-header">
-                    <button class="admin-tab-btn active" onclick="openAdminTab('products')">
-                        📦 Управление товарами
-                    </button>
-                    <button class="admin-tab-btn" onclick="openAdminTab('moderation')">
-                        🔍 Модерация
-                    </button>
-                    <button class="admin-tab-btn" onclick="openAdminTab('ai')">
-                        🤖 AI-добавление
-                    </button>
-                    <button class="admin-tab-btn" onclick="openAdminTab('users')">
-                        👥 Пользователи
-                    </button>
-                    <button class="admin-tab-btn" onclick="openAdminTab('analytics')">
-                        📈 Аналитика
-                    </button>
-                </div>
-
-                <div id="products" class="admin-tab-content active">
-                    <div class="tab-actions">
-                        <div class="search-box-admin">
-                            <input type="text" id="productSearch" placeholder="Поиск товаров..." 
-                                   oninput="searchProducts()">
-                            <button class="btn btn-primary">Найти</button>
-                        </div>
-                        <div>
-                            <button class="btn btn-primary" onclick="showAddProductModal()">
-                                + Добавить товар
-                            </button>
-                            <button class="btn btn-outline" onclick="importProducts()" style="margin-left: 0.5rem;">
-                                Импорт
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <div class="table-container">
-                        <table class="admin-table-enhanced" id="productsTable">
-                            <thead>
-                                <tr>
-                                    <th style="width: 50px;">ID</th>
-                                    <th>Товар</th>
-                                    <th>Категория</th>
-                                    <th>Цена</th>
-                                    <th>Рейтинг</th>
-                                    <th>Статус</th>
-                                    <th style="width: 150px;">Действия</th>
-                                </tr>
-                            </thead>
-                            <tbody id="productsTableBody">
-                                <!-- Таблица товаров -->
-                            </tbody>
-                        </table>
-                    </div>
-                    
-                    <div class="pagination">
-                        <button class="pagination-btn disabled">«</button>
-                        <button class="pagination-btn active">1</button>
-                        <button class="pagination-btn">2</button>
-                        <button class="pagination-btn">3</button>
-                        <button class="pagination-btn">»</button>
-                    </div>
-                </div>
-
-                <div id="moderation" class="admin-tab-content">
-                    <div class="tab-actions">
-                        <h3 style="margin: 0;">Контент на модерации</h3>
-                        <div>
-                            <button class="btn btn-outline" onclick="moderateAll('approve')">
-                                Одобрить все
-                            </button>
-                            <button class="btn btn-outline" onclick="moderateAll('reject')" style="margin-left: 0.5rem;">
-                                Отклонить все
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <div id="moderationContent">
-                        <!-- Контент модерации -->
-                    </div>
-                </div>
-
-                <div id="ai" class="admin-tab-content">
-                    <div class="ai-controls-panel">
-                        <h3 style="margin-top: 0; color: #1e40af;">AI-добавление товаров</h3>
-                        <p style="color: #6b7280; margin-bottom: 1.5rem;">
-                            Автоматический парсинг товаров с маркетплейсов с помощью искусственного интеллекта
-                        </p>
-                        
-                        <div class="ai-controls-row">
-                            <div style="flex: 1;">
-                                <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">
-                                    URL маркетплейса
-                                </label>
-                                <input type="url" id="parseUrl" placeholder="https://example.com/product/category" 
-                                       style="width: 100%;">
-                            </div>
-                            <button class="btn btn-primary" onclick="startAIParsing()">
-                                Запустить AI-парсинг
-                            </button>
-                        </div>
-                        
-                        <div class="ai-controls-row">
-                            <div style="flex: 1;">
-                                <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">
-                                    Категория для добавления
-                                </label>
-                                <select id="aiCategory" style="width: 100%; padding: 0.75rem 1rem; border: 2px solid #bae6fd; border-radius: 8px;">
-                                    <option value="smartphones">Смартфоны</option>
-                                    <option value="laptops">Ноутбуки</option>
-                                    <option value="headphones">Наушники</option>
-                                    <option value="tv">Телевизоры</option>
-                                </select>
-                            </div>
-                            <button class="btn btn-outline" onclick="showAISettings()">
-                                Настройки AI
-                            </button>
-                        </div>
-                        
-                        <div class="ai-progress" id="aiProgress" style="display: none;">
-                            <div class="progress-bar">
-                                <div class="progress-fill" id="progressFill" style="width: 0%"></div>
-                            </div>
-                            <div class="progress-info">
-                                <span id="progressText">Анализ страницы...</span>
-                                <span id="progressPercent">0%</span>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div id="aiResultsPanel">
-                        <!-- Результаты AI-парсинга -->
-                    </div>
-                </div>
-
-                <div id="users" class="admin-tab-content">
-                    <div class="tab-actions">
-                        <div class="search-box-admin">
-                            <input type="text" placeholder="Поиск пользователей..." id="userSearch">
-                            <button class="btn btn-primary">Найти</button>
-                        </div>
-                        <button class="btn btn-outline" onclick="exportUsers()">
-                            Экспорт пользователей
-                        </button>
-                    </div>
-                    
-                    <div class="table-container">
-                        <table class="admin-table-enhanced" id="usersTable">
-                            <thead>
-                                <tr>
-                                    <th>Пользователь</th>
-                                    <th>Email</th>
-                                    <th>Роль</th>
-                                    <th>Активность</th>
-                                    <th>Статус</th>
-                                    <th style="width: 120px;">Действия</th>
-                                </tr>
-                            </thead>
-                            <tbody id="usersTableBody">
-                                <!-- Таблица пользователей -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <div id="analytics" class="admin-tab-content">
-                    <h3>Аналитика системы</h3>
-                    <p style="color: #6b7280; margin-bottom: 2rem;">
-                        Статистика использования и производительности системы
-                    </p>
-                    
-                    <div class="admin-stats-grid" style="margin-bottom: 2rem;">
-                        <div class="stat-card-enhanced primary">
-                            <div class="stat-icon">👁️</div>
-                            <div class="stat-title">Просмотры за день</div>
-                            <div class="stat-value">1,247</div>
-                            <div class="stat-change positive">+8.5%</div>
-                        </div>
-                        
-                        <div class="stat-card-enhanced success">
-                            <div class="stat-icon">🛒</div>
-                            <div class="stat-title">Переходы к покупке</div>
-                            <div class="stat-value">312</div>
-                            <div class="stat-change positive">+12.3%</div>
-                        </div>
-                        
-                        <div class="stat-card-enhanced warning">
-                            <div class="stat-icon">💾</div>
-                            <div class="stat-title">Загрузка сервера</div>
-                            <div class="stat-value">68%</div>
-                            <div class="stat-change negative">+5%</div>
-                        </div>
-                        
-                        <div class="stat-card-enhanced">
-                            <div class="stat-icon">⚡</div>
-                            <div class="stat-title">Время ответа</div>
-                            <div class="stat-value">142ms</div>
-                            <div class="stat-change positive">-15ms</div>
-                        </div>
-                    </div>
-                    
-                    <div style="background: white; padding: 1.5rem; border-radius: 10px; margin-top: 2rem;">
-                        <h4 style="margin-top: 0;">Популярные поисковые запросы</h4>
-                        <div id="popularSearches">
-                            <!-- Популярные поиски -->
-                        </div>
-                    </div>
+                <div class="quick-stat">
+                    <div style="font-size: 0.9rem; color: #6b7280;">Загрузка</div>
+                    <div style="font-size: 1.2rem; font-weight: 600; color: #2563eb;">42%</div>
                 </div>
             </div>
         </div>
-    </main>
 
-    <!-- Модальные окна -->
-    <div id="addProductModal" class="modal">
-        <div class="modal-content" style="max-width: 700px;">
-            <span class="close" onclick="closeAddProductModal()">&times;</span>
-            <h3>Добавить новый товар</h3>
-            <form id="addProductForm">
-                <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+        <div class="admin-stats-grid">
+            <div class="stat-card-enhanced primary">
+                <div class="stat-icon">📦</div>
+                <div class="stat-title">Всего товаров</div>
+                <div class="stat-value" id="totalProducts">0</div>
+                <div class="stat-change positive">+0 за неделю</div>
+            </div>
+            <div class="stat-card-enhanced warning">
+                <div class="stat-icon">⏳</div>
+                <div class="stat-title">На модерации</div>
+                <div class="stat-value" id="pendingItems">0</div>
+                <div class="stat-change negative">-0 за день</div>
+            </div>
+            <div class="stat-card-enhanced success">
+                <div class="stat-icon">💬</div>
+                <div class="stat-title">Новых отзывов</div>
+                <div class="stat-value" id="newReviews">0</div>
+                <div class="stat-change positive">+0 за день</div>
+            </div>
+            <div class="stat-card-enhanced danger">
+                <div class="stat-icon">📝</div>
+                <div class="stat-title">Запросы на добавление</div>
+                <div class="stat-value" id="addRequests">0</div>
+                <div class="stat-change positive">+0 за день</div>
+            </div>
+        </div>
+
+        <!-- Основной контейнер для вкладок админ-панели -->
+        <div class="admin-tabs-container">
+            <!-- Глобальный заголовок вкладок -->
+            <div class="admin-tabs-header">
+                <button class="admin-tab-btn active" onclick="openAdminTab('moderation')">Модерация</button>
+                <button class="admin-tab-btn" onclick="openAdminTab('editor')">Редактор таблиц</button>
+                <button class="admin-tab-btn" onclick="openAdminTab('parser')">Добавление товара</button>
+                <button class="admin-tab-btn" onclick="openAdminTab('manualAdd')">Добавление вручную</button>
+                <button class="admin-tab-btn" onclick="openAdminTab('priceHistory')">История цен</button>
+                <button class="admin-tab-btn" onclick="openAdminTab('analytics')">Аналитика</button>
+                <button class="admin-tab-btn" onclick="openAdminTab('users')">Пользователи</button>
+            </div>
+
+            <!-- Содержимое вкладок -->
+            <!-- Вкладка Модерация -->
+            <div id="moderation" class="admin-tab-content active">
+                <!-- Подвкладки модерации -->
+                <div class="admin-tabs-header" style="background: white; border-bottom: 1px solid #e5e7eb; border-top: 1px solid #e5e7eb;">
+                    <button class="admin-tab-btn active" onclick="openModerationSubTab('reviews')">Отзывы</button>
+                    <button class="admin-tab-btn" onclick="openModerationSubTab('requests')">Запросы</button>
+                </div>
+                <div id="moderationContent">
+                    <!-- Содержимое (отзывы/запросы) будет подгружаться сюда -->
+                </div>
+            </div>
+
+            <!-- Вкладка Редактор таблиц -->
+            <div id="editor" class="admin-tab-content">
+                <div class="crud-header">
+                    <select id="crudTableSelector" class="crud-table-selector">
+                        <option value="">Выберите таблицу</option>
+                        <!-- Опции будут загружены динамически -->
+                    </select>
+                    <button class="btn btn-primary" onclick="loadTableData()">Загрузить</button>
+                </div>
+                <div class="crud-controls">
+                    <button class="btn btn-outline" onclick="addNewRecord()">Добавить запись</button>
+                    <button class="btn btn-outline" onclick="saveTableData()">Сохранить изменения</button>
+                </div>
+                <div id="crudTableContainer" class="crud-container">
+                    <!-- Таблица будет вставлена сюда -->
+                </div>
+            </div>
+
+            <div id="manualAdd" class="admin-tab-content">
+                <h3>Добавление товара вручную</h3>
+                <p>Заполните форму ниже, чтобы добавить новый товар вручную.</p>
+                <form id="manualAddForm">
                     <div class="form-group">
-                        <label>Категория *</label>
-                        <select id="productCategory" required onchange="updateProductFields()">
+                        <label for="manualName">Название товара *</label>
+                        <input type="text" id="manualName" required placeholder="Введите полное название товара">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="manualCategory">Категория *</label>
+                        <select id="manualCategory" required onchange="updateManualSpecFields()">
                             <option value="">Выберите категорию</option>
                             <option value="smartphones">Смартфоны</option>
                             <option value="laptops">Ноутбуки</option>
-                            <option value="headphones">Наушники</option>
+                            <option value="tablets">Планшеты</option>
                             <option value="tv">Телевизоры</option>
+                            <option value="headphones">Наушники</option>
+                            <option value="cameras">Фотоаппараты</option>
+                            <!-- Добавьте другие категории по мере необходимости -->
                         </select>
                     </div>
-                    <div class="form-group">
-                        <label>Бренд *</label>
-                        <input type="text" id="productBrand" required>
-                    </div>
-                </div>
-                
-                <div class="form-group" style="margin-bottom: 1.5rem;">
-                    <label>Название товара *</label>
-                    <input type="text" id="productName" required style="width: 100%;">
-                </div>
-                
-                <div id="dynamicProductFields" style="margin-bottom: 1.5rem;">
-                    <!-- Динамические поля характеристик -->
-                </div>
-                
-                <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
-                    <div class="form-group">
-                        <label>Цена (руб.) *</label>
-                        <input type="number" id="productPrice" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Рейтинг (0-5)</label>
-                        <input type="number" id="productRating" min="0" max="5" step="0.1" value="4.0">
-                    </div>
-                </div>
-                
-                <div class="form-group" style="margin-bottom: 1.5rem;">
-                    <label>Ссылки на изображения (каждая с новой строки)</label>
-                    <textarea id="productImages" rows="3" placeholder="https://example.com/image1.jpg"></textarea>
-                </div>
-                
-                <div class="form-group" style="margin-bottom: 1.5rem;">
-                    <label>Цены в магазинах (JSON формат)</label>
-                    <textarea id="productStorePrices" rows="3" placeholder='[{"store": "DNS", "price": 99990, "url": "#"}, ...]'></textarea>
-                </div>
-                
-                <div style="display: flex; gap: 1rem; justify-content: flex-end;">
-                    <button type="button" class="btn btn-outline" onclick="closeAddProductModal()">Отмена</button>
-                    <button type="submit" class="btn btn-primary">Добавить товар</button>
-                </div>
-            </form>
-        </div>
-    </div>
 
-    <div id="aiSettingsModal" class="modal">
-        <div class="modal-content" style="max-width: 600px;">
-            <span class="close" onclick="closeAISettingsModal()">&times;</span>
-            <h3>Настройки AI-парсинга</h3>
-            <div class="ai-settings">
-                <div class="form-group" style="margin-bottom: 1.5rem;">
-                    <label>Модель AI</label>
-                    <select id="aiModel">
-                        <option value="gpt-4">GPT-4 (Высокая точность)</option>
-                        <option value="gpt-3.5" selected>GPT-3.5 Turbo (Баланс)</option>
-                        <option value="claude">Claude (Для сложных данных)</option>
-                    </select>
-                </div>
-                
-                <div class="form-group" style="margin-bottom: 1.5rem;">
-                    <label>Доверительный порог</label>
-                    <div class="range-slider">
-                        <input type="range" id="confidenceThreshold" min="50" max="95" value="75" 
-                               oninput="document.getElementById('confidenceValue').textContent = this.value + '%'">
-                        <span class="range-value" id="confidenceValue">75%</span>
+                    <div class="form-group">
+                        <label for="manualDescription">Описание (опционально)</label>
+                        <textarea id="manualDescription" rows="3" placeholder="Введите описание товара..."></textarea>
                     </div>
-                    <small style="color: #6b7280;">Минимальная уверенность AI для добавления товара</small>
-                </div>
-                
-                <div class="form-group" style="margin-bottom: 1.5rem;">
-                    <label>Автоматическая проверка</label>
-                    <div style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.5rem;">
-                        <input type="checkbox" id="autoModeration" checked>
-                        <label for="autoModeration" style="margin: 0;">Автоматически одобрять товары с высокой уверенностью</label>
+
+                    <div class="form-group">
+                        <label for="manualImageUrl">URL изображения (опционально)</label>
+                        <input type="url" id="manualImageUrl" placeholder="https://example.com/image.jpg">
                     </div>
+
+                    <!-- КОНТЕЙНЕР ДЛЯ СПЕЦИФИКАЦИЙ -->
+                    <div id="manualSpecFieldsContainer">
+                        <p class="placeholder-text">Выберите категорию, чтобы увидеть доступные поля для характеристик.</p>
+                    </div>
+
+                    <!-- КОНТЕЙНЕР ДЛЯ ЦЕН И ССЫЛОК -->
+                    <div id="manualPricesContainer">
+                        <h4>Цены и ссылки на покупку</h4>
+                        <div id="manualPricesList">
+                            <!-- Блоки цен будут добавляться сюда -->
+                        </div>
+                        <button type="button" class="btn btn-outline" onclick="addManualPriceEntry()">+ Добавить цену и ссылку</button>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" onclick="resetManualAddForm()">Сбросить</button>
+                        <button type="submit" class="btn btn-primary">Сохранить товар</button>
+                    </div>
+                </form>
+            </div>
+            <!-- /НОВАЯ ВКЛАДКА -->
+
+            <!-- ОБНОВЛЁННАЯ ВКЛАДКА ПАРСИНГА -->
+            <div id="parser" class="admin-tab-content">
+                <h3>Парсер товаров</h3>
+                <div class="parse-form-container">
+                    <form id="parseProductForm">
+                        <div class="form-group">
+                            <label for="parseUrl">URL товара *</label>
+                            <input type="url" id="parseUrl" required placeholder="https://example.com/product">
+                        </div>
+                        <div class="form-group">
+                            <label for="parseCategory">Категория *</label>
+                            <select id="parseCategory" required>
+                                <option value="">Выберите категорию</option>
+                                <option value="smartphones">Смартфоны</option>
+                                <option value="laptops">Ноутбуки</option>
+                                <option value="tablets">Планшеты</option>
+                                <option value="tv">Телевизоры</option>
+                                <option value="headphones">Наушники</option>
+                                <option value="cameras">Фотоаппараты</option>
+                                <option value="other">Другое</option>
+                            </select>
+                        </div>
+                        <!-- НОВОЕ ПОЛЕ ДЛЯ ПРОКСИ -->
+                        <div class="form-group">
+                            <label for="parseProxy">Прокси (опционально, формат: http://ip:port)</label>
+                            <input type="text" id="parseProxy" placeholder="http://127.0.0.1:8080">
+                        </div>
+                        <!-- /НОВОЕ ПОЛЕ -->
+                        <div class="form-group">
+                            <label for="parseName">Название устройства (опционально)</label>
+                            <input type="text" id="parseName" placeholder="Введите название...">
+                        </div>
+                        <div class="form-group">
+                            <label for="parseDescription">Описание (опционально)</label>
+                            <textarea id="parseDescription" rows="3" placeholder="Введите описание..."></textarea>
+                        </div>
+                        <div class="form-actions">
+                            <button type="button" class="btn btn-secondary" onclick="resetParseForm()">Сбросить</button>
+                            <button type="submit" class="btn btn-primary">Запустить парсинг</button>
+                        </div>
+                    </form>
                 </div>
-                
-                <div class="form-group" style="margin-bottom: 1.5rem;">
-                    <label>Максимальное количество товаров за сессию</label>
-                    <input type="number" id="maxProducts" min="1" max="100" value="20">
-                </div>
-                
-                <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 2rem;">
-                    <button type="button" class="btn btn-outline" onclick="closeAISettingsModal()">Закрыть</button>
-                    <button type="button" class="btn btn-primary" onclick="saveAISettings()">Сохранить</button>
+                <div id="parseResult" style="margin-top: 1.5rem; display: none;">
+                    <!-- Результаты парсинга будут здесь -->
                 </div>
             </div>
-        </div>
-    </div>
+            <div id="priceHistory" class="admin-tab-content">
+                <h3>История цен</h3>
+                <p>Управление историей цен для товаров.</p>
+                <div class="price-history-controls">
+                    <div class="form-group">
+                        <label for="priceHistoryProductSelect">Выберите товар:</label>
+                        <select id="priceHistoryProductSelect" class="crud-table-selector" onchange="loadPriceHistoryForProduct()">
+                            <option value="">-- Выберите товар --</option>
+                            <!-- Опции будут загружены динамически -->
+                        </select>
+                    </div>
+                    <button class="btn btn-outline" onclick="loadAllProductsForPriceHistory()">Загрузить список товаров</button>
+                </div>
+
+                <div class="price-history-form-container" style="margin-top: 1.5rem; display: none;" id="priceHistoryFormContainer">
+                    <h4>Добавить новую запись</h4>
+                    <form id="addPriceHistoryForm">
+                        <div class="form-group">
+                            <label for="addStoreName">Название магазина *</label>
+                            <input type="text" id="addStoreName" required placeholder="Например, DNS, OZON...">
+                        </div>
+                        <div class="form-group">
+                            <label for="addPrice">Цена * (в рублях)</label>
+                            <input type="number" id="addPrice" required min="0" step="0.01" placeholder="0.00">
+                        </div>
+                        <div class="form-group">
+                            <label for="addDate">Дата *</label>
+                            <input type="date" id="addDate" required>
+                        </div>
+                        <div class="form-actions">
+                            <button type="button" class="btn btn-secondary" onclick="resetPriceHistoryForm()">Сбросить</button>
+                            <button type="submit" class="btn btn-primary">Добавить запись</button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="price-history-list-container" style="margin-top: 1.5rem; display: none;" id="priceHistoryListContainer">
+                    <h4>История цен для выбранного товара</h4>
+                    <div id="priceHistoryList">
+                        <!-- Список истории цен будет загружен сюда -->
+                    </div>
+                </div>
+            </div>
+            <!-- Вкладка Аналитика -->
+            <div id="analytics" class="admin-tab-content">
+                <h3>Аналитика системы</h3>
+                <p style="color: #6b7280; margin-bottom: 2rem;">Статистика использования и производительности системы</p>
+                <div class="admin-stats-grid" style="margin-bottom: 2rem;">
+                    <div class="stat-card-enhanced primary">
+                        <div class="stat-icon">👁️</div>
+                        <div class="stat-title">Просмотры за день</div>
+                        <div class="stat-value" id="dailyViews">0</div>
+                        <div class="stat-change positive">+0%</div>
+                    </div>
+                    <div class="stat-card-enhanced success">
+                        <div class="stat-icon">🛒</div>
+                        <div class="stat-title">Переходы к покупке</div>
+                        <div class="stat-value" id="purchaseClicks">0</div>
+                        <div class="stat-change positive">+0%</div>
+                    </div>
+                    <div class="stat-card-enhanced warning">
+                        <div class="stat-icon">💾</div>
+                        <div class="stat-title">Загрузка сервера</div>
+                        <div class="stat-value" id="serverLoad">0%</div>
+                        <div class="stat-change negative">+0%</div>
+                    </div>
+                    <div class="stat-card-enhanced">
+                        <div class="stat-icon">⚡</div>
+                        <div class="stat-title">Время ответа</div>
+                        <div class="stat-value" id="responseTime">0ms</div>
+                        <div class="stat-change positive">-0ms</div>
+                    </div>
+                </div>
+                <div style="background: white; padding: 1.5rem; border-radius: 10px; margin-top: 2rem;">
+                    <h4 style="margin-top: 0;">Популярные поисковые запросы</h4>
+                    <div id="popularSearches">
+                        <!-- Популярные поиски будут загружены сюда -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Вкладка Пользователи -->
+            <div id="users" class="admin-tab-content">
+                <h3>Управление пользователями</h3>
+                <p style="color: #6b7280; margin-bottom: 2rem;">Просмотр, редактирование и удаление аккаунтов пользователей</p>
+                <div class="table-container">
+                    <table class="admin-table-enhanced" id="usersTable">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Email</th>
+                                <th>Имя</th>
+                                <th>Роль</th>
+                                <th>Дата регистрации</th>
+                                <th>Действия</th>
+                            </tr>
+                        </thead>
+                        <tbody id="usersTableBody">
+                            <!-- Таблица пользователей будет загружена сюда -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div> 
+    </div> 
+</main>
 
     <footer class="footer">
         <div class="container">
@@ -900,442 +663,383 @@
 
     <script src="script.js"></script>
     <script>
-        // Логика для админ-панели
-        let currentAdminPage = 1;
-        const itemsPerPage = 10;
-        
-        function initializeAdminPage() {
-            loadAdminStats();
-            loadProductsTable();
-            loadModerationContent();
-            loadUsersTable();
-            loadPopularSearches();
+
+        let currentTableData = [];
+        let currentTableName = '';
+        let currentModerationTab = 'reviews'; 
+
+
+
+        //Открытие вкладки админ-панели
+        function openAdminTab(tabName) {
+            document.querySelectorAll('.admin-tab-content').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.admin-tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(tabName).classList.add('active');
+            //Найдём кнопку вкладки, которая находится в admin-tabs-header
+            const tabButtons = document.querySelectorAll('#moderation ~ .admin-tabs-container .admin-tabs-header .admin-tab-btn');
+            let foundActive = false;
+            for (let btn of tabButtons) {
+                if (btn.textContent.trim().toLowerCase().includes(tabName.toLowerCase())) {
+                    btn.classList.add('active');
+                    foundActive = true;
+                    break;
+                }
+            }
+            //Если не нашли в заголовке вкладки (например, moderation), ищем в основном заголовке
+            if (!foundActive) {
+                 const mainTabBtns = document.querySelectorAll('.admin-tabs-header .admin-tab-btn');
+                 for (let btn of mainTabBtns) {
+                     if (btn.textContent.trim().toLowerCase() === tabName.toLowerCase()) {
+                         btn.classList.add('active');
+                         break;
+                     }
+                 }
+            }
+
+            //Загрузка данных для вкладки при её открытии
+            if (tabName === 'moderation') {
+                loadModerationData(currentModerationTab); //Загружаем текущую подвкладку модерации
+            } else if (tabName === 'editor') {
+                loadTableList();
+            } else if (tabName === 'analytics') {
+                loadAnalyticsData();
+            } else if (tabName === 'users') {
+                loadUsersTable();
+            }
         }
-        
-        function loadAdminStats() {
-            document.getElementById('totalProducts').textContent = demoProducts.length;
-            document.getElementById('pendingProducts').textContent = '3';
-            document.getElementById('newReviews').textContent = '5';
-            document.getElementById('addRequests').textContent = '2';
+
+        //Открытие подвкладки модерации (отзывы/запросы)
+        function openModerationSubTab(subTabName) {
+            currentModerationTab = subTabName;
+            //Обновим активные кнопки подвкладок
+            document.querySelectorAll('#moderation .admin-tabs-header .admin-tab-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            //Загрузим данные для выбранной подвкладки
+            loadModerationData(subTabName);
         }
-        
-        function loadProductsTable() {
-            const tbody = document.getElementById('productsTableBody');
-            if (!tbody) return;
-            
-            const startIndex = (currentAdminPage - 1) * itemsPerPage;
-            const endIndex = startIndex + itemsPerPage;
-            const productsToShow = demoProducts.slice(startIndex, endIndex);
-            
-            tbody.innerHTML = productsToShow.map(product => `
-                <tr>
-                    <td>${product.id}</td>
-                    <td>
-                        <div class="product-cell">
-                            <img src="${product.image}" alt="${product.name}">
-                            <div>
-                                <div style="font-weight: 500;">${product.name}</div>
-                                <div style="font-size: 0.85rem; color: #6b7280;">
-                                    ${Object.keys(product.specs).slice(0, 2).map(key => product.specs[key]).join(' • ')}
-                                </div>
-                            </div>
-                        </div>
-                    </td>
-                    <td>
-                        <span style="padding: 0.25rem 0.75rem; background: #dbeafe; border-radius: 20px; font-size: 0.85rem;">
-                            ${getCategoryName(product.category)}
-                        </span>
-                    </td>
-                    <td style="font-weight: 600;">${formatPrice(product.price)} ₽</td>
-                    <td>
-                        <div style="display: flex; align-items: center; gap: 0.5rem;">
-                            <span style="color: #f59e0b;">${getStarRating(product.rating)}</span>
-                            <span>${product.rating}</span>
-                        </div>
-                    </td>
-                    <td>
-                        <span class="status-badge status-active">Активен</span>
-                    </td>
-                    <td>
-                        <div class="action-buttons">
-                            <button class="btn-icon btn-view" title="Просмотр" onclick="viewProduct(${product.id})">
-                                👁️
-                            </button>
-                            <button class="btn-icon btn-edit" title="Редактировать" onclick="editProduct(${product.id})">
-                                ✏️
-                            </button>
-                            <button class="btn-icon btn-delete" title="Удалить" onclick="deleteProduct(${product.id})">
-                                🗑️
-                            </button>
-                        </div>
-                    </td>
-                </tr>
-            `).join('');
-            
-            updatePagination(demoProducts.length);
-        }
-        
-        function loadModerationContent() {
+
+        //Загрузка данных для модерации (отзывы или запросы)
+        async function loadModerationData(type) {
             const container = document.getElementById('moderationContent');
             if (!container) return;
-            
-            container.innerHTML = `
-                <div style="margin-bottom: 2rem;">
-                    <h4 style="margin-bottom: 1rem;">Отзывы на модерации</h4>
-                    <div class="moderation-list">
-                        ${[1, 2, 3].map(i => `
-                            <div class="moderation-item" style="background: white; padding: 1.5rem; border-radius: 8px; margin-bottom: 1rem; border: 1px solid #e5e7eb;">
-                                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
-                                    <div>
-                                        <div style="font-weight: 500;">Отличный товар! ${i}</div>
-                                        <div style="color: #6b7280; font-size: 0.9rem; margin-top: 0.25rem;">
-                                            Очень доволен покупкой, все работает прекрасно
-                                        </div>
+
+            try {
+                const token = localStorage.getItem('techAggregatorToken');
+                let endpoint = '';
+                let title = '';
+                if (type === 'reviews') {
+                    endpoint = 'http://localhost:3000/api/admin/reviews';
+                    title = 'Отзывы на модерации';
+                } else if (type === 'requests') {
+                    endpoint = 'http://localhost:3000/api/admin/requests';
+                    title = 'Запросы на добавление';
+                } else {
+                    console.error('Неизвестный тип модерации:', type);
+                    return;
+                }
+
+                container.innerHTML = `<h3>${title}</h3><div class="moderation-list"><p class="loading">Загрузка...</p></div>`;
+                const listContainer = container.querySelector('.moderation-list');
+
+                const response = await fetch(endpoint, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!response.ok) throw new Error(await response.text());
+
+                const items = await response.json();
+                console.log(`Загружены ${type} для модерации:`, items);
+
+                if (items.length === 0) {
+                    listContainer.innerHTML = '<p>Нет элементов на модерации</p>';
+                    return;
+                }
+
+                //Сортировка по дате создания, новые сверху
+                const sortedItems = items.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+                listContainer.innerHTML = sortedItems.map(item => {
+                    const date = new Date(item.createdAt);
+                    const formattedDate = date.toLocaleDateString('ru-RU', {
+                        day: '2-digit',
+                        month: 'long',
+                        year: 'numeric'
+                    });
+
+                    if (type === 'reviews') {
+                        const userName = item.user?.fullName || item.userName || 'Аноним';
+                        return `
+                            <div class="moderation-item" data-id="${item.id}" data-type="review">
+                                <div class="moderation-header">
+                                    <div class="moderation-info">
+                                        <h4>${item.product?.name || 'Товар'} (ID: ${item.productId})</h4>
+                                        <p>Пользователь: ${userName} (ID: ${item.userId || 'N/A'})</p>
+                                        <p>Дата: ${formattedDate}</p>
                                     </div>
-                                    <span class="status-badge status-pending">На проверке</span>
+                                    <span class="status-badge status-${item.status || 'pending'}">${item.status || 'pending'}</span>
                                 </div>
-                                <div style="display: flex; justify-content: space-between; align-items: center;">
-                                    <div style="color: #6b7280; font-size: 0.9rem;">
-                                        <span>Иван Петров</span> • 
-                                        <span>iPhone 15 Pro</span> • 
-                                        <span>5 звезд</span> •
-                                        <span>2 часа назад</span>
-                                    </div>
-                                    <div style="display: flex; gap: 0.5rem;">
-                                        <button class="btn btn-primary btn-small" onclick="moderateReview(${i}, 'approve')">
-                                            Одобрить
-                                        </button>
-                                        <button class="btn btn-outline btn-small" onclick="moderateReview(${i}, 'reject')">
-                                            Отклонить
-                                        </button>
-                                    </div>
+                                <div>
+                                    <strong>Оценка:</strong> ${'★'.repeat(item.rating)}${'☆'.repeat(5 - item.rating)} (${item.rating}/5)<br>
+                                    <strong>Отзыв:</strong> ${item.comment || item.text || '<em>Без комментария</em>'}
                                 </div>
+                                <div class="moderation-actions">
+                                    <button class="btn-action btn-approve" onclick="updateReviewStatus(${item.id}, 'approved')">Одобрить</button>
+                                    <button class="btn-action btn-reject" onclick="updateReviewStatus(${item.id}, 'rejected')">Отклонить</button>
+                                </div>
+                                <textarea class="admin-notes" id="notesReview${item.id}" placeholder="Примечания администратора...">${item.adminNotes || ''}</textarea>
+                                <button class="btn-action btn-view" style="margin-top: 0.5rem;" onclick="viewReviewDetails(${item.id})">Посмотреть</button>
                             </div>
-                        `).join('')}
-                    </div>
-                </div>
-                
-                <div>
-                    <h4 style="margin-bottom: 1rem;">Запросы на добавление товаров</h4>
-                    <div class="moderation-list">
-                        ${[1, 2].map(i => `
-                            <div class="moderation-item" style="background: white; padding: 1.5rem; border-radius: 8px; margin-bottom: 1rem; border: 1px solid #e5e7eb;">
-                                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
-                                    <div>
-                                        <div style="font-weight: 500;">Запрос на добавление ${i}</div>
-                                        <div style="color: #6b7280; font-size: 0.9rem; margin-top: 0.25rem;">
-                                            Пользователь просит добавить модель Samsung Galaxy S25
-                                        </div>
+                        `;
+                    } else if (type === 'requests') {
+                        const requesterName = item.user?.fullName || 'Аноним';
+                        return `
+                            <div class="moderation-item" data-id="${item.id}" data-type="request">
+                                <div class="moderation-header">
+                                    <div class="moderation-info">
+                                        <h4>${item.productName}</h4>
+                                        <p>Категория: ${item.category || 'Не указана'}</p>
+                                        <p>Пользователь: ${requesterName} (ID: ${item.userId || 'N/A'})</p>
+                                        <p>Дата: ${formattedDate}</p>
                                     </div>
-                                    <span class="status-badge status-warning">Новый</span>
+                                    <span class="status-badge status-${item.status}">${item.status}</span>
                                 </div>
-                                <div style="display: flex; justify-content: space-between; align-items: center;">
-                                    <div style="color: #6b7280; font-size: 0.9rem;">
-                                        <span>Алексей Смирнов</span> • 
-                                        <span>Смартфоны</span> •
-                                        <span>1 день назад</span>
-                                    </div>
-                                    <div style="display: flex; gap: 0.5rem;">
-                                        <button class="btn btn-primary btn-small" onclick="processRequest(${i}, 'add')">
-                                            Добавить
-                                        </button>
-                                        <button class="btn btn-outline btn-small" onclick="processRequest(${i}, 'reject')">
-                                            Отклонить
-                                        </button>
-                                    </div>
+                                <div>
+                                    <strong>Ссылка:</strong> ${item.url ? `<a href="${item.url}" target="_blank">${item.url}</a>` : 'Не указана'}<br>
+                                    <strong>Комментарий:</strong> ${item.comment || '<em>Нет</em>'}
                                 </div>
+                                <div class="moderation-actions">
+                                    <button class="btn-action btn-approve" onclick="updateRequestStatus(${item.id}, 'approved')">Одобрить</button>
+                                    <button class="btn-action btn-reject" onclick="updateRequestStatus(${item.id}, 'rejected')">Отклонить</button>
+                                </div>
+                                <textarea class="admin-notes" id="notesRequest${item.id}" placeholder="Примечания администратора...">${item.adminNotes || ''}</textarea>
+                                <button class="btn-action btn-view" style="margin-top: 0.5rem;" onclick="viewRequestDetails(${item.id})">Посмотреть</button>
                             </div>
-                        `).join('')}
-                    </div>
-                </div>
-            `;
+                        `;
+                    }
+                    return '';
+                }).join('');
+            } catch (error) {
+                console.error(`Ошибка загрузки ${type}:`, error);
+                container.innerHTML = `<h3>${type === 'reviews' ? 'Отзывы на модерации' : 'Запросы на добавление'}</h3><div class="moderation-list"><p class="error-message">Ошибка: ${error.message}</p></div>`;
+            }
         }
-        
-        function loadUsersTable() {
+
+        async function loadAnalyticsData() {
+            const token = localStorage.getItem('techAggregatorToken');
+            try {
+                //Загрузка основной статистики (предполагается, что есть такой маршрут)
+                const statsRes = await fetch('http://localhost:3000/api/admin/analytics/stats', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (statsRes.ok) {
+                    const stats = await statsRes.json();
+                    document.getElementById('dailyViews').textContent = stats.dailyViews || 0;
+                    document.getElementById('purchaseClicks').textContent = stats.purchaseClicks || 0;
+                    document.getElementById('serverLoad').textContent = `${stats.serverLoad || 0}%`;
+                    document.getElementById('responseTime').textContent = `${stats.responseTime || 0}ms`;
+                    //Обновим проценты, если есть данные
+                    if (stats.dailyViewsChange) document.querySelector('#dailyViews ~ .stat-change').textContent = `${stats.dailyViewsChange > 0 ? '+' : ''}${stats.dailyViewsChange}%`;
+                    if (stats.purchaseClicksChange) document.querySelector('#purchaseClicks ~ .stat-change').textContent = `${stats.purchaseClicksChange > 0 ? '+' : ''}${stats.purchaseClicksChange}%`;
+                    if (stats.serverLoadChange) document.querySelector('#serverLoad ~ .stat-change').textContent = `${stats.serverLoadChange > 0 ? '+' : ''}${stats.serverLoadChange}%`;
+                    if (stats.responseTimeChange) document.querySelector('#responseTime ~ .stat-change').textContent = `${stats.responseTimeChange > 0 ? '+' : ''}${stats.responseTimeChange}ms`;
+                }
+
+                //Загрузка популярных поисков (предполагается, что есть такой маршрут)
+                const searchesRes = await fetch('http://localhost:3000/api/admin/analytics/popular-searches', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (searchesRes.ok) {
+                    const searches = await searchesRes.json();
+                    const searchesContainer = document.getElementById('popularSearches');
+                    if (searches.length > 0) {
+                        searchesContainer.innerHTML = searches.map(search => `<div>${search.term} (${search.count} раз)</div>`).join('');
+                    } else {
+                        searchesContainer.innerHTML = '<div>Нет данных</div>';
+                    }
+                }
+            } catch (error) {
+                console.error('Ошибка загрузки аналитики:', error);
+                //Показать сообщение об ошибке в соответствующих блоках
+                document.querySelectorAll('#analytics .stat-value').forEach(el => el.textContent = 'Err');
+                document.getElementById('popularSearches').innerHTML = '<div>Ошибка загрузки</div>';
+            }
+        }
+
+        async function loadUsersTable() {
             const tbody = document.getElementById('usersTableBody');
             if (!tbody) return;
-            
-            const users = [
-                { id: 1, name: 'Иван Иванов', email: 'ivan@example.com', role: 'Администратор', lastActive: '2 часа назад', status: 'active' },
-                { id: 2, name: 'Мария Петрова', email: 'maria@example.com', role: 'Модератор', lastActive: '1 день назад', status: 'active' },
-                { id: 3, name: 'Алексей Смирнов', email: 'alex@example.com', role: 'Пользователь', lastActive: '3 дня назад', status: 'active' },
-                { id: 4, name: 'Екатерина Волкова', email: 'katya@example.com', role: 'Пользователь', lastActive: '1 неделя назад', status: 'inactive' },
-                { id: 5, name: 'Дмитрий Козлов', email: 'dima@example.com', role: 'Пользователь', lastActive: 'Только что', status: 'active' }
-            ];
-            
-            tbody.innerHTML = users.map(user => `
-                <tr>
-                    <td>
-                        <div style="display: flex; align-items: center; gap: 1rem;">
-                            <div class="user-avatar">
-                                ${user.name.split(' ').map(n => n[0]).join('')}
-                            </div>
-                            <div>
-                                <div style="font-weight: 500;">${user.name}</div>
-                                <div style="font-size: 0.85rem; color: #6b7280;">ID: ${user.id}</div>
-                            </div>
-                        </div>
-                    </td>
-                    <td>${user.email}</td>
-                    <td>
-                        <span style="padding: 0.25rem 0.75rem; background: ${
-                            user.role === 'Администратор' ? '#dbeafe' : 
-                            user.role === 'Модератор' ? '#f0f9ff' : '#f3f4f6'
-                        }; color: ${
-                            user.role === 'Администратор' ? '#1d4ed8' : 
-                            user.role === 'Модератор' ? '#0c4a6e' : '#4b5563'
-                        }; border-radius: 20px; font-size: 0.85rem;">
-                            ${user.role}
-                        </span>
-                    </td>
-                    <td style="color: #6b7280;">${user.lastActive}</td>
-                    <td>
-                        <span class="status-badge ${user.status === 'active' ? 'status-active' : 'status-inactive'}">
-                            ${user.status === 'active' ? 'Активен' : 'Неактивен'}
-                        </span>
-                    </td>
-                    <td>
-                        <div class="action-buttons">
-                            <button class="btn-icon btn-view" title="Просмотр" onclick="viewUser(${user.id})">
-                                👁️
-                            </button>
-                            <button class="btn-icon btn-edit" title="Редактировать" onclick="editUser(${user.id})">
-                                ✏️
-                            </button>
-                        </div>
-                    </td>
-                </tr>
-            `).join('');
-        }
-        
-        function loadPopularSearches() {
-            const container = document.getElementById('popularSearches');
-            if (!container) return;
-            
-            const searches = [
-                { query: 'iPhone 15 Pro', count: 1247, trend: 'up' },
-                { query: 'Ноутбуки для игр', count: 892, trend: 'up' },
-                { query: 'Наушники с шумоподавлением', count: 745, trend: 'down' },
-                { query: 'Телевизоры 4K', count: 621, trend: 'up' },
-                { query: 'Планшеты для рисования', count: 432, trend: 'up' }
-            ];
-            
-            container.innerHTML = searches.map(search => `
-                <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 0; border-bottom: 1px solid #e5e7eb;">
-                    <div>
-                        <span style="font-weight: 500;">${search.query}</span>
-                        <span style="color: #6b7280; font-size: 0.9rem; margin-left: 0.5rem;">
-                            ${search.count} поисков
-                        </span>
-                    </div>
-                    <div style="color: ${search.trend === 'up' ? '#10b981' : '#ef4444'}; font-size: 0.9rem;">
-                        ${search.trend === 'up' ? '↗ Растет' : '↘ Снижается'}
-                    </div>
-                </div>
-            `).join('');
-        }
-        
-        function openAdminTab(tabName) {
-            // Убираем активный класс со всех вкладок
-            document.querySelectorAll('.admin-tab-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            
-            // Убираем активный класс со всех контентов
-            document.querySelectorAll('.admin-tab-content').forEach(content => {
-                content.classList.remove('active');
-            });
-            
-            // Активируем выбранную вкладку
-            event.target.classList.add('active');
-            document.getElementById(tabName).classList.add('active');
-        }
-        
-        function searchProducts() {
-            const query = document.getElementById('productSearch').value.toLowerCase();
-            alert(`Поиск товаров: "${query}" - будет реализован в бэкенде`);
-        }
-        
-        function viewProduct(productId) {
-            openProduct(productId);
-        }
-        
-        function editProduct(productId) {
-            alert(`Редактирование товара ${productId} - будет реализовано в бэкенде`);
-        }
-        
-        function deleteProduct(productId) {
-            if (confirm('Вы уверены, что хотите удалить этот товар?')) {
-                alert(`Товар ${productId} удален - будет реализовано в бэкенде`);
+
+            try {
+                const token = localStorage.getItem('techAggregatorToken');
+                const response = await fetch('http://localhost:3000/api/admin/users', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!response.ok) throw new Error(await response.text());
+
+                const users = await response.json();
+                console.log('Загружены пользователи:', users);
+
+                tbody.innerHTML = users.map(user => {
+                    const joinDate = new Date(user.createdAt);
+                    const formattedDate = joinDate.toLocaleDateString('ru-RU', {
+                        day: '2-digit',
+                        month: 'long',
+                        year: 'numeric'
+                    });
+
+                    return `
+                        <tr>
+                            <td>${user.id}</td>
+                            <td>${user.email}</td>
+                            <td>${user.fullName || '—'}</td>
+                            <td>${user.role}</td>
+                            <td>${formattedDate}</td>
+                            <td>
+                                <button class="btn btn-outline btn-small" onclick="viewUser(${user.id})">Просм.</button>
+                                <button class="btn btn-outline btn-small" onclick="editUser(${user.id})">Ред.</button>
+                                <button class="btn btn-danger btn-small" onclick="deleteUser(${user.id})">Удл.</button>
+                                <button class="btn btn-primary btn-small" onclick="openMessageForm(${user.id}, '${user.email}')">Сообщение</button>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+
+            } catch (error) {
+                console.error('Ошибка загрузки пользователей:', error);
+                tbody.innerHTML = `<tr><td colspan="6"><p class="error-message">Ошибка: ${error.message}</p></td></tr>`;
             }
         }
-        
-        function moderateReview(reviewId, action) {
-            alert(`Отзыв ${reviewId} ${action === 'approve' ? 'одобрен' : 'отклонен'} - будет реализовано в бэкенде`);
-        }
-        
-        function moderateAll(action) {
-            if (confirm(`Вы уверены, что хотите ${action === 'approve' ? 'одобрить' : 'отклонить'} все элементы?`)) {
-                alert(`Все элементы ${action === 'approve' ? 'одобрены' : 'отклонены'} - будет реализовано в бэкенде`);
+
+        //Форма отправки сообщения пользователю
+        let currentMessageUserId = null;
+
+        function openMessageForm(userId, userEmail) {
+            currentMessageUserId = userId;
+            const container = document.getElementById('usersTable').parentElement;
+            let messageFormContainer = container.querySelector('.message-form-container');
+            if (!messageFormContainer) {
+                messageFormContainer = document.createElement('div');
+                messageFormContainer.className = 'message-form-container';
+                container.appendChild(messageFormContainer);
             }
+
+            messageFormContainer.innerHTML = `
+                <h4>Отправить сообщение пользователю: ${userEmail}</h4>
+                <form id="messageForm">
+                    <div class="message-input-group">
+                        <label for="messageText">Текст сообщения:</label>
+                        <textarea id="messageText" name="messageText" rows="4" required placeholder="Введите ваше сообщение..."></textarea>
+                    </div>
+                    <div class="message-actions">
+                        <button type="button" class="btn btn-secondary" onclick="closeMessageForm()">Отмена</button>
+                        <button type="submit" class="btn btn-primary">Отправить</button>
+                    </div>
+                </form>
+            `;
+
+            document.getElementById('messageForm').addEventListener('submit', sendMessageToUser);
         }
-        
-        function processRequest(requestId, action) {
-            alert(`Запрос ${requestId} ${action === 'add' ? 'обработан' : 'отклонен'} - будет реализовано в бэкенде`);
+
+        function closeMessageForm() {
+            const container = document.getElementById('usersTable').parentElement;
+            const messageFormContainer = container.querySelector('.message-form-container');
+            if (messageFormContainer) {
+                messageFormContainer.remove();
+            }
+            currentMessageUserId = null;
         }
-        
-        function startAIParsing() {
-            const url = document.getElementById('parseUrl').value;
-            const category = document.getElementById('aiCategory').value;
-            
-            if (!url) {
-                alert('Введите URL для парсинга');
+
+        async function sendMessageToUser(event) {
+            event.preventDefault();
+            if (!currentMessageUserId) {
+                showCustomNotification('Ошибка: не выбран пользователь', 'error');
                 return;
             }
-            
-            // Показываем прогресс
-            const progress = document.getElementById('aiProgress');
-            const progressFill = document.getElementById('progressFill');
-            const progressText = document.getElementById('progressText');
-            const progressPercent = document.getElementById('progressPercent');
-            
-            progress.style.display = 'block';
-            
-            // Имитация процесса парсинга
-            let progressValue = 0;
-            const interval = setInterval(() => {
-                progressValue += 10;
-                progressFill.style.width = progressValue + '%';
-                progressPercent.textContent = progressValue + '%';
-                
-                if (progressValue <= 30) {
-                    progressText.textContent = 'Анализ страницы...';
-                } else if (progressValue <= 60) {
-                    progressText.textContent = 'Извлечение данных...';
-                } else if (progressValue <= 90) {
-                    progressText.textContent = 'Обработка AI...';
-                } else {
-                    progressText.textContent = 'Завершение...';
+
+            const messageText = document.getElementById('messageText').value.trim();
+            if (!messageText) {
+                showCustomNotification('Пожалуйста, введите текст сообщения', 'info');
+                return;
+            }
+
+            const token = localStorage.getItem('techAggregatorToken');
+            try {
+                const response = await fetch(`http://localhost:3000/api/admin/users/${currentMessageUserId}/send-message`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ message: messageText })
+                });
+
+                if (!response.ok) throw new Error(await response.text());
+
+                const result = await response.json();
+                console.log('Сообщение отправлено:', result);
+                showCustomNotification('Сообщение отправлено пользователю.', 'success');
+                closeMessageForm(); //Закрываем форму после отправки
+            } catch (error) {
+                console.error('Ошибка отправки сообщения:', error);
+                showCustomNotification(`Ошибка: ${error.message}`, 'error');
+            }
+        }
+
+        //Вспомогательные функции
+        function viewUser(userId) { alert(`Просмотр пользователя ID: ${userId}`); }
+        function editUser(userId) { alert(`Редактирование пользователя ID: ${userId}`); }
+        async function deleteUser(userId) {
+            if (confirm(`Вы уверены, что хотите удалить пользователя ID ${userId}?`)) {
+                const token = localStorage.getItem('techAggregatorToken');
+                try {
+                    const response = await fetch(`http://localhost:3000/api/admin/users/${userId}`, {
+                        method: 'DELETE',
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    if (!response.ok) throw new Error(await response.text());
+                    showCustomNotification('Пользователь удалён.', 'success');
+                    loadUsersTable(); //Перезагрузим таблицу
+                } catch (error) {
+                    console.error('Ошибка удаления пользователя:', error);
+                    showCustomNotification(`Ошибка: ${error.message}`, 'error');
                 }
-                
-                if (progressValue >= 100) {
-                    clearInterval(interval);
-                    showAIResults();
+            }
+        }
+
+        async function updateMainStats() {
+            const token = localStorage.getItem('techAggregatorToken');
+            try {
+                //Загрузка статистики
+                const statsRes = await fetch('http://localhost:3000/api/admin/dashboard-stats', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (statsRes.ok) {
+                    const stats = await statsRes.json();
+                    document.getElementById('totalProducts').textContent = stats.totalProducts || 0;
+                    //pendingItems = pendingReviews + pendingRequests
+                    const pendingReviews = stats.pendingReviews || 0;
+                    const pendingRequests = stats.pendingRequests || 0;
+                    document.getElementById('pendingItems').textContent = pendingReviews + pendingRequests;
+                    document.getElementById('newReviews').textContent = pendingReviews; //Или общее количество новых
+                    document.getElementById('addRequests').textContent = pendingRequests; //Или общее количество новых
                 }
-            }, 300);
+            } catch (error) {
+                console.error('Ошибка обновления статистики:', error);
+                //Показать ошибку в соответствующих блоках
+                document.querySelectorAll('.stat-card-enhanced .stat-value').forEach(el => el.textContent = 'Err');
+            }
         }
+
         
-        function showAIResults() {
-            const container = document.getElementById('aiResultsPanel');
-            
-            container.innerHTML = `
-                <h4 style="margin-top: 2rem;">Результаты AI-парсинга</h4>
-                <div class="ai-results-grid">
-                    ${[1, 2, 3].map(i => `
-                        <div class="ai-result-card">
-                            <div class="ai-result-header">
-                                <div>
-                                    <div style="font-weight: 500;">Найденный товар ${i}</div>
-                                    <div style="color: #6b7280; font-size: 0.9rem; margin-top: 0.25rem;">
-                                        Извлечено из маркетплейса
-                                    </div>
-                                </div>
-                                <div class="ai-confidence">Уверенность: ${85 + i}%</div>
-                            </div>
-                            
-                            <div style="margin-bottom: 1rem;">
-                                <div style="font-size: 0.9rem; color: #6b7280;">Характеристики:</div>
-                                <div style="font-size: 0.85rem; margin-top: 0.5rem;">
-                                    <div>Процессор: Snapdragon 8 Gen ${i}</div>
-                                    <div>Память: ${128 * i} GB</div>
-                                    <div>Экран: 6.${i}'' AMOLED</div>
-                                </div>
-                            </div>
-                            
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem;">
-                                <div>
-                                    <div style="font-size: 0.9rem; color: #6b7280;">Цена:</div>
-                                    <div style="font-weight: 600; font-size: 1.1rem;">${formatPrice(50000 + i * 10000)} ₽</div>
-                                </div>
-                                <div style="display: flex; gap: 0.5rem;">
-                                    <button class="btn btn-primary btn-small" onclick="addAIProduct(${i})">
-                                        Добавить
-                                    </button>
-                                    <button class="btn btn-outline btn-small" onclick="editAIProduct(${i})">
-                                        Редактировать
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    `).join('')}
-                </div>
-                
-                <div style="display: flex; justify-content: center; gap: 1rem; margin-top: 2rem;">
-                    <button class="btn btn-primary" onclick="addAllAIProducts()">
-                        Добавить все товары
-                    </button>
-                    <button class="btn btn-outline" onclick="clearAIResults()">
-                        Очистить результаты
-                    </button>
-                </div>
-            `;
-        }
-        
-        function showAISettings() {
-            document.getElementById('aiSettingsModal').style.display = 'block';
-        }
-        
-        function closeAISettingsModal() {
-            document.getElementById('aiSettingsModal').style.display = 'none';
-        }
-        
-        function saveAISettings() {
-            alert('Настройки AI сохранены');
-            closeAISettingsModal();
-        }
-        
-        function addAIProduct(productId) {
-            alert(`Товар AI-${productId} добавлен в каталог`);
-        }
-        
-        function editAIProduct(productId) {
-            alert(`Редактирование AI-товара ${productId}`);
-        }
-        
-        function addAllAIProducts() {
-            alert('Все найденные товары добавлены в каталог');
-        }
-        
-        function clearAIResults() {
-            document.getElementById('aiResultsPanel').innerHTML = '';
-            document.getElementById('aiProgress').style.display = 'none';
-        }
-        
-        function viewUser(userId) {
-            alert(`Просмотр пользователя ${userId} - будет реализовано в бэкенде`);
-        }
-        
-        function editUser(userId) {
-            alert(`Редактирование пользователя ${userId} - будет реализовано в бэкенде`);
-        }
-        
-        function exportUsers() {
-            alert('Экспорт пользователей - будет реализовано в бэкенде');
-        }
-        
-        function importProducts() {
-            alert('Импорт товаров - будет реализовано в бэкенде');
-        }
-        
-        function updatePagination(totalItems) {
-            const totalPages = Math.ceil(totalItems / itemsPerPage);
-            // В реальном приложении здесь будет обновление пагинации
-        }
-        
-        // Инициализация страницы
         document.addEventListener('DOMContentLoaded', function() {
-            initializeAdminPage();
+           
+            updateMainStats();
         });
+
+      
+        setInterval(updateMainStats, 60000); 
+
     </script>
 </body>
 </html>

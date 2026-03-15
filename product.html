@@ -1,145 +1,299 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Карточка товара - TechAggregator</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="icon" sizes="180x180" href="sources/logo.png">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Карточка товара - TechAggregator</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" sizes="180x180" href="sources/logo.png">
+  <style>
+    /* Стили для корректного отображения */
+    .product-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .breadcrumbs {
+      margin-bottom: 20px;
+      color: #6b7280;
+    }
+    .breadcrumbs a {
+      color: #2563eb;
+      text-decoration: none;
+    }
+    .product-detail {
+      display: flex;
+      gap: 40px;
+      margin-bottom: 40px;
+    }
+    .product-gallery {
+      flex: 0 0 400px;
+    }
+    .main-image img {
+      width: 100%;
+      height: auto;
+      max-height: 500px;
+      object-fit: contain;
+      background: #f8f9fa;
+      border-radius: 8px;
+    }
+    .product-info {
+      flex: 1;
+    }
+    .product-title {
+      font-size: 2rem;
+      margin: 0 0 10px 0;
+    }
+    .product-category {
+      color: #6b7280;
+      margin-bottom: 20px;
+    }
+    .product-rating {
+      margin: 10px 0;
+    }
+    .rating-stars {
+      color: #f59e0b;
+    }
+    .product-specs h3 {
+      margin: 20px 0 10px 0;
+    }
+    .specs-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .spec-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px;
+      background: #f8f9fa;
+      border-radius: 6px;
+    }
+    .action-buttons {
+      margin-top: 24px;
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 500;
+    }
+    .btn-primary { background: #2563eb; color: white; }
+    .btn-outline { background: transparent; color: #2563eb; border: 1px solid #2563eb; }
+    .btn-secondary { background: #6b7280; color: white; }
+
+    .price-comparison,
+    .reviews-section {
+      margin-bottom: 40px;
+    }
+    .price-item {
+      padding: 16px;
+      background: #f0f9ff;
+      border-radius: 8px;
+      margin-bottom: 12px;
+    }
+    .store-info {
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+    .buy-button {
+      display: inline-block;
+      margin-top: 8px;
+      color: #2563eb;
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: #6b7280;
+    }
+    .error-message {
+      color: #ef4444;
+      text-align: center;
+      padding: 40px;
+      font-size: 1.2rem;
+    }
+
+    @media (max-width: 768px) {
+      .product-detail {
+        flex-direction: column;
+      }
+      .product-gallery {
+        flex: auto;
+      }
+    }
+  </style>
 </head>
 <body>
-    <header class="header">
-    <div class="container">
-        <div class="logo">
-            <h1><a href="index.html" style="color: inherit; text-decoration: none; padding-right: 20%;">TechAggregator</a></h1>
-        </div>
-        <nav class="nav">
-            <a href="index.html" class="nav-link" style="padding-left: 5%;">Главная</a>
-            <a href="catalog.html" class="nav-link">Каталог</a>
-            <a href="comparison.html" class="nav-link">Сравнение<span class="comparison-counter">0</span></a>
-            <a href="recommendations.html" class="nav-link">Рекомендации</a>
-        </nav>
-        
-        <!-- Добавляем поиск здесь -->
-        <div class="nav-search-container">
-            <input type="text" class="nav-search" id="navSearch" 
-                   placeholder="Поиск товаров..." 
-                   oninput="showNavSearchSuggestions()"
-                   onkeypress="handleNavSearchEnter(event)">
-            <button class="nav-search-btn" onclick="navSearchProducts()">
-                🔍
-            </button>
-            <div id="navSearchSuggestions" class="nav-search-suggestions"></div>
-        </div>
-        
-        <div class="auth-buttons">
-    <a href="auth.html" class="btn btn-outline">Войти</a>
-    <a href="auth.html?tab=register" class="btn btn-primary">Регистрация</a>
-</div>
-        </div>
-    </header>
-
-    <main class="main">
-        <div class="container">
-            <div class="breadcrumbs">
-                <a href="index.html">Главная</a> > 
-                <a href="catalog.html">Каталог</a> > 
-                <span id="productCategory">Смартфоны</span> > 
-                <span id="productName">Название товара</span>
-            </div>
-
-            <div class="product-detail">
-                <div class="product-gallery">
-                    <div class="main-image">
-                        <img id="mainProductImage" src="" alt="Основное изображение">
-                    </div>
-                </div>
-
-                <div class="product-info">
-                    <h1 id="productTitle">Название товара</h1>
-                    <div class="product-rating">
-                        <span class="rating-stars">★★★★★</span>
-                        <span class="rating-value">4.5</span>
-                    </div>
-
-                    <div class="product-specs">
-                        <h3>Основные характеристики</h3>
-                        <div id="productSpecs" class="specs-list">
-                            <!-- Характеристики будут загружены через JavaScript -->
-                        </div>
-                    </div>
-
-                    
-            <div class="action-buttons">
-                <button class="btn btn-primary" onclick="addCurrentProductToComparison()">Добавить к сравнению</button>
-                <button class="btn btn-outline" onclick="addToFavorites()" id="favoriteBtn">В избранное</button>
-                <button class="btn btn-secondary" onclick="requestProductAddition()" id="requestBtn">Запросить добавление</button>
-            </div>
-
-                </div>
-            </div>
-
-            <div class="price-comparison">
-                <h2>Где купить</h2>
-                <div id="priceList" class="price-list">
-                    <!-- Список цен будет загружен через JavaScript -->
-                </div>
-            </div>
-
-            <div class="reviews-section">
-                <h2>Отзывы и вопросы</h2>
-                <div class="reviews-actions">
-                    <button class="btn btn-primary" onclick="addReview()">Оставить отзыв</button>
-                    <button class="btn btn-outline" onclick="requestProductAddition()">Запросить добавление</button>
-                </div>
-                <div id="reviewsList" class="reviews-list">
-                    <!-- Отзывы будут загружены через JavaScript -->
-                </div>
-            </div>
-        </div>
-    </main>
-
-    <!-- Модальное окно отзыва -->
-
-<div id="reviewModal" class="modal">
-    <div class="modal-content">
-        <span class="close" onclick="closeReviewModal()">&times;</span>
-        <h3>Оставить отзыв</h3>
-        <form id="reviewForm">
-            <div class="form-group">
-                <label>Ваше имя</label>
-                <input type="text" id="reviewName" required placeholder="Введите ваше имя">
-            </div>
-            <div class="form-group">
-                <label>Оценка</label>
-                <div class="star-rating" id="starRating">
-                    <span class="star" data-value="1">★</span>
-                    <span class="star" data-value="2">★</span>
-                    <span class="star" data-value="3">★</span>
-                    <span class="star" data-value="4">★</span>
-                    <span class="star" data-value="5">★</span>
-                </div>
-                <input type="hidden" id="reviewRating" value="5" required>
-                <div class="rating-value-display">Оценка: <span id="ratingValueDisplay">5</span>/5</div>
-            </div>
-            <div class="form-group">
-                <label>Отзыв</label>
-                <textarea id="reviewText" rows="5" placeholder="Расскажите о вашем опыте использования товара..." required></textarea>
-            </div>
-            <div class="form-actions">
-                <button type="button" class="btn btn-secondary" onclick="closeReviewModal()">Отмена</button>
-                <button type="submit" class="btn btn-primary">Отправить отзыв</button>
-            </div>
-        </form>
+<header class="header">
+  <div class="container">
+    <div class="logo">
+      <h1><a href="index.html" style="color: inherit; text-decoration: none; padding-right: 20%;">TechAggregator</a></h1>
     </div>
+    <nav class="nav">
+      <a href="index.html" class="nav-link" style="padding-left: 5%;">Главная</a>
+      <a href="catalog.html" class="nav-link">Каталог</a>
+      <a href="comparison.html" class="nav-link">Сравнение<span class="comparison-counter">0</span></a>
+      <a href="recommendations.html" class="nav-link">Рекомендации</a>
+    </nav>
+    <!-- Поиск -->
+    <div class="nav-search-container">
+      <input type="text" class="nav-search" id="navSearch"
+        placeholder="Поиск товаров..."
+        oninput="showNavSearchSuggestions()"
+        onkeypress="handleNavSearchEnter(event)">
+      <button class="nav-search-btn" onclick="navSearchProducts()">🔍</button>
+      <div id="navSearchSuggestions" class="nav-search-suggestions"></div>
+    </div>
+    <div class="auth-buttons">
+      <a href="auth.html" class="btn btn-outline">Войти</a>
+      <a href="auth.html?tab=register" class="btn btn-primary">Регистрация</a>
+    </div>
+  </div>
+</header>
+
+<main class="main">
+  <div class="container">
+    <div id="loading" class="loading">Загрузка товара...</div>
+    <div id="error" class="error-message" style="display: none;"></div>
+    <div id="productContent" style="display: none;">
+      <div class="breadcrumbs">
+        <a href="index.html">Главная</a> >
+        <a href="catalog.html">Каталог</a> >
+        <span id="productCategory">Смартфоны</span> >
+        <span id="productName">Название товара</span>
+      </div>
+
+      <div class="product-detail">
+        <div class="product-gallery">
+          <div class="main-image">
+            <img id="mainProductImage" src="" alt="Основное изображение">
+          </div>
+        </div>
+        <div class="product-info">
+          <h1 id="productTitle" class="product-title">Название товара</h1>
+          <div class="product-rating">
+            <span id="ratingStars" class="rating-stars">★★★★★</span>
+            <span id="ratingValue" class="rating-value">4.5</span>
+          </div>
+          <div class="product-specs">
+            <h3>Основные характеристики</h3>
+            <div id="productSpecs" class="specs-list">
+              <!-- Тут характеристики -->
+            </div>
+          </div>
+          <div class="action-buttons">
+            <button class="btn btn-primary" onclick="addToComparison(currentProductId)">Добавить к сравнению</button>
+            <button class="btn btn-outline" onclick="addToFavorites(currentProductId)">В избранное</button>
+            <button class="btn btn-secondary" onclick="requestProductAddition()" id="requestBtn">Запросить добавление</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="price-comparison">
+        <h2>Где купить</h2>
+        <div id="priceList" class="price-list">
+          <!-- Тут список цен -->
+        </div>
+      </div>
+
+      <div class="section price-history-section">
+        <h2>История цен</h2>
+        <div id="priceChartContainer" style="height: 400px; width: 100%; position: relative;">
+            <!-- Тут графики -->
+            <div id="priceChartLoading" style="display: flex; justify-content: center; align-items: center; height: 100%;">Загрузка истории цен...</div>
+        </div>
+    </div>
+
+      <div class="reviews-section">
+        <h2>Отзывы и вопросы</h2>
+        <div class="reviews-actions">
+          <button class="btn btn-primary" onclick="addReview()">Оставить отзыв</button>
+          <button class="btn btn-outline" onclick="requestProductAddition()">Запросить добавление</button>
+        </div>
+        <div id="reviewsList" class="reviews-list">
+          <!-- Отзывы будут загружены позже -->
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- Модальное окно отзыва -->
+<div id="reviewModal" class="modal" style="display: none;">
+  <div class="modal-content">
+    <span class="close" onclick="closeReviewModal()">&times;</span>
+    <h3>Оставить отзыв</h3>
+    <form id="reviewForm">
+      <div class="form-group">
+        <label>Оценка</label>
+        <div class="star-rating" id="starRating">
+          <span class="star" data-value="1">★</span>
+          <span class="star" data-value="2">★</span>
+          <span class="star" data-value="3">★</span>
+          <span class="star" data-value="4">★</span>
+          <span class="star" data-value="5">★</span>
+        </div>
+        <input type="hidden" id="reviewRating" value="5" required>
+        <div class="rating-value-display">Оценка: <span id="ratingValueDisplay">5</span>/5</div>
+      </div>
+      <div class="form-group">
+        <label>Отзыв</label>
+        <textarea id="reviewText" rows="5" placeholder="Расскажите о вашем опыте..." required></textarea>
+      </div>
+      <div class="form-actions">
+        <button type="button" class="btn btn-secondary" onclick="closeReviewModal()">Отмена</button>
+        <button type="submit" class="btn btn-primary">Отправить отзыв</button>
+      </div>
+    </form>
+  </div>
 </div>
 
-    <footer class="footer">
-        <div class="container">
-            <p>&copy; 2024 TechAggregator. Все права защищены.</p>
-        </div>
-    </footer>
+<footer class="footer">
+  <div class="container">
+    <p>&copy; 2024 TechAggregator. Все права защищены.</p>
+  </div>
+</footer>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+<script src="script.js"></script>
 
-    <script src="script.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', async function () {
+  const urlParams = new URLSearchParams(window.location.search);
+  const productId = urlParams.get('id');
+  
+  if (!productId) {
+    showError('ID товара не указан');
+    return;
+  }
+
+  currentProductId = parseInt(productId);
+
+  try {
+    const products = await loadProductsFromAPI();
+    const product = products.find(p => p.id === currentProductId);
+    
+    if (product) {
+      displayProduct(product);
+    } else {
+      showError('Товар не найден');
+    }
+  } catch (err) {
+    console.error('Ошибка загрузки:', err);
+    showError('Не удалось загрузить товар');
+  }
+
+  loadUserData();
+  updateComparisonCounter();
+});
+
+</script>
 </body>
 </html>

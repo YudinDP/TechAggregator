@@ -7,7 +7,6 @@
     <link rel="stylesheet" href="style.css">
     <link rel="icon" sizes="180x180" href="sources/logo.png">
     <style>
-        /* Дополнительные стили для скролла фильтров */
         .catalog-layout {
             display: grid;
             grid-template-columns: 280px 1fr;
@@ -104,6 +103,55 @@
             }
         }
     </style>
+    <script>
+//Применяем фильтры из URL при загрузке
+function applyURLFilters() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const search = urlParams.get('search');
+  const category = urlParams.get('category');
+
+  if (category) {
+    document.getElementById('categorySelect').value = category;
+    updateFilters(); //обновляет динамические фильтры
+  }
+
+  if (search) {
+    document.getElementById('mainSearch').value = search;
+    //Фильтруем товары по поисковому запросу
+    filterProductsBySearch(search);
+  } else {
+    //Если нет поиска — просто фильтруем по категории/цене
+    filterProducts();
+  }
+}
+
+//Фильтрация товаров по поисковому запросу
+function filterProductsBySearch(query) {
+  const lowerQuery = query.toLowerCase();
+  let filtered = demoProducts.filter(product =>
+    product.name.toLowerCase().includes(lowerQuery) ||
+    (product.specs && Object.values(product.specs).some(
+      value => value.toString().toLowerCase().includes(lowerQuery)
+    ))
+  );
+
+  //Применяем остальные фильтры (категория, цена и т.д.)
+  const category = document.getElementById('categorySelect')?.value || '';
+  if (category) {
+    filtered = filtered.filter(p => p.category === category);
+  }
+
+  const minPrice = parseFloat(document.getElementById('minPrice')?.value) || 0;
+  const maxPrice = parseFloat(document.getElementById('maxPrice')?.value) || Infinity;
+  filtered = filtered.filter(p => {
+    const price = getMinPrice(p) || 0;
+    return price >= minPrice && price <= maxPrice;
+  });
+
+  displayProducts(filtered);
+  updateProductsInfo(filtered.length, category);
+}
+</script>
 </head>
 <body>
     <header class="header">
@@ -117,15 +165,13 @@
 <a href="comparison.html" class="nav-link">Сравнение<span class="comparison-counter">0</span></a>
 <a href="recommendations.html" class="nav-link">Рекомендации</a>
 </nav>
-<!-- Добавляем поиск здесь -->
+
 <div class="nav-search-container">
 <input type="text" class="nav-search" id="navSearch"
 placeholder="Поиск товаров..."
 oninput="showNavSearchSuggestions()"
 onkeypress="handleNavSearchEnter(event)">
-<button class="nav-search-btn" onclick="navSearchProducts()">
-🔍
-</button>
+<button class="nav-search-btn" onclick="navSearchProducts()">🔍</button>
 <div id="navSearchSuggestions" class="nav-search-suggestions"></div>
 </div>
 <div class="auth-buttons">
@@ -210,7 +256,7 @@ onkeypress="handleNavSearchEnter(event)">
                     </div>
 
                     <div id="productsGrid" class="products-grid">
-                        <!-- Продукты будут загружены через JavaScript -->
+                       
                     </div>
 
                     <div id="noResults" class="no-results" style="display: none;">
@@ -235,7 +281,17 @@ onkeypress="handleNavSearchEnter(event)">
             <p>&copy; 2024 TechAggregator. Все права защищены.</p>
         </div>
     </footer>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  loadUserData();
+  updateComparisonCounter();
 
+  //Загружаем товары из API
+  loadProductsFromAPI().then(() => {
+    applyURLFilters();
+  });
+});
+</script>
     <script src="script.js"></script>
     
 </body>

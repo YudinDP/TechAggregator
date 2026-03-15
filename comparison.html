@@ -5,43 +5,221 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Сравнение товаров - TechAggregator</title>
   <link rel="stylesheet" href="style.css">
+
   <link rel="icon" sizes="180x180" href="sources/logo.png">
-  <style>
-    .comparison-container {
-      max-width: 1400px;
+<style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f8fafc;
+      color: #1f2937;
+      line-height: 1.6;
+    }
+
+    .container {
+      max-width: 1200px;
       margin: 0 auto;
-      padding: 20px;
+      padding:  20px;
     }
-    .header-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 30px;
-      padding-bottom: 20px;
-      border-bottom: 2px solid #e5e7eb;
+
+    .comparison-section {
+      padding: 2rem 0;
     }
-    .controls {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      margin-bottom: 20px;
-    }
-    .empty-state {
+
+    .comparison-header {
       text-align: center;
-      padding: 60px 20px;
+      margin-bottom: 2rem;
+    }
+
+    .comparison-header h1 {
+      font-size: 2rem;
+      color: #111827;
+      margin-bottom: 0.5rem;
+    }
+
+    .comparison-header p {
+      color: #6b7280;
+    }
+
+    /* === КОНТЕЙНЕР ТАБЛИЦЫ === */
+    .comparison-table-wrapper {
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      overflow: hidden;
+      background: white;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+     
+      overflow-x: auto;
+      margin-bottom: 2rem;
+    }
+
+   
+    .comparison-table {
+      border-collapse: collapse;
+      width: 90%;
+      min-width: 600px; 
+      table-layout: auto; 
+      padding: 20px 20px;
+    }
+
+    .comparison-table th,
+    .comparison-table td {
+      border: 1px solid #e5e7eb;
+      padding: 1rem 0.75rem;
+      text-align: center;
+      vertical-align: middle;
+      font-size: 0.9rem;
+    }
+
+  
+    .comparison-table thead th {
+      background-color: #f9fafb;
+      font-weight: 600;
+      color: #374151;
+
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      
+    }
+
+    .comparison-table tbody th:first-child,
+    .comparison-table tbody td:first-child {
+      position: sticky;
+      left: 0;
+      background: #fff;
+      z-index: 5; 
+      box-shadow: 2px 0 3px -1px rgba(0, 0, 0, 0.05);
+      min-width: 180px; 
+      width: 180px;
+    }
+
+    .comparison-table thead th:first-child {
+      position: sticky;
+      left: 0;
+      z-index: 11; 
+      box-shadow: 2px 0 3px -1px rgba(0, 0, 0, 0.1);
+    }
+
+    .product-header {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+      position: relative; 
+    }
+
+    .product-image {
+      width: 60px;
+      height: 60px;
+      object-fit: contain;
       background: #f8f9fa;
-      border-radius: 12px;
-      border: 2px dashed #e5e7eb;
-      margin: 40px 0;
+      border-radius: 8px;
+      padding: 0.25rem;
     }
-    .visible {
-      display: block !important;
-      visibility: visible !important;
-      opacity: 1 !important;
+
+    .product-name {
+      font-weight: 600;
+      font-size: 0.95rem;
+      margin: 0.25rem 0;
+      text-align: center;
+      max-width: 100%;
+      word-break: break-word;
     }
-    .hidden {
-      display: none !important;
+
+    .remove-comparison-btn {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      background: #ef4444;
+      color: white;
+      border: none;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      font-size: 0.8rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
+
+    .remove-comparison-btn:hover {
+      background: #dc2626;
+    }
+
+    .product-price {
+      font-weight: bold;
+      color: #2563eb;
+      margin: 0.25rem 0;
+    }
+
+    .product-rating {
+      color: #f59e0b;
+      font-size: 0.9rem;
+    }
+.comparison-table thead tr,
+.comparison-table tbody tr {
+  display: table-row;
+}
+
+.comparison-table th,
+.comparison-table td {
+  display: table-cell;
+  vertical-align: top;
+  padding: 8px 12px;
+  border: 1px solid #e5e7eb;
+}
+    
+    .spec-value,
+    .price-cell {
+      text-align: center;
+      word-break: break-word; 
+    }
+
+
+    .empty-comparison-state {
+      text-align: center;
+      padding: 4rem 2rem;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      color: #6b7280;
+      font-size: 1.1rem;
+    }
+
+    .empty-comparison-state p {
+      margin-bottom: 1rem;
+    }
+
+    /* === АДАПТИВНОСТЬ === */
+    @media (max-width: 768px) {
+      .comparison-table {
+        font-size: 0.8rem;
+      }
+      .product-name {
+        font-size: 0.85rem;
+      }
+      .product-image {
+        width: 50px;
+        height: 50px;
+      }
+      .comparison-table th,
+      .comparison-table td {
+        padding: 0.75rem 0.5rem;
+      }
+      .comparison-table tbody th:first-child,
+      .comparison-table tbody td:first-child {
+        min-width: 140px;
+        width: 140px;
+      }
+    }
+    
   </style>
 </head>
 <body>
@@ -66,7 +244,7 @@
       <div id="navSearchSuggestions" class="nav-search-suggestions"></div>
     </div>
     <div class="auth-buttons">
-      <!-- Будет обновлено через script.js -->
+
       <a href="auth.html" class="btn btn-outline">Войти</a>
       <a href="auth.html?tab=register" class="btn btn-primary">Регистрация</a>
     </div>
@@ -108,7 +286,7 @@
     <!-- Таблица сравнения -->
     <div id="comparisonTable" class="hidden">
       <div class="comparison-table-wrapper" id="tableContent">
-        <!-- Содержимое будет сгенерировано через script.js -->
+
       </div>
 
       <!-- Примечания -->
@@ -131,11 +309,12 @@
   </div>
 </footer>
 
-<!-- Подключаем основной скрипт -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
 <script src="script.js"></script>
 
 <script>
-  // Экспорт в CSV (использует comparisonList из script.js)
+  //Экспорт в CSV (использует comparisonList из script.js)
   function exportToCSV() {
     const products = window.comparisonList || [];
     if (products.length === 0) {
@@ -151,15 +330,13 @@
     link.href = URL.createObjectURL(blob);
     link.download = 'сравнение_товаров.csv';
     link.click();
-    alert('✅ Данные экспортированы в CSV');
+    alert('Данные экспортированы в CSV');
   }
 
-  // Полная очистка (уже есть в script.js, но вызываем её явно)
   function clearComparison() {
     if (typeof window.clearComparison === 'function') {
       window.clearComparison();
     } else {
-      // fallback
       localStorage.removeItem('techAggregatorComparison');
       location.reload();
     }

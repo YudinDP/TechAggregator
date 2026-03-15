@@ -384,7 +384,7 @@
             <a href="recommendations.html" class="nav-link active">Рекомендации</a>
         </nav>
         
-        <!-- Добавляем поиск здесь -->
+        
         <div class="nav-search-container">
             <input type="text" class="nav-search" id="navSearch" 
                    placeholder="Поиск товаров..." 
@@ -404,71 +404,91 @@
     </header>
 
     <main class="main">
-        <div class="container recommendations-page">
-            <div class="page-header">
-                <h1>Персональные рекомендации</h1>
-                <p>Умный подбор техники на основе ваших предпочтений, популярности и лучших предложений рынка</p>
-            </div>
-
-            <div class="recommendations-tabs">
-    <button class="tab-btn active" onclick="openTab('popular')">
-        <span>🔥</span> Популярное
-    </button>
-    <button class="tab-btn" onclick="openTab('trending')">
-        <span>📈</span> Тренды
-    </button>
-    <button class="tab-btn" onclick="openTab('bestValue')">
-        <span>💰</span> Выгода
-    </button>
+<div class="container recommendations-page">
+<div class="page-header">
+<h1>Персональные рекомендации</h1>
+<p>Умный подбор техники на основе ваших предпочтений, популярности и лучших предложений рынка</p>
+</div>
+<div class="recommendations-tabs">
+<button class="tab-btn active" onclick="openTab('popular')">
+<span>🔥</span> Популярное
+</button>
+<button class="tab-btn" onclick="openTab('trending')">
+<span>📈</span> Тренды
+</button>
+<button class="tab-btn" onclick="openTab('bestValue')">
+<span>💰</span> Выгода
+</button>
+<!-- Добавим вкладку для персональных рекомендаций -->
+<button class="tab-btn" onclick="openTab('personal')">
+<span>🎯</span> Для вас
+</button>
 </div>
 
-            <div id="popular" class="tab-content active">
-                <div class="tab-header">
-                    <h2>Самые популярные товары</h2>
-                    <button class="refresh-btn" onclick="refreshPopular()">
-                        <span>↻</span> Обновить
-                    </button>
-                </div>
-                <p style="color: #6b7280; margin-bottom: 1.5rem;">
-                    Товары, которые чаще всего просматривают и покупают наши пользователи
-                </p>
-                <div class="products-grid" id="popularProducts">
-                    <!-- Популярные товары -->
-                </div>
-            </div>
+<div id="popular" class="tab-content active">
+<div class="tab-header">
+<h2>Самые популярные товары</h2>
+<button class="refresh-btn" onclick="refreshPopular()">
+<span>↻</span> Обновить
+</button>
+</div>
+<p style="color: #6b7280; margin-bottom: 1.5rem;">
+Товары, которые чаще всего просматривают и покупают наши пользователи
+</p>
+<div class="products-grid" id="popularProducts">
+<!-- Популярные товары будут загружены сюда -->
+</div>
+</div>
 
-            <div id="trending" class="tab-content">
-                <div class="tab-header">
-                    <h2>Набирают популярность</h2>
-                    <button class="refresh-btn" onclick="refreshTrending()">
-                        <span>↻</span> Обновить
-                    </button>
-                </div>
-                <p style="color: #6b7280; margin-bottom: 1.5rem;">
-                    Новинки и товары, которые быстро набирают популярность
-                </p>
-                <div class="products-grid" id="trendingProducts">
-                    <!-- Трендовые товары -->
-                </div>
-            </div>
+<div id="trending" class="tab-content">
+<div class="tab-header">
+<h2>Набирают популярность</h2>
+<button class="refresh-btn" onclick="refreshTrending()">
+<span>↻</span> Обновить
+</button>
+</div>
+<p style="color: #6b7280; margin-bottom: 1.5rem;">
+Новинки и товары, которые быстро набирают популярность
+</p>
+<div class="products-grid" id="trendingProducts">
+<!-- Трендовые товары будут загружены сюда -->
+</div>
+</div>
 
-            <div id="bestValue" class="tab-content">
-                <div class="tab-header">
-                    <h2>Лучшее за свои деньги</h2>
-                    <button class="refresh-btn" onclick="refreshBestValue()">
-                        <span>↻</span> Обновить
-                    </button>
-                </div>
-                <p style="color: #6b7280; margin-bottom: 1.5rem;">
-                    Оптимальное соотношение цены и качества по отзывам пользователей
-                </p>
-                <div class="products-grid" id="bestValueProducts">
-                    <!-- Товары с лучшим соотношением цены и качества -->
-                </div>
-            </div>
+<div id="bestValue" class="tab-content">
+<div class="tab-header">
+<h2>Лучшее за свои деньги</h2>
+<button class="refresh-btn" onclick="refreshBestValue()">
+<span>↻</span> Обновить
+</button>
+</div>
+<p style="color: #6b7280; margin-bottom: 1.5rem;">
+Оптимальное соотношение цены и качества по отзывам пользователей
+</p>
+<div class="products-grid" id="bestValueProducts">
+<!-- Товары с лучшим соотношением цены и качества будут загружены сюда -->
+</div>
+</div>
 
-            
-    </main>
+<!-- НОВАЯ ВКЛАДКА: Персональные рекомендации -->
+<div id="personal" class="tab-content">
+<div class="tab-header">
+<h2>Персональные рекомендации для вас</h2>
+<button class="refresh-btn" onclick="loadPersonalRecommendations()"> <!-- Вызов обновления -->
+<span>↻</span> Обновить
+</button>
+</div>
+<p style="color: #6b7280; margin-bottom: 1.5rem;">
+Товары, которые могут вас заинтересовать, исходя из ваших предпочтений
+</p>
+<div class="products-grid" id="personalProducts">
+<!-- Персональные рекомендации будут загружены сюда -->
+</div>
+</div>
+<!-- /НОВАЯ ВКЛАДКА -->
+
+</div> <!-- /.container recommendations-page -->
+</main>
 
     <footer class="footer">
         <div class="container">
@@ -477,363 +497,6 @@
     </footer>
 
     <script src="script.js"></script>
-    <script>
-        //Логика для страницы рекомендаций
-        let currentUserPreferences = null;
-        
-        function initializeRecommendationsPage() {
-            loadAllRecommendations();
-            
-            //Если пользователь авторизован, загружаем его предпочтения
-            const userData = localStorage.getItem('techAggregatorUser');
-            if (userData) {
-                const user = JSON.parse(userData);
-                currentUserPreferences = getUserPreferences(user.id);
-                updateAIFormWithPreferences();
-            }
-        }
-        
-        function loadAllRecommendations() {
-            //Популярные товары (сортировка по рейтингу и просмотрам)
-            const popularProducts = [...demoProducts]
-                .sort((a, b) => b.rating - a.rating)
-                .slice(0, 6);
-            displayEnhancedProducts('popularProducts', popularProducts, 'popular');
-            
-            //Трендовые товары (с недавно добавленными)
-            const trendingProducts = [...demoProducts]
-                .sort((a, b) => b.id - a.id)
-                .slice(0, 6);
-            displayEnhancedProducts('trendingProducts', trendingProducts, 'trending');
-            
-            //Лучшее соотношение цена/качество
-            const bestValueProducts = [...demoProducts]
-                .map(p => ({...p, valueScore: p.rating / (p.price / 10000)}))
-                .sort((a, b) => b.valueScore - a.valueScore)
-                .slice(0, 6);
-            displayEnhancedProducts('bestValueProducts', bestValueProducts, 'value');
-        }
-        
-        function displayEnhancedProducts(gridId, products, type) {
-            const grid = document.getElementById(gridId);
-            if (!grid) return;
-            
-            grid.innerHTML = products.map(product => {
-                const matchScore = calculateMatchScore(product, type);
-                const badgeText = getRecommendationBadge(product, type);
-                
-                return `
-                    <div class="product-card product-card-enhanced">
-                        ${badgeText ? `<div class="recommendation-badge">${badgeText}</div>` : ''}
-                        <img src="${product.image}" alt="${product.name}" 
-                             style="width: 100%; height: 200px; object-fit: contain; background: #f8f9fa; border-radius: 8px;">
-                        <h3>${product.name}</h3>
-                        <div class="product-rating">
-                            <span class="rating-stars">${getStarRating(product.rating)}</span>
-                            <span class="rating-value">${product.rating}</span>
-                            ${getTrendIndicator(product)}
-                        </div>
-                        <div class="product-price">${formatPrice(product.price)} ₽</div>
-                        ${type === 'popular' ? `
-                            <div class="popularity-meter">
-                                <span style="font-size: 0.9rem; color: #6b7280;">Популярность:</span>
-                                <div class="meter-bar">
-                                    <div class="meter-fill" style="width: ${Math.random() * 70 + 30}%"></div>
-                                </div>
-                            </div>
-                        ` : ''}
-                        ${matchScore > 0 ? `<div class="match-percentage">Совпадение: ${matchScore}%</div>` : ''}
-                        <div class="product-actions" style="margin-top: 1rem;">
-                            <button class="btn btn-outline" onclick="event.stopPropagation(); addToComparison(${product.id})">
-                                Сравнить
-                            </button>
-                            <button class="btn btn-primary" onclick="event.stopPropagation(); openProduct(${product.id})">
-                                Подробнее
-                            </button>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        }
-        
-        function getRecommendationBadge(product, type) {
-            switch(type) {
-                case 'popular':
-                    return '🔥 Популярный';
-                case 'trending':
-                    return '📈 Тренд';
-                case 'value':
-                    const valueScore = product.rating / (product.price / 10000);
-                    return valueScore > 8 ? '💰 Выгода' : '';
-                default:
-                    return '';
-            }
-        }
-        
-        function getTrendIndicator(product) {
-            const trend = Math.random() > 0.5 ? 'up' : 'down';
-            const percent = (Math.random() * 15 + 5).toFixed(1);
-            
-            return trend === 'up' 
-                ? `<span class="trend-indicator trend-up">↗ ${percent}%</span>`
-                : `<span class="trend-indicator trend-down">↘ ${percent}%</span>`;
-        }
-        
-        function calculateMatchScore(product, type) {
-            //В реальном приложении здесь будет сложная логика расчета
-            switch(type) {
-                case 'popular':
-                    return Math.floor(product.rating * 20);
-                case 'trending':
-                    return Math.floor((product.id / 10) * 20);
-                case 'value':
-                    const valueScore = product.rating / (product.price / 10000);
-                    return Math.min(Math.floor(valueScore * 10), 100);
-                default:
-                    return 0;
-            }
-        }
-        
-        function openTab(tabName) {
-            //Скрываем все вкладки
-            document.querySelectorAll('.tab-content').forEach(tab => {
-                tab.classList.remove('active');
-            });
-            
-            //Убираем активный класс со всех кнопок
-            document.querySelectorAll('.tab-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            
-            //Показываем выбранную вкладку
-            document.getElementById(tabName).classList.add('active');
-            
-            //Активируем соответствующую кнопку
-            event.target.classList.add('active');
-        }
-        
-        function updateBudgetValue(value) {
-            document.getElementById('budgetValue').textContent = formatPrice(value) + ' ₽';
-            document.getElementById('budgetInput').value = value;
-        }
-        
-        function updateBudgetSlider(value) {
-            const slider = document.getElementById('budgetSlider');
-            if (value >= 10000 && value <= 200000) {
-                slider.value = value;
-                updateBudgetValue(value);
-            }
-        }
-        
-        function updateImportanceValue(value) {
-            document.getElementById('importanceValue').textContent = `${value}/10`;
-        }
-        
-        function getUserPreferences(userId) {
-            //В реальном приложении здесь будет запрос к серверу
-            return {
-                preferredCategories: ['smartphones', 'laptops'],
-                maxBudget: 75000,
-                priorities: ['performance', 'display'],
-                preferredBrands: ['Apple', 'Samsung']
-            };
-        }
-        
-        function updateAIFormWithPreferences() {
-            if (!currentUserPreferences) return;
-            
-            //Устанавливаем бюджет
-            if (currentUserPreferences.maxBudget) {
-                document.getElementById('budgetSlider').value = currentUserPreferences.maxBudget;
-                updateBudgetValue(currentUserPreferences.maxBudget);
-            }
-            
-            //Устанавливаем приоритеты
-            if (currentUserPreferences.priorities) {
-                document.querySelectorAll('input[name="priority"]').forEach(checkbox => {
-                    checkbox.checked = currentUserPreferences.priorities.includes(checkbox.value);
-                });
-            }
-            
-            //Устанавливаем бренды
-            if (currentUserPreferences.preferredBrands && currentUserPreferences.preferredBrands.length > 0) {
-                document.getElementById('brandSelect').value = currentUserPreferences.preferredBrands[0];
-            }
-        }
-        
-        function generateAIRecommendation() {
-            const budget = parseInt(document.getElementById('budgetSlider').value);
-            const category = document.getElementById('categorySelectAI').value;
-            const usage = document.getElementById('usageType').value;
-            const brand = document.getElementById('brandSelect').value;
-            const importance = parseInt(document.getElementById('importanceSlider').value);
-            
-            //Получаем выбранные приоритеты
-            const priorities = [];
-            document.querySelectorAll('input[name="priority"]:checked').forEach(checkbox => {
-                priorities.push(checkbox.value);
-            });
-            
-            if (!budget) {
-                showCustomNotification('Пожалуйста, укажите ваш бюджет', 'info');
-                return;
-            }
-            
-            //Фильтруем товары по критериям
-            let filteredProducts = [...demoProducts];
-            
-            if (category) {
-                filteredProducts = filteredProducts.filter(p => p.category === category);
-            }
-            
-            if (brand) {
-                filteredProducts = filteredProducts.filter(p => 
-                    p.name.toLowerCase().includes(brand.toLowerCase())
-                );
-            }
-            
-            //Фильтруем по бюджету
-            filteredProducts = filteredProducts.filter(p => p.price <= budget);
-            
-            if (filteredProducts.length === 0) {
-                //Если ничего не найдено, увеличиваем бюджет на 20%
-                filteredProducts = demoProducts.filter(p => p.price <= budget * 1.2);
-            }
-            
-            //Ранжируем товары по совпадению с приоритетами
-            const rankedProducts = filteredProducts.map(product => {
-                let score = 100;
-                
-                //Учет бюджета (чем ближе к бюджету, тем лучше)
-                const budgetDiff = Math.abs(product.price - budget * 0.8);
-                score -= (budgetDiff / budget) * 20;
-                
-                //Учет приоритетов
-                priorities.forEach(priority => {
-                    if (priority === 'performance' && product.category === 'laptops') score += 15;
-                    if (priority === 'battery' && product.specs['Батарея']?.includes('mAh')) score += 10;
-                    if (priority === 'display' && product.specs['Экран']) score += 10;
-                    if (priority === 'price' && product.price < budget * 0.7) score += 20;
-                });
-                
-                //Учет использования
-                if (usage === 'gaming' && product.category === 'laptops') score += 20;
-                if (usage === 'creative' && product.specs['Процессор']?.includes('M')) score += 15;
-                
-                return {
-                    ...product,
-                    matchScore: Math.min(Math.max(score, 0), 100)
-                };
-            }).sort((a, b) => b.matchScore - a.matchScore).slice(0, 6);
-            
-            //Показываем результаты
-            const aiResults = document.getElementById('aiResults');
-            const aiForm = document.getElementById('aiForm');
-            
-            aiForm.style.display = 'none';
-            aiResults.style.display = 'block';
-            
-            const recommendations = rankedProducts;
-            
-            aiResults.innerHTML = `
-                <div class="recommendation-summary">
-                    <h4 style="margin-bottom: 1rem; color: #1f2937;">Результаты подбора</h4>
-                    <div class="summary-grid">
-                        <div class="summary-item">
-                            <div class="summary-label">Бюджет</div>
-                            <div class="summary-value">${formatPrice(budget)} ₽</div>
-                        </div>
-                        <div class="summary-item">
-                            <div class="summary-label">Найдено товаров</div>
-                            <div class="summary-value">${recommendations.length}</div>
-                        </div>
-                        <div class="summary-item">
-                            <div class="summary-label">Среднее совпадение</div>
-                            <div class="summary-value">${Math.round(recommendations.reduce((sum, p) => sum + p.matchScore, 0) / recommendations.length)}%</div>
-                        </div>
-                    </div>
-                </div>
-                
-                <h4 style="margin-bottom: 1.5rem;">Рекомендуемые товары:</h4>
-                <div class="products-grid">
-                    ${recommendations.map(product => `
-                        <div class="product-card product-card-enhanced">
-                            <div class="recommendation-badge">🤖 AI выбор</div>
-                            <img src="${product.image}" alt="${product.name}" 
-                                 style="width: 100%; height: 200px; object-fit: contain; background: #f8f9fa; border-radius: 8px;">
-                            <h3>${product.name}</h3>
-                            <div class="product-price">${formatPrice(product.price)} ₽</div>
-                            <div class="match-percentage">Совпадение: ${Math.round(product.matchScore)}%</div>
-                            <div style="font-size: 0.9rem; color: #6b7280; margin: 0.5rem 0;">
-                                ${getRecommendationReason(product, priorities, usage)}
-                            </div>
-                            <div class="product-actions" style="margin-top: 1rem;">
-                                <button class="btn btn-outline" onclick="event.stopPropagation(); addToComparison(${product.id})">
-                                    Сравнить
-                                </button>
-                                <button class="btn btn-primary" onclick="event.stopPropagation(); openProduct(${product.id})">
-                                    Подробнее
-                                </button>
-                            </div>
-                        </div>
-                    `).join('')}
-                </div>
-                
-                <div class="recommendation-actions">
-                    <button class="btn btn-outline" onclick="resetAIRecommendation()">
-                        Новый запрос
-                    </button>
-                    <button class="btn btn-primary" onclick="saveSearchCriteria()" style="margin-left: 1rem;">
-                        Сохранить поиск
-                    </button>
-                </div>
-            `;
-        }
-        
-        function getRecommendationReason(product, priorities, usage) {
-            let reasons = [];
-            
-            if (priorities.includes('performance') && product.rating >= 4.5) {
-                reasons.push('Высокая производительность');
-            }
-            if (priorities.includes('price') && product.price < 80000) {
-                reasons.push('Отличная цена');
-            }
-            if (usage === 'gaming' && product.specs['Процессор']?.includes('Core i7')) {
-                reasons.push('Оптимально для игр');
-            }
-            
-            return reasons.length > 0 ? reasons.join(' • ') : 'Подходит по основным параметрам';
-        }
-        
-        function resetAIRecommendation() {
-            document.getElementById('aiForm').style.display = 'block';
-            document.getElementById('aiResults').style.display = 'none';
-        }
-        
-        function saveSearchCriteria() {
-            showCustomNotification('Критерии поиска сохранены. Мы уведомим вас о новых подходящих товарах', 'info');
-        }
-        
-        function refreshPopular() {
-            showCustomNotification('Список популярных товаров обновлен', 'info');
-            loadAllRecommendations();
-        }
-        
-        function refreshTrending() {
-            showCustomNotification('Список трендовых товаров обновлен', 'info');
-            loadAllRecommendations();
-        }
-        
-        function refreshBestValue() {
-            showCustomNotification('Список товаров с лучшим соотношением цены и качества обновлен', 'info');
-            loadAllRecommendations();
-        }
-        
-        //Инициализация страницы
-        document.addEventListener('DOMContentLoaded', function() {
-            initializeRecommendationsPage();
-        });
-    </script>
+
 </body>
 </html>

@@ -137,6 +137,11 @@ body {
     opacity: 0.9;
 }
 
+.btn-small {
+  padding: 6px 12px;
+  font-size: 0.85rem;
+}
+
 /* Адаптивность для поиска в навигации */
 @media (max-width: 1024px) {
     .nav-search-container {
@@ -175,7 +180,6 @@ body {
     }
 }
 
-/* Стили для search-info на главной */
 .search-info {
     text-align: center;
     margin-top: 1rem;
@@ -321,7 +325,6 @@ body {
     flex: 1;
 }
 
-/* Чекбоксы для фильтров */
 .filter-group .checkbox-options {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
@@ -484,7 +487,6 @@ body {
     gap: 1rem;
 }
 
-/* Кнопка покупки */
 .buy-button {
     background: #10b981;
     color: white;
@@ -625,14 +627,6 @@ body {
     padding: 2rem 0;
 }
 
-.comparison-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 2rem;
-    flex-wrap: wrap;
-    gap: 1rem;
-}
 
 .comparison-actions {
     display: flex;
@@ -655,6 +649,8 @@ body {
     box-shadow: 0 2px 10px rgba(0,0,0,0.1);
     overflow: hidden;
     margin-bottom: 2rem;
+    /* text-align: center;
+    align-items: center; */
 }
 
 .comparison-table-header {
@@ -667,20 +663,16 @@ body {
 }
 
 .comparison-table {
-    width: 100%;
+
     border-collapse: collapse;
+
 }
 
 .comparison-row {
     display: table-row;
 }
 
-.comparison-cell {
-    display: table-cell;
-    padding: 1rem;
-    border-bottom: 1px solid #e5e7eb;
-    vertical-align: middle;
-}
+
 
 .comparison-cell.header {
     background: #f8f9fa;
@@ -1655,7 +1647,7 @@ body {
     }
 }
 
-/* Стили для поиска с подсказками */
+/* ================== ПОИСК ================== */
 .search-wrapper {
     position: relative;
     flex: 1;
@@ -1710,7 +1702,7 @@ body {
     color: #6b7280;
 }
 
-/* Стили для звёздного рейтинга */
+/* ================== РЕЙТИНГ ================== */
 .star-rating {
     display: flex;
     gap: 0.25rem;
@@ -1743,7 +1735,7 @@ body {
     font-weight: 500;
 }
 
-/* Стили для поиска в навигации */
+/* ================== ПОИСК В НАВИГАЦИИ ================== */
 .nav-search-container {
     flex: 1;
     max-width: 400px;
@@ -1822,7 +1814,7 @@ body {
     color: white;
 }
 
-/* Стили для сравнения */
+/* ================== СРАВНЕНИЯ ================== */
 .comparison-content {
     background: white;
     border-radius: 10px;
@@ -2000,7 +1992,6 @@ body {
     }
 }
 
-/* Стили для пустого состояния */
 .empty-state {
     text-align: center;
     padding: 4rem 2rem;
@@ -2043,12 +2034,12 @@ body {
 .comparison-container > *:nth-child(3) {
     animation-delay: 0.2s;
 }
-/* Стили для таблицы сравнения */
 .comparison-container {
-    margin-top: 2rem;
-    border: 1px solid #e5e7eb;
-    border-radius: 8px;
-    overflow: hidden;
+  display: flex;
+  gap: 20px;
+  margin-top: 20px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .comparison-table-header {
@@ -2063,7 +2054,7 @@ body {
 .spec-header {
     font-weight: 600;
     color: #374151;
-    display: flex;
+  
     align-items: center;
 }
 
@@ -2150,7 +2141,6 @@ body {
     text-decoration: underline;
 }
 
-/* Кнопка перехода к сравнению в уведомлении */
 .notification-action-btn {
     margin-left: 1rem;
     padding: 0.25rem 0.75rem;
@@ -2168,7 +2158,7 @@ body {
 }
 
 .product-column {
-    position: relative; /* Это исправит позиционирование крестика */
+    position: relative; 
     min-width: 300px;
     padding: 20px;
     border-right: 1px solid #e5e7eb;
@@ -2179,24 +2169,22 @@ body {
     background: #dc2626 !important;
     transform: scale(1.1);
 }
-/* Основной контейнер для скролла */
+
 .comparison-table-wrapper {
     border: 1px solid #e5e7eb;
     border-radius: 8px;
     overflow: hidden;
     margin-bottom: 30px;
     background: white;
-    overflow-x: auto; /* Горизонтальный скролл для всей таблицы */
+    overflow-x: auto; 
 }
 
-/* Контейнер для спецификаций с фиксированной левой колонкой */
 .specs-scroll-container {
     display: flex;
     flex-direction: column;
-    min-width: max-content; /* Заставляем контейнер быть достаточно широким */
+    min-width: max-content; 
 }
 
-/* Заголовок таблицы (фиксированная часть) */
 .table-header {
     display: flex;
     background: #f8f9fa;
@@ -2204,17 +2192,15 @@ body {
     position: sticky;
     top: 0;
     z-index: 10;
-    min-width: max-content; /* Для корректного скролла */
+    min-width: max-content; 
 }
 
-/* Строка с товарами */
 .products-row {
     display: flex;
     flex: 1;
-    min-width: max-content; /* Для корректного скролла */
+    min-width: max-content; 
 }
 
-/* Левая колонка с названиями характеристик */
 .specs-column {
     width: 250px;
     min-width: 250px;
@@ -2226,7 +2212,6 @@ body {
     z-index: 5;
 }
 
-/* Колонка товара */
 .product-column {
     position: relative;
     min-width: 300px;
@@ -2234,22 +2219,20 @@ body {
     padding: 20px;
     border-right: 1px solid #e5e7eb;
     text-align: center;
-    flex-shrink: 0; /* Не позволяет сжиматься */
+    flex-shrink: 0; 
 }
 
-/* Строка характеристики */
 .spec-row {
     display: flex;
     border-bottom: 1px solid #e5e7eb;
     min-height: 60px;
-    min-width: max-content; /* Для корректного скролла */
+    min-width: max-content; 
 }
 
 .spec-row:nth-child(even) {
     background: #f9fafb;
 }
 
-/* Название характеристики (фиксированное) */
 .spec-name {
     width: 250px;
     min-width: 250px;
@@ -2269,14 +2252,12 @@ body {
     background: #f9fafb;
 }
 
-/* Значения характеристик */
 .spec-values {
     display: flex;
     flex: 1;
-    min-width: max-content; /* Для корректного скролла */
+    min-width: max-content; 
 }
 
-/* Ячейка со значением */
 .spec-value {
     min-width: 300px;
     width: 300px;
@@ -2286,7 +2267,7 @@ body {
     align-items: center;
     justify-content: center;
     text-align: center;
-    flex-shrink: 0; /* Не позволяет сжиматься */
+    flex-shrink: 0; 
 }
 
 /* Адаптивность */
@@ -2310,20 +2291,18 @@ body {
     overflow: hidden;
     margin-bottom: 30px;
     background: white;
-    display: flex;
-    flex-direction: column;
+
 }
 
-/* Обертка для скролла */
 .scroll-wrapper {
     display: flex;
     flex-direction: column;
     width: 100%;
     max-width: 100%;
-    overflow-x: auto; /* Горизонтальный скролл здесь! */
+    overflow-x: auto; 
 }
 
-/* ФИКСИРОВАННАЯ ШАПКА */
+/* ================== ФИКСИРОВАННАЯ ШАПКА ================== */
 .fixed-header {
     background: #f8f9fa;
     border-bottom: 1px solid #e5e7eb;
@@ -2338,7 +2317,6 @@ body {
     min-width: fit-content;
 }
 
-/* Левая ячейка шапки (название столбца) */
 .specs-header {
     width: 250px;
     min-width: 250px;
@@ -2351,25 +2329,22 @@ body {
     flex-shrink: 0;
 }
 
-/* Заголовок товара */
 .product-header {
     width: 300px;
     min-width: 300px;
     padding: 20px;
     border-right: 1px solid #e5e7eb;
     text-align: center;
-    flex-shrink: 0;
+    
     background: #f8f9fa;
 }
 
-/* ОСНОВНАЯ ТАБЛИЦА ДЛЯ СКРОЛЛА */
 .scrollable-table {
     display: flex;
     flex-direction: column;
     min-width: fit-content;
 }
 
-/* Строка характеристики */
 .spec-row {
     display: flex;
     min-height: 60px;
@@ -2381,7 +2356,6 @@ body {
     background: #f9fafb;
 }
 
-/* Ячейка с названием характеристики (фиксированная ширина) */
 .spec-label {
     width: 250px;
     min-width: 250px;
@@ -2399,7 +2373,6 @@ body {
     background: #f9fafb;
 }
 
-/* Ячейка со значением характеристики */
 .spec-cell {
     width: 300px;
     min-width: 300px;
@@ -2412,7 +2385,6 @@ body {
     flex-shrink: 0;
 }
 
-/* Картинка товара */
 .product-image {
     width: 150px;
     height: 150px;
@@ -2438,7 +2410,6 @@ body {
     margin-bottom: 10px;
 }
 
-/* Цены в магазинах */
 .store-price {
     display: flex;
     justify-content: space-between;
@@ -2450,6 +2421,7 @@ body {
     margin-bottom: 8px;
 }
 
+/* ================== СОРТИРОВКИ ================== */
 /* Стили для скроллбара */
 .scroll-wrapper::-webkit-scrollbar {
     height: 10px;
@@ -2671,7 +2643,6 @@ body {
     animation: selectChange 0.3s ease;
 }
 
-/* Подсветка активной опции */
 #sortSelect option[selected] {
     font-weight: 700;
     color: #2563eb;
@@ -2682,10 +2653,10 @@ body {
     overflow-y: auto;
     position: sticky;
     top: 100px; 
-    padding-right: 10px; /* Чтобы не заезжал скроллбар на контент */
+    padding-right: 10px; 
 }
 
-/* Убираем вертикальную прокрутку у всей страницы при наведении на фильтры */
+/* ================== ПРОКРУТКА ФИЛЬТРОВ ================== */
 .filters-sidebar::-webkit-scrollbar {
     width: 8px;
 }
@@ -2704,7 +2675,7 @@ body {
     background: #555;
 }
 
-/* Стили для мобильной версии */
+/* ================== АЛАПТИВНОСТЬ ФИЛЬТРОВ ================== */
 @media (max-width: 768px) {
     .filters-sidebar {
         height: auto;
@@ -2718,6 +2689,7 @@ body {
         flex-direction: column;
     }
 }
+/* ================== УВЕДОМЛЕНИЯ ================== */
 .notification-container {
     position: fixed;
     bottom: 20px;
@@ -2837,6 +2809,7 @@ body {
     background: #3b82f6;
 }
 
+/* ================== АНИМАЦИЯ УВЕДОМЛЕНИЙ ================== */
 @keyframes slideInRight {
     from {
         transform: translateX(100%);
@@ -2857,7 +2830,7 @@ body {
     }
 }
 
-/* Адаптивность для мобильных */
+/* ================== АДАПТИВНОСТЬ УВЕДОМЛЕНИЙ ================== */
 @media (max-width: 768px) {
     .notification-container {
         bottom: 10px;
@@ -2910,7 +2883,7 @@ body {
     font-weight: 500;
 }
 
-/* Стили для поиска в навигации */
+/* ================== ПОИСК В НАВИГАЦИИ ================== */
 .nav-search-container {
     flex: 1;
     max-width: 400px;
@@ -2961,15 +2934,14 @@ body {
     margin-top: 0.25rem;
 }
 
-/* Добавленные стили для категории на русском */
+
 .search-suggestion-category {
     font-size: 0.85rem;
     color: #6b7280;
 }
 
-/* --- НОВЫЕ СТИЛИ ДЛЯ ГЛАВНОЙ СТРАНИЦЫ --- */
+/* ================== ДОП СТИЛИ ГЛАВНОЙ СТРАНИЦЫ ================== */
 
-/* Общие стили для секций */
 .section-title {
     font-size: 2rem;
     text-align: center;
@@ -2990,7 +2962,7 @@ body {
     border-radius: 2px;
 }
 
-/* HERO SECTION */
+/* ================== АНИМАЦИЯ НА ГЛАВНОЙ СТРАНИЦЕ ================== */
 .hero {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
@@ -3042,7 +3014,7 @@ body {
     animation: fadeIn 1s ease-out 0.6s both;
 }
 
-/* FEATURES SECTION */
+/* ================== СТРАНИЦА ИЗБРАННОГО ================== */
 .features-section {
     padding: 5rem 0;
     background-color: #f9fafb;
@@ -3086,7 +3058,7 @@ body {
     line-height: 1.6;
 }
 
-/* CAROUSEL SECTION */
+/* ================== КАРУСЕЛЬ ТОВАРОВ НА ГЛАВНОЙ ================== */
 .popular-products-section {
     padding: 5rem 0;
     background-color: white;
@@ -3097,17 +3069,18 @@ body {
     border-radius: 12px;
     box-shadow: 0 10px 30px rgba(0,0,0,0.1);
     margin: 0 auto;
-    max-width: calc(100% - 40px); /* Учитываем padding container */
+    max-width: calc(100% - 40px);
 }
 
 .carousel-track {
     display: flex;
     transition: transform 0.5s ease-in-out;
-    min-width: max-content; /* Позволяет карусели быть шире контейнера */
+    min-width: max-content; 
 }
 
+/*Ширина плитки в карусели*/
 .carousel-item {
-    min-width: 250px; /* Ширина одного слайда */
+    min-width: 250px; 
     margin-right: 1.5rem;
     flex-shrink: 0;
     background: white;
@@ -3193,10 +3166,37 @@ body {
     transform: scale(1.05);
 }
 
+.carousel-track {
+  display: flex;
+  gap: 30px;
+  transition: transform 0.5s ease-in-out; 
+}
+.carousel-track {
+  display: flex;
+  gap: 20px;
+  transition: transform 0.5s ease-in-out; 
+}
+.carousel-item {
+  min-width: 250px;
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  cursor: pointer;
+}
+.carousel-item img {
+  width: 100%;
+  height: 180px;
+  object-fit: contain;
+  background: #f8f9fa;
+  border-radius: 8px;
+  margin-bottom: 12px;
+}
+
 /* Адаптивность для карусели */
 @media (max-width: 768px) {
     .carousel-item {
-        min-width: 220px; /* Уменьшаем ширину слайда на мобильных */
+        min-width: 220px;
     }
     .hero h2 {
         font-size: 2.2rem;
@@ -3215,7 +3215,7 @@ body {
 
 @media (max-width: 480px) {
     .carousel-item {
-        min-width: 200px; /* Еще меньше на очень маленьких экранах */
+        min-width: 200px; 
     }
     .hero {
         padding: 4rem 0;
@@ -3257,4 +3257,316 @@ body {
         opacity: 1;
         transform: translateY(0);
     }
+}
+
+/* === СРАВНЕНИЕ === */
+.comparison-section {
+  padding: 2rem 0;
+}
+
+.comparison-container {
+  max-width: 1400px; 
+  margin: 0 auto; 
+  padding: 0 20px; 
+}
+
+.comparison-header {
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.comparison-header h1 {
+  font-size: 2rem;
+  color: #1f2937;
+}
+
+.comparison-controls {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+}
+
+.empty-state.hidden {
+  display: none;
+}
+
+.empty-state.visible {
+  display: block;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 4rem 2rem;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+  margin: 2rem 0;
+}
+
+/* === ОБЁРТКА ТАБЛИЦЫ СРАВНЕНИЯ (для прокрутки и центрирования) === */
+.comparison-table-wrapper {
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  overflow: hidden;
+  background: white;
+  margin-bottom: 30px;
+  margin-left: auto;
+  margin-right: auto;
+  overflow-x: auto;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05); 
+}
+
+/* === ОСНОВНАЯ ТАБЛИЦА СРАВНЕНИЯ === */
+.comparison-table {
+  border-collapse: separate; 
+  border-spacing: 0; 
+  width: 100%;
+  min-width: 600px; 
+  table-layout: auto; 
+}
+
+/* === ЯЧЕЙКИ ТАБЛИЦЫ В СРАВНЕНИИ === */
+.comparison-table th,
+.comparison-table td {
+  border-right: 1px solid #e5e7eb; 
+  border-bottom: 1px solid #e5e7eb; 
+  padding: 1.25rem 1rem; 
+  text-align: center;
+  vertical-align: middle; 
+  font-size: 1rem; 
+  line-height: 1.5; 
+}
+
+.comparison-table th:last-child,
+.comparison-table td:last-child {
+  border-right: none;
+}
+
+/* === ЗАГОЛОВКИ В СРАВНЕНИИ === */
+.comparison-table thead th {
+  background-color: #f3f4f6; 
+  font-weight: 600;
+  color: #1f2937;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px; 
+}
+
+.comparison-table thead th:first-child {
+  border-top-left-radius: 12px; 
+}
+
+.comparison-table thead th:last-child {
+  border-top-right-radius: 12px; 
+}
+
+/* === ФИКСИРОВАННАЯ ЛЕВАЯ КОЛОНКА В СРАВНЕНИИ === */
+.comparison-table tbody th:first-child,
+.comparison-table tbody td:first-child {
+  position: sticky;
+  left: 0;
+  background: #fff; 
+  z-index: 5;
+  box-shadow: 2px 0 3px -1px rgba(0, 0, 0, 0.05); 
+  min-width: 200px; 
+  width: 200px;
+  font-weight: 500; 
+  color: #374151;
+}
+
+.comparison-table thead th:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 11; 
+  box-shadow: 2px 0 3px -1px rgba(0, 0, 0, 0.1); 
+  border-top-left-radius: 12px; 
+  background: #f3f4f6; 
+}
+
+/* === СТИЛИ ДЛЯ ЗАГОЛОВКА ТОВАРОВ В СРАВНЕНИИ === */
+.product-header-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem; 
+  position: relative; 
+  background: #f9fafb; 
+}
+
+.product-img {
+  width: 64px; 
+  height: 64px; 
+  object-fit: contain;
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 0.25rem;
+}
+
+.product-name {
+  font-weight: 600;
+  font-size: 1.1rem; 
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  text-align: center;
+}
+
+.remove-comparison-btn {
+  position: absolute;
+  top: 0.5rem; 
+  right: 0.5rem; 
+  background: #ef4444;
+  color: white;
+  border: none;
+  width: 24px; 
+  height: 24px; 
+  border-radius: 50%;
+  font-size: 1rem; 
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+
+.remove-comparison-btn:hover {
+  background: #dc2626;
+  transform: scale(1.1); 
+}
+
+.product-price {
+  font-weight: bold;
+  font-size: 1.2rem; 
+  color: #2563eb;
+  margin-top: 0.25rem;
+}
+
+/* === СТИЛИ ДЛЯ ЯЧЕЕК ХАРАКТЕРИСТИК В СРАВНЕНИИ === */
+.spec-label {
+  background: #f9fafb; 
+  font-weight: 500;
+  color: #4b5563;
+}
+
+.spec-value {
+  word-break: break-word; 
+  line-height: 1.5;
+  font-size: 1rem; 
+}
+
+/* === СТИЛИ ДЛЯ ЯЧЕЕК ЦЕН В СРАВНЕНИИ === */
+.price-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem; 
+  text-align: center;
+  font-size: 1rem; 
+}
+
+.price-value {
+  font-weight: bold;
+  font-size: 1.1rem; 
+  color: #1f2937;
+}
+
+.store-links {
+  font-size: 0.85rem; 
+  color: #6b7280;
+  margin-top: 0.25rem;
+  text-align: center;
+}
+
+.store-links a {
+  color: #2563eb;
+  text-decoration: none;
+  display: block;
+  margin: 0.25rem 0; 
+  padding: 0.25rem 0.5rem; 
+  border-radius: 4px; 
+  transition: background 0.2s;
+}
+
+.store-links a:hover {
+  background: #eff6ff; 
+  text-decoration: underline;
+}
+
+/* === АДАПТИВНОСТЬ === */
+@media (max-width: 768px) {
+  .comparison-table {
+    font-size: 0.85rem; 
+  }
+  .product-name {
+    font-size: 0.95rem;
+    max-width: 6rem;
+  }
+  .product-img {
+    width: 50px; 
+    height: 50px;
+  }
+  .product-price {
+    font-size: 1rem; 
+  }
+  .price-value {
+    font-size: 0.95rem;
+  }
+  .store-links a {
+    font-size: 0.8rem; 
+  }
+  .comparison-table th,
+  .comparison-table td {
+    padding: 0.75rem 0.5rem; 
+  }
+  .comparison-table tbody th:first-child,
+  .comparison-table tbody td:first-child {
+    min-width: 150px;
+    width: 150px;
+  }
+  .remove-comparison-btn {
+    width: 20px; 
+    height: 20px;
+    font-size: 0.8rem;
+  }
+}
+
+.btn-admin-panel {
+  display: block; 
+  width: 100%;
+  max-width: 400px; 
+  padding: 1rem 2rem;
+  margin: 1.5rem auto 0; 
+  background-color: #dc2626; 
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  text-align: center;
+  text-decoration: none; 
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.2s; 
+}
+
+.btn-admin-panel:hover {
+  background-color: #b91c1c; 
+  transform: scale(1.02); 
+}
+
+.btn-admin-panel:active {
+  transform: scale(0.98); 
+}
+
+
+.profile-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center; 
+  gap: 0.75rem; 
 }

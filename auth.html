@@ -1,380 +1,330 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Вход и регистрация - TechAggregator</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="icon" sizes="180x180" href="sources/logo.png">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Вход и регистрация - TechAggregator</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <header class="header">
-    <div class="container">
-        <div class="logo">
-            <h1><a href="index.html" style="color: inherit; text-decoration: none; padding-right: 20%;">TechAggregator</a></h1>
+<header class="header">
+  <div class="container">
+    <div class="logo">
+      <h1><a href="index.html" style="color: inherit; text-decoration: none; padding-right: 20%;">TechAggregator</a></h1>
+    </div>
+    <nav class="nav">
+      <a href="index.html" class="nav-link" style="padding-left: 5%;">Главная</a>
+      <a href="catalog.html" class="nav-link">Каталог</a>
+      <a href="comparison.html" class="nav-link">Сравнение</a>
+      <a href="recommendations.html" class="nav-link">Рекомендации</a>
+    </nav>
+
+    <div class="nav-search-container">
+      <input type="text" class="nav-search" id="navSearch"
+        placeholder="Поиск товаров..."
+        oninput="showNavSearchSuggestions()"
+        onkeypress="handleNavSearchEnter(event)">
+      <button class="nav-search-btn" onclick="navSearchProducts()">🔍</button>
+      <div id="navSearchSuggestions" class="nav-search-suggestions"></div>
+    </div>
+    <div class="auth-buttons">
+      <a href="index.html" class="btn btn-primary">На главную</a>
+    </div>
+  </div>
+</header>
+
+<main class="main">
+  <div class="auth-container">
+    <div class="auth-box">
+      <div class="auth-sidebar">
+        <h2>Добро пожаловать в TechAggregator</h2>
+        <p>Присоединяйтесь к сообществу любителей техники. Получайте персонализированные рекомендации, сравнивайте товары и экономьте время на поиске.</p>
+        <div class="features-list">
+          <div class="feature-item">Персональные рекомендации</div>
+          <div class="feature-item">Сравнение цен в реальном времени</div>
+          <div class="feature-item">Отслеживание изменения цен</div>
+          <div class="feature-item">Сохраняйте избранные товары и сравнения</div>
         </div>
-        <nav class="nav">
-            <a href="index.html" class="nav-link" style="padding-left: 5%;">Главная</a>
-            <a href="catalog.html" class="nav-link">Каталог</a>
-            <a href="comparison.html" class="nav-link">Сравнение</a>
-            <a href="recommendations.html" class="nav-link">Рекомендации</a>
-        </nav>
-        
-        <!-- Добавляем поиск здесь -->
-        <div class="nav-search-container">
-            <input type="text" class="nav-search" id="navSearch" 
-                   placeholder="Поиск товаров..." 
-                   oninput="showNavSearchSuggestions()"
-                   onkeypress="handleNavSearchEnter(event)">
-            <button class="nav-search-btn" onclick="navSearchProducts()">
-                🔍
-            </button>
-            <div id="navSearchSuggestions" class="nav-search-suggestions"></div>
+      </div>
+      <div class="auth-content">
+        <div class="auth-tabs">
+          <button class="auth-tab active" onclick="switchAuthTab('login')">Вход</button>
+          <button class="auth-tab" onclick="switchAuthTab('register')">Регистрация</button>
         </div>
-        
-        <div class="auth-buttons">
-                <a href="index.html" class="btn btn-primary">На главную</a>
+
+        <!-- Форма входа -->
+        <form id="loginForm" class="auth-form active">
+          <div class="form-input">
+            <label for="loginEmail">Email</label>
+            <input type="email" id="loginEmail" placeholder="Ваш email" required>
+            <div class="error-message" id="loginEmailError"></div>
+          </div>
+          <div class="form-input">
+            <label for="loginPassword">Пароль</label>
+            <input type="password" id="loginPassword" placeholder="Ваш пароль" required>
+            <div class="error-message" id="loginPasswordError"></div>
+          </div>
+          <div class="auth-options">
+            <div class="remember-me">
+              <input type="checkbox" id="rememberMe">
+              <label for="rememberMe">Запомнить меня</label>
             </div>
-        </div>
-    </header>
-
-    <main class="main">
-        <div class="auth-container">
-            <div class="auth-box">
-                <div class="auth-sidebar">
-                    <h2>Добро пожаловать в TechAggregator</h2>
-                    <p>Присоединяйтесь к сообществу любителей техники. Получайте персонализированные рекомендации, сравнивайте товары и экономьте время на поиске.</p>
-                    
-                    <div class="features-list">
-                        <div class="feature-item">Персональные рекомендации</div>
-                        <div class="feature-item">Сравнение цен в реальном времени</div>
-                        
-                        <div class="feature-item">Отслеживание изменения цен</div>
-                        <div class="feature-item">Сохраняйте избранные товары и сравнения</div>
-                    </div>
-                </div>
-                
-                <div class="auth-content">
-                    <div class="auth-tabs">
-                        <button class="auth-tab active" onclick="switchAuthTab('login')">Вход</button>
-                        <button class="auth-tab" onclick="switchAuthTab('register')">Регистрация</button>
-                    </div>
-                    
-                    <form id="loginForm" class="auth-form active">
-                        <div class="form-input">
-                            <label for="loginEmail">Email</label>
-                            <input type="email" id="loginEmail" placeholder="Ваш email" required>
-                            <div class="error-message" id="loginEmailError"></div>
-                        </div>
-                        
-                        <div class="form-input">
-                            <label for="loginPassword">Пароль</label>
-                            <input type="password" id="loginPassword" placeholder="Ваш пароль" required>
-                            <div class="error-message" id="loginPasswordError"></div>
-                        </div>
-                        
-                        <div class="auth-options">
-                            <div class="remember-me">
-                                <input type="checkbox" id="rememberMe">
-                                <label for="rememberMe">Запомнить меня</label>
-                            </div>
-                            <a href="#" class="forgot-password" onclick="showForgotPassword()">Забыли пароль?</a>
-                        </div>
-                        
-                        <button type="submit" class="auth-button">Войти</button>
-                        
-                        <div class="social-auth">
-                            <p>Или войдите через</p>
-                            <div class="social-buttons">
-                                <button type="button" class="social-button google" onclick="socialLogin('google')">
-                                    Google
-                                </button>
-                                <button type="button" class="social-button facebook" onclick="socialLogin('facebook')">
-                                    Facebook
-                                </button>
-                            </div>
-                        </div>
-                        
-                        <div class="auth-switch">
-                            Нет аккаунта? <a href="#" onclick="switchAuthTab('register')">Зарегистрируйтесь</a>
-                        </div>
-                    </form>
-                    
-                    <form id="registerForm" class="auth-form">
-                        <div class="form-row">
-                            <div class="form-input">
-                                <label for="registerFirstName">Имя</label>
-                                <input type="text" id="registerFirstName" placeholder="Ваше имя" required>
-                                <div class="error-message" id="firstNameError">Введите имя</div>
-                            </div>
-                            
-                            <div class="form-input">
-                                <label for="registerLastName">Фамилия</label>
-                                <input type="text" id="registerLastName" placeholder="Ваша фамилия">
-                            </div>
-                        </div>
-                        
-                        <div class="form-input">
-                            <label for="registerEmail">Email</label>
-                            <input type="email" id="registerEmail" placeholder="Ваш email" required>
-                            <div class="error-message" id="registerEmailError">Введите корректный email</div>
-                        </div>
-                        
-                        <div class="form-input">
-                            <label for="registerPassword">Пароль</label>
-                            <input type="password" id="registerPassword" placeholder="Придумайте пароль" required>
-                            <div class="error-message" id="registerPasswordError">Пароль должен содержать минимум 6 символов</div>
-                        </div>
-                        
-                        <div class="form-input">
-                            <label for="registerConfirmPassword">Подтверждение пароля</label>
-                            <input type="password" id="registerConfirmPassword" placeholder="Повторите пароль" required>
-                            <div class="error-message" id="confirmPasswordError">Пароли не совпадают</div>
-                        </div>
-                        
-                        <div class="auth-options">
-                            <div class="remember-me">
-                                <input type="checkbox" id="acceptTerms" required>
-                                <label for="acceptTerms">Я принимаю <a href="#" style="color: #2563eb;">условия использования</a></label>
-                            </div>
-                        </div>
-                        
-                        <button type="submit" class="auth-button">Зарегистрироваться</button>
-                        
-                        <div class="social-auth">
-                            <p>Или зарегистрируйтесь через</p>
-                            <div class="social-buttons">
-                                <button type="button" class="social-button google" onclick="socialRegister('google')">
-                                    Google
-                                </button>
-                                <button type="button" class="social-button facebook" onclick="socialRegister('facebook')">
-                                    Facebook
-                                </button>
-                            </div>
-                        </div>
-                        
-                        <div class="auth-switch">
-                            Уже есть аккаунт? <a href="#" onclick="switchAuthTab('login')">Войдите</a>
-                        </div>
-                    </form>
-                    
-                    <form id="forgotPasswordForm" class="auth-form" style="display: none;">
-                        <h3 style="margin-bottom: 1rem; color: #374151;">Восстановление пароля</h3>
-                        <p style="color: #6b7280; margin-bottom: 1.5rem;">Введите email, указанный при регистрации. Мы отправим ссылку для восстановления пароля.</p>
-                        
-                        <div class="form-input">
-                            <label for="forgotEmail">Email</label>
-                            <input type="email" id="forgotEmail" placeholder="Ваш email" required>
-                            <div class="error-message" id="forgotEmailError">Введите корректный email</div>
-                        </div>
-                        
-                        <button type="submit" class="auth-button">Отправить ссылку</button>
-                        
-                        <div class="auth-switch">
-                            <a href="#" onclick="switchAuthTab('login')">← Вернуться к входу</a>
-                        </div>
-                    </form>
-                </div>
+            <a href="#" class="forgot-password" onclick="showForgotPassword()">Забыли пароль?</a>
+          </div>
+          <button type="submit" class="auth-button">Войти</button>
+          <div class="social-auth">
+            <p>Или войдите через</p>
+            <div class="social-buttons">
+              <button type="button" class="social-button google" disabled>Google</button>
+              <button type="button" class="social-button facebook" disabled>Facebook</button>
             </div>
-        </div>
-    </main>
+          </div>
+          <div class="auth-switch">
+            Нет аккаунта? <a href="#" onclick="switchAuthTab('register')">Зарегистрируйтесь</a>
+          </div>
+        </form>
 
-    <footer class="footer">
-        <div class="container">
-            <p>&copy; 2024 TechAggregator. Все права защищены.</p>
-        </div>
-    </footer>
+        <!-- Форма регистрации -->
+        <form id="registerForm" class="auth-form">
+          <div class="form-row">
+            <div class="form-input">
+              <label for="registerFirstName">Имя</label>
+              <input type="text" id="registerFirstName" placeholder="Ваше имя" required>
+              <div class="error-message" id="firstNameError">Введите имя</div>
+            </div>
+            <div class="form-input">
+              <label for="registerLastName">Фамилия</label>
+              <input type="text" id="registerLastName" placeholder="Ваша фамилия">
+            </div>
+          </div>
+          <div class="form-input">
+            <label for="registerEmail">Email</label>
+            <input type="email" id="registerEmail" placeholder="Ваш email" required>
+            <div class="error-message" id="registerEmailError">Введите корректный email</div>
+          </div>
+          <div class="form-input">
+            <label for="registerPassword">Пароль</label>
+            <input type="password" id="registerPassword" placeholder="Придумайте пароль" required>
+            <div class="error-message" id="registerPasswordError">Пароль должен содержать минимум 6 символов</div>
+          </div>
+          <div class="form-input">
+            <label for="registerConfirmPassword">Подтверждение пароля</label>
+            <input type="password" id="registerConfirmPassword" placeholder="Повторите пароль" required>
+            <div class="error-message" id="confirmPasswordError">Пароли не совпадают</div>
+          </div>
+          <div class="auth-options">
+            <div class="remember-me">
+              <input type="checkbox" id="acceptTerms" required>
+              <label for="acceptTerms">Я принимаю <a href="#" style="color: #2563eb;">условия использования</a></label>
+            </div>
+          </div>
+          <button type="submit" class="auth-button">Зарегистрироваться</button>
+          <div class="social-auth">
+            <p>Или зарегистрируйтесь через</p>
+            <div class="social-buttons">
+              <button type="button" class="social-button google" disabled>Google</button>
+              <button type="button" class="social-button facebook" disabled>Facebook</button>
+            </div>
+          </div>
+          <div class="auth-switch">
+            Уже есть аккаунт? <a href="#" onclick="switchAuthTab('login')">Войдите</a>
+          </div>
+        </form>
 
-    <script>
-        //Логика для страницы авторизации
-        document.addEventListener('DOMContentLoaded', function() {
-            //Проверяем, авторизован ли пользователь
-            const userData = localStorage.getItem('techAggregatorUser');
-            if (userData) {
-                window.location.href = 'index.html';
-                return;
-            }
-            
-            //Проверяем параметры URL
-            const urlParams = new URLSearchParams(window.location.search);
-            const tab = urlParams.get('tab');
-            
-            if (tab === 'register') {
-                switchAuthTab('register');
-            }
-        });
-        
-        function switchAuthTab(tab) {
-            //Убираем активный класс у всех вкладок
-            document.querySelectorAll('.auth-tab').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            
-            //Добавляем активный класс выбранной вкладке
-            document.querySelectorAll('.auth-tab').forEach(btn => {
-                if (btn.textContent.includes(tab === 'login' ? 'Вход' : 'Регистрация')) {
-                    btn.classList.add('active');
-                }
-            });
-            
-            //Показываем выбранную форму
-            document.getElementById('loginForm').classList.remove('active');
-            document.getElementById('registerForm').classList.remove('active');
-            document.getElementById('forgotPasswordForm').style.display = 'none';
-            
-            if (tab === 'login') {
-                document.getElementById('loginForm').classList.add('active');
-            } else if (tab === 'register') {
-                document.getElementById('registerForm').classList.add('active');
-            }
-        }
-        
-        function showForgotPassword() {
-            document.getElementById('loginForm').classList.remove('active');
-            document.getElementById('registerForm').classList.remove('active');
-            document.getElementById('forgotPasswordForm').style.display = 'block';
-        }
-        
-        function socialLogin(provider) {
-            alert(`Вход через ${provider} будет реализован в бэкенде`);
-        }
-        
-        function socialRegister(provider) {
-            alert(`Регистрация через ${provider} будет реализован в бэкенде`);
-        }
-        
-        //Валидация форм
-        document.getElementById('loginForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const email = document.getElementById('loginEmail').value;
-            const password = document.getElementById('loginPassword').value;
-            
-            let valid = true;
-            
-            //Сброс ошибок
-            document.querySelectorAll('#loginForm .error-message').forEach(el => {
-                el.style.display = 'none';
-            });
-            
-            //Проверка email
-            if (!email || !email.includes('@')) {
-                document.getElementById('loginEmailError').style.display = 'block';
-                document.getElementById('loginEmail').classList.add('error');
-                valid = false;
-            }
-            
-            //Проверка пароля
-            if (!password || password.length < 6) {
-                document.getElementById('loginPasswordError').style.display = 'block';
-                document.getElementById('loginPassword').classList.add('error');
-                valid = false;
-            }
-            
-            if (valid) {
-                //В реальном приложении здесь был бы запрос к серверу
-                localStorage.setItem('techAggregatorUser', JSON.stringify({
-                    id: 1,
-                    name: 'Иван Иванов',
-                    email: email,
-                    role: 'user'
-                }));
-                showCustomNotification(`Вход выполнен успешно!`, 'info');
-                window.location.href = 'index.html';
-            }
-        });
-        
-        document.getElementById('registerForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const firstName = document.getElementById('registerFirstName').value;
-            const email = document.getElementById('registerEmail').value;
-            const password = document.getElementById('registerPassword').value;
-            const confirmPassword = document.getElementById('registerConfirmPassword').value;
-            const acceptTerms = document.getElementById('acceptTerms').checked;
-            
-            let valid = true;
-            
-            //Сброс ошибок
-            document.querySelectorAll('#registerForm .error-message').forEach(el => {
-                el.style.display = 'none';
-            });
-            document.querySelectorAll('#registerForm input').forEach(el => {
-                el.classList.remove('error');
-            });
-            
-            //Проверка имени
-            if (!firstName) {
-                document.getElementById('firstNameError').style.display = 'block';
-                document.getElementById('registerFirstName').classList.add('error');
-                valid = false;
-            }
-            
-            //Проверка email
-            if (!email || !email.includes('@')) {
-                document.getElementById('registerEmailError').style.display = 'block';
-                document.getElementById('registerEmail').classList.add('error');
-                valid = false;
-            }
-            
-            //Проверка пароля
-            if (!password || password.length < 6) {
-                document.getElementById('registerPasswordError').style.display = 'block';
-                document.getElementById('registerPassword').classList.add('error');
-                valid = false;
-            }
-            
-            //Проверка подтверждения пароля
-            if (password !== confirmPassword) {
-                document.getElementById('confirmPasswordError').style.display = 'block';
-                document.getElementById('registerConfirmPassword').classList.add('error');
-                valid = false;
-            }
-            
-            //Проверка согласия с условиями
-            if (!acceptTerms) {
-                showCustomNotification(`Необходимо принять условия использования`, 'info');
-                valid = false;
-            }
-            
-            if (valid) {
-                //В реальном приложении здесь был бы запрос к серверу
-                localStorage.setItem('techAggregatorUser', JSON.stringify({
-                    id: Date.now(),
-                    name: firstName,
-                    email: email,
-                    role: 'user'
-                }));
-                showCustomNotification(`Регистрация прошла успешно!`, 'info');
-                window.location.href = 'index.html';
-            }
-        });
-        
-        document.getElementById('forgotPasswordForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const email = document.getElementById('forgotEmail').value;
-            
-            if (!email || !email.includes('@')) {
-                document.getElementById('forgotEmailError').style.display = 'block';
-                document.getElementById('forgotEmail').classList.add('error');
-                return;
-            }
-            
-            showCustomNotification(`Ссылка для восстановления пароля отправлена на ${email}`, 'info');
-            switchAuthTab('login');
-        });
-        
-        //Убираем класс error при изменении поля
-        document.querySelectorAll('input').forEach(input => {
-            input.addEventListener('input', function() {
-                this.classList.remove('error');
-                const errorMessage = this.parentElement.querySelector('.error-message');
-                if (errorMessage) {
-                    errorMessage.style.display = 'none';
-                }
-            });
-        });
+        <!-- Форма восстановления пароля -->
+        <form id="forgotPasswordForm" class="auth-form" style="display: none;">
+          <h3 style="margin-bottom: 1rem; color: #374151;">Восстановление пароля</h3>
+          <p style="color: #6b7280; margin-bottom: 1.5rem;">Введите email, указанный при регистрации. Мы отправим ссылку для восстановления пароля.</p>
+          <div class="form-input">
+            <label for="forgotEmail">Email</label>
+            <input type="email" id="forgotEmail" placeholder="Ваш email" required>
+            <div class="error-message" id="forgotEmailError">Введите корректный email</div>
+          </div>
+          <button type="submit" class="auth-button">Отправить ссылку</button>
+          <div class="auth-switch">
+            <a href="#" onclick="switchAuthTab('login')">← Вернуться к входу</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</main>
 
-        
-    </script>
-    <script src="script.js"></script>
+<footer class="footer">
+  <div class="container">
+    <p>&copy; 2024 TechAggregator. Все права защищены.</p>
+  </div>
+</footer>
+
+<script src="script.js"></script>
+<script>
+//Проверка авторизации только по JWT-токену
+document.addEventListener('DOMContentLoaded', function () {
+  //Проверяем, есть ли валидный токен
+  const token = localStorage.getItem('techAggregatorToken');
+  if (token) {
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      //Проверяем срок действия токена
+      if (payload.exp && payload.exp * 1000 > Date.now()) {
+        //Пользователь авторизован — перенаправляем
+        window.location.href = 'index.html';
+        return;
+      } else {
+        //Токен просрочен — удаляем
+        localStorage.removeItem('techAggregatorToken');
+      }
+    } catch (e) {
+      //Невалидный токен — удаляем
+      localStorage.removeItem('techAggregatorToken');
+    }
+  }
+
+  //Обработка URL-параметров
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.get('tab') === 'register') {
+    switchAuthTab('register');
+  }
+});
+
+//=== Переключение вкладок ===
+function switchAuthTab(tab) {
+  document.querySelectorAll('.auth-tab').forEach(btn => btn.classList.remove('active'));
+  document.querySelectorAll('.auth-form').forEach(form => form.classList.remove('active'));
+
+  if (tab === 'login') {
+    document.querySelector('.auth-tab:nth-child(1)').classList.add('active');
+    document.getElementById('loginForm').classList.add('active');
+  } else if (tab === 'register') {
+    document.querySelector('.auth-tab:nth-child(2)').classList.add('active');
+    document.getElementById('registerForm').classList.add('active');
+  }
+}
+
+function showForgotPassword() {
+  document.querySelectorAll('.auth-form').forEach(form => form.classList.remove('active'));
+  document.getElementById('forgotPasswordForm').style.display = 'block';
+}
+
+//Вход через API
+document.getElementById('loginForm').addEventListener('submit', async function (e) {
+  e.preventDefault();
+  const email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value;
+
+  //Сброс ошибок
+  document.querySelectorAll('.error-message').forEach(el => el.style.display = 'none');
+  document.querySelectorAll('input').forEach(el => el.classList.remove('error'));
+
+  let valid = true;
+  if (!email || !email.includes('@')) {
+    document.getElementById('loginEmailError').style.display = 'block';
+    document.getElementById('loginEmail').classList.add('error');
+    valid = false;
+  }
+  if (!password || password.length < 6) {
+    document.getElementById('loginPasswordError').style.display = 'block';
+    document.getElementById('loginPassword').classList.add('error');
+    valid = false;
+  }
+  if (!valid) return;
+
+  try {
+    const res = await fetch('http://localhost:3000/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      alert(data.error || 'Неверный email или пароль');
+      return;
+    }
+
+    localStorage.setItem('techAggregatorToken', data.token);
+
+    alert('Вход выполнен успешно!');
+    window.location.href = 'index.html';
+
+  } catch (err) {
+    console.error('Ошибка входа:', err);
+    alert('Не удалось подключиться к серверу');
+  }
+});
+
+//Регистрация через API
+document.getElementById('registerForm').addEventListener('submit', async function (e) {
+  e.preventDefault();
+  const firstName = document.getElementById('registerFirstName').value.trim();
+  const email = document.getElementById('registerEmail').value.trim();
+  const password = document.getElementById('registerPassword').value;
+  const confirmPassword = document.getElementById('registerConfirmPassword').value;
+  const acceptTerms = document.getElementById('acceptTerms').checked;
+
+  //Сброс ошибок
+  document.querySelectorAll('.error-message').forEach(el => el.style.display = 'none');
+  document.querySelectorAll('input').forEach(el => el.classList.remove('error'));
+
+  let valid = true;
+  if (!firstName) {
+    document.getElementById('firstNameError').style.display = 'block';
+    document.getElementById('registerFirstName').classList.add('error');
+    valid = false;
+  }
+  if (!email || !email.includes('@')) {
+    document.getElementById('registerEmailError').style.display = 'block';
+    document.getElementById('registerEmail').classList.add('error');
+    valid = false;
+  }
+  if (!password || password.length < 6) {
+    document.getElementById('registerPasswordError').style.display = 'block';
+    document.getElementById('registerPassword').classList.add('error');
+    valid = false;
+  }
+  if (password !== confirmPassword) {
+    document.getElementById('confirmPasswordError').style.display = 'block';
+    document.getElementById('registerConfirmPassword').classList.add('error');
+    valid = false;
+  }
+  if (!acceptTerms) {
+    alert('Необходимо принять условия использования');
+    valid = false;
+  }
+  if (!valid) return;
+
+  try {
+    const res = await fetch('http://localhost:3000/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email,
+        password,
+        fullName: firstName
+      })
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      alert(data.error || 'Ошибка регистрации');
+      return;
+    }
+
+    alert('✅ Регистрация прошла успешно! Теперь войдите.');
+    switchAuthTab('login');
+
+  } catch (err) {
+    console.error('Ошибка регистрации:', err);
+    alert('Не удалось подключиться к серверу');
+  }
+});
+
+document.getElementById('forgotPasswordForm').addEventListener('submit', function (e) {
+  e.preventDefault();
+  alert('Восстановление пароля будет реализовано позже.');
+});
+</script>
 </body>
 </html>

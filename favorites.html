@@ -1,400 +1,208 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Избранные товары - TechAggregator</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="icon" sizes="180x180" href="sources/logo.png">
-    <style>
-        .favorites-container {
-            max-width: 1200px;
-            margin: 2rem auto;
-            padding: 0 20px;
-        }
-
-        .page-header {
-            text-align: center;
-            margin-bottom: 2rem;
-        }
-
-        .page-header h1 {
-            font-size: 2.5rem;
-            color: #1f2937;
-            margin-bottom: 0.5rem;
-        }
-
-        .page-header p {
-            color: #6b7280;
-            font-size: 1.1rem;
-        }
-
-        .favorites-stats {
-            display: flex;
-            justify-content: center;
-            gap: 2rem;
-            margin-bottom: 2rem;
-            flex-wrap: wrap;
-        }
-
-        .stat-box {
-            background: white;
-            padding: 1rem 2rem;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            text-align: center;
-            min-width: 150px;
-        }
-
-        .stat-number {
-            font-size: 2rem;
-            font-weight: bold;
-            color: #2563eb;
-        }
-
-        .stat-label {
-            color: #6b7280;
-            font-size: 0.9rem;
-        }
-
-        .favorites-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 1.5rem;
-        }
-
-        .product-card-favorite {
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            padding: 1.5rem;
-            transition: transform 0.3s, box-shadow 0.3s;
-            position: relative;
-        }
-
-        .product-card-favorite:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 5px 20px rgba(0,0,0,0.15);
-        }
-
-        .remove-favorite-btn {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background: #ef4444;
-            color: white;
-            border: none;
-            border-radius: 50%;
-            width: 30px;
-            height: 30px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1rem;
-            transition: background 0.3s;
-        }
-
-        .remove-favorite-btn:hover {
-            background: #dc2626;
-        }
-
-        .product-card-favorite img {
-            width: 100%;
-            height: 200px;
-            object-fit: contain;
-            background: #f8f9fa;
-            border-radius: 8px;
-            margin-bottom: 1rem;
-        }
-
-        .product-card-favorite h3 {
-            font-size: 1.1rem;
-            margin-bottom: 0.5rem;
-            color: #1f2937;
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-        }
-
-        .product-meta {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1rem;
-        }
-
-        .product-category {
-            font-size: 0.9rem;
-            color: #6b7280;
-        }
-
-        .product-price {
-            font-size: 1.25rem;
-            font-weight: bold;
-            color: #2563eb;
-        }
-
-        .product-actions {
-            display: flex;
-            gap: 0.5rem;
-        }
-
-        .empty-favorites {
-            text-align: center;
-            padding: 4rem 2rem;
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-
-        .empty-favorites h3 {
-            color: #374151;
-            margin-bottom: 1rem;
-        }
-
-        .empty-favorites p {
-            color: #6b7280;
-            margin-bottom: 2rem;
-        }
-
-        @media (max-width: 768px) {
-            .favorites-stats {
-                gap: 1rem;
-            }
-
-            .stat-box {
-                padding: 0.75rem 1rem;
-                min-width: 120px;
-            }
-
-            .stat-number {
-                font-size: 1.5rem;
-            }
-
-            .favorites-grid {
-                grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-            }
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Избранное — TechAggregator</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" sizes="180x180" href="sources/logo.png">
+  <style>
+    .favorites-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .product-card-favorite {
+      display: flex;
+      gap: 20px;
+      padding: 20px;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      margin-bottom: 20px;
+      background: white;
+    }
+    .product-image {
+      width: 120px;
+      height: 120px;
+      object-fit: contain;
+      background: #f8f9fa;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    .product-info {
+      flex: 1;
+    }
+    .product-meta {
+      display: flex;
+      gap: 15px;
+      margin: 10px 0;
+      color: #6b7280;
+      font-size: 0.9rem;
+    }
+    .remove-favorite-btn {
+      background: #ef4444;
+      color: white;
+      border: none;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      font-weight: bold;
+      cursor: pointer;
+      position: relative;
+      top: -10px;
+      left: -10px;
+    }
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      background: #f8f9fa;
+      border-radius: 12px;
+      margin: 40px 0;
+      color: #6b7280;
+    }
+    .btn-small {
+      padding: 6px 12px;
+      font-size: 0.85rem;
+    }
+  </style>
 </head>
 <body>
-    <header class="header">
-        <div class="container">
-            <div class="logo">
-                <h1><a href="index.html" style="color: inherit; text-decoration: none; padding-right: 20%;">TechAggregator</a></h1>
-            </div>
-            <nav class="nav">
-                <a href="index.html" class="nav-link" style="padding-left: 5%;">Главная</a>
-                <a href="catalog.html" class="nav-link">Каталог</a>
-                <a href="comparison.html" class="nav-link">Сравнение<span class="comparison-counter">0</span></a>
-                <a href="recommendations.html" class="nav-link">Рекомендации</a>
-            </nav>
-            <div class="nav-search-container">
-                <input type="text" class="nav-search" id="navSearch"
-                       placeholder="Поиск товаров..."
-                       oninput="showNavSearchSuggestions()"
-                       onkeypress="handleNavSearchEnter(event)">
-                <button class="nav-search-btn" onclick="navSearchProducts()">
-                    🔍
-                </button>
-                <div id="navSearchSuggestions" class="nav-search-suggestions"></div>
-            </div>
-            <div class="auth-buttons">
-                <a href="profile.html" class="btn btn-outline">Профиль</a>
-                <a href="#" class="btn btn-primary" onclick="logout()">Выйти</a>
-            </div>
+<header class="header">
+  <div class="container">
+    <div class="logo">
+      <h1><a href="index.html">TechAggregator</a></h1>
+    </div>
+    <nav class="nav">
+      <a href="index.html" class="nav-link">Главная</a>
+      <a href="catalog.html" class="nav-link">Каталог</a>
+      <a href="comparison.html" class="nav-link">Сравнение<span class="comparison-counter">0</span></a>
+      <a href="recommendations.html" class="nav-link">Рекомендации</a>
+    </nav>
+    <div class="auth-buttons">
+      <a href="auth.html" class="btn btn-outline">Войти</a>
+      <a href="auth.html?tab=register" class="btn btn-primary">Регистрация</a>
+    </div>
+  </div>
+</header>
+
+<main class="main">
+  <div class="favorites-container">
+    <h1>❤️ Моё избранное</h1>
+    <div id="favoritesList"></div>
+    <div id="emptyFavoritesState" class="empty-state" style="display: none;">
+      <h3>Нет избранных товаров</h3>
+      <p>Добавьте товары в избранное со страницы каталога или карточки товара</p>
+      <a href="catalog.html" class="btn btn-primary" style="margin-top: 20px;">Перейти в каталог</a>
+    </div>
+  </div>
+</main>
+
+<footer class="footer">
+  <div class="container">
+    <p>&copy; 2024 TechAggregator. Все права защищены.</p>
+  </div>
+</footer>
+
+<script src="script.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', async function () {
+  const token = localStorage.getItem('techAggregatorToken');
+  if (!token) {
+    alert('Пожалуйста, войдите в аккаунт');
+    window.location.href = 'auth.html';
+    return;
+  }
+
+  try {
+    //Загружаем пользователя
+    loadUserData();
+    updateComparisonCounter();
+
+    //Загружаем избранное
+    const res = await fetch('http://localhost:3000/api/favorites', {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+
+    if (!res.ok) throw new Error('Не удалось загрузить избранное');
+
+    const favorites = await res.json();
+    renderFavorites(favorites);
+  } catch (err) {
+    console.error('Ошибка:', err);
+    document.getElementById('favoritesList').innerHTML = '<p style="color: #ef4444;">Не удалось загрузить избранное</p>';
+  }
+});
+
+//Вывод избранных
+function renderFavorites(favorites) {
+  const listEl = document.getElementById('favoritesList');
+  const emptyEl = document.getElementById('emptyFavoritesState');
+
+  if (favorites.length === 0) {
+    emptyEl.style.display = 'block';
+    listEl.innerHTML = '';
+    return;
+  }
+
+  emptyEl.style.display = 'none';
+  listEl.innerHTML = favorites.map(fav => `
+    <div class="product-card-favorite">
+      <button class="remove-favorite-btn" onclick="removeFromFavorites(${fav.id})">×</button>
+      <img src="${fav.image || 'https://via.placeholder.com/120'}" 
+           alt="${fav.name}" 
+           class="product-image"
+           onclick="window.location.href='product.html?id=${fav.id}'">
+      <div class="product-info">
+        <h3 onclick="window.location.href='product.html?id=${fav.id}'" style="cursor: pointer;">${fav.name}</h3>
+        <div class="product-meta">
+          <span>${getCategoryName(fav.category)}</span>
+          <span>${formatPrice(getMinPrice(fav))} ₽</span>
         </div>
-    </header>
-
-    <main class="main">
-        <div class="favorites-container">
-            <div class="page-header">
-                <h1>❤️ Избранные товары</h1>
-                <p>Сохраненные товары для быстрого доступа</p>
-            </div>
-
-            <div class="favorites-stats">
-                <div class="stat-box">
-                    <div class="stat-number" id="favoritesCountStat">0</div>
-                    <div class="stat-label">Товаров</div>
-                </div>
-                <div class="stat-box">
-                    <div class="stat-number" id="categoriesCountStat">0</div>
-                    <div class="stat-label">Категорий</div>
-                </div>
-                <div class="stat-box">
-                    <div class="stat-number" id="averagePriceStat">0 ₽</div>
-                    <div class="stat-label">Средняя цена</div>
-                </div>
-            </div>
-
-            <div id="favoritesList" class="favorites-grid">
-                <!-- Сюда будут добавлены товары из избранного -->
-            </div>
-
-            <div id="emptyFavoritesState" class="empty-favorites" style="display: none;">
-                <h3>Ваш список избранного пуст</h3>
-                <p>Добавляйте товары в избранное, нажимая на значок ❤️ на странице товара</p>
-                <a href="catalog.html" class="btn btn-primary">Перейти в каталог</a>
-            </div>
+        <div class="product-actions" style="margin-top: 10px;">
+          <button class="btn btn-primary btn-small" onclick="window.location.href='product.html?id=${fav.id}'">Подробнее</button>
+          <button class="btn btn-outline btn-small" onclick="addToComparison(${fav.id})">Сравнить</button>
         </div>
-    </main>
+      </div>
+    </div>
+  `).join('');
+}
 
-    <footer class="footer">
-        <div class="container">
-            <p>&copy; 2024 TechAggregator. Все права защищены.</p>
-        </div>
-    </footer>
+//Удаление из избранного
+async function removeFromFavorites(productId) {
+  const token = localStorage.getItem('techAggregatorToken');
+  if (!token) return;
 
-    <script>
-        // --- Функции для работы с избранным ---
+  try {
+    const res = await fetch(`http://localhost:3000/api/favorites/${productId}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${token}` }
+    });
 
-        // Функция для получения списка избранного из localStorage
-        function getFavorites() {
-            const favorites = localStorage.getItem('techAggregatorFavorites');
-            return favorites ? JSON.parse(favorites) : [];
-        }
+    if (res.ok) {
+      showCustomNotification('Удалено из избранного', 'info');
+      //Перезагружаем список
+      document.dispatchEvent(new Event('DOMContentLoaded'));
+    } else {
+      const data = await res.json();
+      showCustomNotification(data.error || 'Ошибка удаления', 'error');
+    }
+  } catch (err) {
+    showCustomNotification('Не удалось подключиться к серверу', 'error');
+  }
+}
 
-        // Функция для сохранения списка избранного в localStorage
-        function saveFavorites(favorites) {
-            localStorage.setItem('techAggregatorFavorites', JSON.stringify(favorites));
-        }
-
-        // Функция для удаления товара из избранного
-        function removeFromFavorites(productId) {
-            let favorites = getFavorites();
-            favorites = favorites.filter(fav => fav.id != productId);
-            saveFavorites(favorites);
-            // Перезагружаем список на странице
-            loadFavorites();
-            // Обновляем счетчики
-            updateFavoritesCounter();
-            updateStats();
-            showNotification('Товар удален из избранного', 'info');
-        }
-
-        // Функция для перехода на страницу товара
-        function goToProduct(productId) {
-            window.location.href = `product.html?id=${productId}`;
-        }
-
-        // Функция для добавления товара в сравнение (пока просто уведомление)
-        function addToComparison(productId) {
-            // В реальной реализации - добавление в localStorage и обновление счетчика
-            showNotification('Товар добавлен в сравнение', 'success');
-            // Обновим счетчик сравнения (предполагается, что он глобальный)
-            let counter = parseInt(document.querySelector('.comparison-counter').textContent) || 0;
-            document.querySelector('.comparison-counter').textContent = counter + 1;
-        }
-
-        // Функция для обновления счетчика избранного в хедере и других местах
-        function updateFavoritesCounter() {
-            const favoriteCount = getFavorites().length;
-            // Обновляем счетчик в хедере, если он есть
-            const headerCounter = document.querySelector('.header .comparison-counter'); // Используем существующий класс или создаем новый
-            if (headerCounter) {
-                headerCounter.textContent = favoriteCount;
-            }
-            // Обновляем счетчик на странице профиля, если она открыта (можно вызывать при навигации)
-            // document.getElementById('favoritesCountStat').textContent = favoriteCount; // Это делается в updateStats
-        }
-
-        // Функция для обновления статистики на странице
-        function updateStats() {
-            const favorites = getFavorites();
-            const count = favorites.length;
-
-            // Обновляем количество товаров
-            document.getElementById('favoritesCountStat').textContent = count;
-
-            if (count === 0) {
-                // Если избранное пусто, показываем соответствующий блок
-                document.getElementById('favoritesList').style.display = 'none';
-                document.getElementById('emptyFavoritesState').style.display = 'block';
-                // Обнуляем другие статы
-                document.getElementById('categoriesCountStat').textContent = '0';
-                document.getElementById('averagePriceStat').textContent = '0 ₽';
-                return;
-            } else {
-                // Иначе показываем список
-                document.getElementById('favoritesList').style.display = 'grid';
-                document.getElementById('emptyFavoritesState').style.display = 'none';
-            }
-
-            // Подсчитываем уникальные категории
-            const categories = new Set(favorites.map(fav => fav.category));
-            document.getElementById('categoriesCountStat').textContent = categories.size;
-
-            // Подсчитываем среднюю цену
-            if (favorites.length > 0) {
-                const total = favorites.reduce((sum, fav) => sum + fav.price, 0);
-                const average = Math.round(total / favorites.length);
-                document.getElementById('averagePriceStat').textContent = `${formatPrice(average)} ₽`;
-            } else {
-                document.getElementById('averagePriceStat').textContent = '0 ₽';
-            }
-        }
-
-        // Функция для форматирования цены (если еще не определена в основном script.js)
-        function formatPrice(price) {
-            return price.toLocaleString('ru-RU');
-        }
-
-        // Функция для загрузки и отображения избранных товаров
-        function loadFavorites() {
-            const favorites = getFavorites();
-            const favoritesList = document.getElementById('favoritesList');
-            favoritesList.innerHTML = ''; // Очищаем текущий список
-
-            if (favorites.length === 0) {
-                // Если избранное пусто, список уже очищен, статы обновятся в updateStats
-                updateStats();
-                return;
-            }
-
-            favorites.forEach(fav => {
-                const productCard = document.createElement('div');
-                productCard.className = 'product-card-favorite';
-                productCard.innerHTML = `
-                    <button class="remove-favorite-btn" onclick="removeFromFavorites(${fav.id})">×</button>
-                    <img src="${fav.image}" alt="${fav.name}">
-                    <h3>${fav.name}</h3>
-                    <div class="product-meta">
-                        <div class="product-category">${getCategoryName(fav.category)}</div>
-                        <div class="product-price">${formatPrice(fav.price)} ₽</div>
-                    </div>
-                    <div class="product-actions">
-                        <button class="btn btn-primary btn-small" onclick="goToProduct(${fav.id})">Подробнее</button>
-                        <button class="btn btn-outline btn-small" onclick="addToComparison(${fav.id})">Сравнить</button>
-                    </div>
-                `;
-                favoritesList.appendChild(productCard);
-            });
-
-            updateStats(); // Обновляем статистику после загрузки товаров
-        }
-
-        // Функция для получения русского названия категории (должна быть в основном script.js, но на всякий случай)
-        function getCategoryName(categoryKey) {
-            const categoryTranslations = {
-                'smartphones': 'Смартфоны',
-                'laptops': 'Ноутбуки',
-                'tv': 'Телевизоры',
-                'headphones': 'Наушники'
-            };
-            return categoryTranslations[categoryKey] || categoryKey;
-        }
-
-
-        // Загружаем избранное при загрузке страницы
-        document.addEventListener('DOMContentLoaded', function() {
-            loadFavorites();
-            updateFavoritesCounter(); // Обновляем счетчик при открытии страницы
-        });
-
-    </script>
-    <script src="script.js"></script>
+function getCategoryName(categoryKey) {
+  const names = { smartphones: 'Смартфоны', laptops: 'Ноутбуки', tv: 'Телевизоры', headphones: 'Наушники' };
+  return names[categoryKey] || categoryKey;
+}
+function formatPrice(price) {
+  if (price == null || isNaN(price)) return '—';
+  return Number(price).toLocaleString('ru-RU');
+}
+function getMinPrice(product) {
+  if (!product.prices || product.prices.length === 0) return null;
+  return Math.min(...product.prices.map(p => p.price));
+}
+</script>
 </body>
 </html>
