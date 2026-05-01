@@ -133,7 +133,7 @@ document.addEventListener('DOMContentLoaded', async function () {
   }
 });
 
-//Вывод избранных
+//Отрисовка избранных товаров
 function renderFavorites(favorites) {
   const listEl = document.getElementById('favoritesList');
   const emptyEl = document.getElementById('emptyFavoritesState');
@@ -145,26 +145,50 @@ function renderFavorites(favorites) {
   }
 
   emptyEl.style.display = 'none';
-  listEl.innerHTML = favorites.map(fav => `
-    <div class="product-card-favorite">
-      <button class="remove-favorite-btn" onclick="removeFromFavorites(${fav.id})">×</button>
-      <img src="${fav.image || 'https://via.placeholder.com/120'}" 
-           alt="${fav.name}" 
-           class="product-image"
-           onclick="window.location.href='product.html?id=${fav.id}'">
-      <div class="product-info">
-        <h3 onclick="window.location.href='product.html?id=${fav.id}'" style="cursor: pointer;">${fav.name}</h3>
-        <div class="product-meta">
-          <span>${getCategoryName(fav.category)}</span>
-          <span>${formatPrice(getMinPrice(fav))} ₽</span>
-        </div>
-        <div class="product-actions" style="margin-top: 10px;">
-          <button class="btn btn-primary btn-small" onclick="window.location.href='product.html?id=${fav.id}'">Подробнее</button>
-          <button class="btn btn-outline btn-small" onclick="addToComparison(${fav.id})">Сравнить</button>
+
+
+  listEl.innerHTML = favorites.map(fav => {
+    //Получаем минимальную цену из текущих цен товара
+    const currentMinPrice = getMinPrice(fav);
+
+    let priceDropInfo = null;
+    const lastPrice = fav.lastPrice || fav.price; //lastPrice — это цена при добавлении в избранное 
+    if (lastPrice && currentMinPrice && currentMinPrice < lastPrice) {
+      const dropPercentage = ((lastPrice - currentMinPrice) / lastPrice) * 100;
+      if (dropPercentage >= 5) { // Порог 5%
+        priceDropInfo = {
+          percentage: dropPercentage.toFixed(1),
+          oldPrice: lastPrice,
+          newPrice: currentMinPrice
+        };
+      }
+    }
+
+    const imgSrc = fav.image || fav.imageUrl || 'https://via.placeholder.com/120x120?text=?';
+    const cardClass = priceDropInfo ? 'product-card-favorite price-drop-highlight' : 'product-card-favorite';
+
+    return `
+      <div class="${cardClass}">
+        <button class="remove-favorite-btn" onclick="removeFromFavorites(${fav.id})">×</button>
+        <img src="${imgSrc}" 
+             alt="${fav.name}" 
+             class="product-image"
+             onclick="window.location.href='product.html?id=${fav.id}'">
+        <div class="product-info">
+          <h3 onclick="window.location.href='product.html?id=${fav.id}'" style="cursor: pointer;">${fav.name}</h3>
+          <div class="product-meta">
+            <span>${getCategoryName(fav.category)}</span>
+            <span>${formatPrice(currentMinPrice)} ₽</span>
+          </div>
+          ${priceDropInfo ? `<div class="price-drop-badge">Цена упала на ${priceDropInfo.percentage}%!</div>` : ''}
+          <div class="product-actions" style="margin-top: 10px;">
+            <button class="btn btn-primary btn-small" onclick="goToProduct(${fav.id})">Подробнее</button>
+            <button class="btn btn-outline btn-small" onclick="addToComparison(${fav.id})">Сравнить</button>
+          </div>
         </div>
       </div>
-    </div>
-  `).join('');
+    `;
+  }).join('');
 }
 
 //Удаление из избранного
@@ -191,10 +215,7 @@ async function removeFromFavorites(productId) {
   }
 }
 
-function getCategoryName(categoryKey) {
-  const names = { smartphones: 'Смартфоны', laptops: 'Ноутбуки', tv: 'Телевизоры', headphones: 'Наушники' };
-  return names[categoryKey] || categoryKey;
-}
+
 function formatPrice(price) {
   if (price == null || isNaN(price)) return '—';
   return Number(price).toLocaleString('ru-RU');

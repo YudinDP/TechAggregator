@@ -328,6 +328,8 @@
             justify-content: flex-end;
         }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
 </head>
 <body>
     <header class="header">
@@ -419,7 +421,7 @@
             <!-- Содержимое вкладок -->
             <!-- Вкладка Модерация -->
             <div id="moderation" class="admin-tab-content active">
-                <!-- Подвкладки модерации -->
+                
                 <div class="admin-tabs-header" style="background: white; border-bottom: 1px solid #e5e7eb; border-top: 1px solid #e5e7eb;">
                     <button class="admin-tab-btn active" onclick="openModerationSubTab('reviews')">Отзывы</button>
                     <button class="admin-tab-btn" onclick="openModerationSubTab('requests')">Запросы</button>
@@ -462,11 +464,37 @@
                             <option value="">Выберите категорию</option>
                             <option value="smartphones">Смартфоны</option>
                             <option value="laptops">Ноутбуки</option>
-                            <option value="tablets">Планшеты</option>
                             <option value="tv">Телевизоры</option>
                             <option value="headphones">Наушники</option>
                             <option value="cameras">Фотоаппараты</option>
-                            <!-- Добавьте другие категории по мере необходимости -->
+                            <option value="tablets">Планшеты</option>
+                            <option value="smartwatches">Смарт-часы</option>
+                            <option value="ebooks">Электронные книги</option>
+                            <option value="drones">Дроны</option>
+                            <option value="pc_components">Комплектующие ПК</option>
+                            <option value="keyboards">Клавиатуры</option>
+                            <option value="mouses">Мыши</option>
+                            <option value="cases">Корпуса ПК</option>
+                            <option value="drivers">Накопители</option>
+                            <option value="fitness_trackers">Фитнес-трекеры</option>
+                            <option value="power_units">Блоки питания</option>
+                            <option value="microphones">Микрофоны</option>
+                            <option value="webcams">Веб-камеры</option>
+                            <option value="power_banks">Павербанки</option>
+                            <option value="portable_speakers">Портативные колонки</option>
+                            <option value="monitors">Мониторы</option>
+                            <option value="accessories">Аксессуары</option>
+                            <option value="gaming">Игровые консоли</option>
+                            <option value="networking">Сетевое оборудование</option>
+                            <option value="cpus">Процессоры</option>
+                            <option value="motherboards">Материнские платы</option>
+                            <option value="ram">Оперативная память</option>
+                            <option value="graphics_cards">Видеокарты</option>
+                            <option value="external_drives">Внешние накопители</option>
+                            <option value="audio">Аудиосистемы</option>
+                            <option value="smart_home">Умный дом</option>
+                            <option value="wearables">Носимые устройства</option>
+                            <option value="other">Другое</option>
                         </select>
                     </div>
 
@@ -480,12 +508,12 @@
                         <input type="url" id="manualImageUrl" placeholder="https://example.com/image.jpg">
                     </div>
 
-                    <!-- КОНТЕЙНЕР ДЛЯ СПЕЦИФИКАЦИЙ -->
+                    
                     <div id="manualSpecFieldsContainer">
                         <p class="placeholder-text">Выберите категорию, чтобы увидеть доступные поля для характеристик.</p>
                     </div>
 
-                    <!-- КОНТЕЙНЕР ДЛЯ ЦЕН И ССЫЛОК -->
+                   
                     <div id="manualPricesContainer">
                         <h4>Цены и ссылки на покупку</h4>
                         <div id="manualPricesList">
@@ -500,9 +528,9 @@
                     </div>
                 </form>
             </div>
-            <!-- /НОВАЯ ВКЛАДКА -->
+            
 
-            <!-- ОБНОВЛЁННАЯ ВКЛАДКА ПАРСИНГА -->
+            
             <div id="parser" class="admin-tab-content">
                 <h3>Парсер товаров</h3>
                 <div class="parse-form-container">
@@ -517,19 +545,45 @@
                                 <option value="">Выберите категорию</option>
                                 <option value="smartphones">Смартфоны</option>
                                 <option value="laptops">Ноутбуки</option>
-                                <option value="tablets">Планшеты</option>
                                 <option value="tv">Телевизоры</option>
                                 <option value="headphones">Наушники</option>
                                 <option value="cameras">Фотоаппараты</option>
+                                <option value="tablets">Планшеты</option>
+                                <option value="smartwatches">Смарт-часы</option>
+                                <option value="ebooks">Электронные книги</option>
+                                <option value="drones">Дроны</option>
+                                <option value="pc_components">Комплектующие ПК</option>
+                                <option value="keyboards">Клавиатуры</option>
+                                <option value="mouses">Мыши</option>
+                                <option value="cases">Корпуса ПК</option>
+                                <option value="drivers">Накопители</option>
+                                <option value="fitness_trackers">Фитнес-трекеры</option>
+                                <option value="power_units">Блоки питания</option>
+                                <option value="microphones">Микрофоны</option>
+                                <option value="webcams">Веб-камеры</option>
+                                <option value="power_banks">Павербанки</option>
+                                <option value="portable_speakers">Портативные колонки</option>
+                                <option value="monitors">Мониторы</option>
+                                <option value="accessories">Аксессуары</option>
+                                <option value="gaming">Игровые консоли</option>
+                                <option value="networking">Сетевое оборудование</option>
+                                <option value="cpus">Процессоры</option>
+                                <option value="motherboards">Материнские платы</option>
+                                <option value="ram">Оперативная память</option>
+                                <option value="graphics_cards">Видеокарты</option>
+                                <option value="external_drives">Внешние накопители</option>
+                                <option value="audio">Аудиосистемы</option>
+                                <option value="smart_home">Умный дом</option>
+                                <option value="wearables">Носимые устройства</option>
                                 <option value="other">Другое</option>
                             </select>
                         </div>
-                        <!-- НОВОЕ ПОЛЕ ДЛЯ ПРОКСИ -->
+                        
                         <div class="form-group">
                             <label for="parseProxy">Прокси (опционально, формат: http://ip:port)</label>
                             <input type="text" id="parseProxy" placeholder="http://127.0.0.1:8080">
                         </div>
-                        <!-- /НОВОЕ ПОЛЕ -->
+                        
                         <div class="form-group">
                             <label for="parseName">Название устройства (опционально)</label>
                             <input type="text" id="parseName" placeholder="Введите название...">
@@ -548,49 +602,49 @@
                     <!-- Результаты парсинга будут здесь -->
                 </div>
             </div>
-            <div id="priceHistory" class="admin-tab-content">
-                <h3>История цен</h3>
-                <p>Управление историей цен для товаров.</p>
-                <div class="price-history-controls">
-                    <div class="form-group">
-                        <label for="priceHistoryProductSelect">Выберите товар:</label>
-                        <select id="priceHistoryProductSelect" class="crud-table-selector" onchange="loadPriceHistoryForProduct()">
-                            <option value="">-- Выберите товар --</option>
-                            <!-- Опции будут загружены динамически -->
-                        </select>
-                    </div>
-                    <button class="btn btn-outline" onclick="loadAllProductsForPriceHistory()">Загрузить список товаров</button>
-                </div>
+            <div class="admin-tab-content" id="priceHistory">
+  <h3>Изменение истории цен</h3>
+   
 
-                <div class="price-history-form-container" style="margin-top: 1.5rem; display: none;" id="priceHistoryFormContainer">
-                    <h4>Добавить новую запись</h4>
-                    <form id="addPriceHistoryForm">
-                        <div class="form-group">
-                            <label for="addStoreName">Название магазина *</label>
-                            <input type="text" id="addStoreName" required placeholder="Например, DNS, OZON...">
-                        </div>
-                        <div class="form-group">
-                            <label for="addPrice">Цена * (в рублях)</label>
-                            <input type="number" id="addPrice" required min="0" step="0.01" placeholder="0.00">
-                        </div>
-                        <div class="form-group">
-                            <label for="addDate">Дата *</label>
-                            <input type="date" id="addDate" required>
-                        </div>
-                        <div class="form-actions">
-                            <button type="button" class="btn btn-secondary" onclick="resetPriceHistoryForm()">Сбросить</button>
-                            <button type="submit" class="btn btn-primary">Добавить запись</button>
-                        </div>
-                    </form>
-                </div>
+  <form class="search-form" id="adminPriceHistorySearchForm">
+    <div class="search-input-container">
+      <input type="text" id="adminPriceHistorySearchInput" class="search-input" placeholder="Поиск товара для истории цен...">
+      <button type="submit" class="search-button">🔍</button>
+    </div>
+    <div id="adminPriceHistorySearchSuggestions" class="search-suggestions" style="display: none;"></div>
+  </form>
 
-                <div class="price-history-list-container" style="margin-top: 1.5rem; display: none;" id="priceHistoryListContainer">
-                    <h4>История цен для выбранного товара</h4>
-                    <div id="priceHistoryList">
-                        <!-- Список истории цен будет загружен сюда -->
-                    </div>
-                </div>
-            </div>
+  <div id="priceHistoryResult" style="display: none;">
+    <h4 id="selectedProductTitle"></h4>
+    <div id="priceHistoryChartContainer" style="width: 100%; height: 400px; margin-top: 20px;">
+      <!-- Canvas для Chart.js будет добавлен сюда -->
+    </div>
+    <div id="priceHistoryListContainer" style="margin-top: 20px;">
+      <!-- Список истории цен будет добавлен сюда -->
+    </div>
+    <h5>Добавить новую запись:</h5>
+    <form id="addPriceHistoryForm">
+      <input type="hidden" id="selectedProductId" value=""> <!-- Сюда будет записан ID товара -->
+      <label for="newStoreName">Магазин:</label>
+<select id="newStoreName" required>
+    <option value="">Выберите магазин</option>
+    <option value="DNS">DNS</option>
+    <option value="OZON">OZON</option>
+    <option value="Wildberries">Wildberries</option>
+    <option value="Citilink">Ситилинк</option>
+    <option value="MVideo">М.Видео</option>
+    <option value="Yandex Market">Яндекс Маркет</option>
+    <option value="Eldorado">Эльдорадо</option>
+    <option value="Other">Другой</option>
+</select>
+      <label for="newPrice">Цена:</label>
+      <input type="number" id="newPrice" required>
+      <label for="newDate">Дата:</label>
+      <input type="date" id="newDate" required>
+      <button type="submit">Добавить в историю</button>
+    </form>
+  </div>
+</div>
             <!-- Вкладка Аналитика -->
             <div id="analytics" class="admin-tab-content">
                 <h3>Аналитика системы</h3>

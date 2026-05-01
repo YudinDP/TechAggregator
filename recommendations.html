@@ -39,6 +39,39 @@
             flex-wrap: wrap;
             justify-content: center;
         }
+
+        .recommendations-filters {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr 1fr auto;
+            gap: 0.75rem;
+            align-items: end;
+        }
+
+        .recommendations-filters .filter-col {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+        }
+
+        .recommendations-filters label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #374151;
+        }
+
+        .recommendations-filters input,
+        .recommendations-filters select {
+            width: 100%;
+            padding: 0.55rem 0.7rem;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 0.9rem;
+        }
         
         .tab-btn {
             padding: 1rem 2rem;
@@ -368,6 +401,10 @@
             .page-header h1 {
                 font-size: 2rem;
             }
+
+            .recommendations-filters {
+                grid-template-columns: 1fr 1fr;
+            }
         }
     </style>
 </head>
@@ -406,8 +443,6 @@
     <main class="main">
 <div class="container recommendations-page">
 <div class="page-header">
-<h1>Персональные рекомендации</h1>
-<p>Умный подбор техники на основе ваших предпочтений, популярности и лучших предложений рынка</p>
 </div>
 <div class="recommendations-tabs">
 <button class="tab-btn active" onclick="openTab('popular')">
@@ -423,6 +458,41 @@
 <button class="tab-btn" onclick="openTab('personal')">
 <span>🎯</span> Для вас
 </button>
+<button class="tab-btn" onclick="openTab('priceDrop')">
+    <span>📉</span> Стало дешевле
+</button>
+</div>
+
+<div class="recommendations-filters">
+    <div class="filter-col">
+        <label for="recommendationsSearch">Поиск</label>
+        <input id="recommendationsSearch" type="text" placeholder="Название или характеристика">
+    </div>
+    <div class="filter-col">
+        <label for="recommendationsCategory">Категория</label>
+        <select id="recommendationsCategory">
+            <option value="">Все категории</option>
+        </select>
+    </div>
+    <div class="filter-col">
+        <label for="recommendationsMinPrice">Цена от</label>
+        <input id="recommendationsMinPrice" type="number" min="0" placeholder="0">
+    </div>
+    <div class="filter-col">
+        <label for="recommendationsMaxPrice">Цена до</label>
+        <input id="recommendationsMaxPrice" type="number" min="0" placeholder="Любая">
+    </div>
+    <div class="filter-col">
+        <label for="recommendationsSort">Сортировка</label>
+        <select id="recommendationsSort">
+            <option value="relevance">По релевантности</option>
+            <option value="rating">По рейтингу</option>
+            <option value="price_asc">По цене (возр.)</option>
+            <option value="price_desc">По цене (убыв.)</option>
+            <option value="name">По названию</option>
+        </select>
+    </div>
+    <button id="recommendationsResetFilters" class="btn btn-secondary">Сбросить</button>
 </div>
 
 <div id="popular" class="tab-content active">
@@ -485,7 +555,21 @@
 <!-- Персональные рекомендации будут загружены сюда -->
 </div>
 </div>
-<!-- /НОВАЯ ВКЛАДКА -->
+
+<div id="priceDrop" class="tab-content">
+    <div class="tab-header">
+        <h2>Товары со значительным снижением цены</h2>
+        <button class="refresh-btn" onclick="loadRecommendationsByType('priceDrop')">
+            <span>↻</span> Обновить
+        </button>
+    </div>
+    <p style="color: #6b7280; margin-bottom: 1.5rem;">
+        Техника, которая подешевела за последние 2 недели
+    </p>
+    <div class="products-grid" id="priceDropProducts">
+        <!-- Товары со скидкой будут загружены сюда -->
+    </div>
+</div>
 
 </div> <!-- /.container recommendations-page -->
 </main>

@@ -41,9 +41,9 @@
         <p>Присоединяйтесь к сообществу любителей техники. Получайте персонализированные рекомендации, сравнивайте товары и экономьте время на поиске.</p>
         <div class="features-list">
           <div class="feature-item">Персональные рекомендации</div>
-          <div class="feature-item">Сравнение цен в реальном времени</div>
-          <div class="feature-item">Отслеживание изменения цен</div>
-          <div class="feature-item">Сохраняйте избранные товары и сравнения</div>
+          <div class="feature-item">Сохранение сравнений</div>
+          <div class="feature-item">Избранные товары</div>
+          <div class="feature-item">Отзывы и запросы на добавление техники</div>
         </div>
       </div>
       <div class="auth-content">
@@ -152,7 +152,7 @@
 
 <footer class="footer">
   <div class="container">
-    <p>&copy; 2024 TechAggregator. Все права защищены.</p>
+    <p>&copy; 2026 TechAggregator. Все права защищены.</p>
   </div>
 </footer>
 
@@ -245,12 +245,12 @@ document.getElementById('loginForm').addEventListener('submit', async function (
 
     localStorage.setItem('techAggregatorToken', data.token);
 
-    alert('Вход выполнен успешно!');
+    //alert('Вход выполнен успешно!');
     window.location.href = 'index.html';
 
   } catch (err) {
     console.error('Ошибка входа:', err);
-    alert('Не удалось подключиться к серверу');
+    //alert('Не удалось подключиться к серверу');
   }
 });
 

@@ -85,7 +85,8 @@ onkeypress="handleNavSearchEnter(event)">
 <div id="navSearchSuggestions" class="nav-search-suggestions"></div>
 </div>
 <div class="auth-buttons">
-<a href="auth.html" class="btn btn-outline">Войти</a>
+
+<a href="auth.html?tab=register" class="btn btn-primary">Регистрация</a>
 <a href="auth.html?tab=register" class="btn btn-primary">Регистрация</a>
 </div>
 </div>
@@ -105,15 +106,38 @@ onkeypress="handleNavSearchEnter(event)">
 <!-- Ссылки по категориям -->
   <div style="display: flex; gap: 12px; margin-top: 12px; flex-wrap: wrap; justify-content: center;">
     <a href="catalog.html?category=smartphones" class="btn btn-outline btn-small">📱 Смартфоны</a>
-    <a href="catalog.html?category=laptops" class="btn btn-outline btn-small">💻 Ноутбуки</a>
-    <a href="catalog.html?category=tv" class="btn btn-outline btn-small">📺 Телевизоры</a>
-    <a href="catalog.html?category=headphones" class="btn btn-outline btn-small">🎧 Наушники</a>
-    <a href="catalog.html?category=tablets" class="btn btn-outline btn-small">📱 Планшеты</a>
-    <a href="catalog.html?category=smartwatches" class="btn btn-outline btn-small">⌚ Умные часы</a>
-    <a href="catalog.html?category=cameras" class="btn btn-outline btn-small">📸 Камеры</a>
-    <a href="catalog.html?category=drones" class="btn btn-outline btn-small">🚁 Дроны</a>
-    <a href="catalog.html?category=ereaders" class="btn btn-outline btn-small">📖 Электронные книги</a>
-  </div>
+<a href="catalog.html?category=laptops" class="btn btn-outline btn-small">💻 Ноутбуки</a>
+<a href="catalog.html?category=tv" class="btn btn-outline btn-small">📺 Телевизоры</a>
+<a href="catalog.html?category=headphones" class="btn btn-outline btn-small">🎧 Наушники</a>
+<a href="catalog.html?category=cameras" class="btn btn-outline btn-small">📸 Фотоаппараты</a>
+<a href="catalog.html?category=tablets" class="btn btn-outline btn-small">📟 Планшеты</a>
+<a href="catalog.html?category=smartwatches" class="btn btn-outline btn-small">⌚ Смарт-часы</a>
+<a href="catalog.html?category=ebooks" class="btn btn-outline btn-small">📖 Электронные книги</a>
+<a href="catalog.html?category=drones" class="btn btn-outline btn-small">🚁 Дроны</a>
+<a href="catalog.html?category=pc_components" class="btn btn-outline btn-small">🔧 Комплектующие ПК</a>
+<a href="catalog.html?category=keyboards" class="btn btn-outline btn-small">⌨️ Клавиатуры</a>
+<a href="catalog.html?category=mouses" class="btn btn-outline btn-small">🖱️ Мыши</a>
+<a href="catalog.html?category=cases" class="btn btn-outline btn-small">📦 Корпуса ПК</a>
+<a href="catalog.html?category=drivers" class="btn btn-outline btn-small">💾 Накопители</a>
+<a href="catalog.html?category=fitness_trackers" class="btn btn-outline btn-small">🏃 Фитнес-трекеры</a>
+<a href="catalog.html?category=power_units" class="btn btn-outline btn-small">🔌 Блоки питания</a>
+<a href="catalog.html?category=microphones" class="btn btn-outline btn-small">🎤 Микрофоны</a>
+<a href="catalog.html?category=webcams" class="btn btn-outline btn-small">📷 Веб-камеры</a>
+<a href="catalog.html?category=power_banks" class="btn btn-outline btn-small">🔋 Павербанки</a>
+<a href="catalog.html?category=portable_speakers" class="btn btn-outline btn-small">🔊 Портативные колонки</a>
+<a href="catalog.html?category=monitors" class="btn btn-outline btn-small">🖥️ Мониторы</a>
+<a href="catalog.html?category=accessories" class="btn btn-outline btn-small">🎒 Аксессуары</a>
+<a href="catalog.html?category=gaming" class="btn btn-outline btn-small">🎮 Игровые консоли</a>
+<a href="catalog.html?category=networking" class="btn btn-outline btn-small">🌐 Сетевое оборудование</a>
+<a href="catalog.html?category=cpus" class="btn btn-outline btn-small">⚙️ Процессоры</a>
+<a href="catalog.html?category=motherboards" class="btn btn-outline btn-small">🖧 Материнские платы</a>
+<a href="catalog.html?category=ram" class="btn btn-outline btn-small">🧠 Оперативная память</a>
+<a href="catalog.html?category=graphics_cards" class="btn btn-outline btn-small">🖼️ Видеокарты</a>
+<a href="catalog.html?category=external_drives" class="btn btn-outline btn-small">💿 Внешние накопители</a>
+<a href="catalog.html?category=audio" class="btn btn-outline btn-small">🎵 Аудиосистемы</a>
+<a href="catalog.html?category=smart_home" class="btn btn-outline btn-small">🏠 Умный дом</a>
+<a href="catalog.html?category=wearables" class="btn btn-outline btn-small">👓 Носимые устройства</a>
+<a href="catalog.html?category=other" class="btn btn-outline btn-small">📦 Другое</a></div>
 </div>
 <!-- Описание -->
 <section class="features-section">
@@ -122,13 +146,13 @@ onkeypress="handleNavSearchEnter(event)">
 <div class="features-grid">
 <div class="feature-card enhanced">
 <div class="feature-icon">🤖</div>
-<h4>AI-анализ</h4>
-<p>Автоматическое обновление каталога и мониторинг цен</p>
+<h4>Умный анализ</h4>
+<p>Мониторинг цен и выгоды</p>
 </div>
 <div class="feature-card enhanced">
 <div class="feature-icon">📊</div>
-<h4>Сравнение цен</h4>
-<p>Смотрите актуальные цены из множества магазинов</p>
+<h4>Сравнение</h4>
+<p>Сравнивайте товары, цены, выгоду</p>
 </div>
 <div class="feature-card enhanced">
 <div class="feature-icon">🎯</div>
@@ -308,7 +332,8 @@ function getCategoryName(categoryKey) {
     smartphones: 'Смартфоны',
     laptops: 'Ноутбуки',
     tv: 'Телевизоры',
-    headphones: 'Наушники'
+    headphones: 'Наушники',
+    graphics_cards: 'Видеокарты'
   };
   return names[categoryKey] || categoryKey;
 }

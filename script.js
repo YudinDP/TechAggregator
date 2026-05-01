@@ -5,16 +5,39 @@ let comparisonList = [];
 let favorites = [];
 let currentFilters = {};
 let selectedCheckboxes = {};
+const recommendationStore = {
+  popular: [],
+  trending: [],
+  bestValue: [],
+  personal: [],
+  priceDrop: []
+};
+const recommendationGridIdMap = {
+  popular: 'popularProducts',
+  trending: 'trendingProducts',
+  bestValue: 'bestValueProducts',
+  personal: 'personalProducts',
+  priceDrop: 'priceDropProducts'
+};
+const recommendationFilters = {
+  query: '',
+  category: '',
+  minPrice: '',
+  maxPrice: '',
+  sortBy: 'relevance'
+};
 let demoProducts = []; //Только для совместимости, по факту данные берутся с бд
 let currentAdminTableData = [];
 let currentAdminTableName = '';
 let currentModerationTab = 'reviews';
 let currentPriceHistoryProduct = null;
 let currentPriceHistoryEntries = [];
-// --- ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ ДЛЯ ПОИСКА В ТАБЛИЦЕ ---
+//Глобальные переменные для поиска в таблице
 let currentTableSearchField = '';
 let currentTableSearchValue = '';
-//=== КАРТА ПЕРЕВОДА КЛЮЧЕЙ ХАРАКТЕРИСТИК НА РУССКИЙ ===
+let priceHistoryChartInstance = null;
+let similarModeTargetId = null;
+//Карта перевода ключей
 window.specKeyTranslations = {
   //Смартфоны
   'screen_size': 'Экран',
@@ -205,6 +228,325 @@ window.specKeyTranslations = {
 window.demoProducts = demoProducts;
 console.log('demoProducts доступна глобально, количество:', demoProducts.length);
 
+const VALUE_CALCULATOR_CONFIG = {
+    smartphones: {
+        baseScore: 60,
+        weights: {
+            ram_size: 1,
+            storage_capacity: 0.1,
+            battery_capacity_mah: 0.005,
+            screen_refresh_rate: 1.5,
+            rear_camera_primary_mp: 0.3,
+            weight_g: -0.05
+        },
+        bonuses: {
+            cpu_model: {
+                'apple a1': 25, 'snapdragon 8': 25, 'snapdragon 7': 15,
+                'dimensity 9': 25, 'dimensity 8': 15, 'exynos 2': 15,
+                'core i9': 25, 'core i7': 25
+            },
+            screen_technology: {
+                'oled': 25, 'amoled': 20, 'super amoled': 22,
+                'ips': 5, 'lcd': 2
+            },
+            water_resistance: { 'ip68': 15, 'ip67': 10 },
+            connectivity: { '5g': 15, 'nfc': 10 }
+        },
+        scale: 10000
+    },
+    laptops: {
+        baseScore: 30,
+        weights: {
+            ram_size: 5,
+            storage_capacity: 0.15,
+            battery_life_hours: 2,
+            weight_g: -0.02
+        },
+        bonuses: {
+            cpu_model: {
+                'core i9': 30, 'ryzen 9': 28, 'core i7': 20, 'ryzen 7': 18,
+                'apple m3': 35, 'apple m2': 25, 'apple m1': 20
+            },
+            gpu_model: { 'rtx 40': 30, 'rtx 30': 20, 'geforce': 10, 'radeon rx': 15 },
+            screen_type: { 'oled': 25, 'ips': 10 },
+            keyboard_backlight: { 'есть': 5 }
+        },
+        scale: 10000
+    },
+    tv: {
+        baseScore: 40,
+        weights: { diagonal_in: 8, sound_power_w: 1 },
+        bonuses: {
+            screen_resolution: { '8k': 50, '4k': 20, 'ultra hd': 20 },
+            screen_technology: { 'oled': 60, 'qled': 40, 'miniled': 30, 'led': 0 },
+            smart_platform: { 'google tv': 10, 'android tv': 10, 'webos': 8, 'tizen': 8 },
+            hdr_support: { 'dolby vision': 15, 'hdr10+': 10, 'hdr10': 5 }
+        },
+        scale: 10000
+    },
+    headphones: {
+        baseScore: 15,
+        weights: { battery_life_hours: 3, driver_size_mm: 0.5, weight_g: -0.05 },
+        bonuses: {
+            anc_type: { 'active': 25, 'гибридное': 20, 'адаптивное': 20 },
+            connectivity: { 'bluetooth 5.3': 10, 'bluetooth 5.2': 5 },
+            controls_touch: { 'есть': 5 }
+        },
+        scale: 10000
+    },
+    tablets: {
+        baseScore: 25,
+        weights: { screen_size: 10, ram_size: 5, storage_capacity: 0.15, battery_capacity_mah: 0.003 },
+        bonuses: {
+            screen_technology: { 'oled': 20, 'ips': 10 },
+            stylus_support: { 'есть': 15 }
+        },
+        scale: 10000
+    },
+    cameras: {
+        baseScore: 50,
+        weights: { sensor_resolution_mp: 1.5, iso_range: 0.05 },
+        bonuses: {
+            sensor_size: { 'full frame': 50, 'aps-c': 20, 'micro 4/3': 10 },
+            video_resolution: { '8k': 30, '4k': 15 },
+            image_stabilization: { 'есть': 15 }
+        },
+        scale: 10000
+    },
+    smartwatches: {
+        baseScore: 15,
+        weights: { battery_life_hours: 2 },
+        bonuses: {
+            gps_type: { 'gps': 10, 'glonass': 10 },
+            nfc_support: { 'есть': 15 },
+            water_resistance_rating: { '5atm': 10, '10atm': 15, 'ip68': 5 },
+            ecg_support: { 'есть': 10 }
+        },
+        scale: 10000
+    },
+    ebooks: {
+        baseScore: 10,
+        weights: { storage_available_gb: 2, battery_standby_days: 1 },
+        bonuses: {
+            screen_frontlight: { 'есть': 10 },
+            water_resistance: { 'есть': 10 }
+        },
+        scale: 10000
+    },
+    drones: {
+        baseScore: 20,
+        weights: { range: 2, weight_g: -0.05 },
+        bonuses: {
+            camera_gimbal: { 'есть': 20 },
+            obstacle_avoidance: { 'есть': 15 },
+            video_resolution: { '4k': 15 }
+        },
+        scale: 10000
+    },
+    default: { baseScore: 35, weights: {}, bonuses: {}, scale: 10000 }
+};
+
+//Извлекает первое числовое значение из строки характеристики
+function extractSpecNumber(value) {
+    if (!value) return 0;
+    const str = String(value).toLowerCase().replace(/,/g, '.');
+    const match = str.match(/(\d+\.?\d*)/);
+    return match ? parseFloat(match[1]) : 0;
+}
+
+//Ищет бонусы по ключевым словам в значении характеристики
+function getSpecBonuses(specKey, specValue, configBonuses) {
+    if (!configBonuses || !configBonuses[specKey]) return 0;
+    const valueLower = String(specValue).toLowerCase();
+    let bonus = 0;
+    for (const [keyword, score] of Object.entries(configBonuses[specKey])) {
+        if (valueLower.includes(keyword.toLowerCase())) {
+            bonus += score;
+            break;
+        }
+    }
+    return bonus;
+}
+
+async function getMarketPrice(productId) {
+    try {
+        //1. Пробуем получить актуальные цены из таблицы Price
+        const pricesRes = await fetch(`http://localhost:3000/api/products/${productId}/prices`);
+        if (pricesRes.ok) {
+            const prices = await pricesRes.json();
+            if (prices && prices.length > 0) {
+                const validPrices = prices.map(p => p.price).filter(p => p > 0);
+                if (validPrices.length > 0) {
+                    const sum = validPrices.reduce((acc, p) => acc + p, 0);
+                    return sum / validPrices.length;
+                }
+            }
+        }
+        
+        //2. Если актуальных цен нет, берём последние записи из истории
+        const historyRes = await fetch(`http://localhost:3000/api/products/${productId}/price-history`);
+        if (historyRes.ok) {
+            const history = await historyRes.json();
+            let latestPrices = [];
+            
+            for (const storeName in history) {
+                if (Array.isArray(history[storeName]) && history[storeName].length > 0) {
+                    //Сортируем по дате и берём последнюю запись для каждого магазина
+                    const sorted = [...history[storeName]].sort((a, b) => new Date(b.x) - new Date(a.x));
+                    if (sorted[0]?.y > 0) {
+                        latestPrices.push(sorted[0].y);
+                    }
+                }
+            }
+            
+            if (latestPrices.length > 0) {
+                const sum = latestPrices.reduce((acc, p) => acc + p, 0);
+                return sum / latestPrices.length;
+            }
+        }
+    } catch (e) {
+        console.warn(' Не удалось получить рыночную цену:', e);
+    }
+    return null;
+}
+
+function calculateValueScore(product, price, marketPrice = null) {
+    if (!price || price <= 0) return 0;
+
+    const config = VALUE_CALCULATOR_CONFIG[product.category] || VALUE_CALCULATOR_CONFIG.default;
+    let perfScore = config.baseScore;
+    const specs = product.specs || {};
+
+    //1. Считаем числовые характеристики
+    for (const [key, weight] of Object.entries(config.weights)) {
+        if (specs[key]) {
+            const val = extractSpecNumber(specs[key]);
+            perfScore += val * weight;
+        }
+    }
+
+    //2. Считаем бонусы за "качество" (процессор, тип экрана и т.д.)
+    if (config.bonuses) {
+        for (const key of Object.keys(config.bonuses)) {
+            if (specs[key]) {
+                perfScore += getSpecBonuses(key, specs[key], config.bonuses);
+            }
+        }
+    }
+
+    //3. Корректировка на основе соотношения с рыночной ценой
+    let priceFactor = 1;
+    if (marketPrice && marketPrice > 0 && price > 0) {
+        //priceFactor > 1 если цена ниже рынка (бонус), < 1 если выше (штраф)
+        priceFactor = marketPrice / price;
+        //Ограничиваем влияние ценового фактора разумными пределами (0.5 - 2.0)
+        priceFactor = Math.max(3, Math.min(4, priceFactor));
+    }
+
+    //Итоговая формула: (Мощность * ЦеновойФактор / ПользовательскаяЦена) * Масштаб
+    return Math.round(((perfScore * priceFactor / price) * config.scale) * 10) / 10;
+}
+
+function getValueInterpretation(score) {
+    if (score >= 70) return { text: "Отличная цена! ", color: "#059669", width: "100%" };
+    if (score >= 55) return { text: "Хорошая цена ", color: "#10b981", width: "90%" };
+    if (score >= 40) return { text: "Выгодная цена ", color: "#3b82f6", width: "75%" };
+    if (score >= 25) return { text: "Средняя цена ", color: "#f59e0b", width: "60%" };
+    if (score >= 15) return { text: "Цена завышена ", color: "#ef4444", width: "40%" };
+    return { text: "Не рекомендуется ", color: "#991b1b", width: "20%" };
+}
+
+async function renderValueCalculator(product, container) {
+    console.log(' renderValueCalculator:', product?.name, 'Категория:', product?.category);
+    if (!container || !product) return;
+
+    //Поиск минимальной цены из доступных в продукте
+    const priceValues = (product.prices || []).map(p => p.price).filter(p => p > 0);
+    const minPrice = priceValues.length > 0 ? Math.min(...priceValues) : 10000;
+
+    //Рендерим UI сразу, чтобы пользователь не ждал
+    container.innerHTML = `
+        <div class="value-calc-block">
+            <h3 style="margin: 0 0 10px; font-size: 1.1rem; color: #1e293b;">💡 Калькулятор выгоды</h3>
+            <p style="margin: 0 0 15px; color: #64748b; font-size: 0.9rem;">
+                Система отталкивается не только от рыночной цены, но и от характеристик
+            </p>
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
+                <label style="font-weight: 500;">Цена (₽):</label>
+                <input type="number" class="calc-price-input" value="${minPrice}" step="100" min="0"
+                       style="width: 140px; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 1rem;">
+            </div>
+            <div class="calc-result-box" style="background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                <div class="calc-bar-bg" style="height: 10px; background: #e5e7eb; border-radius: 5px; overflow: hidden; margin-bottom: 10px;">
+                    <div class="calc-bar-fill" style="height: 100%; width: 0%; background: #3b82f6; transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);"></div>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                    <span style="font-size: 0.95rem; color: #475569;">Индекс выгоды:</span>
+                    <strong class="calc-score-value" style="font-size: 1.3rem; color: #0f172a;">—</strong>
+                </div>
+                <div class="calc-interpretation" style="font-weight: 600; font-size: 0.95rem;"></div>
+                <div class="market-price-display" style="margin-top: 8px; font-size: 0.85rem; color: #64748b; min-height: 1.2em;"></div>
+            </div>
+        </div>
+    `;
+
+    const input = container.querySelector('.calc-price-input');
+    const barFill = container.querySelector('.calc-bar-fill');
+    const scoreVal = container.querySelector('.calc-score-value');
+    const interpVal = container.querySelector('.calc-interpretation');
+    const marketPriceDisplay = container.querySelector('.market-price-display');
+
+    if (!input || !barFill || !scoreVal || !interpVal || !marketPriceDisplay) {
+        console.error('renderValueCalculator: не удалось найти элементы калькулятора');
+        return;
+    }
+
+    //Загружаем рыночную цену асинхронно
+    let marketPrice = null;
+    if (product.id) {
+        marketPriceDisplay.textContent = '📊 Загрузка рыночной цены...';
+        try {
+            marketPrice = await getMarketPrice(product.id);
+            if (marketPrice && marketPriceDisplay) {
+                marketPriceDisplay.textContent = `📊 Средняя рыночная цена: ${Math.round(marketPrice).toLocaleString('ru-RU')} ₽`;
+            } else if (marketPriceDisplay) {
+                marketPriceDisplay.textContent = '📊 Рыночная цена: данные недоступны';
+            }
+        } catch (e) {
+            console.warn('⚠️ Ошибка загрузки рыночной цены:', e);
+            if (marketPriceDisplay) {
+                marketPriceDisplay.textContent = '📊 Рыночная цена: ошибка загрузки';
+            }
+        }
+    }
+
+    //Функция обновления расчёта
+    const updateCalc = () => {
+        try {
+            const price = parseFloat(input.value) || 0;
+            const score = calculateValueScore(product, price, marketPrice);
+            const interp = getValueInterpretation(score);
+
+            scoreVal.textContent = score.toFixed(1);
+            interpVal.textContent = interp.text;
+            interpVal.style.color = interp.color;
+            barFill.style.width = interp.width;
+            barFill.style.background = interp.color;
+        } catch (e) {
+            console.error('💥 Ошибка в updateCalc:', e);
+        }
+    };
+
+    //Вешаем обработчики событий на поле ввода
+    ['input', 'change', 'keyup'].forEach(evt => {
+        input.addEventListener(evt, updateCalc);
+    });
+
+    //Первый запуск расчёта
+    updateCalc();
+}
+
+
 //Инициализация
 document.addEventListener('DOMContentLoaded', function() {
     initializeApp();
@@ -247,12 +589,32 @@ async function initializeApp() {
 
 //===================== КАТАЛОГ И ФИЛЬТРЫ =====================
 
-//=== ИНИЦИАЛИЗАЦИЯ КАТАЛОГА ===
 function initializeCatalog() {
-  //Загружаем параметры из URL
-  loadFiltersFromURL();
-  //Отображаем товары (уже из API)
-  displayProducts(demoProducts);
+    const urlParams = new URLSearchParams(window.location.search);
+    const initialCategory = urlParams.get('category');
+    const similarTo = urlParams.get('similarTo'); //Читаем параметр режима "Похожее"
+
+    //Если есть режим "Похожее", сохраняем ID целевого товара
+    if (similarTo) {
+        similarModeTargetId = parseInt(similarTo, 10);
+    }
+
+    //Загружаем список категорий
+    loadCategories();
+
+    //Если в URL есть параметр category, выбираем её в селекторе и фильтруем
+    if (initialCategory) {
+        const categorySelect = document.getElementById('categorySelect');
+        if (categorySelect) {
+            categorySelect.value = initialCategory;
+            updateFilters();
+            filterProducts();
+        }
+    }
+    
+    //Обновляем баннер похожести и загружаем товары
+    updateSimilarModeBanner();
+    loadProductsFromAPI();
 }
 
 //Загрузка фильтров из url при переходе по ссылке
@@ -280,11 +642,11 @@ function updateFilters() {
   const category = categorySelect ? categorySelect.value : '';
   const dynamicFilters = document.getElementById('dynamicFilters');
 
-  // Сбрасываем выбранные чекбоксы для предыдущей категории
+  //Сбрасываем выбранные чекбоксы для предыдущей категории
   selectedCheckboxes = {};
 
   if (category && demoProducts && demoProducts.length > 0) {
-    // 1. Найдём все товары текущей категории
+    //1. Найдём все товары текущей категории
     const productsInCategory = demoProducts.filter(p => p.category === category);
 
     if (productsInCategory.length === 0) {
@@ -298,7 +660,7 @@ function updateFilters() {
       return;
     }
 
-    // 2. Соберём все уникальные ключи характеристик для этой категории
+    //2. Соберём все уникальные ключи характеристик для этой категории
     const uniqueSpecKeys = new Set();
     productsInCategory.forEach(product => {
       if (product.specs) {
@@ -306,29 +668,29 @@ function updateFilters() {
       }
     });
 
-    // 3. Для каждого ключа соберём уникальные *значения*
+    //3. Для каждого ключа соберём уникальные *значения*
     const filtersForCategory = [];
     uniqueSpecKeys.forEach(key => {
       const valuesSet = new Set();
       productsInCategory.forEach(product => {
         if (product.specs && product.specs[key]) {
-          // Нормализуем значение перед добавлением в Set
+          //Нормализуем значение перед добавлением в Set
           const normalizedValue = normalizeFilterValue(product.specs[key]);
           valuesSet.add(normalizedValue);
         }
       });
-      // Пропускаем ключи с очень большим количеством уникальных значений (например, цены)
-      if (valuesSet.size > 0 && valuesSet.size <= 20) { // Порог, можно изменить
+      //Пропускаем ключи с очень большим количеством уникальных значений (например, цены)
+      if (valuesSet.size > 0 && valuesSet.size <= 20) { //Порог, можно изменить
         filtersForCategory.push({
-          name: key, // Используем оригинальный ключ из specs
-          label: specKeyTranslations[key] || key, // Русское название или ключ
+          name: key, //Используем оригинальный ключ из specs
+          label: specKeyTranslations[key] || key, //Русское название или ключ
           type: 'checkbox',
-          options: [...valuesSet].sort() // Сортируем значения
+          options: [...valuesSet].sort() //Сортируем значения
         });
       }
     });
 
-    // 4. Сгенерируем HTML для фильтров
+    //4. Сгенерируем HTML для фильтров
     dynamicFilters.innerHTML = `
       <h4 style="margin: 1.5rem 0 1rem; color: #374151; font-size: 1.1rem;">
         Характеристики ${getCategoryName(category)}
@@ -379,7 +741,7 @@ function updateFilters() {
     `;
   }
 
-  // Обновляем счётчики и отображение
+  //Обновляем счётчики и отображение
   filterProducts();
 }
 
@@ -418,76 +780,110 @@ function clearCheckboxes(filterName) {
 
 //Фильтры
 function filterProducts() {
-  const categorySelect = document.getElementById('categorySelect');
-  const category = categorySelect ? categorySelect.value : '';
-  const minPriceInput = document.getElementById('minPrice');
-  const minPrice = minPriceInput && minPriceInput.value ? parseFloat(minPriceInput.value) : 0;
-  const maxPriceInput = document.getElementById('maxPrice');
-  const maxPrice = maxPriceInput && maxPriceInput.value ? parseFloat(maxPriceInput.value) : Infinity;
-  const sortSelect = document.getElementById('sortSelect');
-  const sortBy = sortSelect ? sortSelect.value : 'name';
+    const categorySelect = document.getElementById('categorySelect');
+    const category = categorySelect ? categorySelect.value : '';
+    const minPriceInput = document.getElementById('minPrice');
+    const minPrice = minPriceInput && minPriceInput.value ? parseFloat(minPriceInput.value) : 0;
+    const maxPriceInput = document.getElementById('maxPrice');
+    const maxPrice = maxPriceInput && maxPriceInput.value ? parseFloat(maxPriceInput.value) : Infinity;
+    const sortSelect = document.getElementById('sortSelect');
+    const sortBy = sortSelect ? sortSelect.value : 'name';
 
-  // Добавляем minPrice и brand ко всем товарам (для удобства фильтрации/сортировки)
-  let filtered = demoProducts.map(p => ({
-    ...p,
-    minPrice: p.prices && p.prices.length > 0 ? Math.min(...p.prices.map(pr => pr.price)) : null,
-    brand: p.name.split(' ')[0] || ''
-  }));
+    //1. Создаём массив товаров с вычисленной minPrice (это важно для корректной работы)
+    let filtered = demoProducts.map(p => ({
+        ...p,
+        minPrice: p.prices && p.prices.length > 0 ? Math.min(...p.prices.map(pr => pr.price)) : null,
+        brand: p.name.split(' ')[0] || ''
+    }));
 
-  // 1. Фильтрация по категории
-  if (category) {
-    filtered = filtered.filter(p => p.category === category);
-  }
+    //Проверяем, включен ли режим и есть ли товары
+    if (similarModeTargetId && filtered.length > 0) {
+        //Ищем целевой товар В ОБНОВЛЕННОМ массиве (где уже есть minPrice)
+        const target = filtered.find(p => p.id === similarModeTargetId);
+        
+        if (target) {
+            console.log(`🔍 Поиск похожего для: ${target.name} (Цена: ${target.minPrice})`);
+            
+            //Расширяем диапазон до ±50% (было ±30%), чтобы находилось больше товаров
+            const targetPrice = target.minPrice || 0;
+            const minRange = targetPrice * 0.5; 
+            const maxRange = targetPrice * 1.5; 
 
-  // 2. Фильтрация по цене
-  filtered = filtered.filter(p => {
-    const price = p.minPrice || 0;
-    return price >= minPrice && price <= maxPrice;
-  });
+            filtered = filtered.filter(p => {
+                //Исключаем сам исходный товар
+                if (p.id === target.id) return false;
+                
+                //Обязательно та же категория
+                if (p.category !== target.category) return false;
 
-  // 3. Фильтрация по чекбоксам (динамические фильтры по характеристикам)
-  // Object.keys(selectedCheckboxes) перебирает имена фильтров (specKey)
-  Object.keys(selectedCheckboxes).forEach(specKey => {
-    const selectedValues = selectedCheckboxes[specKey];
-    if (selectedValues.length > 0) {
-      // filtered = filtered.filter(product => { ... })
-      // selectedValues.some(value => matchFilter(product, specKey, value))
-      filtered = filtered.filter(product =>
-        selectedValues.some(value => matchFilter(product, specKey, value))
-      );
+                //Проверка цены (если цена у товара есть)
+                if (p.minPrice !== null) {
+                    if (p.minPrice < minRange || p.minPrice > maxRange) return false;
+                }
+                
+                return true;
+            });
+            console.log(`✅ Найдено похожих товаров: ${filtered.length}`);
+        } else {
+            console.warn('⚠️ Целевой товар не найден в базе, показываем всё');
+            //Если товар вдруг удалили из базы, сбрасываем режим
+            exitSimilarMode();
+        }
     }
-  });
+    //=== КОНЕЦ РЕЖИМА ===
 
-  // 4. Сортировка
-  if (sortBy) {
-    filtered = sortProductsList(filtered, sortBy);
-  }
+    //3. Фильтрация по категории (Только если мы НЕ в режиме "Похожее")
+    //В режиме "Похожее" категория уже отфильтрована выше
+    if (category && !similarModeTargetId) {
+        filtered = filtered.filter(p => p.category === category);
+    }
 
-  // 5. Обновляем UI
-  updateProductsInfo(filtered.length, category);
-  displayProducts(filtered); // ← передаём уже обогащённые и отфильтрованные товары
+    //4. Фильтрация по цене (слайдеры/поля ввода)
+    filtered = filtered.filter(p => {
+        const price = p.minPrice || 0;
+        return price >= minPrice && price <= maxPrice;
+    });
+
+    //5. Фильтрация по чекбоксам (характеристики)
+    Object.keys(selectedCheckboxes).forEach(specKey => {
+        const selectedValues = selectedCheckboxes[specKey];
+        if (selectedValues.length > 0) {
+            filtered = filtered.filter(product =>
+                selectedValues.some(value => matchFilter(product, specKey, value))
+            );
+        }
+    });
+
+    //6. Сортировка
+    if (sortBy) {
+        filtered = sortProductsList(filtered, sortBy);
+    }
+
+    //7. Обновляем UI
+    updateProductsInfo(filtered.length, category);
+    displayProducts(filtered);
 }
 
 //Сопоставление фильтров
 function matchFilter(product, specKey, filterValue) {
-  // Получаем значение характеристики из specs товара
+  //Получаем значение характеристики из specs товара
   const specValue = product.specs?.[specKey];
 
-  // Если характеристики нет, или значение пустое, товар не подходит
+  //Если характеристики нет, или значение пустое, товар не подходит
   if (specValue == null || specValue === '') {
     return false;
   }
 
-  // Нормализуем значения для сравнения
+  //Нормализуем значения для сравнения
   const normSpecValue = normalizeFilterValue(specValue);
   const normFilterValue = normalizeFilterValue(filterValue);
 
-  // Проверяем точное совпадение
+  //Проверяем точное совпадение
   if (normSpecValue === normFilterValue) {
     return true;
   }
 
-  // Дополнительно: проверим, является ли specValue списком/массивом (если хранится как строка через запятую или точку с запятой)
+  //Дополнительно: проверим, является ли specValue списком/массивом (если хранится как строка через запятую или точку с запятой)
   if (typeof specValue === 'string') {
     const possibleValues = specValue.split(/[,;]/).map(v => normalizeFilterValue(v.trim()));
     if (possibleValues.includes(normFilterValue)) {
@@ -495,8 +891,8 @@ function matchFilter(product, specKey, filterValue) {
     }
   }
 
-  // Для числовых диапазонов (например, "До 4000 mAh", "Свыше 5000 mAh")
-  // Проверим, начинается ли filterValue с "до" или "свыше"
+  //Для числовых диапазонов (например, "До 4000 mAh", "Свыше 5000 mAh")
+  //Проверим, начинается ли filterValue с "до" или "свыше"
   if (normFilterValue.startsWith('до')) {
     const thresholdMatch = normFilterValue.match(/до\s*(\d+)/i);
     if (thresholdMatch) {
@@ -521,28 +917,28 @@ function matchFilter(product, specKey, filterValue) {
 
   return false;
 }
-// --- /ОБНОВЛЁННАЯ ФУНКЦИЯ ---
 
-// --- ВСПОМОГАТЕЛЬНАЯ ФУНКЦИЯ НОРМАЛИЗАЦИИ ---
-// normalizeFilterValue - Нормализует значение характеристики для сравнения
+
+
+//Нормализует значение характеристики для сравнения
 function normalizeFilterValue(str) {
   if (typeof str !== 'string') {
-    // Если значение не строка (например, число), преобразуем в строку
+    //Если значение не строка (например, число), преобразуем в строку
     str = String(str);
   }
   return str
     .toLowerCase()
     .trim()
-    .replace(/\s+/g, '') // Убираем все пробелы
-    .replace(/гб|gb/i, 'gb') // Приводим "ГБ", "гигабайт" к "gb"
+    .replace(/\s+/g, '') //Убираем все пробелы
+    .replace(/гб|gb/i, 'gb') //Приводим "ГБ", "гигабайт" к "gb"
     .replace(/мб|mb/i, 'mb')
     .replace(/кб|kb/i, 'kb')
     .replace(/тб|tb/i, 'tb')
     .replace(/дюйм|дюймы|inch/i, 'inch')
     .replace(/вт|w/i, 'w')
-    .replace(/мач|mac/i, 'mac') // Пример для процессоров
-    .replace(/core\s*i(\d)/i, 'corei$1') // Пример: "Core i7" -> "corei7"
-    // ... добавьте другие правила нормализации по мере необходимости ...
+    .replace(/мач|mac/i, 'mac') //Пример для процессоров
+    .replace(/core\s*i(\d)/i, 'corei$1') 
+    
     ;
 }
 
@@ -677,7 +1073,7 @@ function initializeProductPage() {
 
       //Отображаем товар
       displayProduct(product);
-
+      trackProductView(productId);
       //Загружаем отзывы
       loadProductReviews(productId);
 
@@ -701,7 +1097,7 @@ function displayProduct(product) {
   document.getElementById('loading').style.display = 'none';
   document.getElementById('productContent').style.display = 'block';
 
-  //Обновляем хлебные крошки и заголовок
+ 
   document.getElementById('productTitle').textContent = product.name;
   document.getElementById('productCategory').textContent = getCategoryName(product.category);
   document.getElementById('productName').textContent = product.name;
@@ -718,16 +1114,15 @@ function displayProduct(product) {
     mainImage.alt = product.name;
   }
 
-  //=== ХАРАКТЕРИСТИКИ — ВЕРТИКАЛЬНО ===
   const specsList = document.getElementById('productSpecs');
   if (specsList) {
 
     specsList.innerHTML = Object.entries(product.specs || {}).map(([key, value]) => {
       //Получаем русское название из словаря
-      const russianName = specKeyTranslations[key] || key; 
+      const russianName = specKeyTranslations[key] || key;
       return `
         <div class="spec-item">
-          <span>${russianName}:</span> <!-- ← Выводим русское название -->
+          <span>${russianName}:</span> 
           <span>${value}</span>
         </div>
       `;
@@ -737,7 +1132,11 @@ function displayProduct(product) {
   //Цены с графиками
   const priceList = document.getElementById('priceList');
   if (priceList && product.prices) {
-    priceList.innerHTML = product.prices.map(price => `
+    
+    const sortedPrices = [...product.prices].sort((a, b) => a.price - b.price);
+    
+
+    priceList.innerHTML = sortedPrices.map(price => `
       <div class="price-item">
         <div class="store-info">${price.store}</div>
         <div>${formatPrice(price.price)} ₽</div>
@@ -746,24 +1145,24 @@ function displayProduct(product) {
     `).join('');
   }
 
-  //=== ИСТОРИЯ ЦЕН (ГРАФИК) ===
-  const historySection = document.getElementById('priceChartContainer'); //Убедитесь, что ID совпадает
+  const historySection = document.getElementById('priceChartContainer'); 
   if (historySection) {
 
-    //Загружаем и отрисовываем график истории цен
-    loadAndRenderPriceHistory(product.id);
+    
   } else {
      console.warn('Контейнер для графика истории цен (#priceChartContainer) не найден на странице.');
   }
 
-  //Отзывы 
+  //Отзывы
   loadProductReviews(product.id);
+
+  loadAndRenderPriceHistory(product.id, product.prices || []);
+  renderValueCalculator(product, document.getElementById('valueCalculatorContainer'));
   
-  loadAndRenderPriceHistory(product.id);
 }
 
 //Загрузка и формат данных по истории цен
-async function loadAndRenderPriceHistory(productId) {
+async function loadAndRenderPriceHistory(productId, currentPrices = []) {
   console.log(`Requesting price history for product ID: ${productId}`);
 
   //Показываем индикатор загрузки, скрываем canvas (если он был)
@@ -789,6 +1188,8 @@ async function loadAndRenderPriceHistory(productId) {
 
     //Вызываем функцию для отрисовки графика
     renderPriceChart(container, priceHistoryData);
+    renderGeneralPriceInsights(currentPrices, priceHistoryData);
+    renderStorePriceInsights(currentPrices, priceHistoryData);
 
   } catch (error) {
     console.error('Error loading price history:', error);
@@ -796,6 +1197,8 @@ async function loadAndRenderPriceHistory(productId) {
     if (loadingDiv) loadingDiv.style.display = 'none';
     //Показываем сообщение об ошибке в контейнере
     container.innerHTML = `<p style="color: red; text-align: center;">Ошибка загрузки истории цен: ${error.message}</p>`;
+    renderGeneralPriceInsights(currentPrices, {});
+    renderStorePriceInsights(currentPrices, {});
   }
 }
 
@@ -912,6 +1315,335 @@ function renderPriceChart(container, data) {
   } catch (error) {
     console.error("Ошибка при создании основного графика:", error);
   }
+}
+
+function renderGeneralPriceInsights(currentPrices, priceHistoryData) {
+  const insightsEl = document.getElementById('priceInsightsGeneral');
+  if (!insightsEl) return;
+
+  const normalizedPrices = Array.isArray(currentPrices)
+    ? currentPrices
+        .map((item) => ({
+          store: item.store || item.storeName || 'Магазин',
+          price: Number(item.price)
+        }))
+        .filter((item) => Number.isFinite(item.price) && item.price > 0)
+    : [];
+
+  if (!normalizedPrices.length) {
+    insightsEl.className = 'price-insights price-insights--neutral';
+    insightsEl.innerHTML = `
+      <h3>Общая аналитика</h3>
+      <p>Недостаточно данных по текущим ценам для точной рекомендации.</p>
+    `;
+    return;
+  }
+
+  const avgMarketPrice = normalizedPrices.reduce((sum, item) => sum + item.price, 0) / normalizedPrices.length;
+  const bestOffer = [...normalizedPrices].sort((a, b) => a.price - b.price)[0];
+  const historyStoreKey = findHistoryStoreKey(priceHistoryData, bestOffer.store);
+  const selectedStoreHistory = normalizeStoreHistory((historyStoreKey && priceHistoryData?.[historyStoreKey]) || []);
+  const selectedStoreTrend = calculateRecentTrend(selectedStoreHistory);
+  const productTrend = calculateProductTrend(priceHistoryData, normalizedPrices);
+  const productForecast = forecastPrice(productTrend.allPoints, avgMarketPrice);
+
+  const evaluation = evaluatePriceSituation(bestOffer.price, avgMarketPrice, selectedStoreTrend);
+  const status = evaluation.status;
+  const decisionText = evaluation.decisionText;
+
+  const marketDeltaPct = ((bestOffer.price - avgMarketPrice) / avgMarketPrice) * 100;
+  const productTrendText = describeTrend(productTrend.trend);
+  const productForecastText = describeForecast(productForecast, 'по рынку в целом');
+
+  insightsEl.className = `price-insights price-insights--${status}`;
+  insightsEl.innerHTML = `
+    <h3>Общая аналитика</h3>
+    <p><strong>Рекомендация:</strong> ${decisionText}</p>
+    <p>Лучшая цена сейчас: <strong>${formatPrice(bestOffer.price)} ₽</strong> (${bestOffer.store}), это ${marketDeltaPct >= 0 ? 'на' : 'ниже на'} <strong>${Math.abs(marketDeltaPct).toFixed(1)}%</strong> относительно средней цены по магазинам (${formatPrice(avgMarketPrice)} ₽).</p>
+    <p><strong>Тренд товара (по всем магазинам):</strong> ${productTrendText}</p>
+    <p><strong>Прогноз по товару:</strong> ${productForecastText}</p>
+  `;
+}
+
+function renderStorePriceInsights(currentPrices, priceHistoryData) {
+  const listEl = document.getElementById('storeInsightsList');
+  if (!listEl) return;
+
+  const normalizedPrices = Array.isArray(currentPrices)
+    ? currentPrices
+        .map((item) => ({
+          store: item.store || item.storeName || 'Магазин',
+          price: Number(item.price)
+        }))
+        .filter((item) => Number.isFinite(item.price) && item.price > 0)
+    : [];
+
+  if (!normalizedPrices.length) {
+    listEl.innerHTML = `
+      <div class="store-insight-card price-insights--neutral">
+        <h4>Аналитика по магазинам</h4>
+        <p>Недостаточно данных для расчёта.</p>
+      </div>
+    `;
+    return;
+  }
+
+  const avgMarketPrice = normalizedPrices.reduce((sum, item) => sum + item.price, 0) / normalizedPrices.length;
+  const sortedByPrice = [...normalizedPrices].sort((a, b) => a.price - b.price);
+
+  listEl.innerHTML = sortedByPrice.map((storeEntry) => {
+    const storeColor = getStoreColor(storeEntry.store);
+    const cardBg = hexToRgba(storeColor, 0.16);
+    const historyStoreKey = findHistoryStoreKey(priceHistoryData, storeEntry.store);
+    const storeHistory = normalizeStoreHistory((historyStoreKey && priceHistoryData?.[historyStoreKey]) || []);
+    const storeTrend = calculateRecentTrend(storeHistory);
+    const storeForecast = forecastPrice(storeHistory, storeEntry.price);
+    const evaluation = evaluatePriceSituation(storeEntry.price, avgMarketPrice, storeTrend);
+    const diffPct = ((storeEntry.price - avgMarketPrice) / avgMarketPrice) * 100;
+
+    return `
+      <div class="store-insight-card price-insights--${evaluation.status}" style="background: ${cardBg}; border-color: ${storeColor}; color: #111111;">
+        <h4 style="color: #111111;">${storeEntry.store}</h4>
+        <p><strong>Цена:</strong> ${formatPrice(storeEntry.price)} ₽ (${diffPct >= 0 ? '+' : ''}${diffPct.toFixed(1)}% к рынку)</p>
+        <p><strong>Изменение за период:</strong> ${describeRecentDelta(storeTrend)}</p>
+        <p><strong>Тренд:</strong> ${describeTrendShort(storeTrend)}</p>
+        <p><strong>Прогноз:</strong> ${describeForecastShort(storeForecast)}</p>
+        <p><strong>Рекомендация:</strong> ${evaluation.shortDecision}</p>
+      </div>
+    `;
+  }).join('');
+}
+
+function evaluatePriceSituation(price, avgMarketPrice, trend) {
+  const isBelowMarket = price <= avgMarketPrice * 0.98;
+  const isAboveMarket = price >= avgMarketPrice * 1.02;
+  const isStoreDeclining = trend.direction === 'down';
+  const isStoreGrowing = trend.direction === 'up';
+
+  if (isBelowMarket && isStoreDeclining) {
+    return {
+      status: 'buy',
+      decisionText: 'Сейчас выгодная цена: предложение ниже среднерыночного уровня, и у этого магазина цена снижалась в последнее время. Покупать разумно сейчас.',
+      shortDecision: 'Можно покупать сейчас.'
+    };
+  }
+
+  if (isAboveMarket || isStoreGrowing) {
+    return {
+      status: 'wait',
+      decisionText: 'Сейчас покупать не стоит: цена выше среднерыночной или у этого магазина заметен рост цены за последнее время.',
+      shortDecision: 'Лучше подождать.'
+    };
+  }
+
+  return {
+    status: 'neutral',
+    decisionText: 'Цена близка к среднерыночной. Можно подождать и понаблюдать динамику.',
+    shortDecision: 'Нейтрально: решать по срочности.'
+  };
+}
+
+function normalizeStoreHistory(historyArray) {
+  if (!Array.isArray(historyArray)) return [];
+  return historyArray
+    .map((point) => ({
+      timestamp: new Date(point.x).getTime(),
+      price: Number(point.y)
+    }))
+    .filter((point) => Number.isFinite(point.timestamp) && Number.isFinite(point.price) && point.price > 0)
+    .sort((a, b) => a.timestamp - b.timestamp);
+}
+
+function findHistoryStoreKey(priceHistoryData, storeName) {
+  if (!priceHistoryData || typeof priceHistoryData !== 'object') return null;
+  if (priceHistoryData[storeName]) return storeName;
+  const normalizedTarget = String(storeName || '').trim().toLowerCase();
+  return Object.keys(priceHistoryData).find((key) => key.trim().toLowerCase() === normalizedTarget) || null;
+}
+
+function hexToRgba(hexColor, alpha = 1) {
+  const safeColor = String(hexColor || '').trim();
+  const fallback = `rgba(156, 163, 175, ${alpha})`;
+  const hex = safeColor.startsWith('#') ? safeColor.slice(1) : safeColor;
+
+  if (![3, 6].includes(hex.length)) return fallback;
+
+  const normalizedHex = hex.length === 3
+    ? hex.split('').map((ch) => ch + ch).join('')
+    : hex;
+
+  const r = parseInt(normalizedHex.slice(0, 2), 16);
+  const g = parseInt(normalizedHex.slice(2, 4), 16);
+  const b = parseInt(normalizedHex.slice(4, 6), 16);
+
+  if ([r, g, b].some((v) => Number.isNaN(v))) return fallback;
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+function calculateRecentTrend(storeHistory) {
+  if (!storeHistory.length) {
+    return { direction: 'flat', deltaPct: 0 };
+  }
+
+  const lastPoints = storeHistory.slice(-8);
+  if (lastPoints.length < 2) {
+    return { direction: 'flat', deltaPct: 0 };
+  }
+
+  const splitIndex = Math.max(1, Math.floor(lastPoints.length / 2));
+  const firstWindow = lastPoints.slice(0, splitIndex).map((point) => point.price);
+  const secondWindow = lastPoints.slice(splitIndex).map((point) => point.price);
+
+  const startPrice = median(firstWindow);
+  const endPrice = median(secondWindow);
+  const deltaPct = startPrice > 0 ? ((endPrice - startPrice) / startPrice) * 100 : 0;
+
+  if (deltaPct > 1.5) return { direction: 'up', deltaPct };
+  if (deltaPct < -1.5) return { direction: 'down', deltaPct };
+  return { direction: 'flat', deltaPct };
+}
+
+function calculateProductTrend(priceHistoryData, currentPrices) {
+  const allPoints = [];
+
+  if (priceHistoryData && typeof priceHistoryData === 'object') {
+    Object.values(priceHistoryData).forEach((storeSeries) => {
+      const normalized = normalizeStoreHistory(storeSeries);
+      allPoints.push(...normalized);
+    });
+  }
+
+  if (!allPoints.length) {
+    const fallbackAvg = currentPrices.reduce((sum, item) => sum + item.price, 0) / currentPrices.length;
+    return {
+      trend: { direction: 'flat', deltaPct: 0 },
+      allPoints: [{ timestamp: Date.now(), price: fallbackAvg }]
+    };
+  }
+
+  allPoints.sort((a, b) => a.timestamp - b.timestamp);
+  const trend = calculateRecentTrend(allPoints);
+  return { trend, allPoints };
+}
+
+function forecastPrice(seriesPoints, fallbackPrice) {
+  if (!Array.isArray(seriesPoints) || !seriesPoints.length) {
+    return { direction: 'flat', predictedPrice: fallbackPrice, deltaPct: 0 };
+  }
+
+  const recent = seriesPoints.slice(-12);
+  const lastKnown = recent[recent.length - 1].price;
+
+  if (recent.length < 3) {
+    return { direction: 'flat', predictedPrice: lastKnown || fallbackPrice, deltaPct: 0 };
+  }
+
+  const firstTs = recent[0].timestamp;
+  const xValues = recent.map((point) => (point.timestamp - firstTs) / (24 * 3600 * 1000));
+  const yValues = recent.map((point) => point.price);
+  const meanX = xValues.reduce((a, b) => a + b, 0) / xValues.length;
+  const meanY = yValues.reduce((a, b) => a + b, 0) / yValues.length;
+
+  let numerator = 0;
+  let denominator = 0;
+  for (let i = 0; i < xValues.length; i += 1) {
+    numerator += (xValues[i] - meanX) * (yValues[i] - meanY);
+    denominator += (xValues[i] - meanX) ** 2;
+  }
+
+  const slopePerDay = denominator > 0 ? numerator / denominator : 0;
+  const horizonDays = 7;
+  const rawPredictedPrice = Math.max(1, lastKnown + slopePerDay * horizonDays);
+  const rawDeltaPct = lastKnown > 0 ? ((rawPredictedPrice - lastKnown) / lastKnown) * 100 : 0;
+
+  //Убираем аномальные скачки прогноза через ограничение по волатильности
+  const maxRecentMovePct = getRecentVolatilityPercent(recent);
+  const maxAllowedDeltaPct = Math.min(20, Math.max(4, maxRecentMovePct * 1.8 + 2));
+  const boundedDeltaPct = clamp(rawDeltaPct, -maxAllowedDeltaPct, maxAllowedDeltaPct);
+
+  const historicalMin = Math.min(...recent.map((point) => point.price));
+  const historicalMax = Math.max(...recent.map((point) => point.price));
+  const volatilityFloor = historicalMin * 0.85;
+  const volatilityCeil = historicalMax * 1.15;
+
+  const predictedByDelta = lastKnown * (1 + boundedDeltaPct / 100);
+  const predictedPrice = clamp(predictedByDelta, volatilityFloor, volatilityCeil);
+  const deltaPct = lastKnown > 0 ? ((predictedPrice - lastKnown) / lastKnown) * 100 : 0;
+
+  if (deltaPct > 1.5) return { direction: 'up', predictedPrice, deltaPct };
+  if (deltaPct < -1.5) return { direction: 'down', predictedPrice, deltaPct };
+  return { direction: 'flat', predictedPrice, deltaPct };
+}
+
+function getRecentVolatilityPercent(seriesPoints) {
+  if (!Array.isArray(seriesPoints) || seriesPoints.length < 2) return 0;
+
+  const changes = [];
+  for (let i = 1; i < seriesPoints.length; i += 1) {
+    const prevPrice = seriesPoints[i - 1].price;
+    const currPrice = seriesPoints[i].price;
+    if (prevPrice > 0) {
+      changes.push(Math.abs(((currPrice - prevPrice) / prevPrice) * 100));
+    }
+  }
+
+  if (!changes.length) return 0;
+  return median(changes);
+}
+
+function clamp(value, min, max) {
+  return Math.min(max, Math.max(min, value));
+}
+
+function median(values) {
+  if (!Array.isArray(values) || !values.length) return 0;
+  const sorted = [...values].sort((a, b) => a - b);
+  const mid = Math.floor(sorted.length / 2);
+  if (sorted.length % 2 === 0) {
+    return (sorted[mid - 1] + sorted[mid]) / 2;
+  }
+  return sorted[mid];
+}
+
+function describeTrend(trend) {
+  if (!trend) return 'Данных недостаточно.';
+  if (trend.direction === 'up') return `цена росла примерно на ${Math.abs(trend.deltaPct).toFixed(1)}% за последний период.`;
+  if (trend.direction === 'down') return `цена снижалась примерно на ${Math.abs(trend.deltaPct).toFixed(1)}% за последний период.`;
+  return 'существенных колебаний за последний период не выявлено.';
+}
+
+function describeTrendShort(trend) {
+  if (!trend) return 'нет данных.';
+  if (trend.direction === 'up') return `рост (${Math.abs(trend.deltaPct).toFixed(1)}%).`;
+  if (trend.direction === 'down') return `снижение (${Math.abs(trend.deltaPct).toFixed(1)}%).`;
+  return 'без явных изменений.';
+}
+
+function describeRecentDelta(trend) {
+  if (!trend || !Number.isFinite(trend.deltaPct)) return 'недостаточно данных.';
+  if (trend.direction === 'up') return `цена выросла на ${Math.abs(trend.deltaPct).toFixed(1)}%.`;
+  if (trend.direction === 'down') return `цена снизилась на ${Math.abs(trend.deltaPct).toFixed(1)}%.`;
+  return `изменение около ${Math.abs(trend.deltaPct).toFixed(1)}%.`;
+}
+
+function describeForecast(forecast, scopeLabel) {
+  if (!forecast || !Number.isFinite(forecast.predictedPrice)) {
+    return `Прогноз ${scopeLabel} пока недоступен.`;
+  }
+  if (forecast.direction === 'up') {
+    return `По модели линейного тренда ${scopeLabel} цена может вырасти до ${formatPrice(forecast.predictedPrice)} ₽ в ближайшую неделю.`;
+  }
+  if (forecast.direction === 'down') {
+    return `По модели линейного тренда ${scopeLabel} цена может снизиться до ${formatPrice(forecast.predictedPrice)} ₽ в ближайшую неделю.`;
+  }
+  return `По модели линейного тренда ${scopeLabel} ожидается стабильный уровень около ${formatPrice(forecast.predictedPrice)} ₽ в ближайшую неделю.`;
+}
+
+function describeForecastShort(forecast) {
+  if (!forecast || !Number.isFinite(forecast.predictedPrice)) return 'недостаточно данных.';
+  if (forecast.direction === 'up') return `возможен рост до ${formatPrice(forecast.predictedPrice)} ₽.`;
+  if (forecast.direction === 'down') return `возможно снижение до ${formatPrice(forecast.predictedPrice)} ₽.`;
+  return `ожидается около ${formatPrice(forecast.predictedPrice)} ₽.`;
 }
 
 async function renderMiniPriceChartInComparison(containerId, productId) {
@@ -1057,56 +1789,54 @@ async function renderMiniPriceChartInComparison(containerId, productId) {
 
 //Вспомогательная функция для генерации случайного цвета
 function getStoreColor(storeName) {
-  // Приводим имя магазина к нижнему регистру для нечувствительности к регистру
+  //Приводим имя магазина к нижнему регистру для нечувствительности к регистру
   const normalizedStoreName = storeName.toLowerCase();
 
-  // Определяем цвета для известных магазинов
+  //Определяем цвета для известных магазинов
   const colorMap = {
-    // --- СООТВЕТСТВИЕ МАГАЗИН -> ЦВЕТ ---
-    'dns': '#f97316', // Оранжевый (DNS-shop)
-    'dns-shop': '#f97316', // На случай, если приходит 'DNS-shop'
-    'dns shop': '#f97316', // На случай, если приходит 'DNS Shop'
-    'ozon': '#1d4ed8', // Синий (OZON)
-    'ozon.ru': '#1d4ed8', // На случай, если приходит 'OZON.ru'
-    'mvideo': '#dc2626', // Красный (М.Видео)
-    'm.video': '#dc2626', // На случай, если приходит 'М.Видео' как 'M.Video'
-    'eldorado': '#10b981', // Изумрудный (Эльдорадо)
-    'citilink': '#8b5cf6', // Фиолетовый (Ситилинк)
-    'avito': '#059669', // Тёмно-зелёный (Avito)
-    'avito marketplace': '#059669', // На случай, если приходит полное название
-    'yandex market': '#ff9900', // Жёлтый (Яндекс.Маркет)
-    'wildberries': '#ff0000', // Ярко-красный (Wildberries)
-    'aliexpress': '#ff6600', // Оранжево-красный (AliExpress)
-    'amazon': '#ff9900', // Жёлтый (Amazon)
-    'ebay': '#0a3069', // Тёмно-синий (eBay)
-    'bestbuy': '#003b64', // Тёмно-синий (Best Buy)
-    'walmart': '#007dc6', // Синий (Walmart)
-    'target': '#cc0000', // Красный (Target)
-    'apple': '#a2aaad', // Серый (Apple)
-    'samsung': '#1428a0', // Тёмно-синий (Samsung)
-    'xiaomi': '#ff6600', // Оранжевый (Xiaomi)
-    'huawei': '#e01e24', // Красный (Huawei)
-    'google': '#4285f4', // Синий (Google)
-    'asus': '#000000', // Чёрный (Asus)
-    'lenovo': '#d9006c', // Фуксия (Lenovo)
-    'hp': '#0096d6', // Светло-синий (HP)
-    'dell': '#007db8', // Синий (Dell)
-    'acer': '#83004c', // Бордовый (Acer)
-    'msi': '#ff0000', // Красный (MSI)
-    'lg': '#005fa7', // Синий (LG)
-    'sony': '#000000', // Чёрный (Sony)
-    'nokia': '#085a9e', // Синий (Nokia)
-    'lg electronics': '#005fa7', // На случай полного названия
-    'apple inc.': '#a2aaad', // На случай полного названия
-    // ... добавьте другие магазины и бренды по необходимости ...
+    'dns': '#f97316', //Оранжевый (DNS-shop)
+    'dns-shop': '#f97316', //На случай, если приходит 'DNS-shop'
+    'dns shop': '#f97316', //На случай, если приходит 'DNS Shop'
+    'ozon': '#1d4ed8', //Синий (OZON)
+    'ozon.ru': '#1d4ed8', //На случай, если приходит 'OZON.ru'
+    'mvideo': '#dc2626', //Красный (М.Видео)
+    'm.video': '#dc2626', //На случай, если приходит 'М.Видео' как 'M.Video'
+    'eldorado': '#10b981', //Изумрудный (Эльдорадо)
+    'citilink': '#8b5cf6', //Фиолетовый (Ситилинк)
+    'avito': '#059669', //Тёмно-зелёный (Avito)
+    'avito marketplace': '#059669', //На случай, если приходит полное название
+    'yandex market': '#ff9900', //Жёлтый (Яндекс.Маркет)
+    'wildberries': '#ff0000', //Ярко-красный (Wildberries)
+    'aliexpress': '#ff6600', //Оранжево-красный (AliExpress)
+    'amazon': '#ff9900', //Жёлтый (Amazon)
+    'ebay': '#0a3069', //Тёмно-синий (eBay)
+    'bestbuy': '#003b64', //Тёмно-синий (Best Buy)
+    'walmart': '#007dc6', 
+    'target': '#cc0000', 
+    'apple': '#a2aaad', 
+    'samsung': '#1428a0', 
+    'xiaomi': '#ff6600', 
+    'huawei': '#e01e24', 
+    'google': '#4285f4', 
+    'asus': '#000000', 
+    'lenovo': '#d9006c', 
+    'hp': '#0096d6', 
+    'dell': '#007db8', 
+    'acer': '#83004c', 
+    'msi': '#ff0000', 
+    'lg': '#005fa7', 
+    'sony': '#000000', 
+    'nokia': '#085a9e', 
+    'lg electronics': '#005fa7', 
+    'apple inc.': '#a2aaad', 
   };
 
-  // Возвращаем цвет из карты, если он найден, иначе возвращаем серый как резервный вариант
-  return colorMap[normalizedStoreName] || '#9ca3af'; // '#9ca3af' - серый цвет по умолчанию
+  //Возвращаем цвет из карты, если он найден, иначе возвращаем серый как резервный вариант
+  return colorMap[normalizedStoreName] || '#9ca3af'; //'#9ca3af' - серый цвет по умолчанию
 }
 
 function trackPurchase(productId, store) {
-    //Позже здесь будет отправка аналитики
+    
     console.log(`Покупка товара ${productId} в магазине ${store}`);
 }
 
@@ -1163,9 +1893,9 @@ async function loadProductReviews(productId) {
       //Используем userName из отзыва (или fullName из связанного user, если доступен)
       const displayName = review.user?.fullName || review.userName || 'Аноним';
 
-      //ПРАВИЛЬНАЯ ПРОВЕРКА ТЕКСТА: проверяем review.comment (или review.text, в зависимости от сервера)
+      
       //Если поле null или undefined или пустая строка, показываем "Без комментария"
-      const commentText = review.comment || review.text; //<-- Проверьте, какое поле возвращает сервер
+      const commentText = review.comment || review.text; 
       const displayText = commentText ? commentText : '<em>Без комментария</em>';
 
       return `
@@ -1182,7 +1912,7 @@ async function loadProductReviews(productId) {
               <div class="review-date">${formattedDate}</div>
             </div>
           </div>
-          <p class="review-text">${displayText}</p> <!-- Отображаем текст или "Без комментария" -->
+          <p class="review-text">${displayText}</p> 
         </div>
       `;
     }).join('');
@@ -1206,7 +1936,7 @@ function showAuthModal() {
         authModal.style.display = 'block';
     } else {
         //Иначе перенаправляем на страницу авторизации
-        window.location.href = 'auth.html';
+        //window.location.href = 'auth.html';
     }
 }
 
@@ -1308,8 +2038,8 @@ function updateAuthButtons() {
     `;
   } else {
     authButtons.innerHTML = `
-      <button class="btn btn-outline" onclick="showAuthModal()">Войти</button>
-      <button class="btn btn-primary" onclick="showRegModal()">Регистрация</button>
+      <a class="btn btn-outline" href="auth.html">Войти</a>
+      <a class="btn btn-primary" href="auth.html"">Регистрация</a>
     `;
   }
 }
@@ -1364,9 +2094,10 @@ async function updateComparisonCounter() {
 //Добавление в сравнение
 async function addToComparison(productId) {
   const token = localStorage.getItem('techAggregatorToken');
+  
   if (!token) {
     showCustomNotification('Войдите в аккаунт', 'info');
-    window.location.href = 'auth.html';
+    //window.location.href = 'auth.html';
     return;
   }
 
@@ -1439,7 +2170,7 @@ async function addToFavorites(productId) {
   const token = localStorage.getItem('techAggregatorToken');
   if (!token) {
     showCustomNotification('Войдите в аккаунт', 'info');
-    window.location.href = 'auth.html';
+    //window.location.href = 'auth.html';
     return;
   }
 
@@ -1617,7 +2348,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (addProductForm) {
         addProductForm.addEventListener('submit', function(e) {
             e.preventDefault();
-            //Здесь будет логика добавления товара
+    
             showCustomNotification('Товар добавлен в каталог - будет реализовано в бэкенде', 'info');
             closeAddProductModal();
         });
@@ -1638,6 +2369,7 @@ function searchProductsGlobal() {
     const mainSearch = document.getElementById('mainSearch');
 const query = mainSearch && mainSearch.value ? mainSearch.value.toLowerCase() : '';
     if (query) {
+        
         window.location.href = `catalog.html?search=${encodeURIComponent(query)}`;
     }
 }
@@ -1752,10 +2484,7 @@ function createComparisonContent() {
     }
 }
 
-//Инициализация рекомендаций (если на странице)
-function initializeRecommendationsPage() {
 
-}
 
 //Инициализация админ-панели (если на странице)
 function initializeAdminPage() {
@@ -1765,6 +2494,11 @@ function initializeAdminPage() {
         window.location.href = 'index.html';
         return;
     }
+    updateMainStats();
+    setInterval(updateMainStats, 60000);
+    loadAnalyticsData();
+  loadPopularSearches();
+  initializeAdminProductSearch();
 }
 
 //Функции для поиска с подсказками
@@ -1830,6 +2564,7 @@ function handleSearchEnter(event) {
 function searchProducts() {
     const query = document.getElementById('mainSearch').value.trim();
     if (query) {
+      trackSearchQuery(query);
         document.getElementById('searchSuggestions').style.display = 'none';
         window.location.href = `catalog.html?search=${encodeURIComponent(query)}`;
     }
@@ -1853,7 +2588,7 @@ async function initializeComparisonPage() {
   const token = localStorage.getItem('techAggregatorToken');
   if (!token) {
     showCustomNotification('Войдите в аккаунт', 'info');
-    window.location.href = 'auth.html';
+    //window.location.href = 'auth.html';
     return;
   }
 
@@ -2204,24 +2939,24 @@ async function submitReview(event) {
   }
 
   const ratingInput = document.getElementById('reviewRating');
-  const textArea = document.getElementById('reviewText'); // <-- Убедитесь, что id правильный
+  const textArea = document.getElementById('reviewText'); 
 
   const rating = parseInt(ratingInput.value, 10);
-  const text = textArea ? textArea.value.trim() : ''; // <-- Получаем текст из #reviewText
+  const text = textArea ? textArea.value.trim() : ''; 
 
   if (!rating || rating < 1 || rating > 5) {
     showCustomNotification('Пожалуйста, укажите оценку (1-5)', 'info');
     return;
   }
 
-  // Комментарий может быть пустым, но если он есть, проверим длину
-  if (text && text.length < 10) { // Проверяем длину только если текст не пустой
+  //Комментарий может быть пустым, но если он есть, проверим длину
+  if (text && text.length < 10) { //Проверяем длину только если текст не пустой
     showCustomNotification('Отзыв должен содержать минимум 10 символов', 'info');
     return;
   }
 
   const token = localStorage.getItem('techAggregatorToken');
-  const productId = getCurrentProductId(); // Убедитесь, что ID товара получается корректно
+  const productId = getCurrentProductId(); 
 
   if (!token || !productId) {
     showCustomNotification('Ошибка: токен или ID товара отсутствует.', 'error');
@@ -2229,7 +2964,6 @@ async function submitReview(event) {
   }
 
   try {
-    // --- ИСПРАВЛЕНО: Отправляем 'text' ---
     const response = await fetch('http://localhost:3000/api/reviews', {
       method: 'POST',
       headers: {
@@ -2239,8 +2973,8 @@ async function submitReview(event) {
       body: JSON.stringify({
         productId: productId,
         rating: rating,
-        text: text // <-- Отправляем 'text', как ожидает сервер
-        // userName не нужно, сервер берёт из токена
+        text: text 
+        //userName не нужно, сервер берёт из токена
       })
     });
 
@@ -2250,7 +2984,7 @@ async function submitReview(event) {
         currentUser = null;
         updateAuthButtons();
         showCustomNotification('Сессия истекла. Пожалуйста, войдите снова.', 'warning');
-        window.location.href = 'auth.html';
+        //window.location.href = 'auth.html';
         return;
       }
       const errorData = await response.json().catch(() => ({ error: `HTTP ${response.status}` }));
@@ -2261,15 +2995,13 @@ async function submitReview(event) {
     console.log('Отзыв отправлен на модерацию:', result);
     showCustomNotification('Ваш отзыв отправлен на модерацию.', 'success');
 
-    // Очистим форму
+    //Очистим форму
     ratingInput.value = '5';
     if (textArea) textArea.value = '';
 
-    // Перезагрузим отзывы для обновления списка (опционально)
+    //Перезагрузим отзывы для обновления списка (опционально)
     await loadProductReviews(productId);
 
-    // ПОВТОРНО ЗАГРУЗИТЬ ИНФОРМАЦИЮ О ТОВАРЕ (включая рейтинг), если нужно обновить на лету
-    // loadProductDetails(productId); // Вызовите, если есть такая функция и она нужна
 
   } catch (error) {
     console.error('Ошибка отправки отзыва:', error);
@@ -2456,13 +3188,38 @@ function findProductsByCategoryQuery(query) {
 //Ключевые слова для категорий поиска
 const CATEGORY_KEYWORDS = {
   smartphones: ['смартфон', 'телефон', 'айфон', 'iphone', 'samsung', 'pixel', 'xiaomi'],
-  laptops: ['ноутбук', 'лэптоп', 'macbook', 'lenovo', 'asus', 'hp', 'dell'],
-  tv: ['телевизор', 'тв', 'oled', 'qled', 'lg', 'sony'],
-  headphones: ['наушники', 'bluetooth', 'tws', 'airpods', 'sony', 'bose'],
-  smartwatches: ['часы', 'смартчасы', 'watch', 'apple watch', 'garmin'],
-  tablets: ['планшет', 'ipad', 'galaxy tab'],
-  drones: ['дрон', 'dji', 'квадрокоптер'],
-  ereaders: ['электронная книга', 'kindle', 'pocketbook']
+    laptops: ['ноутбук', 'лэптоп', 'macbook', 'lenovo', 'asus', 'hp', 'dell'],
+    tv: ['телевизор', 'тв', 'oled', 'qled', 'lg', 'sony'],
+    headphones: ['наушники', 'bluetooth', 'tws', 'airpods', 'sony', 'bose', 'гарнитура'],
+    cameras: ['фотоаппарат', 'камера', 'canon', 'nikon', 'зеркалка'],
+    tablets: ['планшет', 'ipad', 'galaxy tab', 'xiaomi pad'],
+    smartwatches: ['часы', 'смартчасы', 'watch', 'apple watch', 'garmin'],
+    ebooks: ['электронная книга', 'kindle', 'pocketbook', 'читалка'],
+    drones: ['дрон', 'dji', 'квадрокоптер', 'квадрик'],
+    pc_components: ['комплектующие', 'комплектующие пк', 'железо'],
+    keyboards: ['клавиатура', 'клавиатуры', 'клава'],
+    mouses: ['мышь', 'мыши', 'компьютерная мышь'],
+    cases: ['корпус', 'корпуса', 'case'],
+    drivers: ['накопитель', 'накопители', 'диск', 'ssd', 'hdd'],
+    fitness_trackers: ['фитнес-трекер', 'фитнес браслет', 'трекер'],
+    power_units: ['блок питания', 'блоки питания', 'бп'],
+    microphones: ['микрофон', 'микрофоны', 'микро'],
+    webcams: ['веб-камера', 'веб-камеры', 'вебка'],
+    power_banks: ['павербанк', 'внешний аккумулятор', 'powerbank'],
+    portable_speakers: ['колонка', 'колонки', 'портативная колонка'],
+    monitors: ['монитор', 'мониторы', 'дисплей'],
+    accessories: ['аксессуар', 'чехол', 'зарядка', 'кабель'],
+    gaming: ['консоль', 'консоли', 'playstation', 'xbox', 'nintendo', 'приставка'],
+    networking: ['роутер', 'маршрутизатор', 'wifi', 'wi-fi', 'switch'],
+    cpus: ['процессор', 'процессоры', 'cpu', 'intel', 'amd'],
+    motherboards: ['материнская плата', 'материнки', 'материнская'],
+    ram: ['оперативная память', 'оперативка', 'ram', 'dram'],
+    graphics_cards: ['видеокарта', 'видеокарты', 'gpu', 'rtx'],
+    external_drives: ['внешний накопитель', 'внешний диск', 'portable ssd'],
+    audio: ['аудиосистема', 'акустика', 'саундбар'],
+    smart_home: ['умный дом', 'smart home', 'умная розетка', 'умная лампа'],
+    wearables: ['носимые устройства', 'wearable', 'гаджет', 'умные очки'],
+    other: ['другое', 'прочее']
 };
 
 function showNavSearchSuggestions() {
@@ -2490,15 +3247,26 @@ function showNavSearchSuggestions() {
 
     //Прямое совпадение с русскими названиями
     const RU_CATEGORY_MAP = {
-      'смартфоны': 'smartphones',
-      'ноутбуки': 'laptops',
-      'телевизоры': 'tv',
-      'наушники': 'headphones',
-      'смарт-часы': 'smartwatches',
-      'планшеты': 'tablets',
-      'дроны': 'drones',
-      'электронные книги': 'ereaders'
-    };
+    'смартфоны': 'smartphones',
+    'ноутбуки': 'laptops',
+    'телевизоры': 'tv',
+    'наушники': 'headphones',
+    'фотоаппараты': 'cameras',
+    'планшеты': 'tablets',
+    'смарт-часы': 'smartwatches',
+    'электронные книги': 'ebooks',
+    'дроны': 'drones',
+    'комплектующие пк': 'pc_components',
+    'мониторы': 'monitors',
+    'аксессуары': 'accessories',
+    'игровые консоли': 'gaming',
+    'сетевое оборудование': 'networking',
+    'накопители': 'storage',
+    'аудиосистемы': 'audio',
+    'умный дом': 'smart_home',
+    'носимые устройства': 'wearables',
+    'другое': 'other'
+};
 
     if (RU_CATEGORY_MAP[query]) {
       matchingCategories.add(RU_CATEGORY_MAP[query]);
@@ -2552,23 +3320,13 @@ function selectNavSearchSuggestion(productId) {
 function navSearchProducts() {
   const query = document.getElementById('navSearch')?.value?.trim();
   if (query) {
+    trackSearchQuery(query);
     document.getElementById('navSearchSuggestions').style.display = 'none';
     
     //Находим категории по запросу
     const lowerQuery = query.toLowerCase();
     const categories = new Set();
     
-    //Прямое совпадение
-    const RU_CATEGORY_MAP = {
-      'смартфоны': 'smartphones',
-      'ноутбуки': 'laptops',
-      'телевизоры': 'tv',
-      'наушники': 'headphones',
-      'смарт-часы': 'smartwatches',
-      'планшеты': 'tablets',
-      'дроны': 'drones',
-      'электронные книги': 'ereaders'
-    };
     
     if (RU_CATEGORY_MAP[lowerQuery]) {
       categories.add(RU_CATEGORY_MAP[lowerQuery]);
@@ -2640,11 +3398,34 @@ function requestProductAddition() {
                         <option value="laptops">Ноутбуки</option>
                         <option value="tv">Телевизоры</option>
                         <option value="headphones">Наушники</option>
-                        <option value="cameras">Камеры</option>
-                        <option value="drones">Дроны</option>
+                        <option value="cameras">Фотоаппараты</option>
                         <option value="tablets">Планшеты</option>
                         <option value="smartwatches">Смарт-часы</option>
-                        <option value="ereaders">Электронные книги</option>
+                        <option value="ebooks">Электронные книги</option>
+                        <option value="drones">Дроны</option>
+                        <option value="pc_components">Комплектующие ПК</option>
+                        <option value="keyboards">Клавиатуры</option>
+                        <option value="mouses">Мыши</option>
+                        <option value="cases">Корпуса ПК</option>
+                        <option value="drivers">Накопители</option>
+                        <option value="fitness_trackers">Фитнес-трекеры</option>
+                        <option value="power_units">Блоки питания</option>
+                        <option value="microphones">Микрофоны</option>
+                        <option value="webcams">Веб-камеры</option>
+                        <option value="power_banks">Павербанки</option>
+                        <option value="portable_speakers">Портативные колонки</option>
+                        <option value="monitors">Мониторы</option>
+                        <option value="accessories">Аксессуары</option>
+                        <option value="gaming">Игровые консоли</option>
+                        <option value="networking">Сетевое оборудование</option>
+                        <option value="cpus">Процессоры</option>
+                        <option value="motherboards">Материнские платы</option>
+                        <option value="ram">Оперативная память</option>
+                        <option value="graphics_cards">Видеокарты</option>
+                        <option value="external_drives">Внешние накопители</option>
+                        <option value="audio">Аудиосистемы</option>
+                        <option value="smart_home">Умный дом</option>
+                        <option value="wearables">Носимые устройства</option>
                         <option value="other">Другое</option>
                     </select>
                 </div>
@@ -2777,7 +3558,7 @@ async function submitRequest(event) {
     showCustomNotification('Запрос отправлен администратору. Мы уведомим вас, когда товар будет добавлен.', 'info');
 
     //Закрываем модальное окно
-    closeRequestModal(); //Убедитесь, что функция closeRequestModal определена
+    closeRequestModal(); 
 
     //Очищаем форму (если нужно)
     if (productNameInput) productNameInput.value = '';
@@ -3143,7 +3924,7 @@ function renderComparisonTable(container) {
         </tr>
       </thead>
       <tbody>
-        <!-- Характеристики -->
+        
         ${specsArray.map(specKey => {
           const russianName = specKeyTranslations[specKey] || specKey;
           return `
@@ -3158,7 +3939,7 @@ function renderComparisonTable(container) {
           `;
         }).join('')}
 
-        <!-- Строка "Цены и покупка" -->
+        
         <tr class="price-row">
   <td class="spec-label fixed-col">Цены и покупка</td>
   ${comparisonList.map(product => {
@@ -3179,12 +3960,20 @@ function renderComparisonTable(container) {
             </td>`;
   }).join('')}
 </tr>
+        <tr class="value-calc-row">
+          <td class="spec-label fixed-col">Калькулятор выгоды</td>
+          ${comparisonList.map(product => `
+            <td class="value-calc-cell">
+              <div id="valueCalcContainer-${product.id}"></div>
+            </td>
+          `).join('')}
+        </tr>
         <tr class="mini-chart-row">
           <td class="spec-label fixed-col">История цен</td>
           ${comparisonList.map(product => `
             <td class="mini-chart-cell">
               <div id="miniChartContainer-${product.id}" style="height: 200px; width: 100%; display: flex; justify-content: center; align-items: center;">
-                <!-- Заглушка или canvas будет вставлен сюда -->
+                
               </div>
             </td>
           `).join('')}
@@ -3198,6 +3987,11 @@ function renderComparisonTable(container) {
   //Отрисовка графиков
   setTimeout(() => {
     comparisonList.forEach(product => {
+      const valueCalcContainer = document.getElementById(`valueCalcContainer-${product.id}`);
+      if (valueCalcContainer) {
+        renderValueCalculator(product, valueCalcContainer);
+      }
+
       const containerId = `miniChartContainer-${product.id}`;
       const chartContainer = document.getElementById(containerId);
       if (chartContainer) {
@@ -3291,7 +4085,7 @@ function showCustomNotification(message, type = 'info', duration = 5000) {
 
 //Удаляем старую функцию showNotification если она есть
 if (typeof showNotification === 'function') {
-    console.warn('Старая функция showNotification будет заменена');
+    console.warn('Старая функция showNotification');
 }
 
 //Навигация по категориям
@@ -3363,8 +4157,8 @@ window.showCustomNotification = showCustomNotification;
 async function loadProfileDataFromAPI() {
   const token = localStorage.getItem('techAggregatorToken');
   if (!token) {
-    showCustomNotification('Требуется авторизация', 'warning');
-    window.location.href = 'auth.html';
+    //showCustomNotification('Требуется авторизация', 'warning');
+    //window.location.href = 'auth.html';
     return;
   }
 
@@ -3376,12 +4170,12 @@ async function loadProfileDataFromAPI() {
 
     if (!profileRes.ok) {
       if (profileRes.status === 401) {
-        // Токен недействителен или просрочен
+        //Токен недействителен или просрочен
         localStorage.removeItem('techAggregatorToken');
         currentUser = null;
         updateAuthButtons();
         showCustomNotification('Сессия истекла. Пожалуйста, войдите снова.', 'warning');
-        window.location.href = 'auth.html';
+        //window.location.href = 'auth.html';
         return;
       }
       throw new Error(`HTTP ${profileRes.status}: ${profileRes.statusText}`);
@@ -3390,7 +4184,7 @@ async function loadProfileDataFromAPI() {
     const { user } = await profileRes.json();
     console.log('loadProfileDataFromAPI: Данные профиля загружены:', user);
 
-    // --- ОБНОВЛЕНИЕ ИНФОРМАЦИИ О ПОЛЬЗОВАТЕЛЕ ---
+  
     const userNameElement = document.getElementById('userName');
     const userEmailElement = document.getElementById('userEmail');
     const userJoinDateElement = document.getElementById('userJoinDate');
@@ -3404,9 +4198,7 @@ async function loadProfileDataFromAPI() {
       });
       userJoinDateElement.textContent = `Дата регистрации: ${joinDate}`;
     }
-    // --- /ОБНОВЛЕНИЕ ИНФОРМАЦИИ О ПОЛЬЗОВАТЕЛЕ ---
 
-    // --- ОБНОВЛЕНИЕ КНОПКИ АДМИН-ПАНЕЛИ ---
     const adminButton = document.getElementById('adminPanelButton');
     if (adminButton) {
       if (user.role === 'admin') {
@@ -3417,9 +4209,7 @@ async function loadProfileDataFromAPI() {
     } else {
       console.warn('loadProfileDataFromAPI: Кнопка админ-панели (#adminPanelButton) не найдена в DOM.');
     }
-    // --- /ОБНОВЛЕНИЕ КНОПКИ АДМИН-ПАНЕЛИ ---
 
-    // --- ЗАГРУЗКА И ПРЕДВАРИТЕЛЬНЫЙ ПРОСМОТР ИЗБРАННОГО ---
     try {
       console.log('loadProfileDataFromAPI: Загрузка избранного...');
       const favoritesRes = await fetch('http://localhost:3000/api/favorites', {
@@ -3427,33 +4217,31 @@ async function loadProfileDataFromAPI() {
       });
       if (!favoritesRes.ok) {
         if (favoritesRes.status === 401) {
-          // Если токен истёк при запросе к избранному, тоже перенаправляем
+          //Если токен истёк при запросе к избранному, тоже перенаправляем
           localStorage.removeItem('techAggregatorToken');
           currentUser = null;
           updateAuthButtons();
           showCustomNotification('Сессия истекла. Пожалуйста, войдите снова.', 'warning');
-          window.location.href = 'auth.html';
+          //window.location.href = 'auth.html';
           return;
         }
         throw new Error(`HTTP ${favoritesRes.status}: ${favoritesRes.statusText}`);
       }
       const favoriteProducts = await favoritesRes.json();
       console.log(`loadProfileDataFromAPI: Загружено ${favoriteProducts.length} избранных товаров.`);
-      // Сохраняем в глобальную переменную для renderFavoritesPreview
-      window.favorites = favoriteProducts; // Или просто favorites, если она объявлена глобально
-      // Вызываем функцию отрисовки
+      //Сохраняем в глобальную переменную для renderFavoritesPreview
+      window.favorites = favoriteProducts; //Или просто favorites, если она объявлена глобально
+      //Вызываем функцию отрисовки
       renderFavoritesPreview(favoriteProducts);
     } catch (favError) {
       console.error('loadProfileDataFromAPI: Ошибка загрузки избранного:', favError);
-      // Очищаем контейнер или показываем ошибку
+      //Очищаем контейнер или показываем ошибку
       const container = document.getElementById('favoritesPreview');
       if (container) container.innerHTML = `<p class="error-message">Ошибка загрузки избранного: ${favError.message}</p>`;
-      // Очищаем глобальную переменную
+      //Очищаем глобальную переменную
       window.favorites = [];
     }
-    // --- /ЗАГРУЗКА ИЗБРАННОГО ---
-
-    // --- ЗАГРУЗКА И ПРЕДВАРИТЕЛЬНЫЙ ПРОСМОТР СРАВНЕНИЙ ---
+  
     try {
       console.log('loadProfileDataFromAPI: Загрузка сравнений...');
       const comparisonsRes = await fetch('http://localhost:3000/api/comparisons', {
@@ -3461,31 +4249,31 @@ async function loadProfileDataFromAPI() {
       });
       if (!comparisonsRes.ok) {
         if (comparisonsRes.status === 401) {
-          // Если токен истёк при запросе к сравнениям, тоже перенаправляем
+          //Если токен истёк при запросе к сравнениям, тоже перенаправляем
           localStorage.removeItem('techAggregatorToken');
           currentUser = null;
           updateAuthButtons();
           showCustomNotification('Сессия истекла. Пожалуйста, войдите снова.', 'warning');
-          window.location.href = 'auth.html';
+          //window.location.href = 'auth.html';
           return;
         }
         throw new Error(`HTTP ${comparisonsRes.status}: ${comparisonsRes.statusText}`);
       }
       const comparisonProducts = await comparisonsRes.json();
       console.log(`loadProfileDataFromAPI: Загружено ${comparisonProducts.length} товаров в сравнении.`);
-      // Сохраняем в глобальную переменную для renderComparisonsPreview
-      window.comparisons = comparisonProducts; // Или просто comparisons
-      // Вызываем функцию отрисовки
+      //Сохраняем в глобальную переменную для renderComparisonsPreview
+      window.comparisons = comparisonProducts; //Или просто comparisons
+      //Вызываем функцию отрисовки
       renderComparisonsPreview(comparisonProducts);
     } catch (compError) {
       console.error('loadProfileDataFromAPI: Ошибка загрузки сравнений:', compError);
-      // Очищаем контейнер или показываем ошибку
+      //Очищаем контейнер или показываем ошибку
       const container = document.getElementById('comparisonsPreview');
       if (container) container.innerHTML = `<p class="error-message">Ошибка загрузки сравнений: ${compError.message}</p>`;
-      // Очищаем глобальную переменную
+      //Очищаем глобальную переменную
       window.comparisons = [];
     }
-    // --- /ЗАГРУЗКА СРАВНЕНИЙ ---
+    
 
   } catch (error) {
     console.error('loadProfileDataFromAPI: Ошибка загрузки профиля:', error);
@@ -3498,7 +4286,36 @@ async function loadProfileDataFromAPI() {
                 'smartphones': 'Смартфоны',
                 'laptops': 'Ноутбуки',
                 'tv': 'Телевизоры',
-                'headphones': 'Наушники'
+                'headphones': 'Наушники',
+                'cameras': 'Фотоаппараты',
+                'tablets': 'Планшеты',
+                'smartwatches': 'Смарт-часы',
+                'ebooks': 'Электронные книги',
+                'drones': 'Дроны',
+                'pc_components': 'Комплектующие ПК',
+                'keyboards': 'Клавиатуры',
+                'mouses': 'Мыши',
+                'cases': 'Корпуса ПК',
+                'drivers': 'Накопители',
+                'fitness_trackers': 'Фитнес-трекеры',
+                'power_units': 'Блоки питания',
+                'microphones': 'Микрофоны',
+                'webcams': 'Веб-камеры',
+                'power_banks': 'Павербанки',
+                'portable_speakers': 'Портативные колонки',
+                'monitors': 'Мониторы',
+                'accessories': 'Аксессуары',
+                'gaming': 'Игровые консоли',
+                'networking': 'Сетевое оборудование',
+                'cpus': 'Процессоры',
+                'motherboards': 'Материнские платы',
+                'ram': 'Оперативная память',
+                'graphics_cards': 'Видеокарты',
+                'external_drives': 'Внешние накопители',
+                'audio': 'Аудиосистемы',
+                'smart_home': 'Умный дом',
+                'wearables': 'Носимые устройства',
+                'other': 'Другое'
             };
             return categoryTranslations[categoryKey] || categoryKey;
         }
@@ -3514,22 +4331,31 @@ function renderFavoritesPreview(favorites) {
   const noMsg = document.getElementById('noFavoritesMessage');
   if (!container) return;
 
-  container.innerHTML = '';
+  container.innerHTML = ''; //Очищаем контейнер
+
   if (favorites.length === 0) {
-    if (noMsg) noMsg.style.display = 'block';
+    if (noMsg) noMsg.style.display = 'block'; //Показываем сообщение "Нет избранного"
     return;
   }
-  if (noMsg) noMsg.style.display = 'none';
 
+  if (noMsg) noMsg.style.display = 'none'; //Скрываем сообщение "Нет избранного"
+
+  //Отображаем только первые 3 товара (или сколько есть)
   favorites.slice(0, 3).forEach(fav => {
     const el = document.createElement('div');
-    el.className = 'favorite-item';
+    el.className = 'favorite-item'; 
+
+    //Получаем минимальную цену из доступных цен товара (если есть)
+    const minPrice = fav.prices && fav.prices.length > 0
+                     ? Math.min(...fav.prices.map(p => p.price))
+                     : null;
+
     el.innerHTML = `
       <button class="remove-favorite-btn" onclick="removeFromFavorites(${fav.id})">×</button>
-      <img src="${fav.image || 'https://via.placeholder.com/50'}" alt="${fav.name}" onclick="window.location.href='product.html?id=${fav.id}'">
+      <img src="${fav.image || fav.imageUrl || 'https://via.placeholder.com/50?text=?'}" alt="${fav.name}" onclick="window.location.href='product.html?id=${fav.id}'">
       <div class="favorite-item-info">
         <div class="favorite-item-name">${fav.name}</div>
-        <div class="favorite-item-price">${formatPrice(getMinPrice(fav))} ₽</div>
+        <div class="favorite-item-price">${formatPrice(minPrice)} ₽</div>
       </div>
     `;
     container.appendChild(el);
@@ -3642,19 +4468,7 @@ async function clearComparisonByCategory(category) {
             console.warn(`Данные для товара ID ${id} недоступны.`);
             return null;
         }       
-
-        //Пример функций для профиля
-        function uploadAvatar() {
-            alert('Функция загрузки аватара будет реализована позже');
-        }
-
-        function editProfile() {
-            alert('Функция редактирования профиля будет реализована позже');
-        }
-
-        function changePassword() {
-            alert('Функция смены пароля будет реализована позже');
-        }
+        
 
         function logout() {
   currentUser = null;
@@ -3727,55 +4541,271 @@ document.addEventListener('DOMContentLoaded', function () {
             return price.toLocaleString('ru-RU');
         }
 
-        //Функция для загрузки и отображения избранных товаров
-        function loadFavorites() {
-            const favorites = getFavorites();
-            const favoritesList = document.getElementById('favoritesList');
-            favoritesList.innerHTML = ''; //Очищаем текущий список
+//Функция для загрузки и отображения избранных товаров
+async function loadFavorites() {
+  const favoritesList = document.getElementById('favoritesList');
+  if (!favoritesList) {
+     console.error('Контейнер избранного (#favoritesList) не найден.');
+     return;
+  }
 
-            if (favorites.length === 0) {
-                //Если избранное пусто, список уже очищен, статы обновятся в updateStats
-                loadProfileDataFromAPI();
-                return;
+  try {
+    const token = localStorage.getItem('techAggregatorToken');
+    if (!token) {
+      showCustomNotification('Требуется авторизация', 'warning');
+      window.location.href = 'auth.html';
+      return;
+    }
+
+    const response = await fetch('http://localhost:3000/api/favorites', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        localStorage.removeItem('techAggregatorToken');
+        currentUser = null;
+        updateAuthButtons();
+        showCustomNotification('Сессия истекла. Пожалуйста, войдите снова.', 'warning');
+        window.location.href = 'auth.html';
+        return;
+      }
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+
+    const favoriteProducts = await response.json();
+    console.log('Загружены избранные товары для favorites.html:', favoriteProducts);
+
+    //Сохраняем в глобальную переменную (если нужно для других функций)
+    window.favorites = favoriteProducts;
+
+    //Очищаем список
+    favoritesList.innerHTML = '';
+
+    if (favoriteProducts.length === 0) {
+      //Показываем сообщение "Нет избранных товаров" (если есть такой элемент)
+      const noFavoritesMessage = document.getElementById('noFavoritesMessage');
+      if (noFavoritesMessage) {
+          noFavoritesMessage.style.display = 'block';
+      }
+      return;
+    }
+
+    //Показываем список (скрываем сообщение, если оно было)
+    const noFavoritesMessage = document.getElementById('noFavoritesMessage');
+    if (noFavoritesMessage) {
+        noFavoritesMessage.style.display = 'none';
+    }
+
+    //Загружаем текущие цены и историю цен для всех избранных товаров
+    const allCurrentPrices = {};
+    const allPriceHistories = {};
+
+    const pricePromises = favoriteProducts.map(async (fav) => {
+      try {
+        //Загружаем текущие цены
+        const pricesResponse = await fetch(`http://localhost:3000/api/products/${fav.id}/prices`, {
+            headers: { 'Authorization': `Bearer ${token}` } //Добавляем токен для получения цен
+        });
+        if (pricesResponse.ok) {
+          const prices = await pricesResponse.json();
+          allCurrentPrices[fav.id] = prices;
+        } else {
+          allCurrentPrices[fav.id] = [];
+        }
+      } catch (e) {
+        console.error(`Ошибка загрузки текущих цен для ${fav.id}:`, e);
+        allCurrentPrices[fav.id] = [];
+      }
+
+      try {
+        //Загружаем историю цен
+        const historyResponse = await fetch(`http://localhost:3000/api/products/${fav.id}/price-history`, {
+            headers: { 'Authorization': `Bearer ${token}` } //Добавляем токен для получения истории
+        });
+        if (historyResponse.ok) {
+          const history = await historyResponse.json();
+          allPriceHistories[fav.id] = history;
+        } else {
+          allPriceHistories[fav.id] = {};
+        }
+      } catch (e) {
+        console.error(`Ошибка загрузки истории цен для ${fav.id}:`, e);
+        allPriceHistories[fav.id] = {};
+      }
+    });
+
+    await Promise.all(pricePromises); //Ждём завершения всех загрузок
+
+    let hasPriceDrops = false;
+    const priceDropNotifications = [];
+
+    //Отрисовываем карточки
+    for (const fav of favoriteProducts) {
+      const currentPrices = allCurrentPrices[fav.id] || [];
+      const priceHistory = allPriceHistories[fav.id];
+
+      let currentMinPrice = null;
+      if (currentPrices.length > 0) {
+        currentMinPrice = Math.min(...currentPrices.map(p => p.price));
+      }
+
+      let previousMinPrice = null;
+      if (priceHistory) {
+        let overallLatestEntry = null;
+        for (const storeName in priceHistory) {
+          if (Array.isArray(priceHistory[storeName])) {
+            const sortedForStore = priceHistory[storeName].sort((a, b) => new Date(b.x) - new Date(a.x));
+            const latestForStore = sortedForStore[0];
+            if (latestForStore && (!overallLatestEntry || new Date(latestForStore.x) > new Date(overallLatestEntry.x))) {
+              overallLatestEntry = latestForStore;
             }
-
-            favorites.forEach(fav => {
-                const productCard = document.createElement('div');
-                productCard.className = 'product-card-favorite';
-                productCard.innerHTML = `
-                    <button class="remove-favorite-btn" onclick="removeFromFavorites(${fav.id})">×</button>
-                    <img src="${fav.image}" alt="${fav.name}">
-                    <h3>${fav.name}</h3>
-                    <div class="product-meta">
-                        <div class="product-category">${getCategoryName(fav.category)}</div>
-                        <div class="product-price">${formatPrice(fav.price)} ₽</div>
-                    </div>
-                    <div class="product-actions">
-                        <button class="btn btn-primary btn-small" onclick="goToProduct(${fav.id})">Подробнее</button>
-                        <button class="btn btn-outline btn-small" onclick="addToComparison(${fav.id})">Сравнить</button>
-                    </div>
-                `;
-                favoritesList.appendChild(productCard);
-            });
-
-            loadProfileDataFromAPI(); //Обновляем статистику после загрузки товаров
+          }
         }
-
-        //Функция для получения русского названия категории (должна быть в основном script.js, но на всякий случай)
-        function getCategoryName(categoryKey) {
-            const categoryTranslations = {
-                'smartphones': 'Смартфоны',
-                'laptops': 'Ноутбуки',
-                'tv': 'Телевизоры',
-                'headphones': 'Наушники'
-            };
-            return categoryTranslations[categoryKey] || categoryKey;
+        if (overallLatestEntry) {
+          previousMinPrice = overallLatestEntry.y;
         }
+      }
+
+      let priceDropInfo = null;
+      if (previousMinPrice !== null && currentMinPrice !== null && currentMinPrice < previousMinPrice) {
+        const dropPercentage = ((previousMinPrice - currentMinPrice) / previousMinPrice) * 100;
+        if (dropPercentage >= 5) {
+          priceDropInfo = {
+            percentage: dropPercentage.toFixed(2),
+            oldPrice: previousMinPrice,
+            newPrice: currentMinPrice
+          };
+          hasPriceDrops = true;
+          priceDropNotifications.push({
+            productName: fav.name,
+            oldPrice: previousMinPrice,
+            newPrice: currentMinPrice,
+            percentage: dropPercentage.toFixed(2)
+          });
+        }
+      }
+
+      const productCard = document.createElement('div');
+      productCard.className = 'product-card-favorite';
+      if (priceDropInfo) {
+        productCard.classList.add('price-drop-highlight');
+      }
+
+      //Используем fav.image или fav.imageUrl, добавляем onClick для перехода к товару
+      productCard.innerHTML = `
+        <button class="remove-favorite-btn" onclick="removeFromFavorites(${fav.id})">×</button>
+        <img src="${fav.image || fav.imageUrl || 'https://via.placeholder.com/100?text=?'}" alt="${fav.name}" onclick="window.location.href='product.html?id=${fav.id}'">
+        <h3>${fav.name}</h3>
+        <div class="product-meta">
+          <div class="product-category">${getCategoryName(fav.category)}</div>
+          <div class="product-price">${formatPrice(currentMinPrice)} ₽</div>
+          ${priceDropInfo ? `<div class="price-drop-badge">Цена упала на ${priceDropInfo.percentage}%!</div>` : ''}
+        </div>
+        <div class="product-actions">
+          <button class="btn btn-primary btn-small" onclick="goToProduct(${fav.id})">Подробнее</button>
+          <button class="btn btn-outline btn-small" onclick="addToComparison(${fav.id})">Сравнить</button>
+        </div>
+      `;
+      favoritesList.appendChild(productCard);
+    }
+
+  } catch (error) {
+    console.error('Ошибка загрузки избранного для favorites.html:', error);
+    favoritesList.innerHTML = `<p class="error-message">Ошибка загрузки избранного: ${error.message}</p>`;
+  }
+
+
+  async function checkPriceDropNotificationsOnLogin() {
+  const token = localStorage.getItem('techAggregatorToken');
+  if (!token) {
+    //Не показываем уведомления, если не авторизованы
+    return;
+  }
+
+  try {
+    //Загружаем избранные товары
+    const favoritesRes = await fetch('http://localhost:3000/api/favorites', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+
+    if (!favoritesRes.ok) {
+      if (favoritesRes.status === 401) {
+        localStorage.removeItem('techAggregatorToken');
+        currentUser = null;
+        updateAuthButtons();
+        console.log('Сессия истекла при проверке уведомлений.');
+        return; //Не показываем уведомление, так как сессия истекла
+      }
+      throw new Error(`HTTP ${favoritesRes.status}: ${favoritesRes.statusText}`);
+    }
+
+    const favoriteProducts = await favoritesRes.json();
+    if (favoriteProducts.length === 0) {
+      return; //Нечего проверять
+    }
+
+    let hasPriceDrops = false;
+
+    //Загружаем текущие цены и историю для каждого товара
+    for (const fav of favoriteProducts) {
+      const pricesResponse = await fetch(`http://localhost:3000/api/products/${fav.id}/prices`);
+      const historyResponse = await fetch(`http://localhost:3000/api/products/${fav.id}/price-history`);
+
+      if (!pricesResponse.ok || !historyResponse.ok) continue;
+
+      const currentPrices = await pricesResponse.json();
+      const priceHistory = await historyResponse.json();
+
+      let currentMinPrice = null;
+      if (currentPrices.length > 0) {
+        currentMinPrice = Math.min(...currentPrices.map(p => p.price));
+      }
+
+      let previousMinPrice = null;
+      if (priceHistory) {
+        let overallLatestEntry = null;
+        for (const storeName in priceHistory) {
+          if (Array.isArray(priceHistory[storeName])) {
+            const sortedForStore = priceHistory[storeName].sort((a, b) => new Date(b.x) - new Date(a.x));
+            const latestForStore = sortedForStore[0];
+            if (latestForStore && (!overallLatestEntry || new Date(latestForStore.x) > new Date(overallLatestEntry.x))) {
+              overallLatestEntry = latestForStore;
+            }
+          }
+        }
+        if (overallLatestEntry) {
+          previousMinPrice = overallLatestEntry.y;
+        }
+      }
+
+      if (previousMinPrice !== null && currentMinPrice !== null && currentMinPrice < previousMinPrice) {
+        const dropPercentage = ((previousMinPrice - currentMinPrice) / previousMinPrice) * 100;
+        if (dropPercentage >= 5) { //Порог падения цены (5%)
+          hasPriceDrops = true;
+          break; //Нашли хотя бы одно падение, можно прервать
+        }
+      }
+    }
+
+    if (hasPriceDrops) {
+      //Показываем уведомление
+      showCustomNotification('Цены на некоторые товары в вашем избранном упали!', 'info');
+    }
+
+  } catch (error) {
+    console.error('Ошибка проверки уведомлений о падении цен при входе:', error);
+    
+  }
+}
+
+  loadProfileDataFromAPI(); 
+}
 
 
         //Загружаем избранное при загрузке страницы
         document.addEventListener('DOMContentLoaded', function() {
-            loadFavorites();
+            renderfavorites();
             updateFavoritesCounter(); 
         });
 
@@ -3839,32 +4869,36 @@ async function updateModerationStats() {
     if (!token) return;
 
     try {
-        //Получаем все отзывы
+        //Получаем все *отзывы* на модерации (со статусом 'pending' или 'isApproved: false')
         const reviewsRes = await fetch('http://localhost:3000/api/admin/reviews', {
             headers: { 'Authorization': `Bearer ${token}` }
         });
+        let allReviews = [];
+        let pendingReviewsCount = 0;
         if (reviewsRes.ok) {
-            const allReviews = await reviewsRes.json();
-            const pendingReviews = allReviews.filter(r => r.status === 'pending');
-            document.getElementById('newReviews').textContent = allReviews.length;
-            //Обновляем общее количество на модерации
-            const totalPending = pendingReviews.length + (await getPendingRequestsCount() || 0);
-            document.getElementById('pendingItems').textContent = totalPending;
+            allReviews = await reviewsRes.json();
+            //Считаем только те, которые ожидают модерации
+            //Используем поле status, если оно есть и хранит 'pending'
+            pendingReviewsCount = allReviews.filter(r => r.status === 'pending').length;
+            //Или используем isApproved, если статус не используется для модерации
+            //pendingReviewsCount = allReviews.filter(r => !r.isApproved).length;
         }
 
-        //Получаем все запросы
+        //Получаем все *запросы* на добавление товара на модерации (со статусом 'pending')
         const requestsRes = await fetch('http://localhost:3000/api/admin/requests', {
             headers: { 'Authorization': `Bearer ${token}` }
         });
+        let allRequests = [];
+        let pendingRequestsCount = 0;
         if (requestsRes.ok) {
-            const allRequests = await requestsRes.json();
-            const pendingRequests = allRequests.filter(r => r.status === 'pending');
-            document.getElementById('addRequests').textContent = allRequests.length;
-            //Обновляем общее количество на модерации
-            const totalPending = (await getPendingReviewsCount() || 0) + pendingRequests.length;
-            document.getElementById('pendingItems').textContent = totalPending;
+            allRequests = await requestsRes.json();
+            pendingRequestsCount = allRequests.filter(r => r.status === 'pending').length;
         }
 
+        //Обновляем отображение на странице
+        document.getElementById('newReviews').textContent = allReviews.length; //Общее количество отзывов
+        document.getElementById('addRequests').textContent = allRequests.length; //Общее количество запросов
+        document.getElementById('pendingItems').textContent = pendingReviewsCount + pendingRequestsCount; //На модерации
     } catch (error) {
         console.error('Ошибка обновления статистики модерации:', error);
     }
@@ -3873,26 +4907,66 @@ async function updateModerationStats() {
 //Вспомогательная функция для получения количества на модерации (можно оптимизировать в один запрос)
 async function getPendingReviewsCount() {
     const token = localStorage.getItem('techAggregatorToken');
-    const res = await fetch('http://localhost:3000/api/admin/reviews', {
-        headers: { 'Authorization': `Bearer ${token}` }
-    });
-    if (res.ok) {
+    if (!token) return 0;
+    try {
+        const res = await fetch('http://localhost:3000/api/admin/reviews', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!res.ok) return 0;
         const reviews = await res.json();
+        //Считаем только те, которые ожидают модерации
         return reviews.filter(r => r.status === 'pending').length;
+    } catch (e) {
+        return 0;
     }
-    return 0;
 }
 
 async function getPendingRequestsCount() {
     const token = localStorage.getItem('techAggregatorToken');
-    const res = await fetch('http://localhost:3000/api/admin/requests', {
-        headers: { 'Authorization': `Bearer ${token}` }
-    });
-    if (res.ok) {
+    if (!token) return 0;
+    try {
+        const res = await fetch('http://localhost:3000/api/admin/requests', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!res.ok) return 0;
         const requests = await res.json();
         return requests.filter(r => r.status === 'pending').length;
+    } catch (e) {
+        return 0;
     }
-    return 0;
+}
+
+//Обновление основных счётчиков
+async function updateMainStats() {
+    const token = localStorage.getItem('techAggregatorToken');
+    if (!token) return;
+
+    try {
+        //Загрузка статистики
+        const statsRes = await fetch('http://localhost:3000/api/admin/dashboard-stats', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (statsRes.ok) {
+            const stats = await statsRes.json();
+
+            //Обновляем отображение
+            document.getElementById('totalProducts').textContent = stats.totalProducts || 0;
+
+            //pendingItems = pendingReviews + pendingRequests
+            const pendingReviews = stats.pendingReviews || 0;
+            const pendingRequests = stats.pendingRequests || 0;
+            document.getElementById('pendingItems').textContent = pendingReviews + pendingRequests;
+
+            //Опционально: отдельные счётчики для новых элементов
+            document.getElementById('newReviews').textContent = pendingReviews; //Или общее количество новых
+            document.getElementById('addRequests').textContent = pendingRequests; //Или общее количество новых
+        }
+    } catch (error) {
+        console.error('Ошибка обновления статистики:', error);
+        //Показать ошибку в соответствующих блоках
+        document.querySelectorAll('.stat-card-enhanced .stat-value').forEach(el => el.textContent = 'Err');
+    }
 }
 
 async function loadTableList() {
@@ -3901,7 +4975,7 @@ async function loadTableList() {
 
     try {
         const token = localStorage.getItem('techAggregatorToken');
-        const response = await fetch('http://localhost:3000/api/admin/tables', { //<-- Этот маршрут должен быть на сервере
+        const response = await fetch('http://localhost:3000/api/admin/tables', { 
             headers: { 'Authorization': `Bearer ${token}` }
         });
 
@@ -3923,30 +4997,6 @@ async function loadTableList() {
     }
 }
 
-
-async function updateMainStats() {
-    const token = localStorage.getItem('techAggregatorToken');
-    try {
-        //Загрузка статистики
-        const statsRes = await fetch('http://localhost:3000/api/admin/dashboard-stats', {
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
-        if (statsRes.ok) {
-            const stats = await statsRes.json();
-            document.getElementById('totalProducts').textContent = stats.totalProducts || 0;
-            //pendingItems = pendingReviews + pendingRequests
-            const pendingReviews = stats.pendingReviews || 0;
-            const pendingRequests = stats.pendingRequests || 0;
-            document.getElementById('pendingItems').textContent = pendingReviews + pendingRequests;
-            document.getElementById('newReviews').textContent = pendingReviews; //Или общее количество новых
-            document.getElementById('addRequests').textContent = pendingRequests; //Или общее количество новых
-        }
-    } catch (error) {
-        console.error('Ошибка обновления статистики:', error);
-        //Показать ошибку в соответствующих блоках
-        document.querySelectorAll('.stat-card-enhanced .stat-value').forEach(el => el.textContent = 'Err');
-    }
-}
 
 function closeMessageForm() {
     const container = document.getElementById('usersTable').parentElement;
@@ -4214,14 +5264,14 @@ function viewRequestDetails(requestId) {
 
 
 //Загрузка данных из выбранной таблицы
-async function loadTableData(searchField = '', searchValue = '') { // <-- ПРИНИМАЕТ ПАРАМЕТРЫ ПОИСКА
+async function loadTableData(searchField = '', searchValue = '') { 
   const selector = document.getElementById('crudTableSelector');
   const tableName = selector.value;
   const container = document.getElementById('crudTableContainer');
 
-  // Сохраняем параметры поиска (если они переданы)
-  // currentTableSearchField = searchField; // <-- Убедитесь, что глобальная переменная объявлена
-  // currentTableSearchValue = searchValue; // <-- Убедитесь, что глобальная переменная объявлена
+  //Сохраняем параметры поиска (если они переданы)
+  //currentTableSearchField = searchField; 
+  //currentTableSearchValue = searchValue; 
 
   if (!tableName) {
     showCustomNotification('Пожалуйста, выберите таблицу', 'info');
@@ -4237,7 +5287,6 @@ async function loadTableData(searchField = '', searchValue = '') { // <-- ПРИ
     container.innerHTML = '<p class="loading">Загрузка данных...</p>';
     const token = localStorage.getItem('techAggregatorToken');
 
-    // --- ОБНОВЛЕНИЕ: Формируем URL с параметрами поиска ---
     let endpoint = `http://localhost:3000/api/admin/table/${tableName}`;
     const params = new URLSearchParams();
     if (searchField && searchValue) {
@@ -4247,9 +5296,9 @@ async function loadTableData(searchField = '', searchValue = '') { // <-- ПРИ
     if (params.toString()) {
       endpoint += '?' + params.toString();
     }
-    // --- /ОБНОВЛЕНИЕ ---
 
-    const response = await fetch(endpoint, { // <-- Используем обновлённый endpoint
+
+    const response = await fetch(endpoint, { 
       headers: { 'Authorization': `Bearer ${token}` }
     });
 
@@ -4267,9 +5316,7 @@ async function loadTableData(searchField = '', searchValue = '') { // <-- ПРИ
     currentAdminTableData = [...data];
     currentAdminTableName = tableName;
 
-    // --- ОБНОВЛЕНИЕ: Передаём searchField и searchValue в renderCrudTable ---
-    renderCrudTable(container, data, tableName, searchField, searchValue); // <-- Передаём параметры поиска
-    // --- /ОБНОВЛЕНИЕ ---
+    renderCrudTable(container, data, tableName, searchField, searchValue); 
 
   } catch (error) {
     console.error(`Ошибка загрузки данных из таблицы ${tableName}:`, error);
@@ -4278,16 +5325,15 @@ async function loadTableData(searchField = '', searchValue = '') { // <-- ПРИ
 }
 
 //Отрисовка таблицы данных
-function renderCrudTable(container, data, tableName, searchField = '', searchValue = '') { // <-- Принимает параметры поиска
+function renderCrudTable(container, data, tableName, searchField = '', searchValue = '') { 
   if (data.length === 0) {
     container.innerHTML = '<p>Нет данных для отображения.</p>';
     return;
   }
 
-  const fields = Object.keys(data[0]); // Получаем ключи первого объекта как поля таблицы
+  const fields = Object.keys(data[0]); //Получаем ключи первого объекта как поля таблицы
   const primaryKey = 'id';
 
-  // --- ДОБАВЛЕНО: ПОЛЯ ПОИСКА (с сохранением значений) ---
   const searchControlsHTML = `
     <div class="table-search-controls" style="margin-bottom: 1rem; padding: 1rem; background: #f8f9fa; border-radius: 8px; display: flex; gap: 1rem; align-items: end;">
       <div class="form-group">
@@ -4295,7 +5341,7 @@ function renderCrudTable(container, data, tableName, searchField = '', searchVal
         <select id="tableSearchField" class="table-search-field-select" onchange="searchTableDataDebounced()">
           <option value="">(Все столбцы)</option>
           ${fields.map(field => `
-            <option value="${field}" ${field === searchField ? 'selected' : ''}> <!-- Сохраняем выбранное поле -->
+            <option value="${field}" ${field === searchField ? 'selected' : ''}> 
               ${field}
             </option>
           `).join('')}
@@ -4311,10 +5357,9 @@ function renderCrudTable(container, data, tableName, searchField = '', searchVal
       <button class="btn btn-outline btn-small" onclick="resetTableSearch()">Сброс</button>
     </div>
   `;
-  // --- /ДОБАВЛЕНО ---
 
   let tableHTML = `
-    ${searchControlsHTML} <!-- Вставляем контролы поиска перед таблицей -->
+    ${searchControlsHTML} 
     <table class="crud-table">
       <thead>
         <tr>
@@ -4354,7 +5399,7 @@ function debounce(func, delay) {
 
 
 const searchTableDataDebounced = debounce(function() {
-  // Эта функция будет вызываться через delay после последнего ввода
+  //Эта функция будет вызываться через delay после последнего ввода
   const searchFieldSelect = document.getElementById('tableSearchField');
   const searchValueInput = document.getElementById('tableSearchValue');
 
@@ -4366,49 +5411,38 @@ const searchTableDataDebounced = debounce(function() {
   const field = searchFieldSelect.value;
   const value = searchValueInput.value.trim();
 
-  // Если оба поля пусты, загружаем все данные
+  //Если оба поля пусты, загружаем все данные
   if (!field && !value) {
-    loadTableData(); // <-- Вызов loadTableData() без параметров
+    loadTableData(); 
     return;
   }
 
-  // Если указано поле, но не указано значение - не ищем, очищаем результаты
+  //Если указано поле, но не указано значение - не ищем, очищаем результаты
   if (field && !value) {
-    // Оставим таблицу пустой или покажем сообщение, что нужно ввести значение
-    // Или можно не обновлять, если значение удаляется
-    // Лучше всего - вызвать loadTableData без параметров, если поле выбрано, но значение стирается
+    //Оставим таблицу пустой или покажем сообщение, что нужно ввести значение
+    //Или можно не обновлять, если значение удаляется
+    //Лучше всего - вызвать loadTableData без параметров, если поле выбрано, но значение стирается
     if (field) {
-         loadTableData(); // Сбрасываем фильтр по полю, если значение убрано
+         loadTableData(); //Сбрасываем фильтр по полю, если значение убрано
     }
     return;
   }
 
-  // Если указано значение, но не указано поле - ищем по всем полям (пока не реализовано на сервере для этого случая)
-  // или выбираем первое доступное поле
+  //Если указано значение, но не указано поле - ищем по всем полям (пока не реализовано на сервере для этого случая)
+  //или выбираем первое доступное поле
   if (value && !field) {
-    // Для простоты, покажем уведомление
-    // showCustomNotification('Пожалуйста, выберите столбец для поиска.', 'info');
-    // Вместо уведомления, можно искать по всем строкам, передав пустое поле, но сервер это не поддерживает.
-    // Лучше уведомить.
-    // Или, если сервер поддерживает, можно отправить ?searchValue=value, без searchField.
-    // Проверим, поддерживает ли сервер это. В текущем серверном коде, если searchField нет, но searchValue есть, он игнорируется.
-    // Чтобы сервер поддерживал поиск по всем полям, нужно его изменить. Пока оставим уведомление.
-    showCustomNotification('Пожалуйста, выберите столбец для поиска.', 'info');
+showCustomNotification('Пожалуйста, выберите столбец для поиска.', 'info');
     return;
   }
 
-  // Вызываем loadTableData с параметрами поиска
-  loadTableData(field, value); // <-- Вызов loadTableData с параметрами
+  //Вызываем loadTableData с параметрами поиска
+  loadTableData(field, value); 
 }, 500);
 
-
-// --- /ОБНОВЛЁННАЯ ФУНКЦИЯ ---
-
-// --- НОВАЯ ФУНКЦИЯ: Сброс поиска по таблице ---
 function resetTableSearch() {
   document.getElementById('tableSearchField').value = '';
   document.getElementById('tableSearchValue').value = '';
-  loadTableData(); // Перезагружаем без параметров поиска
+  loadTableData(); //Перезагружаем без параметров поиска
 }
 
 function searchTableData() {
@@ -4423,28 +5457,27 @@ function searchTableData() {
   const field = searchFieldSelect.value;
   const value = searchValueInput.value.trim();
 
-  // Если оба поля пусты, загружаем все данные
+  //Если оба поля пусты, загружаем все данные
   if (!field && !value) {
     loadTableData();
     return;
   }
 
-  // Если указано поле, но не указано значение - ошибка
+  //Если указано поле, но не указано значение - ошибка
   if (field && !value) {
     showCustomNotification('Пожалуйста, введите значение для поиска.', 'info');
     return;
   }
 
-  // Если указано значение, но не указано поле - ищем по всем полям (пока не реализовано на сервере для этого случая)
-  // или выбираем первое доступное поле
+  //Если указано значение, но не указано поле - ищем по всем полям (пока не реализовано на сервере для этого случая)
+  //или выбираем первое доступное поле
   if (value && !field) {
-    // Пример: если есть список полей для текущей таблицы, можно выбрать первое
-    // Для простоты, покажем уведомление
+    
     showCustomNotification('Пожалуйста, выберите столбец для поиска.', 'info');
     return;
   }
 
-  // Загружаем данные с параметрами поиска
+  //Загружаем данные с параметрами поиска
   loadTableData(field, value);
 }
 
@@ -4544,54 +5577,121 @@ async function deleteRow(recordId, rowIndex) {
     }
 }
 
-//Добавление новой записи
-function addNewRecord() {
-    alert('Функция добавления новой записи будет реализована позже. Требует формы ввода.');
-}
-
-//Сохранение всех изменений
-function saveTableData() {
-    alert('Функция сохранения всех изменений будет реализована позже. Требует логики сравнения и массового обновления.');
-}
-
 //Вкладка с аналитикой
 async function loadAnalyticsData() {
-    const token = localStorage.getItem('techAggregatorToken');
-    try {
-        //Загрузка основной статистики (предполагается, что есть такой маршрут)
-        const statsRes = await fetch('http://localhost:3000/api/admin/analytics/stats', {
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
-        if (statsRes.ok) {
-            const stats = await statsRes.json();
-            document.getElementById('dailyViews').textContent = stats.dailyViews || 0;
-            document.getElementById('purchaseClicks').textContent = stats.purchaseClicks || 0;
-            document.getElementById('serverLoad').textContent = `${stats.serverLoad || 0}%`;
-            document.getElementById('responseTime').textContent = `${stats.responseTime || 0}ms`;
-            if (stats.dailyViewsChange !== undefined) document.querySelector('#dailyViews ~ .stat-change').textContent = `${stats.dailyViewsChange > 0 ? '+' : ''}${stats.dailyViewsChange}%`;
-            if (stats.purchaseClicksChange !== undefined) document.querySelector('#purchaseClicks ~ .stat-change').textContent = `${stats.purchaseClicksChange > 0 ? '+' : ''}${stats.purchaseClicksChange}%`;
-            if (stats.serverLoadChange !== undefined) document.querySelector('#serverLoad ~ .stat-change').textContent = `${stats.serverLoadChange > 0 ? '+' : ''}${stats.serverLoadChange}%`;
-            if (stats.responseTimeChange !== undefined) document.querySelector('#responseTime ~ .stat-change').textContent = `${stats.responseTimeChange > 0 ? '+' : ''}${stats.responseTimeChange}ms`;
-        }
+  const token = localStorage.getItem('techAggregatorToken');
 
-        //Загрузка популярных поисков (предполагается, что есть такой маршрут)
-        const searchesRes = await fetch('http://localhost:3000/api/admin/analytics/popular-searches', {
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
-        if (searchesRes.ok) {
-            const searches = await searchesRes.json();
-            const searchesContainer = document.getElementById('popularSearches');
-            if (searches.length > 0) {
-                searchesContainer.innerHTML = searches.map(search => `<div>${search.term} (${search.count} раз)</div>`).join('');
-            } else {
-                searchesContainer.innerHTML = '<div>Нет данных</div>';
-            }
-        }
-    } catch (error) {
-        console.error('Ошибка загрузки аналитики:', error);
-        document.querySelectorAll('#analytics .stat-value').forEach(el => el.textContent = 'Err');
-        document.getElementById('popularSearches').innerHTML = '<div>Ошибка загрузки</div>';
+  try {
+   
+    const statsRes = await fetch('http://localhost:3000/api/admin/analytics/stats', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+
+    if (!statsRes.ok) {
+      if (statsRes.status === 401) {
+        localStorage.removeItem('techAggregatorToken');
+        currentUser = null;
+        updateAuthButtons();
+        showCustomNotification('Сессия истекла. Пожалуйста, войдите снова.', 'warning');
+        window.location.href = 'auth.html';
+        return;
+      }
+      throw new Error(`HTTP ${statsRes.status}: ${statsRes.statusText}`);
     }
+
+    const stats = await statsRes.json();
+    console.log('Загружена аналитика:', stats);
+
+    const dailyViewsEl = document.getElementById('dailyViews'); 
+    if (dailyViewsEl) dailyViewsEl.textContent = stats.dailyViews;
+
+    const purchaseClicksEl = document.getElementById('purchaseClicks'); 
+    if (purchaseClicksEl) purchaseClicksEl.textContent = stats.purchaseClicks;
+
+    const totalProductsEl = document.getElementById('totalProductsStat'); 
+    if (totalProductsEl) totalProductsEl.textContent = stats.totalProducts;
+
+    const totalReviewsEl = document.getElementById('totalReviewsStat'); 
+    if (totalReviewsEl) totalReviewsEl.textContent = stats.totalReviews;
+
+    const totalRequestsEl = document.getElementById('totalRequestsStat'); 
+    if (totalRequestsEl) totalRequestsEl.textContent = stats.totalRequests;
+
+    const totalUsersEl = document.getElementById('totalUsersStat'); 
+    if (totalUsersEl) totalUsersEl.textContent = stats.totalUsers;
+
+    const serverLoadEl = document.getElementById('serverLoad'); 
+    if (serverLoadEl) serverLoadEl.textContent = `${stats.serverLoad}%`;
+
+    const responseTimeEl = document.getElementById('responseTime'); 
+    if (responseTimeEl) responseTimeEl.textContent = `${stats.responseTime} ms`;
+
+    //Обновление изменений (если отображаются)
+    const dailyViewsChangeEl = document.getElementById('dailyViewsChange');
+    if (dailyViewsChangeEl) dailyViewsChangeEl.textContent = `${stats.dailyViewsChange > 0 ? '+' : ''}${stats.dailyViewsChange.toFixed(1)}%`;
+
+    const purchaseClicksChangeEl = document.getElementById('purchaseClicksChange');
+    if (purchaseClicksChangeEl) purchaseClicksChangeEl.textContent = `${stats.purchaseClicksChange > 0 ? '+' : ''}${stats.purchaseClicksChange.toFixed(1)}%`;
+
+
+
+  } catch (error) {
+    console.error('Ошибка загрузки аналитики:', error);
+
+    showCustomNotification(`Ошибка загрузки аналитики: ${error.message}`, 'error');
+  }
+}
+
+//популярные товары
+async function loadPopularSearches() {
+  const token = localStorage.getItem('techAggregatorToken');
+
+  try {
+    const searchesRes = await fetch('http://localhost:3000/api/admin/analytics/popular-searches', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+
+    if (!searchesRes.ok) {
+      if (searchesRes.status === 401) {
+        localStorage.removeItem('techAggregatorToken');
+        currentUser = null;
+        updateAuthButtons();
+        showCustomNotification('Сессия истекла. Пожалуйста, войдите снова.', 'warning');
+        window.location.href = 'auth.html';
+        return;
+      }
+      throw new Error(`HTTP ${searchesRes.status}: ${searchesRes.statusText}`);
+    }
+
+    const searches = await searchesRes.json();
+    const searchesContainer = document.getElementById('popularSearches'); 
+
+    if (!searchesContainer) {
+        console.warn('Контейнер популярных поисков (#popularSearches) не найден.');
+        return;
+    }
+
+    if (searches.length > 0) {
+      //Очищаем предыдущий список
+      searchesContainer.innerHTML = '';
+      //Создаём HTML для каждого поиска
+      searches.forEach(search => {
+        const div = document.createElement('div');
+        div.className = 'popular-search-item'; //Добавим класс для стилизации
+        div.textContent = `${search.term} (${search.count} раз)`;
+        searchesContainer.appendChild(div);
+      });
+    } else {
+      searchesContainer.innerHTML = '<div class="no-data">Нет данных</div>';
+    }
+
+  } catch (error) {
+    console.error('Ошибка загрузки популярных поисков:', error);
+    const searchesContainer = document.getElementById('popularSearches');
+    if (searchesContainer) {
+      searchesContainer.innerHTML = '<div class="error-message">Ошибка загрузки</div>';
+    }
+  }
 }
 
 //Вкладка с пользователями
@@ -4630,7 +5730,7 @@ return `
         <td>
             <button class="btn btn-outline btn-small" onclick="viewUser(${user.id})">Просм.</button>
             <button class="btn btn-outline btn-small" onclick="editUser(${user.id})">Ред.</button>
-            <!-- Кнопка удаления убрана -->
+            
             <button class="btn btn-primary btn-small" onclick="openMessageForm(${user.id}, '${user.email}')">Сообщение</button>
         </td>
     </tr>
@@ -4700,304 +5800,146 @@ function openMessageForm(userId, userEmail) {
 
 
 //Добавление
-document.getElementById('parseProductForm').addEventListener('submit', async function(e) {
-    e.preventDefault();
+document.addEventListener('DOMContentLoaded', () => {
+    const parseForm = document.getElementById('parseProductForm');
+    if (parseForm) {
+        parseForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const url = document.getElementById('parseUrl')?.value.trim();
+            const category = document.getElementById('parseCategory')?.value.trim() || null;
+            const proxy = document.getElementById('parseProxy')?.value.trim() || null;
 
-    //Получаем значения из формы
-    const url = document.getElementById('parseUrl').value.trim();
-    const category = document.getElementById('parseCategory').value;
+            if (!url) {
+                showCustomNotification('Пожалуйста, введите URL товара.', 'info');
+                return;
+            }
 
-    //Проверяем, заполнены ли обязательные поля
-    if (!url) {
-        showCustomNotification('Пожалуйста, введите URL товара', 'info');
-        return;
-    }
-    if (!category) {
-        showCustomNotification('Пожалуйста, выберите категорию', 'info');
-        return;
-    }
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerText;
+            submitBtn.disabled = true;
+            submitBtn.innerText = '⏳ Загрузка...';
 
-    const token = localStorage.getItem('techAggregatorToken');
-    try {
-        const response = await fetch('http://localhost:3000/api/admin/parse-product', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify({
-                url: url,
-                category: category 
-            })
+            try {
+                await sendParseRequest(url, category, proxy);
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerText = originalText;
+            }
         });
-
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error || `HTTP ${response.status}`);
-        }
-
-        const result = await response.json();
-        console.log('Результат парсинга:', result);
-
-        //Отображение результатов
-        displayParsedData(result.parsedData);
-
-    } catch (error) {
-        console.error('Ошибка парсинга:', error);
-        showCustomNotification(`Ошибка парсинга: ${error.message}`, 'error');
     }
 });
 
 
-let currentManualCategory = ''; // <-- Добавлено для вкладки вручную
+let currentManualCategory = ''; 
 
-// --- КАРТА КАТЕГОРИЙ НА КЛЮЧИ ХАРАКТЕРИСТИК (для вкладки вручную) ---
+
 const CATEGORY_TO_SPECS_MAP = {
     smartphones: [
-        'screen_size',
-        'screen_resolution',
-        'screen_technology',
-        'screen_refresh_rate',
-        'cpu_brand',
-        'cpu_model',
-        'ram_size',
-        'ram_type',
-        'storage_capacity',
-        'storage_type',
-        'rear_camera_count',
-        'rear_camera_primary_mp',
-        'rear_camera_sensor_model',
-        'rear_camera_sensor_size',
-        'front_camera_mp',
-        'battery_capacity_mah',
-        'battery_type',
-        'os',
-        'os_version',
-        'weight_g',
-        'dimensions_mm',
-        'sim_slots',
-        'connectivity',
-        's_pen',
-        'water_resistance',
-        'build_material',
-        'fingerprint_scanner',
-        'face_unlock'
+        'screen_size', 'screen_resolution', 'screen_technology', 'screen_refresh_rate',
+        'cpu_brand', 'cpu_model', 'cpu_cores', 'cpu_speed',
+        'ram_size', 'ram_type',
+        'storage_capacity', 'storage_type',
+        'rear_camera_count', 'rear_camera_primary_mp', 'rear_camera_sensor_model',
+        'front_camera_mp', 'battery_capacity_mah', 'battery_type',
+        'os', 'os_version', 'weight_g', 'dimensions_mm',
+        'sim_slots', 'connectivity', 'water_resistance', 'build_material',
+        'fingerprint_scanner', 'face_unlock', 'nfc_support', 'wireless_charging'
     ],
     laptops: [
-        'screen_type',
-        'screen_aspect_ratio',
-        'cpu_generation',
-        'cpu_cores',
-        'cpu_threads',
-        'cpu_base_freq',
-        'cpu_boost_freq',
-        'gpu_model',
-        'gpu_memory_mb',
-        'gpu_brand',
-        'ram_size',
-        'ram_type',
-        'ssd_type',
-        'hdd_capacity_gb',
-        'hdd_rpm',
-        'storage_capacity',
-        'storage_type',
-        'keyboard_backlight',
-        'keyboard_layout',
-        'ports_usb_a',
-        'ports_usb_c',
-        'ports_hdmi',
-        'ports_displayport',
-        'battery_life_hours',
-        'webcam_mp',
-        'webcam_features',
-        'audio_system',
-        'audio_features',
-        'security_features',
-        'os',
-        'weight_g',
-        'dimensions_mm',
-        'tpm',
-        'touch_bar'
-    ],
-    tablets: [
-        'screen_size',
-        'screen_resolution',
-        'screen_technology',
-        'screen_surface_type',
-        'screen_frontlight',
-        'screen_frontlight_color',
-        'screen_page_turn_buttons',
-        'cpu_brand',
-        'cpu_model',
-        'ram_size',
-        'ram_type',
-        'storage_capacity',
-        'storage_expandable',
-        'storage_max_gb',
-        'os',
-        'os_version',
-        'battery_capacity_mah',
-        'battery_life_hours',
-        'battery_charging_type',
-        'battery_charging_speed',
-        'rear_camera_primary_mp',
-        'front_camera_mp',
-        'weight_g',
-        'dimensions_mm',
-        'accessory_ports',
-        'stylus_support',
-        'stylus_included',
-        'keyboard_support',
-        'keyboard_included',
-        'connectivity',
-        'sim_slots'
+        'screen_size', 'screen_resolution', 'screen_type', 'screen_refresh_rate',
+        'cpu_brand', 'cpu_model', 'cpu_cores', 'cpu_speed',
+        'ram_size', 'ram_type', 'ram_slots',
+        'storage_capacity', 'storage_type', 'storage_slots',
+        'gpu_model', 'gpu_brand', 'gpu_memory_mb',
+        'os', 'keyboard_backlight', 'keyboard_layout',
+        'ports_usb_a', 'ports_usb_c', 'ports_hdmi', 'ports_displayport',
+        'battery_capacity_mah', 'battery_life_hours', 'weight_g', 'dimensions_mm',
+        'webcam_mp', 'audio_system', 'fingerprint_scanner', 'tpm'
     ],
     tv: [
-        'diagonal_in',
-        'screen_format',
-        'hdr_support',
-        'smart_platform',
-        'sound_power_w',
-        'sound_channels',
-        'mount_type',
-        'wall_mount_kit',
-        'power_consumption_w',
-        'power_standby_w',
-        'screen_resolution',
-        'screen_technology',
-        'refresh_rate',
-        'os',
-        'weight_g',
-        'dimensions_mm',
-        'ports_hdmi',
-        'ports_usb_a',
-        'ports_usb_c'
+        'diagonal_in', 'screen_resolution', 'screen_technology', 'hdr_support',
+        'smart_platform', 'refresh_rate', 'sound_power_w', 'sound_channels',
+        'ports_hdmi', 'ports_usb', 'wifi_support', 'bluetooth_support',
+        'weight_g', 'dimensions_mm', 'mount_type', 'energy_class'
     ],
     headphones: [
-        'driver_size_mm',
-        'driver_type',
-        'impedance_ohms',
-        'frequency_response_hz',
-        'sensitivity_db',
-        'microphone_frequency_response',
-        'microphone_noise_reduction',
-        'wireless_standard',
-        'wireless_range_m',
-        'charging_port',
-        'charging_time_h',
-        'anc_type',
-        'anc_level',
-        'controls_type',
-        'controls_touch',
-        'controls_voice',
-        'foldable',
-        'ear_pad_type',
-        'ear_pad_material',
-        'ear_pad_replaceable',
-        'carry_case_included',
-        'cable_length_m',
-        'cable_connector',
-        'battery_life_hours',
-        'noise_cancel',
-        'type'
+        'driver_size_mm', 'driver_type', 'impedance_ohms', 'frequency_response_hz',
+        'sensitivity_db', 'wireless_standard', 'battery_life_hours', 'charging_port',
+        'anc_type', 'microphone', 'foldable', 'weight_g',
+        'cable_length_m', 'connector_type', 'controls_type'
     ],
     cameras: [
-        'sensor_model',
-        'sensor_size',
-        'sensor_resolution_mp',
-        'lens_mount',
-        'lens_aperture',
-        'lens_zoom',
-        'image_stabilization',
-        'video_resolution',
-        'video_fps',
-        'iso_range',
-        'shutter_speed',
-        'viewfinder_type',
-        'viewfinder_magnification',
-        'lcd_type',
-        'lcd_size_in',
-        'lcd_touch',
-        'lcd_articulating',
-        'rear_camera_primary_mp',
-        'weight_g',
-        'weight_kg',
-        'dimensions_w_h_d_mm',
-        'battery_life_shots',
-        'battery_model',
-        'flash_type',
-        'flash_sync_speed',
-        'ports',
-        'fingerprint_reader'
+        'sensor_size', 'sensor_resolution_mp', 'lens_mount', 'video_resolution',
+        'video_fps', 'iso_range', 'image_stabilization', 'viewfinder_type',
+        'lcd_size_in', 'lcd_touch', 'battery_life_shots', 'weight_g',
+        'dimensions_mm', 'weather_sealing', 'flash_type'
+    ],
+    tablets: [
+        'screen_size', 'screen_resolution', 'screen_technology',
+        'cpu_brand', 'cpu_model', 'ram_size', 'storage_capacity',
+        'os', 'battery_capacity_mah', 'rear_camera_mp', 'front_camera_mp',
+        'weight_g', 'dimensions_mm', 'stylus_support', 'keyboard_support',
+        'sim_slots', 'connectivity'
     ],
     smartwatches: [
-        'watch_band_material',
-        'watch_band_width_mm',
-        'watch_band_replacement',
-        'health_monitoring',
-        'sports_modes_count',
-        'gps_type',
-        'nfc_support',
-        'lte_support',
-        'sleep_tracking',
-        'stress_monitoring',
-        'spo2_monitoring',
-        'ecg_support',
-        'water_resistance_rating',
-        'watch_face_customizable',
-        'os',
-        'battery_life_hours',
-        'weight_g',
-        'dimensions_mm',
-        'connectivity'
+        'display_size_in', 'display_type', 'battery_life_hours', 'water_resistance_rating',
+        'gps_type', 'nfc_support', 'lte_support', 'health_monitoring',
+        'sports_modes_count', 'compatibility', 'weight_g', 'strap_material'
     ],
     ebooks: [
-        'screen_size',
-        'screen_resolution',
-        'screen_technology',
-        'screen_surface_type',
-        'screen_frontlight',
-        'screen_frontlight_color',
-        'screen_page_turn_buttons',
-        'storage_capacity',
-        'storage_available_gb',
-        'file_formats_supported',
-        'dictionary_included',
-        'bookstore_integration',
-        'battery_standby_days',
-        'charging_method',
-        'accessories_included',
-        'weight_g',
-        'dimensions_mm'
+        'screen_size', 'screen_resolution', 'screen_technology', 'screen_frontlight',
+        'storage_capacity', 'battery_life_days', 'weight_g', 'dimensions_mm',
+        'file_formats_supported', 'dictionary_included', 'waterproof'
     ],
     drones: [
-        'motor_type',
-        'propeller_guard',
-        'camera_specs',
-        'camera_gimbal',
-        'camera_recording_mode',
-        'flight_modes',
-        'obstacle_avoidance',
-        'return_to_home',
-        'follow_me_mode',
-        'orbit_mode',
-        'flight_time',
-        'range',
-        'remote_control_range',
-        'remote_control_battery_life',
-        'transmission_latency_ms',
-        'wind_resistance_level',
-        'indoor_outdoor_use',
-        'weight_g',
-        'dimensions_mm'
-    ]
-    // ... добавьте другие категории по мере необходимости, используя ключи из specKeyTranslations ...
+        'flight_time_minutes', 'max_range_km', 'camera_resolution', 'video_resolution',
+        'gimbal_type', 'obstacle_avoidance', 'max_speed_kmh', 'weight_g',
+        'wind_resistance', 'gps_support', 'return_to_home'
+    ],
+    pc_components: [
+        'component_type', 'brand', 'model', 'socket', 'chipset',
+        'ram_type', 'ram_speed', 'pcie_version', 'power_connector',
+        'tdp_w', 'dimensions_mm', 'warranty_years'
+    ],
+    monitors: [
+        'screen_size', 'screen_resolution', 'panel_type', 'refresh_rate',
+        'response_time_ms', 'brightness_nits', 'contrast_ratio', 'hdr_support',
+        'ports_hdmi', 'ports_displayport', 'adjustable_stand', 'vesa_mount',
+        'weight_g', 'dimensions_mm'
+    ],
+    accessories: [
+        'accessory_type', 'compatibility', 'material', 'color',
+        'weight_g', 'dimensions_mm', 'warranty_years'
+    ],
+    gaming: [
+        'console_type', 'storage_capacity', 'resolution_output', 'backwards_compatibility',
+        'controller_included', 'online_service', 'weight_g', 'dimensions_mm'
+    ],
+    networking: [
+        'wifi_standard', 'max_speed_mbps', 'ethernet_ports', 'antenna_count',
+        'coverage_area_sqm', 'vpn_support', 'parental_controls', 'weight_g'
+    ],
+    storage: [
+        'storage_type', 'capacity_gb', 'interface', 'read_speed_mbs',
+        'write_speed_mbs', 'form_factor', 'warranty_years'
+    ],
+    audio: [
+        'speaker_count', 'power_w', 'frequency_response_hz', 'connectivity',
+        'voice_assistant', 'weight_g', 'dimensions_mm'
+    ],
+    smart_home: [
+        'device_type', 'protocol', 'compatibility', 'power_source',
+        'range_m', 'app_support', 'voice_control', 'weight_g'
+    ],
+    wearables: [
+        'display_type', 'battery_life_days', 'water_resistance', 'sensors',
+        'connectivity', 'compatibility', 'weight_g', 'strap_size'
+    ],
+    other: [] //Пустой массив для категории "Другое"
 };
-// --- /КАРТА ---
 
-// --- ФУНКЦИИ ДЛЯ ВКЛАДКИ "ДОБАВЛЕНИЕ ВРУЧНУЮ" ---
-
-// Обновление полей спецификаций при выборе категории
+//Обновление полей спецификаций при выборе категории
 function updateManualSpecFields() {
   const categorySelect = document.getElementById('manualCategory');
   const container = document.getElementById('manualSpecFieldsContainer');
@@ -5051,7 +5993,7 @@ function updateManualSpecFields() {
   }
 }
 
-// Добавление блока для новой цены и ссылки
+//Добавление блока для новой цены и ссылки
 function addManualPriceEntry() {
   const container = document.getElementById('manualPricesList');
   const entryCount = container.children.length;
@@ -5089,7 +6031,7 @@ function addManualPriceEntry() {
   container.appendChild(priceEntryDiv);
 }
 
-// Удаление блока цены и ссылки
+//Удаление блока цены и ссылки
 function removeManualPriceEntry(index) {
   const entryDiv = document.getElementById(`priceEntry_${index}`);
   if (entryDiv) {
@@ -5097,7 +6039,7 @@ function removeManualPriceEntry(index) {
   }
 }
 
-// Сброс формы вручную
+//Сброс формы вручную
 function resetManualAddForm() {
   document.getElementById('manualAddForm').reset();
   document.getElementById('manualSpecFieldsContainer').innerHTML = '<p class="placeholder-text">Выберите категорию, чтобы увидеть доступные поля для характеристик.</p>';
@@ -5106,7 +6048,7 @@ function resetManualAddForm() {
   console.log('Форма "Добавление вручную" сброшена.');
 }
 
-// Отправка формы вручную
+//Отправка формы вручную
 document.getElementById('manualAddForm')?.addEventListener('submit', async function(e) {
   e.preventDefault();
   console.log('Отправка формы "Добавление вручную"...');
@@ -5198,95 +6140,24 @@ document.getElementById('manualAddForm')?.addEventListener('submit', async funct
   }
 });
 
-// --- /ФУНКЦИИ ДЛЯ ВКЛАДКИ "ДОБАВЛЕНИЕ ВРУЧНУЮ" ---
-
-// --- ФУНКЦИИ ДЛЯ ВКЛАДКИ "ПАРСИНГ" (обновлена) ---
-
-// Сброс формы парсинга
+//Сброс формы парсинга
 function resetParseForm() {
   document.getElementById('parseProductForm').reset();
   document.getElementById('parseResult').style.display = 'none';
   console.log('Форма "Парсинг" сброшена.');
 }
 
-// Отправка формы парсинга
-document.getElementById('parseProductForm')?.addEventListener('submit', async function(e) {
-  e.preventDefault();
-  console.log('Отправка формы "Парсинг"...');
 
-  const url = document.getElementById('parseUrl').value.trim();
-  const category = document.getElementById('parseCategory').value;
-  const proxy = document.getElementById('parseProxy').value.trim(); // <-- Новое поле
 
-  if (!url || !category) {
-    showCustomNotification('Пожалуйста, заполните все обязательные поля формы', 'info');
-    return;
-  }
 
-  const requestData = { url, category }; // <-- Начинаем формировать тело
-  if (proxy) requestData.proxy = proxy; // <-- Добавляем proxy, если есть
-
-  const token = localStorage.getItem('techAggregatorToken');
-  try {
-    const response = await fetch('http://localhost:3000/api/admin/parse-product', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify(requestData) // <-- Отправляем обновлённое тело
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || `HTTP ${response.status}`);
-    }
-
-    const result = await response.json();
-    console.log('Результат парсинга:', result);
-
-    // Отображение результата (пример, адаптируйте под ваш дизайн)
-    const resultContainer = document.getElementById('parseResult');
-    if (result.parsedData) {
-      const data = result.parsedData;
-      resultContainer.innerHTML = `
-          <h4>Результаты парсинга:</h4>
-          <p><strong>Источник:</strong> ${data.source || 'Неизвестен'}</p>
-          <p><strong>Название:</strong> ${data.name || 'Не указано'}</p>
-          <p><strong>Цена:</strong> ${data.price ? data.price + ' ₽' : 'Не указана'}</p>
-          <p><strong>URL источника:</strong> <a href="${data.sourceUrl}" target="_blank">${data.sourceUrl}</a></p>
-          ${data.imageUrl ? `<p><strong>Изображение:</strong> <img src="${data.imageUrl}" alt="Изображение товара" style="max-width: 300px;"></p>` : '<p><em>Изображение не найдено или не извлечено.</em></p>'}
-          ${Object.keys(data.specs).length > 0 ? `
-          <h5>Характеристики:</h5>
-          <ul>
-            ${Object.entries(data.specs).map(([key, value]) => `<li><strong>${key}:</strong> ${value}</li>`).join('')}
-          </ul>` : '<p><em>Характеристики не найдены или не извлечены.</em></p>'}
-          <p><em>Данные НЕ сохранены в БД. Используйте вкладку "Добавление вручную" для сохранения.</em></p>
-      `;
-    } else {
-      resultContainer.innerHTML = '<p>Данные не получены.</p>';
-    }
-    resultContainer.style.display = 'block';
-
-  } catch (error) {
-    console.error('Ошибка парсинга:', error);
-    const resultContainer = document.getElementById('parseResult');
-    resultContainer.innerHTML = `<p class="error-message">Ошибка: ${error.message}</p>`;
-    resultContainer.style.display = 'block';
-  }
-});
-
-// --- /ФУНКЦИИ ДЛЯ ВКЛАДКИ "ПАРСИНГ" ---
-
-// --- ОБНОВЛЁННАЯ ФУНКЦИЯ ОТКРЫТИЯ ВКЛАДКИ ---
 function openAdminTab(tabName) {
     document.querySelectorAll('.admin-tab-content').forEach(tab => tab.classList.remove('active'));
     document.querySelectorAll('.admin-tab-btn').forEach(btn => btn.classList.remove('active'));
     document.getElementById(tabName).classList.add('active');
-    // Обновим активные кнопки
+    //Обновим активные кнопки
     event.target.classList.add('active');
 
-    // Загрузка данных для вкладки при её открытии
+    //Загрузка данных для вкладки при её открытии
     if (tabName === 'moderation') {
         loadModerationData(currentModerationTab);
     } else if (tabName === 'editor') {
@@ -5296,7 +6167,7 @@ function openAdminTab(tabName) {
     } else if (tabName === 'users') {
         loadUsersTable();
     }
-    // Для 'parser' и 'manualAdd' ничего загружать не нужно, только открыть форму
+    //Для 'parser' и 'manualAdd' ничего загружать не нужно, только открыть форму
 }
 
 
@@ -5308,7 +6179,7 @@ async function loadAllProductsForPriceHistory() {
 
     const token = localStorage.getItem('techAggregatorToken');
     try {
-        const response = await fetch('http://localhost:3000/api/admin/products', { // Предполагаемый маршрут для получения всех продуктов
+        const response = await fetch('http://localhost:3000/api/admin/products', { //Предполагаемый маршрут для получения всех продуктов
             headers: { 'Authorization': `Bearer ${token}` }
         });
 
@@ -5318,7 +6189,7 @@ async function loadAllProductsForPriceHistory() {
                 currentUser = null;
                 updateAuthButtons();
                 showCustomNotification('Сессия истекла. Пожалуйста, войдите снова.', 'warning');
-                window.location.href = 'auth.html';
+                //window.location.href = 'auth.html';
                 return;
             }
             throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -5342,13 +6213,13 @@ async function loadAllProductsForPriceHistory() {
     }
 }
 
-// Загрузка истории цен для выбранного товара
+//Загрузка истории цен для выбранного товара
 async function loadPriceHistoryForProduct() {
     const selectElement = document.getElementById('priceHistoryProductSelect');
     const productId = parseInt(selectElement.value, 10);
 
     if (!productId) {
-        // Если выбрана пустая опция, скрываем форму и список
+        //Если выбрана пустая опция, скрываем форму и список
         document.getElementById('priceHistoryFormContainer').style.display = 'none';
         document.getElementById('priceHistoryListContainer').style.display = 'none';
         currentPriceHistoryProduct = null;
@@ -5371,7 +6242,7 @@ async function loadPriceHistoryForProduct() {
                 currentUser = null;
                 updateAuthButtons();
                 showCustomNotification('Сессия истекла. Пожалуйста, войдите снова.', 'warning');
-                window.location.href = 'auth.html';
+                //window.location.href = 'auth.html';
                 return;
             }
             throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -5380,13 +6251,13 @@ async function loadPriceHistoryForProduct() {
         const historyEntries = await response.json();
         console.log('Загружена история цен:', historyEntries);
 
-        currentPriceHistoryEntries = [...historyEntries]; // Сохраняем копию
+        currentPriceHistoryEntries = [...historyEntries]; //Сохраняем копию
 
-        // Показываем форму добавления
+        //Показываем форму добавления
         document.getElementById('priceHistoryFormContainer').style.display = 'block';
-        // Показываем список
+        //Показываем список
         document.getElementById('priceHistoryListContainer').style.display = 'block';
-        // Отрисовываем список
+        //Отрисовываем список
         renderPriceHistoryList(historyEntries);
 
     } catch (error) {
@@ -5396,7 +6267,7 @@ async function loadPriceHistoryForProduct() {
     }
 }
 
-// Отрисовка списка истории цен
+//Отрисовка списка истории цен
 function renderPriceHistoryList(entries) {
     const container = document.getElementById('priceHistoryList');
     if (!container) return;
@@ -5429,7 +6300,7 @@ function renderPriceHistoryList(entries) {
     }).join('');
 }
 
-// Обработчик отправки формы добавления
+//Обработчик отправки формы добавления
 document.getElementById('addPriceHistoryForm')?.addEventListener('submit', async function(e) {
     e.preventDefault();
 
@@ -5469,7 +6340,7 @@ document.getElementById('addPriceHistoryForm')?.addEventListener('submit', async
                 currentUser = null;
                 updateAuthButtons();
                 showCustomNotification('Сессия истекла. Пожалуйста, войдите снова.', 'warning');
-                window.location.href = 'auth.html';
+                //window.location.href = 'auth.html';
                 return;
             }
             const errorData = await response.json().catch(() => ({ error: `HTTP ${response.status}` }));
@@ -5480,9 +6351,9 @@ document.getElementById('addPriceHistoryForm')?.addEventListener('submit', async
         console.log('Новая запись истории цен добавлена:', result);
 
         showCustomNotification('Запись истории цен добавлена.', 'success');
-        // Сбросим форму
+        //Сбросим форму
         resetPriceHistoryForm();
-        // Перезагрузим историю для текущего товара
+        //Перезагрузим историю для текущего товара
         loadPriceHistoryForProduct();
 
     } catch (error) {
@@ -5491,27 +6362,24 @@ document.getElementById('addPriceHistoryForm')?.addEventListener('submit', async
     }
 });
 
-// Сброс формы добавления
+//Сброс формы добавления
 function resetPriceHistoryForm() {
     document.getElementById('addPriceHistoryForm').reset();
 }
 
-// Функция редактирования (заглушка, требует реализации формы редактирования)
+//Функция редактирования (заглушка, требует реализации формы редактирования)
 function editPriceHistoryEntry(entryId) {
-    // Найти запись
+    //Найти запись
     const entry = currentPriceHistoryEntries.find(e => e.id === entryId);
     if (!entry) {
         showCustomNotification('Запись не найдена.', 'error');
         return;
     }
 
-    // Здесь должна быть логика для отображения формы редактирования
-    // и последующего PUT запроса
     alert(`Редактирование записи ID ${entryId}:\nМагазин: ${entry.storeName}\nЦена: ${entry.price}\nДата: ${entry.date}`);
-    // Пока что просто покажем алерт
 }
 
-// Функция удаления
+//Функция удаления
 async function deletePriceHistoryEntry(entryId) {
     if (!confirm(`Вы уверены, что хотите удалить запись истории цен ID ${entryId}?`)) {
         return;
@@ -5530,7 +6398,7 @@ async function deletePriceHistoryEntry(entryId) {
                 currentUser = null;
                 updateAuthButtons();
                 showCustomNotification('Сессия истекла. Пожалуйста, войдите снова.', 'warning');
-                window.location.href = 'auth.html';
+                //window.location.href = 'auth.html';
                 return;
             }
             const errorData = await response.json().catch(() => ({ error: `HTTP ${response.status}` }));
@@ -5541,8 +6409,8 @@ async function deletePriceHistoryEntry(entryId) {
         console.log(result.message);
 
         showCustomNotification(result.message, 'success');
-        // Обновим список
-        loadPriceHistoryForProduct(); // Перезагружаем для текущего товара
+        //Обновим список
+        loadPriceHistoryForProduct(); //Перезагружаем для текущего товара
 
     } catch (error) {
         console.error('Ошибка удаления записи истории цен:', error);
@@ -5553,252 +6421,395 @@ async function deletePriceHistoryEntry(entryId) {
 
 //Рекоммендации
 function initializeRecommendationsPage() {
-  // Загружаем рекомендации для всех вкладок
+  //Загружаем рекомендации для всех вкладок
   loadRecommendationsByType('popular');
   loadRecommendationsByType('trending');
   loadRecommendationsByType('bestValue');
-  // Загружаем персонализированные рекомендации
+  loadRecommendationsByType('priceDrop');
+  loadRecommendationsByType('personal');
+  //Загружаем персонализированные рекомендации
   loadPersonalRecommendations();
+  setupRecommendationsFilters();
 }
 
 
 async function loadRecommendationsByType(type) {
-  const gridIdMap = {
-    'popular': 'popularProducts',
-    'trending': 'trendingProducts',
-    'bestValue': 'bestValueProducts',
-    'personal': 'personalProducts' // Предположим, у вас есть контейнер #personalProducts
-  };
-
-  const gridId = gridIdMap[type];
-  if (!gridId) {
-    console.error(`loadRecommendationsByType: Неизвестный тип рекомендаций: ${type}`);
-    return;
-  }
-
-  const grid = document.getElementById(gridId);
-  if (!grid) {
-    console.error(`loadRecommendationsByType: Контейнер #${gridId} не найден.`);
-    return;
-  }
-
-  grid.innerHTML = '<p>Загрузка...</p>'; // Показываем заглушку
-
-  const token = localStorage.getItem('techAggregatorToken');
-  if (!token) {
-    showCustomNotification('Требуется авторизация для загрузки рекомендаций.', 'warning');
-    grid.innerHTML = '<p>Требуется авторизация.</p>';
-    return;
-  }
-
-  try {
-    let endpoint = '';
-    switch (type) {
-      case 'popular':
-        endpoint = 'http://localhost:3000/api/recommendations/popular';
-        break;
-      case 'trending':
-        endpoint = 'http://localhost:3000/api/recommendations/trending';
-        break;
-      case 'bestValue':
-        endpoint = 'http://localhost:3000/api/recommendations/best-value';
-        break;
-      case 'personal':
-        // endpoint = 'http://localhost:3000/api/recommendations/personal'; // Вызывается отдельно
-        return;
-      default:
-        throw new Error(`Неизвестный тип: ${type}`);
+    const gridId = recommendationGridIdMap[type];
+    const grid = document.getElementById(gridId);
+    if (!grid) return;
+    grid.innerHTML = '<p style="text-align:center; padding:20px;">Загрузка...</p>';
+    const token = localStorage.getItem('techAggregatorToken');
+    let endpoint = `/api/recommendations/${type}`;
+    if (type === 'bestValue') endpoint = '/api/recommendations/best-value';
+    else if (type === 'priceDrop') endpoint = '/api/recommendations/price-drops';
+    try {
+        const res = await fetch(`http://localhost:3000${endpoint}`, {
+            headers: { ...(token && { 'Authorization': `Bearer ${token}` }) }
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const products = await res.json();
+        recommendationStore[type] = Array.isArray(products) ? products : [];
+        await renderRecommendationsByType(type);
+    } catch (error) {
+        console.error(`Ошибка загрузки ${type}:`, error);
+        grid.innerHTML = '<p style="text-align:center; color:red;">Ошибка загрузки рекомендаций</p>';
     }
-
-    const response = await fetch(endpoint, {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
-
-    if (!response.ok) {
-      if (response.status === 401) {
-        localStorage.removeItem('techAggregatorToken');
-        currentUser = null;
-        updateAuthButtons();
-        showCustomNotification('Сессия истекла. Пожалуйста, войдите снова.', 'warning');
-        window.location.href = 'auth.html';
-        return;
-      }
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-    }
-
-    const products = await response.json();
-    console.log(`Загружены ${type} рекомендации:`, products);
-
-    // Отрисовываем продукты в соответствующий контейнер
-    displayEnhancedProducts(gridId, products, type);
-
-  } catch (error) {
-    console.error(`Ошибка загрузки ${type} рекомендаций:`, error);
-    grid.innerHTML = `<p class="error-message">Ошибка: ${error.message}</p>`;
-  }
 }
-// --- /ФУНКЦИЯ ЗАГРУЗКИ ---
 
-// --- ФУНКЦИЯ ЗАГРУЗКИ ПЕРСОНАЛЬНЫХ РЕКОМЕНДАЦИЙ ---
 async function loadPersonalRecommendations() {
-  const gridId = 'personalProducts'; // Убедитесь, что контейнер существует в HTML
-  const grid = document.getElementById(gridId);
-  if (!grid) {
-    console.error(`loadPersonalRecommendations: Контейнер #${gridId} не найден.`);
-    return;
-  }
+    const gridId = recommendationGridIdMap.personal;
+    const grid = document.getElementById(gridId);
+    if (!grid) return;
 
-  grid.innerHTML = '<p>Загрузка персональных рекомендаций...</p>';
-
-  const token = localStorage.getItem('techAggregatorToken');
-  if (!token) {
-    showCustomNotification('Требуется авторизация для загрузки персональных рекомендаций.', 'warning');
-    grid.innerHTML = '<p>Требуется авторизация.</p>';
-    return;
-  }
-
-  try {
-    const response = await fetch('http://localhost:3000/api/recommendations/personal', {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
-
-    if (!response.ok) {
-      if (response.status === 401) {
-        localStorage.removeItem('techAggregatorToken');
-        currentUser = null;
-        updateAuthButtons();
-        showCustomNotification('Сессия истекла. Пожалуйста, войдите снова.', 'warning');
-        window.location.href = 'auth.html';
+    const token = localStorage.getItem('techAggregatorToken');
+    if (!token) {
+        grid.innerHTML = '<p>Войдите, чтобы видеть персональные рекомендации</p>';
         return;
-      }
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
 
-    const products = await response.json();
-    console.log('Загружены персональные рекомендации:', products);
-
-    // Отрисовываем продукты в соответствующий контейнер
-    displayEnhancedProducts(gridId, products, 'personal');
-
-  } catch (error) {
-    console.error('Ошибка загрузки персональных рекомендаций:', error);
-    grid.innerHTML = `<p class="error-message">Ошибка: ${error.message}</p>`;
-  }
+    try {
+        const res = await fetch('http://localhost:3000/api/recommendations/personal', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        
+        const data = await res.json();
+        recommendationStore.personal = Array.isArray(data) ? data : (data.products || []);
+        await renderRecommendationsByType('personal');
+    } catch (error) {
+        console.error('Ошибка личных рекомендаций:', error);
+        grid.innerHTML = '<p>Ошибка загрузки</p>';
+    }
 }
-// --- /ФУНКЦИЯ ПЕРСОНАЛЬНЫХ РЕКОМЕНДАЦИЙ ---
 
-// --- ОБНОВЛЁННАЯ ФУНКЦИЯ ОТРИСОВКИ РЕКОМЕНДАЦИЙ ---
-// displayEnhancedProducts - Отображение товаров в контейнере с расширенной информацией
+//Отображение товаров в контейнере с расширенной информацией
 function displayEnhancedProducts(gridId, products, type) {
+    const grid = document.getElementById(gridId);
+    if (!grid) return;
+    if (!products || products.length === 0) {
+        grid.innerHTML = '<p style="text-align:center; color:#6b7280; padding:2rem;">Нет доступных товаров в данной подборке</p>';
+        return;
+    }
+    grid.innerHTML = products.map(product => {
+        const badgeText = getRecommendationBadge(product, type);
+        let priceDropHtml = '';
+        if (type === 'priceDrop' && product.priceDrop) {
+            priceDropHtml = `<div style="background:#ef4444; color:white; padding:4px 8px; border-radius:12px; font-size:0.8rem; margin-top:5px; display:inline-block;">📉 Снизилось на ${product.priceDrop.dropPercent}%</div>`;
+        }
+        return `
+        <div class="product-card product-card-enhanced" onclick="openProduct(${product.id})">
+            ${badgeText ? `<div class="recommendation-badge">${badgeText}</div>` : ''}
+            <img src="${product.image || product.imageUrl || 'https://via.placeholder.com/300?text=Нет+изображения'}" alt="${product.name}"
+            style="width: 100%; height: 200px; object-fit: contain; background: #f8f9fa; border-radius: 8px;">
+            <h3>${product.name}</h3>
+            <div class="product-rating">
+                <span class="rating-stars">${getStarRating(product.rating)}</span>
+                <span class="rating-value">${product.rating}</span>
+            </div>
+            <div class="product-price">${formatPrice(getMinPrice(product))} ₽</div>
+            ${priceDropHtml}
+            ${product.valueScore ? `<div style="display:inline-block; padding:4px 8px; background:#dbeafe; color:#1d4ed8; border-radius:20px; font-size:0.8rem; margin-top:5px;">💰 Выгода: ${Math.round(product.valueScore)}%</div>` : ''}
+            ${type === 'personal' && product.recommendationType === 'viewed'
+                ? `<div style="display:inline-block; padding:4px 8px; background:#ede9fe; color:#5b21b6; border-radius:20px; font-size:0.8rem; margin-top:5px;">👀 Вы смотрели</div>`
+                : ''
+            }
+            ${type === 'personal' && product.recommendationType === 'similar' && product.similarityScore !== undefined
+                ? `<div style="display:inline-block; padding:4px 8px; background:#dcfce7; color:#166534; border-radius:20px; font-size:0.8rem; margin-top:5px;">🔍 Похоже на просмотренное (${Math.round(product.similarityScore * 100)}%)</div>`
+                : ''
+            }
+            <div class="product-actions" style="margin-top: 1rem;">
+                <button class="btn btn-outline" onclick="event.stopPropagation(); addToComparison(${product.id})">Сравнить</button>
+                <button class="btn btn-primary" onclick="event.stopPropagation(); openProduct(${product.id})">Подробнее</button>
+            </div>
+        </div>
+        `;
+    }).join('');
+}
+
+async function displayBestValueProducts(gridId, products) {
+    const grid = document.getElementById(gridId);
+    if (!grid) return;
+
+    if (!products || products.length === 0) {
+        grid.innerHTML = '<p style="text-align:center; color:#6b7280; padding:2rem;">Нет доступных товаров в данной подборке</p>';
+        return;
+    }
+
+    const enrichedProducts = await Promise.all(products.map(async (product) => {
+        const minPrice = getMinPrice(product);
+        let marketPrice = null;
+        if (product.id) {
+            try {
+                marketPrice = await getMarketPrice(product.id);
+            } catch (e) {
+                console.warn('Не удалось получить рыночную цену для рекомендации:', product.id, e);
+            }
+        }
+        const score = calculateValueScore(product, minPrice || 0, marketPrice);
+        const interpretation = getValueInterpretation(score);
+        const normalizedScore = Number.isFinite(score) ? score : -Infinity;
+        return {
+          ...product,
+          _minPrice: minPrice,
+          _marketPrice: marketPrice,
+          _valueScore: normalizedScore,
+          _valueInterpretation: interpretation
+        };
+    }));
+
+    enrichedProducts.sort((a, b) => b._valueScore - a._valueScore);
+
+    grid.innerHTML = enrichedProducts.map((product) => `
+        <div class="product-card product-card-enhanced" onclick="openProduct(${product.id})">
+            <div class="recommendation-badge">💰 Выгодно</div>
+            <img src="${product.image || product.imageUrl || 'https://via.placeholder.com/300?text=Нет+изображения'}" alt="${product.name}"
+            style="width: 100%; height: 200px; object-fit: contain; background: #f8f9fa; border-radius: 8px;">
+            <h3>${product.name}</h3>
+            <div class="product-rating">
+                <span class="rating-stars">${getStarRating(product.rating)}</span>
+                <span class="rating-value">${product.rating}</span>
+            </div>
+            <div class="product-price">${formatPrice(product._minPrice)} ₽</div>
+            <div style="margin-top:8px; font-size:0.85rem; color:#64748b;">
+                📊 Средняя рыночная цена: ${product._marketPrice ? `${Math.round(product._marketPrice).toLocaleString('ru-RU')} ₽` : 'данные недоступны'}
+            </div>
+            <div style="margin-top:10px; background:#e5e7eb; border-radius:999px; overflow:hidden; height:8px;">
+                <div style="height:100%; width:${product._valueInterpretation.width}; background:${product._valueInterpretation.color}; transition:width .3s ease;"></div>
+            </div>
+            <div style="margin-top:8px; font-weight:600; color:${product._valueInterpretation.color}; font-size:0.9rem;">
+                ${product._valueInterpretation.text} (${product._valueScore.toFixed(1)})
+            </div>
+            <div class="product-actions" style="margin-top: 1rem;">
+                <button class="btn btn-outline" onclick="event.stopPropagation(); addToComparison(${product.id})">Сравнить</button>
+                <button class="btn btn-primary" onclick="event.stopPropagation(); openProduct(${product.id})">Подробнее</button>
+            </div>
+        </div>
+    `).join('');
+}
+
+function setupRecommendationsFilters() {
+  const queryInput = document.getElementById('recommendationsSearch');
+  const categorySelect = document.getElementById('recommendationsCategory');
+  const minPriceInput = document.getElementById('recommendationsMinPrice');
+  const maxPriceInput = document.getElementById('recommendationsMaxPrice');
+  const sortSelect = document.getElementById('recommendationsSort');
+  const resetBtn = document.getElementById('recommendationsResetFilters');
+
+  if (!queryInput || !categorySelect || !minPriceInput || !maxPriceInput || !sortSelect || !resetBtn) return;
+
+  const apply = () => applyRecommendationsFilters();
+
+  queryInput.addEventListener('input', apply);
+  categorySelect.addEventListener('change', apply);
+  minPriceInput.addEventListener('change', apply);
+  maxPriceInput.addEventListener('change', apply);
+  sortSelect.addEventListener('change', apply);
+  resetBtn.addEventListener('click', resetRecommendationsFilters);
+
+  populateRecommendationsCategoryFilter();
+}
+
+function populateRecommendationsCategoryFilter() {
+  const categorySelect = document.getElementById('recommendationsCategory');
+  if (!categorySelect) return;
+
+  const categories = Array.from(new Set((demoProducts || []).map(p => p.category).filter(Boolean))).sort();
+  const current = categorySelect.value;
+  categorySelect.innerHTML = `<option value="">Все категории</option>${categories.map(cat => `<option value="${cat}">${getCategoryName(cat)}</option>`).join('')}`;
+  categorySelect.value = current || '';
+}
+
+function getActiveRecommendationTabType() {
+  const active = document.querySelector('.tab-content.active');
+  return active?.id || 'popular';
+}
+
+async function renderRecommendationsByType(type) {
+  const gridId = recommendationGridIdMap[type];
   const grid = document.getElementById(gridId);
   if (!grid) return;
-  grid.innerHTML = products.map(product => {
-    const matchScore = calculateMatchScore(product, type);
-    const badgeText = getRecommendationBadge(product, type);
-    const trendIndicator = getTrendIndicator(product, type); // Если используется
-    // --- ИСПРАВЛЕНО: Добавлен onclick для всей карточки ---
-    return `
-      <div class="product-card product-card-enhanced" onclick="openProduct(${product.id})"> <!-- <-- ДОБАВЛЕНО -->
-        ${badgeText ? `<div class="recommendation-badge">${badgeText}</div>` : ''}
-        <img src="${product.image || product.imageUrl || 'https://via.placeholder.com/300?text=Нет+изображения'}" alt="${product.name}"
-             style="width: 100%; height: 200px; object-fit: contain; background: #f8f9fa; border-radius: 8px;">
-        <h3>${product.name}</h3>
-        <div class="product-rating">
-          <span class="rating-stars">${getStarRating(product.rating)}</span>
-          <span class="rating-value">${product.rating}</span>
-          ${trendIndicator}
-        </div>
-        <div class="product-price">${formatPrice(getMinPrice(product))} ₽</div>
-        ${type === 'popular' ? `
-        <div class="popularity-meter">
-          <span style="font-size: 0.9rem; color: #6b7280;">Популярность:</span>
-          <div class="meter-bar">
-            <div class="meter-fill" style="width: ${Math.random() * 70 + 30}%"></div>
-          </div>
-        </div>
-        ` : ''}
-        ${matchScore > 0 ? `<div class="match-percentage">Совпадение: ${Math.round(matchScore)}%</div>` : ''}
-        <div class="product-actions" style="margin-top: 1rem;">
-          <button class="btn btn-outline" onclick="event.stopPropagation(); addToComparison(${product.id})"> <!-- <-- event.stopPropagation() -->
-            Сравнить
-          </button>
-          <button class="btn btn-primary" onclick="event.stopPropagation(); openProduct(${product.id})"> <!-- <-- event.stopPropagation() -->
-            Подробнее
-          </button>
-        </div>
-      </div>
-    `;
-    // --- /ИСПРАВЛЕНО ---
-  }).join('');
-}
-// --- /ОБНОВЛЁННАЯ ФУНКЦИЯ ОТРИСОВКИ ---
 
-// --- ФУНКЦИЯ РАСЧЁТА СОВПАДЕНИЯ ---
+  const source = Array.isArray(recommendationStore[type]) ? recommendationStore[type] : [];
+  const prepared = type === 'bestValue' ? await prepareBestValueProducts(source) : [...source];
+  const filtered = filterAndSortRecommendationProducts(prepared, type);
+
+  if (type === 'bestValue') {
+    renderPreparedBestValueProducts(gridId, filtered);
+  } else {
+    displayEnhancedProducts(gridId, filtered, type);
+  }
+}
+
+async function prepareBestValueProducts(products) {
+  const enriched = await Promise.all((products || []).map(async (product) => {
+    const minPrice = getMinPrice(product);
+    let marketPrice = null;
+    if (product.id) {
+      try {
+        marketPrice = await getMarketPrice(product.id);
+      } catch (e) {
+        marketPrice = null;
+      }
+    }
+    const rawScore = calculateValueScore(product, minPrice || 0, marketPrice);
+    const valueScore = Number.isFinite(rawScore) ? rawScore : -Infinity;
+    return {
+      ...product,
+      _minPrice: minPrice,
+      _marketPrice: marketPrice,
+      _valueScore: valueScore,
+      _valueInterpretation: getValueInterpretation(valueScore)
+    };
+  }));
+  return enriched;
+}
+
+function renderPreparedBestValueProducts(gridId, products) {
+  const grid = document.getElementById(gridId);
+  if (!grid) return;
+  if (!products || products.length === 0) {
+    grid.innerHTML = '<p style="text-align:center; color:#6b7280; padding:2rem;">Нет доступных товаров в данной подборке</p>';
+    return;
+  }
+  grid.innerHTML = products.map((product) => `
+    <div class="product-card product-card-enhanced" onclick="openProduct(${product.id})">
+      <div class="recommendation-badge">💰 Выгодно</div>
+      <img src="${product.image || product.imageUrl || 'https://via.placeholder.com/300?text=Нет+изображения'}" alt="${product.name}"
+      style="width: 100%; height: 200px; object-fit: contain; background: #f8f9fa; border-radius: 8px;">
+      <h3>${product.name}</h3>
+      <div class="product-rating">
+        <span class="rating-stars">${getStarRating(product.rating)}</span>
+        <span class="rating-value">${product.rating}</span>
+      </div>
+      <div class="product-price">${formatPrice(product._minPrice)} ₽</div>
+      <div style="margin-top:8px; font-size:0.85rem; color:#64748b;">
+        📊 Средняя рыночная цена: ${product._marketPrice ? `${Math.round(product._marketPrice).toLocaleString('ru-RU')} ₽` : 'данные недоступны'}
+      </div>
+      <div style="margin-top:10px; background:#e5e7eb; border-radius:999px; overflow:hidden; height:8px;">
+        <div style="height:100%; width:${product._valueInterpretation.width}; background:${product._valueInterpretation.color}; transition:width .3s ease;"></div>
+      </div>
+      <div style="margin-top:8px; font-weight:600; color:${product._valueInterpretation.color}; font-size:0.9rem;">
+        ${product._valueInterpretation.text} (${product._valueScore.toFixed(1)})
+      </div>
+      <div class="product-actions" style="margin-top: 1rem;">
+        <button class="btn btn-outline" onclick="event.stopPropagation(); addToComparison(${product.id})">Сравнить</button>
+        <button class="btn btn-primary" onclick="event.stopPropagation(); openProduct(${product.id})">Подробнее</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function filterAndSortRecommendationProducts(products, type) {
+  const query = (recommendationFilters.query || '').toLowerCase().trim();
+  const category = recommendationFilters.category || '';
+  const minPrice = recommendationFilters.minPrice !== '' ? Number(recommendationFilters.minPrice) : 0;
+  const maxPrice = recommendationFilters.maxPrice !== '' ? Number(recommendationFilters.maxPrice) : Infinity;
+  const sortBy = recommendationFilters.sortBy || 'relevance';
+
+  let result = [...products].filter(product => {
+    const min = product._minPrice ?? getMinPrice(product) ?? 0;
+    const matchesQuery = !query || product.name?.toLowerCase().includes(query) ||
+      (product.specs && Object.values(product.specs).some(v => String(v).toLowerCase().includes(query)));
+    const matchesCategory = !category || product.category === category;
+    const matchesPrice = min >= minPrice && min <= maxPrice;
+    return matchesQuery && matchesCategory && matchesPrice;
+  });
+
+  result.sort((a, b) => {
+    if (type === 'bestValue') {
+      if (sortBy === 'price_asc') return (a._minPrice ?? getMinPrice(a) ?? Infinity) - (b._minPrice ?? getMinPrice(b) ?? Infinity);
+      if (sortBy === 'price_desc') return (b._minPrice ?? getMinPrice(b) ?? 0) - (a._minPrice ?? getMinPrice(a) ?? 0);
+      if (sortBy === 'rating') return (b.rating || 0) - (a.rating || 0);
+      if (sortBy === 'name') return (a.name || '').localeCompare(b.name || '', 'ru');
+      return (b._valueScore ?? -Infinity) - (a._valueScore ?? -Infinity);
+    }
+
+    if (sortBy === 'price_asc') return (getMinPrice(a) ?? Infinity) - (getMinPrice(b) ?? Infinity);
+    if (sortBy === 'price_desc') return (getMinPrice(b) ?? 0) - (getMinPrice(a) ?? 0);
+    if (sortBy === 'rating') return (b.rating || 0) - (a.rating || 0);
+    if (sortBy === 'name') return (a.name || '').localeCompare(b.name || '', 'ru');
+    return 0;
+  });
+
+  return result;
+}
+
+async function applyRecommendationsFilters() {
+  recommendationFilters.query = document.getElementById('recommendationsSearch')?.value || '';
+  recommendationFilters.category = document.getElementById('recommendationsCategory')?.value || '';
+  recommendationFilters.minPrice = document.getElementById('recommendationsMinPrice')?.value || '';
+  recommendationFilters.maxPrice = document.getElementById('recommendationsMaxPrice')?.value || '';
+  recommendationFilters.sortBy = document.getElementById('recommendationsSort')?.value || 'relevance';
+  await renderRecommendationsByType(getActiveRecommendationTabType());
+}
+
+async function resetRecommendationsFilters() {
+  const queryInput = document.getElementById('recommendationsSearch');
+  const categorySelect = document.getElementById('recommendationsCategory');
+  const minPriceInput = document.getElementById('recommendationsMinPrice');
+  const maxPriceInput = document.getElementById('recommendationsMaxPrice');
+  const sortSelect = document.getElementById('recommendationsSort');
+
+  if (queryInput) queryInput.value = '';
+  if (categorySelect) categorySelect.value = '';
+  if (minPriceInput) minPriceInput.value = '';
+  if (maxPriceInput) maxPriceInput.value = '';
+  if (sortSelect) sortSelect.value = 'relevance';
+
+  await applyRecommendationsFilters();
+}
+
+//Функция расчёта совпадения
 function calculateMatchScore(product, type) {
-  // Пример расчёта совпадения для bestValue или personal
+  //Пример расчёта совпадения для bestValue или personal
   switch (type) {
     case 'bestValue':
-      // Используем valueScore, рассчитанный на сервере
+      //Используем valueScore, рассчитанный на сервере
       return Math.min(Math.max(product.valueScore || 0, 0), 100);
     case 'personal':
-      // Используем similarityScore, рассчитанный на сервере, или просто высокий рейтинг
-      // или совпадение по категории с избранным/сравнением
-      let score = product.rating * 20; // Базовый счёт за рейтинг
-      // Проверим, находится ли товар в избранном или сравнении у пользователя (из localStorage или из данных, полученных с сервера)
-      // Для простоты, используем localStorage, как в loadFavorites
+      let score = product.rating * 20; //Базовый счёт за рейтинг
+      
       const favIds = JSON.parse(localStorage.getItem('techAggregatorFavorites') || '[]').map(f => f.id);
-      const compIds = JSON.parse(localStorage.getItem('techAggregatorComparisons') || '[]').map(c => c.id); // Предположим, что есть такая переменная
+      const compIds = JSON.parse(localStorage.getItem('techAggregatorComparisons') || '[]').map(c => c.id); //Предположим, что есть такая переменная
 
       if (favIds.includes(product.id)) score += 30;
       if (compIds.includes(product.id)) score += 20;
 
-      // Если у товара есть similarityScore (из calculateSimilarity на сервере)
+      
       if (product.similarityScore !== undefined) {
         score += (product.similarityScore * 50);
       }
 
       return Math.min(Math.max(score, 0), 100);
     default:
-      return 0; // Для популярных/трендов, совпадение не считается
+      return 0; //Для популярных/трендов, совпадение не считается
   }
 }
-// --- /ФУНКЦИЯ РАСЧЁТА ---
 
-// --- ФУНКЦИЯ ПОЛУЧЕНИЯ БЕЙДЖА ---
+//Функция получения бейджа
 function getRecommendationBadge(product, type) {
-  switch (type) {
-    case 'popular':
-      // Пример: бейдж на основе рейтинга
-      if (product.rating >= 4.8) return '🔥 Топ-популярный';
-      if (product.rating >= 4.5) return '🔥 Популярный';
-      return '';
-    case 'trending':
-      // Пример: бейдж на основе новизны или роста рейтинга
-      // const daysSinceCreated = (Date.now() - new Date(product.createdAt).getTime()) / (1000 * 60 * 60 * 24);
-      // if (daysSinceCreated < 7) return '🆕 Новинка';
-      return '📈 Тренд';
-    case 'bestValue':
-      // Бейдж на основе valueScore
-      if ((product.valueScore || 0) > 8) return '💰 Выгода';
-      return '';
-    case 'personal':
-      // Бейдж для персональных
-      return '🎯 Для вас';
-    default:
-      return '';
-  }
+    switch (type) {
+        case 'popular': return product.rating >= 4.8 ? '🔥 Топ' : product.rating >= 4.5 ? '🔥 Популярно' : '';
+        case 'trending': return '📈 Тренд';
+        case 'bestValue': return '💰 Выгодно';
+        case 'priceDrop': return '📉 Цена упала';
+        case 'personal':
+            if (product.recommendationType === 'viewed') return '👀 Вы смотрели';
+            if (product.recommendationType === 'similar') return '🎯 Похоже на ваши просмотры';
+            return '🎯 Для вас';
+        default: return '';
+    }
 }
-// --- /ФУНКЦИЯ БЕЙДЖА ---
 
-// --- ФУНКЦИЯ ИНДИКАТОРА ТРЕНДА ---
+//Индикатор тренда
 function getTrendIndicator(product, type) {
-  // Пример простого индикатора, если это трендовый товар
+  //Пример простого индикатора, если это трендовый товар
   if (type === 'trending') {
-    // Можно использовать дату создания или другие метрики
+    //Можно использовать дату создания или другие метрики
     const date = new Date(product.createdAt);
     const now = new Date();
     const diffDays = Math.floor((now - date) / (1000 * 60 * 60 * 24));
-    // Просто для демонстрации, используем случайный индикатор
+    //Просто для демонстрации, используем случайный индикатор
     const trend = Math.random() > 0.5 ? 'up' : 'down';
     const percent = (Math.random() * 15 + 5).toFixed(1);
     return trend === 'up'
@@ -5807,21 +6818,1291 @@ function getTrendIndicator(product, type) {
   }
   return '';
 }
-// --- /ФУНКЦИЯ ИНДИКАТОРА ---
 
-// --- ОБНОВЛЁННАЯ ФУНКЦИЯ ОТКРЫТИЯ ВКЛАДКИ ---
-// openTab - Открытие вкладки на странице рекомендаций
+//Открытие вкладки на странице рекомендаций
 function openTab(tabName) {
-  // Скрываем все вкладки
+  //Скрываем все вкладки
   document.querySelectorAll('.tab-content').forEach(tab => {
     tab.classList.remove('active');
   });
-  // Убираем активный класс со всех кнопок
+  //Убираем активный класс со всех кнопок
   document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.classList.remove('active');
   });
-  // Показываем выбранную вкладку
+  //Показываем выбранную вкладку
   document.getElementById(tabName).classList.add('active');
-  // Активируем соответствующую кнопку
-  event.target.classList.add('active');
+  //Активируем соответствующую кнопку
+  const targetBtn = Array.from(document.querySelectorAll('.tab-btn'))
+    .find(btn => btn.getAttribute('onclick')?.includes(`'${tabName}'`));
+  if (targetBtn) targetBtn.classList.add('active');
+  applyRecommendationsFilters();
+}
+
+function editProfile() {
+  if (!currentUser) {
+    showCustomNotification('Требуется авторизация', 'warning');
+    //window.location.href = 'auth.html';
+    return;
+  }
+
+  //Закрываем старое окно, если оно есть
+  closeEditProfileModal();
+
+  const modalHtml = `
+    <div class="modal-overlay" id="editProfileModalOverlay" style="
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    ">
+      <div class="modal-content" id="editProfileModalContent" style="
+        background-color: white;
+        padding: 2rem;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        max-width: 500px;
+        width: 90%;
+        max-height: 90vh;
+        overflow-y: auto;
+      ">
+        <h3>Редактировать профиль</h3>
+        <form id="editProfileForm">
+          <div class="form-group">
+            <label for="editFullName">Полное имя:</label>
+            <input type="text" id="editFullName" name="fullName" value="${currentUser.fullName || ''}" required>
+          </div>
+          <div class="form-group">
+            <label for="editEmail">Email:</label>
+            <input type="email" id="editEmail" name="email" value="${currentUser.email}" readonly disabled>
+          </div>
+          <div class="form-actions">
+            <button type="button" class="btn btn-outline" onclick="closeEditProfileModal()">Отмена</button>
+            <button type="submit" class="btn btn-primary">Сохранить</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  `;
+
+  document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+  const overlay = document.getElementById('editProfileModalOverlay');
+  if (overlay) {
+    overlay.onclick = function(event) {
+      if (event.target === overlay) {
+        closeEditProfileModal();
+      }
+    };
+  }
+
+  document.getElementById('editProfileForm').addEventListener('submit', async function (e) {
+    e.preventDefault();
+
+    const fullNameInput = document.getElementById('editFullName');
+    const newFullName = fullNameInput.value.trim();
+
+    if (!newFullName) {
+      showCustomNotification('Полное имя не может быть пустым', 'info');
+      return;
+    }
+
+    const token = localStorage.getItem('techAggregatorToken');
+    if (!token) {
+      showCustomNotification('Токен отсутствует', 'error');
+      return;
+    }
+
+    try {
+      const response = await fetch('http://localhost:3000/api/profile', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          fullName: newFullName
+        })
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          localStorage.removeItem('techAggregatorToken');
+          currentUser = null;
+          updateAuthButtons();
+          showCustomNotification('Сессия истекла. Пожалуйста, войдите снова.', 'warning');
+          //window.location.href = 'auth.html';
+          return;
+        }
+        const errorData = await response.json();
+        throw new Error(errorData.error || `HTTP ${response.status}`);
+      }
+
+      const updatedUser = await response.json();
+      console.log('Профиль обновлён:', updatedUser);
+
+      currentUser.fullName = updatedUser.fullName;
+
+      closeEditProfileModal();
+      showCustomNotification('Профиль успешно обновлён', 'success');
+
+      if (window.location.pathname.includes('profile.html')) {
+         loadProfileDataFromAPI();
+      }
+
+    } catch (error) {
+      console.error('Ошибка обновления профиля:', error);
+      showCustomNotification(`Ошибка обновления профиля: ${error.message}`, 'error');
+    }
+  });
+}
+
+function closeEditProfileModal() {
+  const modal = document.getElementById('editProfileModalOverlay');
+  if (modal) {
+    modal.remove();
+  }
+}
+
+function changePassword() {
+  if (!currentUser) {
+    showCustomNotification('Требуется авторизация', 'warning');
+    //window.location.href = 'auth.html';
+    return;
+  }
+
+  closeChangePasswordModal();
+
+  const modalHtml = `
+    <div class="modal-overlay" id="changePasswordModalOverlay" style="
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    ">
+      <div class="modal-content" id="changePasswordModalContent" style="
+        background-color: white;
+        padding: 2rem;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        max-width: 500px;
+        width: 90%;
+        max-height: 90vh;
+        overflow-y: auto;
+      ">
+        <h3>Сменить пароль</h3>
+        <form id="changePasswordForm">
+          <div class="form-group">
+            <label for="oldPassword">Старый пароль:</label>
+            <input type="password" id="oldPassword" name="oldPassword" required>
+          </div>
+          <div class="form-group">
+            <label for="newPassword">Новый пароль (минимум 8 символов):</label>
+            <input type="password" id="newPassword" name="newPassword" required pattern=".{8,}">
+          </div>
+          <div class="form-group">
+            <label for="confirmNewPassword">Подтвердите новый пароль:</label>
+            <input type="password" id="confirmNewPassword" name="confirmNewPassword" required>
+          </div>
+          <div class="form-actions">
+            <button type="button" class="btn btn-outline" onclick="closeChangePasswordModal()">Отмена</button>
+            <button type="submit" class="btn btn-primary">Сменить пароль</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  `;
+
+  document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+  const overlay = document.getElementById('changePasswordModalOverlay');
+  if (overlay) {
+    overlay.onclick = function(event) {
+      if (event.target === overlay) {
+        closeChangePasswordModal();
+      }
+    };
+  }
+
+  document.getElementById('changePasswordForm').addEventListener('submit', async function (e) {
+    e.preventDefault();
+
+    const oldPasswordInput = document.getElementById('oldPassword');
+    const newPasswordInput = document.getElementById('newPassword');
+    const confirmNewPasswordInput = document.getElementById('confirmNewPassword');
+
+    const oldPassword = oldPasswordInput.value;
+    const newPassword = newPasswordInput.value;
+    const confirmNewPassword = confirmNewPasswordInput.value;
+
+    if (newPassword !== confirmNewPassword) {
+      showCustomNotification('Новые пароли не совпадают', 'info');
+      return;
+    }
+
+    if (newPassword.length < 8) {
+      showCustomNotification('Новый пароль должен быть не менее 8 символов', 'info');
+      return;
+    }
+
+    const token = localStorage.getItem('techAggregatorToken');
+    if (!token) {
+      showCustomNotification('Токен отсутствует', 'error');
+      return;
+    }
+
+    try {
+      const response = await fetch('http://localhost:3000/api/change-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          oldPassword: oldPassword,
+          newPassword: newPassword
+        })
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          localStorage.removeItem('techAggregatorToken');
+          currentUser = null;
+          updateAuthButtons();
+          showCustomNotification('Сессия истекла. Пожалуйста, войдите снова.', 'warning');
+          //window.location.href = 'auth.html';
+          return;
+        }
+        const errorData = await response.json();
+        throw new Error(errorData.error || `HTTP ${response.status}`);
+      }
+
+      const result = await response.json();
+      console.log('Пароль изменён:', result);
+
+      closeChangePasswordModal();
+      showCustomNotification('Пароль успешно изменён', 'success');
+      logout();
+
+    } catch (error) {
+      console.error('Ошибка смены пароля:', error);
+      showCustomNotification(`Ошибка смены пароля: ${error.message}`, 'error');
+    }
+  });
+}
+
+function closeChangePasswordModal() {
+  const modal = document.getElementById('changePasswordModalOverlay');
+  if (modal) {
+    modal.remove();
+  }
+}
+
+function changeAvatar() {
+  if (!currentUser) {
+    showCustomNotification('Требуется авторизация', 'warning');
+    //window.location.href = 'auth.html';
+    return;
+  }
+
+  closeChangeAvatarModal();
+
+  const modalHtml = `
+    <div class="modal-overlay" id="changeAvatarModalOverlay" style="
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    ">
+      <div class="modal-content" id="changeAvatarModalContent" style="
+        background-color: white;
+        padding: 2rem;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        max-width: 500px;
+        width: 90%;
+        max-height: 90vh;
+        overflow-y: auto;
+      ">
+        <h3>Сменить аватар</h3>
+        <form id="changeAvatarForm">
+          <div class="form-group">
+            <label for="avatarUpload">Загрузить новое изображение:</label>
+            <input type="file" id="avatarUpload" name="avatar" accept="image/*" required>
+          </div>
+          <div class="form-actions">
+            <button type="button" class="btn btn-outline" onclick="closeChangeAvatarModal()">Отмена</button>
+            <button type="submit" class="btn btn-primary">Сохранить</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  `;
+
+  document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+  const overlay = document.getElementById('changeAvatarModalOverlay');
+  if (overlay) {
+    overlay.onclick = function(event) {
+      if (event.target === overlay) {
+        closeChangeAvatarModal();
+      }
+    };
+  }
+
+  document.getElementById('changeAvatarForm').addEventListener('submit', async function (e) {
+    e.preventDefault();
+
+    const fileInput = document.getElementById('avatarUpload');
+    const file = fileInput.files[0];
+
+    if (!file) {
+      showCustomNotification('Пожалуйста, выберите файл изображения.', 'info');
+      return;
+    }
+
+    //Проверка типа файла (опционально, но рекомендуется)
+    if (!file.type.match('image.*')) {
+      showCustomNotification('Пожалуйста, выберите файл изображения (JPEG, PNG, GIF).', 'info');
+      return;
+    }
+
+    //Проверка размера файла (опционально, например, не более 5MB)
+    const maxSize = 5 * 1024 * 1024; //5 MB в байтах
+    if (file.size > maxSize) {
+      showCustomNotification('Размер файла не должен превышать 5 МБ.', 'info');
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('avatar', file);
+
+    const token = localStorage.getItem('techAggregatorToken');
+    if (!token) {
+      showCustomNotification('Токен отсутствует', 'error');
+      return;
+    }
+
+    try {
+      const response = await fetch('http://localhost:3000/api/profile/avatar', {
+        method: 'PUT', //Или PATCH
+        headers: {
+          //Не указываем Content-Type, так как используется FormData
+          'Authorization': `Bearer ${token}`
+        },
+        body: formData
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          localStorage.removeItem('techAggregatorToken');
+          currentUser = null;
+          updateAuthButtons();
+          showCustomNotification('Сессия истекла. Пожалуйста, войдите снова.', 'warning');
+          //window.location.href = 'auth.html';
+          return;
+        }
+        const errorData = await response.json();
+        throw new Error(errorData.error || `HTTP ${response.status}`);
+      }
+
+      const result = await response.json();
+      console.log('Аватар обновлён:', result);
+
+      //Обновляем URL аватара у currentUser (если сервер возвращает новый URL)
+      if (result.updatedUser && result.updatedUser.avatarUrl) {
+          currentUser.avatarUrl = result.updatedUser.avatarUrl;
+      }
+
+      closeChangeAvatarModal();
+      showCustomNotification('Аватар успешно обновлён', 'success');
+
+      //Обновить отображение аватара на странице 
+      updateAvatarDisplay(result.updatedUser.avatarUrl);
+
+    } catch (error) {
+      console.error('Ошибка смены аватара:', error);
+      showCustomNotification(`Ошибка смены аватара: ${error.message}`, 'error');
+    }
+  });
+}
+
+function closeChangeAvatarModal() {
+  const modal = document.getElementById('changeAvatarModalOverlay');
+  if (modal) {
+    modal.remove();
+  }
+}
+
+function updateAvatarDisplay(newAvatarUrl) {
+  
+  const avatarElements = document.querySelectorAll('.user-avatar-img'); //Пример класса
+  if (avatarElements.length > 0) {
+    avatarElements.forEach(img => {
+      img.src = newAvatarUrl || 'https://via.placeholder.com/50x50?text=?'; //Заглушка, если нет URL
+    });
+  }
+
+  //Если аватар отображается как фоновое изображение div'а
+  const avatarBgElements = document.querySelectorAll('.user-avatar-bg'); //Пример класса
+  if (avatarBgElements.length > 0) {
+    avatarBgElements.forEach(div => {
+      div.style.backgroundImage = `url("${newAvatarUrl || 'https://via.placeholder.com/50x50?text=?'}")`;
+    });
+  }
+}
+
+
+async function addProductToDatabase(productData) {
+    const token = localStorage.getItem('techAggregatorToken');
+    if (!token) return showCustomNotification('Ошибка авторизации', 'error');
+
+    try {
+        const response = await fetch('http://localhost:3000/api/admin/manual-add-product', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify(productData)
+        });
+
+        if (response.ok) {
+            showCustomNotification('Товар успешно добавлен в каталог!', 'success');
+            resetParseForm();
+        } else {
+            const err = await response.json();
+            showCustomNotification(`Ошибка: ${err.error}`, 'error');
+        }
+    } catch (e) {
+        console.error(e);
+        showCustomNotification('Ошибка сети', 'error');
+    }
+}
+
+//Отправка на парсинг
+async function sendParseRequest(url, category, proxy = null) {
+    const token = localStorage.getItem('techAggregatorToken');
+    if (!token) {
+        showCustomNotification('Требуется авторизация администратора', 'error');
+        return;
+    }
+
+    try {
+        console.log('📤 Отправка запроса на парсинг:', { url, category, proxy });
+        
+        const response = await fetch('http://localhost:3000/api/admin/parse-product', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ url, category, proxy })
+        });
+
+        if (!response.ok) {
+            const errData = await response.json().catch(() => ({ error: `HTTP ${response.status}` }));
+            throw new Error(errData.error || `Ошибка сервера: ${response.status}`);
+        }
+
+        const result = await response.json();
+        console.log('✅ Ответ сервера:', result);
+        displayParsedResult(result.parsedData, result.message);
+    } catch (error) {
+        console.error('❌ Ошибка парсинга:', error);
+        showCustomNotification(`Ошибка: ${error.message}`, 'error');
+        //Показываем ошибку в контейнере результата, если сервер вернул данные частично
+        const resultContainer = document.getElementById('parseResult');
+        if (resultContainer) {
+            resultContainer.innerHTML = `<p class="error-message" style="color: #ef4444;">⚠️ ${error.message}</p>`;
+            resultContainer.style.display = 'block';
+        }
+    }
+}
+
+//Отображение спаршеного товара админу
+function displayParsedResult(parsedData, message) {
+    const resultContainer = document.getElementById('parseResult');
+    if (!resultContainer) return;
+
+    //Начальная цена (если парсер нашел цену с Яндекса)
+    //Теперь здесь формируется ПОЛНАЯ строка с ценой, ссылкой и магазином
+    const initialPriceRow = parsedData.price ? `
+        <div class="price-row" style="display: flex; gap: 10px; margin-bottom: 5px;">
+            <select class="price-store-select" style="flex: 1;">
+                <option value="Яндекс Маркет" selected>Яндекс Маркет</option>
+            </select>
+            <input type="number" class="price-value-input" value="${parsedData.price}" style="flex: 1;" placeholder="Цена">
+            <input type="url" class="price-url-input" value="${parsedData.sourceUrl || ''}" style="flex: 1.5;" placeholder="Ссылка на товар">
+            <button type="button" class="btn btn-danger btn-small" onclick="this.parentElement.remove()">✕</button>
+        </div>
+    ` : '';
+
+    //Начальные характеристики (уже нормализованные сервером)
+    let specsHtml = '';
+    if (parsedData.specs && typeof parsedData.specs === 'object') {
+        specsHtml = Object.entries(parsedData.specs).map(([key, val]) => {
+            const displayKey = window.specKeyTranslations?.[key] || key;
+            return `
+            <div class="spec-row" style="display: flex; gap: 10px; margin-bottom: 5px;">
+                <input type="text" class="spec-key" value="${displayKey}" style="flex: 1;" placeholder="Название">
+                <input type="text" class="spec-value" value="${val}" style="flex: 1;" placeholder="Значение">
+                <button type="button" class="btn btn-danger btn-small" onclick="this.parentElement.remove()">✕</button>
+            </div>
+            `;
+        }).join('');
+    }
+
+    resultContainer.innerHTML = `
+        <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; border: 1px solid #e5e7eb;">
+            <h3>📦 Редактирование товара перед сохранением</h3>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <div>
+                    <label style="font-weight: bold;">Название товара</label>
+                    <input type="text" id="editProdName" value="${parsedData.name || ''}" style="width: 100%; padding: 8px; margin-top: 5px;">
+                </div>
+                <div>
+                    <label style="font-weight: bold;">Категория</label>
+                    <select id="editProdCategory" style="width: 100%; padding: 8px; margin-top: 5px;">
+                        <option value="smartphones" ${parsedData.category === 'smartphones' ? 'selected' : ''}>Смартфоны</option>
+                        <option value="laptops" ${parsedData.category === 'laptops' ? 'selected' : ''}>Ноутбуки</option>
+                        <option value="tv" ${parsedData.category === 'tv' ? 'selected' : ''}>Телевизоры</option>
+                        <option value="monitors" ${parsedData.category === 'monitors' ? 'selected' : ''}>Мониторы</option>
+                        <option value="external_drives" ${parsedData.category === 'external_drives' ? 'selected' : ''}>Внешние накопители</option>
+                        <option value="graphics_cards" ${parsedData.category === 'graphics_cards' ? 'selected' : ''}>Видеокарты</option>
+                        <option value="cpus" ${parsedData.category === 'cpus' ? 'selected' : ''}>Процессоры</option>
+                        <option value="motherboards" ${parsedData.category === 'motherboards' ? 'selected' : ''}>Материнские платы</option>
+                        <option value="ram" ${parsedData.category === 'ram' ? 'selected' : ''}>Оперативная память</option>
+                        <option value="power_banks" ${parsedData.category === 'power_banks' ? 'selected' : ''}>Павербанки</option>
+                        <option value="smart_home" ${parsedData.category === 'smart_home' ? 'selected' : ''}>Умный дом</option>
+                        <option value="fitness_trackers" ${parsedData.category === 'fitness_trackers' ? 'selected' : ''}>Фитнес-трекеры</option>
+                        <option value="portable_speakers" ${parsedData.category === 'portable_speakers' ? 'selected' : ''}>Портативные колонки</option>
+                        <option value="webcams" ${parsedData.category === 'webcams' ? 'selected' : ''}>Веб-камеры</option>
+                        <option value="microphones" ${parsedData.category === 'microphones' ? 'selected' : ''}>Микрофоны</option>
+                        <option value="power_units" ${parsedData.category === 'power_units' ? 'selected' : ''}>Блоки питания</option>
+                        <option value="drivers" ${parsedData.category === 'drivers' ? 'selected' : ''}>Накопители</option>
+                        <option value="cases" ${parsedData.category === 'cases' ? 'selected' : ''}>Корпуса ПК</option>
+                        <option value="mouses" ${parsedData.category === 'mouses' ? 'selected' : ''}>Мыши</option>
+                        <option value="keyboards" ${parsedData.category === 'keyboards' ? 'selected' : ''}>Клавиатура</option>
+                        <option value="headphones" ${parsedData.category === 'headphones' ? 'selected' : ''}>Наушники</option>
+                        <option value="cameras" ${parsedData.category === 'cameras' ? 'selected' : ''}>Камеры</option>
+                        <option value="tablets" ${parsedData.category === 'tablets' ? 'selected' : ''}>Планшеты</option>
+                        <option value="smartwatches" ${parsedData.category === 'smartwatches' ? 'selected' : ''}>Смарт-часы</option>
+                        <option value="ebooks" ${parsedData.category === 'ebooks' ? 'selected' : ''}>Электронные книги</option>
+                        <option value="drones" ${parsedData.category === 'drones' ? 'selected' : ''}>Дроны</option>
+                        <option value="pc_components" ${parsedData.category === 'pc_components' ? 'selected' : ''}>Комплектующие ПК</option>
+                        <option value="accessories" ${parsedData.category === 'accessories' ? 'selected' : ''}>Аксессуары</option>
+                        <option value="gaming" ${parsedData.category === 'gaming' ? 'selected' : ''}>Игровые консоли</option>
+                        <option value="networking" ${parsedData.category === 'networking' ? 'selected' : ''}>Сетевое оборудование</option>
+                        <option value="audio" ${parsedData.category === 'audio' ? 'selected' : ''}>Аудиосистемы</option>
+                        <option value="wearables" ${parsedData.category === 'wearables' ? 'selected' : ''}>Носимые устройства</option>
+                        <option value="other">Другое</option>
+                    </select>
+                </div>
+            </div>
+            <div style="margin-top: 15px;">
+                <label style="font-weight: bold;">Ссылка на изображение</label>
+                <input type="text" id="editProdImage" value="${parsedData.imageUrl || ''}" style="width: 100%; padding: 8px; margin-top: 5px;" oninput="updateImagePreview(this.value)">
+                <div style="margin-top: 10px;">
+                    <img id="imagePreviewThumb" src="${parsedData.imageUrl || ''}" style="max-height: 100px; border-radius: 4px; display: ${parsedData.imageUrl ? 'block' : 'none'};">
+                </div>
+            </div>
+            <div style="margin-top: 15px;">
+                <label style="font-weight: bold;">Характеристики (Нормализованные)</label>
+                <div id="specsContainer" style="margin-top: 5px;">${specsHtml || '<p>Нет характеристик</p>'}</div>
+                <button type="button" class="btn btn-secondary" style="margin-top: 5px;" onclick="addSpecRow()">+ Характеристика</button>
+            </div>
+            <div style="margin-top: 15px;">
+                <label style="font-weight: bold;">Цены в магазинах</label>
+                <div id="pricesContainer" style="margin-top: 5px;">${initialPriceRow}</div>
+                <button type="button" class="btn btn-secondary" style="margin-top: 5px;" onclick="addPriceRow()">+ Цена магазина</button>
+            </div>
+            <p style="color: #6b7280; margin-top: 15px;">${message || 'Проверьте данные и нажмите "Сохранить".'}</p>
+            <div style="margin-top: 15px; display: flex; gap: 10px;">
+                <button class="btn btn-secondary" onclick="resetParseForm()">Отмена</button>
+                <button class="btn btn-primary" onclick="confirmAndSaveParsedDataWithEdit()">✅ Сохранить в БД</button>
+            </div>
+        </div>
+    `;
+    resultContainer.style.display = 'block';
+}
+
+
+function addPriceRow() {
+  const container = document.getElementById('pricesContainer');
+  const div = document.createElement('div');
+  div.className = 'price-row';
+  div.style.cssText = 'display: flex; gap: 10px; margin-bottom: 5px;';
+  div.innerHTML = `
+    <select class="price-store-select" style="flex: 1;">
+      <option value="DNS">DNS</option>
+      <option value="OZON">OZON</option>
+      <option value="Wildberries">Wildberries</option>
+      <option value="Citilink">Citilink</option>
+      <option value="MVideo">M.Video</option>
+      <option value="Yandex Market">Яндекс Маркет</option>
+      <option value="Other">Другой</option>
+    </select>
+    <input type="number" class="price-value-input" style="flex: 1;" placeholder="Цена">
+    <input type="url" class="price-url-input" style="flex: 1.5;" placeholder="Ссылка на товар">
+    <button type="button" class="btn btn-danger btn-small" onclick="this.parentElement.remove()">✕</button>
+  `;
+  container.appendChild(div);
+}
+
+function updateImagePreview(url) {
+    const img = document.getElementById('imagePreviewThumb');
+    if (img) {
+        if (url) {
+            img.src = url;
+            img.style.display = 'block';
+        } else {
+            img.style.display = 'none';
+        }
+    }
+}
+
+//История цен
+
+async function searchProductForPriceHistory() {
+  const searchInput = document.getElementById('productSearchInput');
+  const searchTerm = searchInput.value.trim();
+
+  if (!searchTerm) {
+    showCustomNotification('Пожалуйста, введите название товара для поиска.', 'info');
+    return;
+  }
+
+  const token = localStorage.getItem('techAggregatorToken');
+  if (!token) {
+    showCustomNotification('Токен отсутствует', 'error');
+    return;
+  }
+
+  try {
+    //Поиск товара по названию (предположим, есть маршрут /api/products/search)
+    //Если такого маршрута нет, можно запросить все товары, но это неэффективно
+    //Пока используем существующий маршрут получения товара по ID, предполагая, что админ знает ID
+    //Или используем маршрут получения всех товаров и фильтруем на клиенте (неэффективно для больших списков)
+    //Лучше добавить маршрут /api/products/search в server.js
+    //const response = await fetch(`http://localhost:3000/api/products/search?q=${encodeURIComponent(searchTerm)}`, {
+    const response = await fetch(`http://localhost:3000/api/products?search=${encodeURIComponent(searchTerm)}`, { //Используем существующий маршрут с параметром поиска, если он реализован
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        localStorage.removeItem('techAggregatorToken');
+        currentUser = null;
+        updateAuthButtons();
+        showCustomNotification('Сессия истекла. Пожалуйста, войдите снова.', 'warning');
+        window.location.href = 'auth.html';
+        return;
+      }
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+
+    const products = await response.json();
+    console.log('Результаты поиска:', products);
+
+    //Предположим, что мы нашли один товар или берем первый из списка
+    const foundProduct = products.find(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()));
+    //Или покажем список и дадим выбрать, если найдено несколько
+    if (!foundProduct) {
+      document.getElementById('priceHistoryResult').style.display = 'none';
+      showCustomNotification('Товар не найден.', 'info');
+      return;
+    }
+
+    //Загружаем историю цен для найденного товара
+    await loadAndDisplayPriceHistory(foundProduct.id, foundProduct.name);
+
+  } catch (error) {
+    console.error('Ошибка поиска товара:', error);
+    showCustomNotification(`Ошибка поиска товара: ${error.message}`, 'error');
+  }
+}
+
+async function loadAndDisplayPriceHistory(productId, productName) {
+  const token = localStorage.getItem('techAggregatorToken');
+  if (!token) {
+    showCustomNotification('Токен отсутствует', 'error');
+    return;
+  }
+
+  try {
+    //Загружаем историю цен
+    const historyResponse = await fetch(`http://localhost:3000/api/products/${productId}/price-history`, { //Используем существующий маршрут
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+
+    if (!historyResponse.ok) {
+      if (historyResponse.status === 401) {
+        localStorage.removeItem('techAggregatorToken');
+        currentUser = null;
+        updateAuthButtons();
+        showCustomNotification('Сессия истекла. Пожалуйста, войдите снова.', 'warning');
+        window.location.href = 'auth.html';
+        return;
+      }
+      throw new Error(`HTTP ${historyResponse.status}: ${historyResponse.statusText}`);
+    }
+
+    const historyData = await historyResponse.json();
+    console.log('История цен для товара:', productId, historyData);
+
+    //Обновляем заголовок
+    document.getElementById('selectedProductTitle').textContent = productName;
+    //Устанавливаем ID товара в скрытое поле формы
+    document.getElementById('selectedProductId').value = productId;
+
+    //Показываем контейнер с результатами
+    document.getElementById('priceHistoryResult').style.display = 'block';
+
+    //Очищаем предыдущий график
+    if (priceHistoryChartInstance) {
+      priceHistoryChartInstance.destroy();
+    }
+
+    //Отрисовываем график
+    renderPriceHistoryChart(historyData, productName);
+
+    //Отрисовываем список
+    renderPriceHistoryList(historyData);
+
+  } catch (error) {
+    console.error('Ошибка загрузки истории цен:', error);
+    document.getElementById('priceHistoryChartContainer').innerHTML = `<p class="error-message">Ошибка загрузки истории: ${error.message}</p>`;
+    document.getElementById('priceHistoryListContainer').innerHTML = `<p class="error-message">Ошибка загрузки списка: ${error.message}</p>`;
+    showCustomNotification(`Ошибка загрузки истории цен: ${error.message}`, 'error');
+  }
+}
+
+function renderPriceHistoryChart(data, productName) {
+  const container = document.getElementById('priceHistoryChartContainer');
+  container.innerHTML = ''; //Очищаем контейнер
+
+  if (!data || Object.keys(data).length === 0) {
+    container.innerHTML = '<p style="text-align: center; color: #666;">История цен отсутствует</p>';
+    return;
+  }
+
+  const canvas = document.createElement('canvas');
+  container.appendChild(canvas);
+
+  //Преобразование данных для Chart.js (аналогично loadAndRenderPriceHistory)
+  const datasets = Object.entries(data).map(([storeName, storeData]) => {
+    const color = getStoreColor(storeName); //Предполагаем, что getStoreColor доступна
+    return {
+      label: storeName,
+      data: storeData.map(point => ({
+        x: new Date(point.x).getTime(), //Преобразуем строку в timestamp
+        y: point.y
+      })),
+      borderColor: color,
+      backgroundColor: color + '20', //Добавляем прозрачность (например, RGBA)
+      fill: false,
+      tension: 0.1
+    };
+  });
+
+  const chartData = {
+    datasets: datasets
+  };
+
+  const config = {
+    type: 'line',
+    data: chartData,
+    options: {
+      responsive: true,
+      maintainAspectRatio: false, //Позволяем высоте контейнера управлять размером
+      scales: {
+        x: {
+          type: 'time',
+          time: {
+            unit: 'day', //Можно настроить на 'week', 'month' в зависимости от данных
+            tooltipFormat: 'dd.MM.yyyy',
+          },
+          title: {
+            display: true,
+            text: 'Дата'
+          }
+        },
+        y: {
+          title: {
+            display: true,
+            text: 'Цена (₽)'
+          }
+        }
+      },
+      plugins: {
+        legend: {
+          display: true,
+          position: 'top',
+        },
+        tooltip: {
+          mode: 'index',
+          intersect: false,
+          callbacks: {
+            title: function(context) {
+              const d = new Date(context[0].parsed.x);
+              return d.toLocaleString('ru-RU');
+            }
+          }
+        }
+      }
+    }
+  };
+
+  priceHistoryChartInstance = new Chart(canvas, config);
+}
+
+function renderPriceHistoryList(entries) {
+  const container = document.getElementById('priceHistoryListContainer');
+  if (!container) return;
+
+  if (!entries || entries.length === 0) {
+    container.innerHTML = '<p>Для этого товара пока нет записей об истории цен.</p>';
+    return;
+  }
+
+  //Предположим, что entries - это объект в формате { storeName: [{x: date, y: price}, ...], ... }
+  //Нужно преобразовать в плоский список для отображения
+  let flatList = [];
+  for (const [storeName, storeEntries] of Object.entries(entries)) {
+    storeEntries.forEach(entry => {
+      flatList.push({
+        storeName: storeName,
+        date: entry.x, //Это строка в формате ISO
+        price: entry.y
+      });
+    });
+  }
+
+  //Сортируем по дате (новые сверху)
+  flatList.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+  container.innerHTML = `
+    <table class="price-history-table">
+      <thead>
+        <tr>
+          <th>Магазин</th>
+          <th>Дата</th>
+          <th>Цена (₽)</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${flatList.map(entry => `
+          <tr>
+            <td>${entry.storeName}</td>
+            <td>${new Date(entry.date).toLocaleString('ru-RU')}</td>
+            <td>${formatPrice(entry.price)}</td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  `;
+}
+
+document.getElementById('addPriceHistoryForm').addEventListener('submit', async function (e) {
+  e.preventDefault();
+
+  const productId = document.getElementById('selectedProductId').value;
+  const storeName = document.getElementById('newStoreName').value.trim();
+  const price = parseFloat(document.getElementById('newPrice').value);
+  const date = document.getElementById('newDate').value; //Это строка в формате YYYY-MM-DD
+
+  if (!productId || !storeName || isNaN(price) || price < 0 || !date) {
+    showCustomNotification('Пожалуйста, заполните все поля корректно.', 'info');
+    return;
+  }
+
+  const token = localStorage.getItem('techAggregatorToken');
+  if (!token) {
+    showCustomNotification('Токен отсутствует', 'error');
+    return;
+  }
+
+  try {
+    //Отправляем новую запись на сервер
+    const response = await fetch('http://localhost:3000/api/admin/price-history', { //Используем маршрут добавления
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        productId: parseInt(productId, 10),
+        storeName: storeName,
+        price: price,
+        date: date //Отправляем строку, сервер должен её распознать
+      })
+    });
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        localStorage.removeItem('techAggregatorToken');
+        currentUser = null;
+        updateAuthButtons();
+        showCustomNotification('Сессия истекла. Пожалуйста, войдите снова.', 'warning');
+        window.location.href = 'auth.html';
+        return;
+      }
+      const errorData = await response.json();
+      throw new Error(errorData.error || `HTTP ${response.status}`);
+    }
+
+    const result = await response.json();
+    console.log('Новая запись добавлена:', result);
+    showCustomNotification('Новая запись в истории цен добавлена.', 'success');
+
+    //Очищаем форму
+    document.getElementById('newStoreName').value = '';
+    document.getElementById('newPrice').value = '';
+    document.getElementById('newDate').value = '';
+
+    //Перезагружаем историю цен для обновления графика и списка
+    const productName = document.getElementById('selectedProductTitle').textContent;
+    await loadAndDisplayPriceHistory(productId, productName); //Перезагружаем данные для текущего товара
+
+  } catch (error) {
+    console.error('Ошибка добавления записи в историю:', error);
+    showCustomNotification(`Ошибка добавления записи: ${error.message}`, 'error');
+  }
+});
+
+//Админ поиск
+function initializeAdminProductSearch() {
+  const searchInputId = 'adminPriceHistorySearchInput';
+  const suggestionsContainerId = 'adminPriceHistorySearchSuggestions';
+  const searchFormId = 'adminPriceHistorySearchForm';
+
+  const searchInput = document.getElementById(searchInputId);
+  const searchForm = document.getElementById(searchFormId);
+
+  if (!searchInput || !searchForm) {
+    console.warn('Элементы поиска для админ-панели не найдены.');
+    return;
+  }
+
+  let autocompleteTimeout = null;
+
+  searchInput.addEventListener('input', function(e) {
+    const query = e.target.value.trim();
+
+    if (autocompleteTimeout) {
+      clearTimeout(autocompleteTimeout);
+    }
+
+    if (query.length > 0) {
+      autocompleteTimeout = setTimeout(async () => {
+        try {
+          const suggestions = await fetchSearchSuggestions(query);
+          showSearchSuggestions(suggestions, suggestionsContainerId);
+          attachSuggestionHandlers(suggestionsContainerId, function(productId, productName) {
+             loadAndDisplayPriceHistory(productId, productName);
+             document.getElementById(suggestionsContainerId).style.display = 'none';
+          });
+        } catch (error) {
+          console.error('Ошибка автозаполнения в админке:', error);
+          document.getElementById(suggestionsContainerId).innerHTML = '';
+          document.getElementById(suggestionsContainerId).style.display = 'none';
+        }
+      }, 300);
+    } else {
+      document.getElementById(suggestionsContainerId).innerHTML = '';
+      document.getElementById(suggestionsContainerId).style.display = 'none';
+      clearTimeout(autocompleteTimeout);
+    }
+  });
+
+  searchForm.addEventListener('submit', function(e) {
+    e.preventDefault();
+    const query = searchInput.value.trim();
+    if (query) {
+      searchProductForPriceHistoryByName(query, function(productId, productName) {
+        loadAndDisplayPriceHistory(productId, productName);
+      });
+    }
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!searchInput.contains(e.target) && !document.getElementById(suggestionsContainerId).contains(e.target)) {
+      document.getElementById(suggestionsContainerId).style.display = 'none';
+    }
+  });
+}
+
+async function searchProductForPriceHistoryByName(searchTerm, onSuccessCallback) {
+  if (!searchTerm) {
+    showCustomNotification('Пожалуйста, введите название товара для поиска.', 'info');
+    return;
+  }
+
+  const token = localStorage.getItem('techAggregatorToken');
+  if (!token) {
+    showCustomNotification('Токен отсутствует', 'error');
+    return;
+  }
+
+  try {
+    const response = await fetch(`http://localhost:3000/api/products?search=${encodeURIComponent(searchTerm)}`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        localStorage.removeItem('techAggregatorToken');
+        currentUser = null;
+        updateAuthButtons();
+        showCustomNotification('Сессия истекла. Пожалуйста, войдите снова.', 'warning');
+        window.location.href = 'auth.html';
+        return;
+      }
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+
+    const products = await response.json();
+    console.log('Результаты поиска (по имени):', products);
+
+    const foundProduct = products.find(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()));
+    if (!foundProduct) {
+      document.getElementById('priceHistoryResult').style.display = 'none';
+      showCustomNotification('Товар не найден.', 'info');
+      return;
+    }
+
+    if (onSuccessCallback && typeof onSuccessCallback === 'function') {
+      onSuccessCallback(foundProduct.id, foundProduct.name);
+    }
+
+  } catch (error) {
+    console.error('Ошибка поиска товара по имени:', error);
+    showCustomNotification(`Ошибка поиска товара: ${error.message}`, 'error');
+  }
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+
+  initializeAdminProductSearch();
+
+});
+
+function renderPriceHistoryList(entries) {
+  const container = document.getElementById('priceHistoryListContainer');
+  if (!container) return;
+
+  if (!entries || Object.keys(entries).length === 0) {
+    container.innerHTML = '<p>Для этого товара пока нет записей об истории цен.</p>';
+    return;
+  }
+
+  let flatList = [];
+  for (const [storeName, storeEntries] of Object.entries(entries)) {
+    storeEntries.forEach(entry => {
+      flatList.push({
+        storeName: storeName,
+        date: entry.x,
+        price: entry.y
+      });
+    });
+  }
+
+  flatList.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+  container.innerHTML = `
+    <table class="table table-striped table-hover mt-3">
+      <thead class="thead-dark">
+        <tr>
+          <th scope="col">Магазин</th>
+          <th scope="col">Дата</th>
+          <th scope="col">Цена (₽)</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${flatList.map(entry => `
+          <tr>
+            <td>${entry.storeName}</td>
+            <td>${new Date(entry.date).toLocaleString('ru-RU')}</td>
+            <td>${formatPrice(entry.price)}</td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  `;
+}
+
+//Удаление строки характеристики
+function removeSpecRow(button) {
+    const row = button.closest('.spec-edit-row');
+    if (row) {
+        row.style.opacity = '0.5';
+        row.style.transition = 'opacity 0.2s';
+        setTimeout(() => row.remove(), 200);
+    }
+}
+
+//Дублирование строки характеристики
+function duplicateSpecRow(button) {
+    const row = button.closest('.spec-edit-row');
+    if (!row) return;
+    
+    const keyInput = row.querySelector('.spec-key-input');
+    const valueInput = row.querySelector('.spec-value-input');
+    
+    const newRow = document.createElement('div');
+    newRow.className = 'spec-edit-row';
+    newRow.innerHTML = `
+        <div style="display: grid; grid-template-columns: 1fr 2fr auto auto; gap: 0.5rem; align-items: center;">
+            <input type="text" class="spec-key-input" value="${keyInput?.value || ''}" 
+                   placeholder="Ключ" style="padding: 0.4rem; border: 1px solid #ddd; border-radius: 4px;">
+            <input type="text" class="spec-value-input" value="${valueInput?.value || ''}" 
+                   placeholder="Значение" style="padding: 0.4rem; border: 1px solid #ddd; border-radius: 4px;">
+            <button type="button" class="btn btn-outline btn-small" 
+                    onclick="removeSpecRow(this)" style="padding: 0.4rem 0.6rem;">✕</button>
+            <button type="button" class="btn btn-outline btn-small" 
+                    onclick="duplicateSpecRow(this)" style="padding: 0.4rem 0.6rem;">📋</button>
+        </div>
+    `;
+    
+    row.parentNode.insertBefore(newRow, row.nextSibling);
+    
+    //Подсветка новой строки
+    newRow.style.animation = 'fadeIn 0.3s ease';
+}
+
+//Добавление новой пустой строки характеристики
+function addSpecRow() {
+    const container = document.getElementById('specsContainer');
+    if (container.querySelector('p')) container.innerHTML = '';
+    const div = document.createElement('div');
+    div.className = 'spec-row';
+    div.style.cssText = 'display: flex; gap: 10px; margin-bottom: 5px;';
+    div.innerHTML = `
+        <input type="text" class="spec-key" style="flex: 1;" placeholder="Название">
+        <input type="text" class="spec-value" style="flex: 1;" placeholder="Значение">
+        <button type="button" class="btn btn-danger btn-small" onclick="this.parentElement.remove()">✕</button>
+    `;
+    container.appendChild(div);
+}
+
+async function confirmAndSaveParsedDataWithEdit() {
+    const name = document.getElementById('editProdName')?.value;
+    const category = document.getElementById('editProdCategory')?.value;
+    const imageUrl = document.getElementById('editProdImage')?.value;
+
+    if (!name) return showCustomNotification('Введите название товара', 'warning');
+    if (!category) return showCustomNotification('Выберите категорию', 'warning');
+
+    //Сбор характеристик (используем обратный перевод, если ключ был русским)
+    const specs = {};
+    document.querySelectorAll('.spec-row').forEach(row => {
+        const keyInput = row.querySelector('.spec-key');
+        const valInput = row.querySelector('.spec-value');
+        if (keyInput && valInput && keyInput.value) {
+            //Пытаемся найти английский ключ по русскому названию
+            let finalKey = keyInput.value;
+            for (const [eng, rus] of Object.entries(window.specKeyTranslations || {})) {
+                if (rus === keyInput.value) {
+                    finalKey = eng;
+                    break;
+                }
+            }
+            specs[finalKey] = valInput.value;
+        }
+    });
+
+    //Сбор цен
+    const prices = [];
+    document.querySelectorAll('.price-row').forEach(row => {
+  const storeSelect = row.querySelector('.price-store-select');
+  const priceInput = row.querySelector('.price-value-input');
+  const urlInput = row.querySelector('.price-url-input'); //<-- ДОБАВЛЕНО
+  if (storeSelect && priceInput) {
+    const price = parseFloat(priceInput.value);
+    const url = urlInput ? urlInput.value.trim() : ''; //<-- ДОБАВЛЕНО
+    if (!isNaN(price) && price > 0) {
+      prices.push({ storeName: storeSelect.value, price: price, url: url }); //<-- ДОБАВЛЕНО url
+    }
+  }
+});
+
+    const productData = {
+        name,
+        category,
+        imageUrl,
+        specs,
+        prices
+    };
+
+    await addProductToDatabase(productData);
+}
+
+function addParsedPriceRow() {
+    const container = document.getElementById('parsedPriceRows');
+    //Убираем подсказку, если она есть
+    const hint = container.querySelector('.text-muted');
+    if (hint) hint.remove();
+
+    const row = document.createElement('div');
+    row.className = 'parsed-price-row';
+    row.style.cssText = 'display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 0.5rem; margin-bottom: 0.5rem;';
+    row.innerHTML = `
+        <input type="text" class="parsed-price-store" value="" placeholder="Магазин (напр. DNS)" style="padding: 0.4rem; border: 1px solid #ddd; border-radius: 4px;">
+        <input type="number" class="parsed-price-value" value="" placeholder="Цена" style="padding: 0.4rem; border: 1px solid #ddd; border-radius: 4px;">
+        <input type="url" class="parsed-price-url" value="" placeholder="Ссылка на товар" style="padding: 0.4rem; border: 1px solid #ddd; border-radius: 4px;">
+        <button type="button" class="btn btn-danger btn-small" onclick="this.closest('.parsed-price-row').remove()">✕</button>
+    `;
+    container.appendChild(row);
+    row.querySelector('.parsed-price-store').focus();
+}
+
+
+async function trackProductView(productId) {
+    if (!productId) return;
+    try {
+        const token = localStorage.getItem('techAggregatorToken');
+        await fetch('http://localhost:3000/api/analytics/track-view', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                ...(token && { 'Authorization': `Bearer ${token}` })
+            },
+            body: JSON.stringify({ productId: parseInt(productId) })
+        });
+    } catch (e) {
+        console.warn('Не удалось записать просмотр:', e);
+    }
+}
+
+async function trackSearchQuery(query) {
+  if (!query || query.trim() === '') return;
+  try {
+    const token = localStorage.getItem('techAggregatorToken');
+    await fetch('http://localhost:3000/api/analytics/track-search', {
+      method: 'POST',
+      keepalive: true,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token && { 'Authorization': `Bearer ${token}` })
+      },
+      body: JSON.stringify({ query: query.trim() })
+    });
+  } catch (e) {
+    console.warn('Ошибка логирования поиска:', e);
+  }
 }

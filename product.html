@@ -113,6 +113,73 @@
       padding: 40px;
       color: #6b7280;
     }
+    .price-history-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 320px;
+      gap: 16px;
+      align-items: stretch;
+    }
+    .price-chart-main {
+      min-width: 0;
+    }
+    .store-insights-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      max-height: 400px;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+    .store-insight-card {
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid #d1d5db;
+      background: #f9fafb;
+      font-size: 0.92rem;
+    }
+    .store-insight-card h4 {
+      margin: 0 0 6px 0;
+      font-size: 0.98rem;
+    }
+    .store-insight-card p {
+      margin: 0 0 4px 0;
+      line-height: 1.4;
+      color: inherit;
+    }
+    .store-insight-card p:last-child {
+      margin-bottom: 0;
+    }
+    .price-insights {
+      margin-top: 16px;
+      padding: 16px;
+      border-radius: 10px;
+      border: 1px solid #d1d5db;
+      background: #f9fafb;
+    }
+    .price-insights--buy {
+      border-color: #10b981;
+      background: #ecfdf5;
+    }
+    .price-insights--wait {
+      border-color: #ef4444;
+      background: #fef2f2;
+    }
+    .price-insights--neutral {
+      border-color: #f59e0b;
+      background: #fffbeb;
+    }
+    .price-insights h3 {
+      margin: 0 0 8px 0;
+      font-size: 1.1rem;
+    }
+    .price-insights p {
+      margin: 0 0 8px 0;
+      line-height: 1.5;
+      color: #1f2937;
+    }
+    .price-insights p:last-child {
+      margin-bottom: 0;
+    }
     .error-message {
       color: #ef4444;
       text-align: center;
@@ -126,6 +193,12 @@
       }
       .product-gallery {
         flex: auto;
+      }
+      .price-history-layout {
+        grid-template-columns: 1fr;
+      }
+      .store-insights-list {
+        max-height: none;
       }
     }
   </style>
@@ -182,18 +255,22 @@
             <span id="ratingStars" class="rating-stars">★★★★★</span>
             <span id="ratingValue" class="rating-value">4.5</span>
           </div>
+          <div class="action-buttons">
+            <button class="btn btn-primary" onclick="addToComparison(currentProductId)">Добавить к сравнению</button>
+            <button class="btn btn-outline" onclick="addToFavorites(currentProductId)">В избранное</button>
+            <!-- НОВАЯ КНОПКА: Найти похожее -->
+            <button class="btn btn-outline" style="border-color: #10b981; color: #10b981;" onclick="findSimilar(currentProductId)">🔍 Найти похожее</button>
+            <button class="btn btn-secondary" onclick="requestProductAddition()" id="requestBtn">Запросить добавление</button>
+            <div id="valueCalculatorContainer"></div>
+          </div>
           <div class="product-specs">
             <h3>Основные характеристики</h3>
             <div id="productSpecs" class="specs-list">
               <!-- Тут характеристики -->
             </div>
           </div>
-          <div class="action-buttons">
-            <button class="btn btn-primary" onclick="addToComparison(currentProductId)">Добавить к сравнению</button>
-            <button class="btn btn-outline" onclick="addToFavorites(currentProductId)">В избранное</button>
-            <button class="btn btn-secondary" onclick="requestProductAddition()" id="requestBtn">Запросить добавление</button>
-          </div>
         </div>
+        
       </div>
 
       <div class="price-comparison">
@@ -205,9 +282,21 @@
 
       <div class="section price-history-section">
         <h2>История цен</h2>
-        <div id="priceChartContainer" style="height: 400px; width: 100%; position: relative;">
-            <!-- Тут графики -->
-            <div id="priceChartLoading" style="display: flex; justify-content: center; align-items: center; height: 100%;">Загрузка истории цен...</div>
+        <div class="price-history-layout">
+          <div id="priceChartContainer" class="price-chart-main" style="height: 400px; width: 100%; position: relative;">
+              <!-- Тут графики -->
+              <div id="priceChartLoading" style="display: flex; justify-content: center; align-items: center; height: 100%;">Загрузка истории цен...</div>
+          </div>
+          <div id="storeInsightsList" class="store-insights-list">
+            <div class="store-insight-card price-insights--neutral">
+              <h4>Аналитика по магазинам</h4>
+              <p>Собираем данные...</p>
+            </div>
+          </div>
+        </div>
+        <div id="priceInsightsGeneral" class="price-insights price-insights--neutral">
+          <h3>Общая аналитика</h3>
+          <p>Собираем данные для рекомендации...</p>
         </div>
     </div>
 
@@ -294,6 +383,11 @@ document.addEventListener('DOMContentLoaded', async function () {
   updateComparisonCounter();
 });
 
+// Функция перехода в режим "Похожие товары"
+window.findSimilar = function(productId) {
+    // Перенаправляем на каталог с параметром ID товара, который ищем
+    window.location.href = `catalog.html?similarTo=${productId}`;
+};
 </script>
 </body>
 </html>
