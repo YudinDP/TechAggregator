@@ -2,6 +2,8 @@
 const express = require('express');
 const cors = require('cors');
 const cron = require('node-cron');
+const fs = require('fs');
+const path = require('path');
 const os = require('os');
 require('dotenv').config();
 const MIN_VIEWS_FOR_ANALYTICS = 5;
@@ -32,6 +34,31 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const responseTimeSamples = [];
 const MAX_RESPONSE_TIME_SAMPLES = 300;
+
+const PRICE_SYNC_STATE_FILE = path.join(__dirname, 'data', 'price-sync-state.json');
+const PRICE_SYNC_DELAY_MS = parseInt(process.env.PRICE_SYNC_DELAY_MS || '3500', 10);
+const PRICE_SYNC_MAX_PREVIEW = parseInt(process.env.PRICE_SYNC_MAX_PER_PREVIEW || '120', 10);
+const PRICE_SYNC_AUTO_MAX = parseInt(process.env.PRICE_SYNC_AUTO_MAX_STORES || '80', 10);
+const THREE_DAYS_MS = 3 * 24 * 60 * 60 * 1000;
+
+function readPriceSyncState() {
+  try {
+    return JSON.parse(fs.readFileSync(PRICE_SYNC_STATE_FILE, 'utf8'));
+  } catch {
+    return {};
+  }
+}
+
+function writePriceSyncState(patch) {
+  const dir = path.dirname(PRICE_SYNC_STATE_FILE);
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+  const prev = readPriceSyncState();
+  fs.writeFileSync(PRICE_SYNC_STATE_FILE, JSON.stringify({ ...prev, ...patch }, null, 2), 'utf8');
+}
+
+function delay(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 function isMissingTableError(error, modelName) {
   return error?.code === 'P2021' && error?.meta?.modelName === modelName;
@@ -543,6 +570,20 @@ app.get('/api/test', (req, res) => {
 //Запуск сервера
 app.listen(PORT, () => {
   console.log(` Сервер запущен на http://localhost:${PORT}`);
+  setInterval(() => {
+    try {
+      scheduleAutomaticPriceSyncIfDue();
+    } catch (e) {
+      console.error('[PRICE SYNC] scheduler:', e);
+    }
+  }, 60 * 60 * 1000);
+  setTimeout(() => {
+    try {
+      scheduleAutomaticPriceSyncIfDue();
+    } catch (e) {
+      console.error('[PRICE SYNC] startup check:', e);
+    }
+  }, 15000);
 });
 
 //=== ПРОФИЛЬ И ЛИЧНЫЕ ДАННЫЕ ===
@@ -1638,18 +1679,61 @@ app.get('/api/admin/analytics/stats', authenticateToken, requireAdminRole, async
           ? Number((responseTimeSamples.reduce((sum, value) => sum + value, 0) / responseTimeSamples.length).toFixed(1))
           : 0;
         const memoryLoadPercent = Number((((os.totalmem() - os.freemem()) / os.totalmem()) * 100).toFixed(1));
+        const cpuCount = Math.max(1, os.cpus()?.length || 1);
+        const rawLoad = os.loadavg?.()[0] ?? 0;
+        const normalizedCpuLoad = rawLoad > 0 ? Number(Math.min(100, (rawLoad / cpuCount) * 100).toFixed(1)) : 0;
+        const serverLoad = normalizedCpuLoad > 0
+          ? Number(((normalizedCpuLoad * 0.45) + (memoryLoadPercent * 0.55)).toFixed(1))
+          : memoryLoadPercent;
+
+        const onlineSince = new Date(now.getTime() - 15 * 60 * 1000);
+        const [recentViewUsers, recentSearchUsers] = await Promise.all([
+          prisma.viewLog.findMany({
+            where: { viewedAt: { gte: onlineSince }, userId: { not: null } },
+            select: { userId: true }
+          }),
+          prisma.searchLog.findMany({
+            where: { createdAt: { gte: onlineSince }, userId: { not: null } },
+            select: { userId: true }
+          })
+        ]);
+
+        const onlineUserIds = new Set([
+          ...recentViewUsers.map((item) => item.userId),
+          ...recentSearchUsers.map((item) => item.userId)
+        ]);
+
+        try {
+          const recentPurchaseUsers = await prisma.purchaseClick.findMany({
+            where: { clickedAt: { gte: onlineSince }, userId: { not: null } },
+            select: { userId: true }
+          });
+          recentPurchaseUsers.forEach((item) => onlineUserIds.add(item.userId));
+        } catch (purchaseOnlineError) {
+          if (!isMissingTableError(purchaseOnlineError, 'PurchaseClick')) {
+            throw purchaseOnlineError;
+          }
+        }
+
+        const uptimeSeconds = process.uptime();
 
         res.json({
             totalProducts: await prisma.product.count(),
             totalUsers: await prisma.user.count(),
+            totalReviews: await prisma.review.count(),
+            totalRequests: await prisma.request.count(),
             dailyViews: viewsToday,
             purchaseClicks: purchaseClicksToday,
             dailyViewsChange: getPercentChange(viewsToday, viewsYesterday),
             purchaseClicksChange: getPercentChange(purchaseClicksToday, purchaseClicksYesterday),
             popularSearches: searches.map(s => ({ term: s.query, count: s._count.query })),
             popularProducts,
-            serverLoad: memoryLoadPercent,
-            responseTime: averageResponseTime
+            serverLoad,
+            memoryLoad: memoryLoadPercent,
+            cpuLoad: normalizedCpuLoad,
+            responseTime: averageResponseTime,
+            onlineUsers: onlineUserIds.size,
+            uptimeHours: Number((uptimeSeconds / 3600).toFixed(2))
         });
     } catch (error) {
         console.error('Ошибка аналитики:', error);
@@ -2903,8 +2987,7 @@ app.post('/api/change-password', authenticateToken, async (req, res) => {
     res.status(500).json({ error: 'Failed to change password' });
   }
 });
-const multer = require('multer'); 
-const path = require('path');
+const multer = require('multer');
 
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
@@ -3384,159 +3467,31 @@ app.get('/api/test-parse', authenticateToken, requireAdminRole, async (req, res)
   }
 });
 
-//Функция для обновления цен и истории
-async function updatePricesAndHistory() {
-  console.log('[CRON] Запуск автоматического обновления цен и истории...');
-
-  try {
-    //Получаем все товары с активными ценами
-    const products = await prisma.product.findMany({
-      where: { isActive: true },
-      include: { prices: true }
-    });
-
-    for (const product of products) {
-      for (const priceEntry of product.prices) {
-        try {
-
-          //Временная заглушка для демонстрации логики
-          const currentPrice = priceEntry.price; //Замените на реальную цену из парсинга
-          const oldPrice = priceEntry.price;
-
-          if (currentPrice !== oldPrice) {
-            console.log(`[CRON] Цена изменилась для товара ${product.id}, магазин ${priceEntry.storeName}: ${oldPrice}  ${currentPrice}`);
-
-            //Обновляем цену в таблице Price
-            await prisma.price.update({
-              where: { id: priceEntry.id },
-              data: { price: currentPrice }
-            });
-
-            //Создаём запись в истории цен PriceHistory
-            await prisma.priceHistory.create({
-              data: {
-                productId: product.id,
-                storeName: priceEntry.storeName,
-                price: currentPrice,
-                date: new Date()
-              }
-            });
-
-            //Пересчитываем среднюю/минимальную цену для товара при необходимости
-            //await recalculateProductPrice(product.id);
-          } else {
-             console.log(`[CRON] Цена не изменилась для товара ${product.id}, магазин ${priceEntry.storeName}`);
-          }
-        } catch (err) {
-          console.error(`[CRON] Ошибка обновления цены для товара ${product.id}, магазин ${priceEntry.storeName}:`, err.message);
-          //Продолжаем обработку следующих цен, не прерывая цикл
-        }
-      }
-    }
-
-    console.log('[CRON] Автоматическое обновление цен и истории завершено.');
-  } catch (error) {
-    console.error('[CRON] Критическая ошибка при обновлении цен и истории:', error);
-  }
+async function parseProductFromYandexMarket(url) {
+//Извлекаем ID модели из URL
+const match = url.match(/\/(\d+)(?:[\/?#]|$)/);
+if (!match) throw new Error('Не удалось извлечь ID из URL');
+const modelId = parseInt(match[1], 10);
+//Запрос к API Systems
+const response = await axios.get('http://market.apisystem.name/models/${modelId}/specification', {
+  params: { api_key: process.env.API_SYSTEMS_API_KEY, format: 'json' },
+  timeout: 10000
+});
+if (response.data.status !== 'OK') throw new Error('API Systems вернул ошибку');
+const fields = response.data;
+//Сбор характеристик
+const specs = {};
+if (Array.isArray(fields.specifications)) {
+  fields.specifications.forEach(s => { if (s.name && s.value) specs[s.name] = s.value.toString(); });
 }
-
-//Запуск задачи раз в 3 дня в 02:00 
-cron.schedule('0 2 */3 * *', updatePricesAndHistory, {
-  scheduled: true,
-  timezone: "Europe/Moscow" //Укажите свою временную зону
-});
-
-//Маршрут для ручного запуска обновления 
-app.post('/api/admin/manual-price-update', authenticateToken, requireAdminRole, async (req, res) => {
-  try {
-    //Запускаем функцию обновления в фоне
-    updatePricesAndHistory();
-    res.json({ message: 'Обновление цен и истории запущено вручную.' });
-  } catch (error) {
-    console.error('Ошибка при ручном запуске обновления:', error);
-    res.status(500).json({ error: 'Не удалось запустить обновление' });
-  }
-});
-
-
-
-
-async function parseProductFromYandexMarket(url, proxy = null) {
-    console.log(`[API-SYSTEMS] Запрашиваем информацию о товаре через API Systems для URL: ${url}`);
-
-  
-    const { id: modelId, source } = extractModelIdFromUrl(url);
-    if (!modelId) {
-        throw new Error('Не удалось извлечь ID модели из URL. Убедитесь, что URL корректен и принадлежит Яндекс.Маркету или Wildberries.');
-    }
-
-    console.log(`  Извлечён ID модели: ${modelId}, источник: ${source}`);
-
-    let apiResponse;
-    try {
-        //2. Вызываем API Systems для получения данных по ID
-        console.log(`[API-SYSTEMS] Запрашиваем характеристики для ID: ${modelId}, источник: ${source}`);
-        
-        apiResponse = {
-            //Эти данные взяты из логов, которые вы предоставили
-            product_name: 'Смартфон Xiaomi Redmi Note 15 Pro 12/512GB 4G, Ростест, Dual nano Sim, Black',
-            price: null, //Предположим, цена не всегда доступна из API Systems
-            prev_image: 'https://avatars.mds.yandex.net/get-mpic/14848359/2a0000019be0423406b4f533811a5601edfc/orig',
-            specifications: [
-                { category: 'Общие характеристики', name: 'Бренд', value: 'Xiaomi' },
-                { category: 'Общие характеристики', name: 'Цвет товара', value: 'black' },
-                { category: 'Экран', name: 'Диагональ экрана', value: '6.77"' },
-                { category: 'Память и процессор', name: 'Оперативная память', value: '12 ГБ' },
-                { category: 'Память и процессор', name: 'Встроенная память', value: '512 ГБ' },
-                { category: 'Питание', name: 'Емкость аккумулятора (точно)', value: '6580 мА·ч' },
-              
-            ],
-            status: 'OK'
-        };
-        
-    } catch (error) {
-        console.error(`[API-SYSTEMS] Ошибка при вызове API для ${modelId}:`, error.message);
-        throw new Error(`Ошибка при запросе к API Systems: ${error.message}`);
-    }
-
-    if (!apiResponse || apiResponse.status !== 'OK') {
-        throw new Error(`API Systems вернул статус: ${apiResponse?.status || 'N/A'}. Данные не получены.`);
-    }
-
-    //3. Извлекаем нужные данные из ответа API Systems
-    const name = apiResponse.product_name || null; //Используем product_name из API
-    const description = apiResponse.description || null; //Если есть
-    const vendor = apiResponse.vendor || null; //Бренд (может быть в другом поле)
-    const photoUrl = apiResponse.prev_image || (apiResponse.photos && apiResponse.photos.length > 0 ? apiResponse.photos[0].url : null); //Берём главное изображение
-    const price = apiResponse.price || null; //Цена (если доступна из API)
-
-    //4. Извлекаем и преобразуем характеристики
-    const specs = {};
-    if (Array.isArray(apiResponse.specifications)) {
-        apiResponse.specifications.forEach(spec => {
-            //Используем 'name' как ключ и 'value' как значение
-            //Проверим, что поля существуют
-            if (spec.name && spec.value !== undefined && spec.value !== null) {
-                //Опционально: можно нормализовать ключи (например, привести к snake_case)
-                //или использовать 'name' как есть, если оно уже в нужном формате.
-                //Для начала, используем 'name' как ключ напрямую.
-                specs[spec.name.trim()] = spec.value.toString().trim(); //Преобразуем значение в строку на всякий случай
-            }
-        });
-    }
-    //Если характеристики хранятся в другом формате (например, объект с категориями), адаптируйте логику выше.
-
-    console.log(`  Данные извлечены из API Systems (yandex_market):`, { name, price, photoUrl, specs: Object.keys(specs) });
-
-    
-    return {
-        source: 'API Systems (yandex_market)',
-        name: name, // Используем имя из API Systems
-        price: price, // Используем цену из API Systems (может быть null)
-        imageUrl: photoUrl, // Используем изображение из API Systems
-        sourceUrl: url,
-        specs: specs // Используем характеристики из API Systems
-    };
+return {
+  source: 'API Systems (yandex_market)',
+  name: fields.product_name || 'Неизвестное название',
+  price: null, //API /specification не возвращает цену
+  imageUrl: fields.prev_image || null,
+  sourceUrl: url,
+  specs: specs
+};
 }
 
   function extractModelIdFromUrl(urlString) {
@@ -3565,6 +3520,294 @@ async function parseProductFromYandexMarket(url, proxy = null) {
     }
     return { id: null, source: null };
 }
+
+
+//--- Автообновление цен по ссылкам магазинов (DNS / Ozon / Яндекс.Маркет) ---
+async function fetchParsedPriceForStoreUrl(url, proxy = null) {
+  if (!url || typeof url !== 'string') {
+    throw new Error('Пустая ссылка');
+  }
+  const trimmed = url.trim();
+  let parsedUrl;
+  try {
+    parsedUrl = new URL(trimmed);
+  } catch {
+    throw new Error('Некорректный URL');
+  }
+  const host = parsedUrl.hostname.toLowerCase();
+
+  if (host.includes('dns-shop.ru')) {
+    const data = await parseProductFromDnsShop(trimmed, proxy);
+    const price = data.price != null ? Math.round(Number(data.price)) : null;
+    return { price: Number.isFinite(price) ? price : null, parsedName: data.name || null, source: data.source };
+  }
+  if (host.includes('ozon.ru')) {
+    const data = await parseProductFromOzon(trimmed, proxy);
+    const price = data.price != null ? Math.round(Number(data.price)) : null;
+    return { price: Number.isFinite(price) ? price : null, parsedName: data.name || null, source: data.source };
+  }
+  if (host.includes('market.yandex.ru') || host.includes('yandex.ru')) {
+    const data = await parseProductFromYandexMarket(trimmed, proxy);
+    const price = data.price != null ? Math.round(Number(data.price)) : null;
+    return { price: Number.isFinite(price) ? price : null, parsedName: data.name || null, source: data.source };
+  }
+
+  throw new Error(`Домен не поддерживается для автообновления (${host}). Укажите ссылку DNS-Shop, Ozon или Яндекс.Маркет.`);
+}
+
+async function collectPriceSyncResults(options = {}) {
+  const {
+    productIds = null,
+    maxStores = PRICE_SYNC_MAX_PREVIEW,
+    proxy = null,
+    throttleDelay = PRICE_SYNC_DELAY_MS
+  } = options;
+
+  const where = { isActive: true };
+  if (Array.isArray(productIds) && productIds.length > 0) {
+    const ids = productIds.map((id) => parseInt(id, 10)).filter((n) => !isNaN(n));
+    if (ids.length) where.id = { in: ids };
+  }
+
+  const products = await prisma.product.findMany({
+    where,
+    include: { prices: true },
+    orderBy: { id: 'asc' }
+  });
+
+  const results = [];
+  let processed = 0;
+
+  outer: for (const product of products) {
+    for (const priceRow of product.prices) {
+      if (processed >= maxStores) break outer;
+
+      const base = {
+        productId: product.id,
+        productName: product.name,
+        priceId: priceRow.id,
+        storeName: priceRow.storeName,
+        url: priceRow.url,
+        oldPrice: priceRow.price
+      };
+
+      if (!priceRow.url || !String(priceRow.url).trim()) {
+        results.push({ ...base, newPrice: null, status: 'skipped', message: 'Нет ссылки на карточку магазина' });
+        continue;
+      }
+
+      try {
+        const parsed = await fetchParsedPriceForStoreUrl(String(priceRow.url).trim(), proxy);
+        processed += 1;
+        if (throttleDelay > 0) await delay(throttleDelay);
+
+        if (parsed.price == null || !Number.isFinite(parsed.price)) {
+          results.push({
+            ...base,
+            newPrice: null,
+            status: 'error',
+            message: 'Цена на странице не найдена (сайт/API не вернул цену)',
+            parsedName: parsed.parsedName
+          });
+        } else {
+          results.push({
+            ...base,
+            newPrice: parsed.price,
+            status: 'ok',
+            message: null,
+            parsedName: parsed.parsedName
+          });
+        }
+      } catch (err) {
+        processed += 1;
+        if (throttleDelay > 0) await delay(throttleDelay);
+        results.push({
+          ...base,
+          newPrice: null,
+          status: 'error',
+          message: err.message || String(err)
+        });
+      }
+    }
+  }
+
+  return {
+    results,
+    summary: {
+      total: results.length,
+      ok: results.filter((r) => r.status === 'ok').length,
+      error: results.filter((r) => r.status === 'error').length,
+      skipped: results.filter((r) => r.status === 'skipped').length
+    }
+  };
+}
+
+async function applyPriceSyncResults(resultRows) {
+  const toWrite = resultRows.filter((r) => r && r.status === 'ok' && r.newPrice != null && r.priceId);
+  const now = new Date();
+  let updated = 0;
+
+  for (const row of toWrite) {
+    const newPrice = Math.round(Number(row.newPrice));
+    if (!Number.isFinite(newPrice) || newPrice < 0) continue;
+
+    const priceRow = await prisma.price.findFirst({
+      where: { id: row.priceId, productId: row.productId }
+    });
+    if (!priceRow) continue;
+
+    await prisma.$transaction([
+      prisma.priceHistory.create({
+        data: {
+          productId: row.productId,
+          storeName: priceRow.storeName,
+          price: newPrice,
+          date: now
+        }
+      }),
+      prisma.price.update({
+        where: { id: priceRow.id },
+        data: {
+          price: newPrice,
+          recordedAt: now
+        }
+      })
+    ]);
+    updated += 1;
+  }
+
+  return { applied: updated };
+}
+
+async function runAutomaticPriceSyncJob() {
+  console.log('[PRICE SYNC] Автоматический запуск...');
+  const state = readPriceSyncState();
+  if (state.autoSyncRunning) {
+    console.log('[PRICE SYNC] Уже выполняется, пропуск.');
+    return;
+  }
+  writePriceSyncState({ autoSyncRunning: true, autoSyncStartedAt: new Date().toISOString() });
+
+  try {
+    const proxy = process.env.PRICE_SYNC_PROXY || null;
+    const { results } = await collectPriceSyncResults({
+      productIds: null,
+      maxStores: PRICE_SYNC_AUTO_MAX,
+      proxy,
+      throttleDelay: PRICE_SYNC_DELAY_MS
+    });
+
+    const okRows = results.filter((r) => r.status === 'ok');
+    const applyRes = await applyPriceSyncResults(okRows);
+
+    writePriceSyncState({
+      autoSyncRunning: false,
+      lastAutoSyncAt: new Date().toISOString(),
+      lastAutoSyncSummary: {
+        ok: okRows.length,
+        applied: applyRes.applied
+      },
+      lastAutoSyncError: null
+    });
+
+    console.log('[PRICE SYNC] Готово:', applyRes);
+  } catch (e) {
+    console.error('[PRICE SYNC] Ошибка:', e);
+    writePriceSyncState({
+      autoSyncRunning: false,
+      lastAutoSyncError: e.message || String(e)
+    });
+  }
+}
+
+function scheduleAutomaticPriceSyncIfDue() {
+  const state = readPriceSyncState();
+  if (state.autoSyncRunning) return;
+
+  const last = state.lastAutoSyncAt ? new Date(state.lastAutoSyncAt).getTime() : 0;
+  if (last && Date.now() - last < THREE_DAYS_MS) return;
+
+  runAutomaticPriceSyncJob().catch((e) => console.error('[PRICE SYNC]', e));
+}
+
+app.get('/api/admin/prices/sync-status', authenticateToken, requireAdminRole, async (req, res) => {
+  try {
+    const s = readPriceSyncState();
+    res.json({
+      lastAutoSyncAt: s.lastAutoSyncAt || null,
+      lastAutoSyncSummary: s.lastAutoSyncSummary || null,
+      lastAutoSyncError: s.lastAutoSyncError || null,
+      autoSyncRunning: !!s.autoSyncRunning,
+      delayMs: PRICE_SYNC_DELAY_MS,
+      maxPreviewStores: PRICE_SYNC_MAX_PREVIEW,
+      autoMaxStoresPerRun: PRICE_SYNC_AUTO_MAX,
+      supportedHosts: ['dns-shop.ru', 'ozon.ru', 'market.yandex.ru', 'yandex.ru']
+    });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.post('/api/admin/prices/sync-preview', authenticateToken, requireAdminRole, async (req, res) => {
+  try {
+    const { proxy = null, productIds = null, maxStores } = req.body || {};
+    const maxCap = Math.min(parseInt(maxStores, 10) || PRICE_SYNC_MAX_PREVIEW, 500);
+    const data = await collectPriceSyncResults({
+      productIds,
+      maxStores: maxCap,
+      proxy,
+      throttleDelay: PRICE_SYNC_DELAY_MS
+    });
+    res.json({ ...data, generatedAt: new Date().toISOString() });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: e.message || 'Ошибка предпросмотра' });
+  }
+});
+
+app.post('/api/admin/prices/sync-apply', authenticateToken, requireAdminRole, async (req, res) => {
+  try {
+    const { results } = req.body || {};
+    if (!Array.isArray(results)) {
+      return res.status(400).json({ error: 'Ожидается массив results' });
+    }
+    const applyRes = await applyPriceSyncResults(results);
+    res.json({ message: 'Цены и история обновлены', ...applyRes });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.post('/api/admin/prices/sync-product/:productId', authenticateToken, requireAdminRole, async (req, res) => {
+  try {
+    const productId = parseInt(req.params.productId, 10);
+    const { dryRun = false, proxy = null } = req.body || {};
+    if (isNaN(productId)) return res.status(400).json({ error: 'Некорректный ID' });
+
+    const data = await collectPriceSyncResults({
+      productIds: [productId],
+      maxStores: 200,
+      proxy,
+      throttleDelay: PRICE_SYNC_DELAY_MS
+    });
+
+    if (!dryRun) {
+      const applyRes = await applyPriceSyncResults(data.results.filter((r) => r.status === 'ok'));
+      return res.json({ ...data, applied: applyRes });
+    }
+
+    res.json(data);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.post('/api/admin/manual-price-update', authenticateToken, requireAdminRole, async (req, res) => {
+  runAutomaticPriceSyncJob().catch(console.error);
+  res.json({
+    message: `Запущено фоновое обновление (до ${PRICE_SYNC_AUTO_MAX} магазинов за проход). Интервал авто: 3 дня.`
+  });
+});
 
 
 async function parseProductWithGPT(url, htmlContent = null) {

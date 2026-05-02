@@ -36,6 +36,7 @@ let currentPriceHistoryEntries = [];
 let currentTableSearchField = '';
 let currentTableSearchValue = '';
 let priceHistoryChartInstance = null;
+let lastAdminPriceSyncPreview = null;
 let similarModeTargetId = null;
 //Карта перевода ключей
 window.specKeyTranslations = {
@@ -1140,7 +1141,7 @@ function displayProduct(product) {
       <div class="price-item">
         <div class="store-info">${price.store}</div>
         <div>${formatPrice(price.price)} ₽</div>
-        <a href="${price.url}" target="_blank" class="buy-button">Купить</a>
+        <a href="${price.url}" target="_blank" class="buy-button" onclick="trackPurchase(${product.id}, '${String(price.store || '').replace(/'/g, "\\'")}')">Купить</a>
       </div>
     `).join('');
   }
@@ -1836,8 +1837,23 @@ function getStoreColor(storeName) {
 }
 
 function trackPurchase(productId, store) {
-    
     console.log(`Покупка товара ${productId} в магазине ${store}`);
+    if (!productId) return;
+    const token = localStorage.getItem('techAggregatorToken');
+    fetch('http://localhost:3000/api/analytics/track-purchase', {
+      method: 'POST',
+      keepalive: true,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+      },
+      body: JSON.stringify({
+        productId: parseInt(productId, 10),
+        storeName: store || null
+      })
+    }).catch((error) => {
+      console.warn('Не удалось записать переход к покупке:', error);
+    });
 }
 
 //===================== ОТЗЫВЫ И ЗАПРОСЫ =====================
@@ -2499,6 +2515,7 @@ function initializeAdminPage() {
     loadAnalyticsData();
   loadPopularSearches();
   initializeAdminProductSearch();
+  initializeAdminPriceSyncControls();
 }
 
 //Функции для поиска с подсказками
@@ -5920,7 +5937,70 @@ const CATEGORY_TO_SPECS_MAP = {
         'wifi_standard', 'max_speed_mbps', 'ethernet_ports', 'antenna_count',
         'coverage_area_sqm', 'vpn_support', 'parental_controls', 'weight_g'
     ],
+    keyboards: [
+        'keyboard_type', 'switch_type', 'layout', 'connectivity',
+        'backlight', 'anti_ghosting', 'key_rollover', 'weight_g'
+    ],
+    mouses: [
+        'sensor_type', 'dpi_max', 'buttons_count', 'connectivity',
+        'polling_rate_hz', 'weight_g', 'battery_life_hours', 'rgb_backlight'
+    ],
+    cases: [
+        'case_type', 'supported_form_factors', 'materials', 'fan_support',
+        'radiator_support', 'gpu_max_length_mm', 'cpu_cooler_max_height_mm', 'weight_g'
+    ],
+    fitness_trackers: [
+        'display_type', 'battery_life_days', 'water_resistance', 'sensors',
+        'connectivity', 'compatibility', 'weight_g', 'strap_size'
+    ],
+    power_units: [
+        'power_w', 'efficiency_rating', 'modular_type', 'fan_size_mm',
+        'protection_systems', 'connectors', 'form_factor', 'warranty_years'
+    ],
+    microphones: [
+        'microphone_type', 'polar_pattern', 'frequency_response_hz', 'sensitivity_db',
+        'connectivity', 'sample_rate_khz', 'bit_depth', 'weight_g'
+    ],
+    webcams: [
+        'resolution', 'fps', 'focus_type', 'field_of_view',
+        'microphone', 'mount_type', 'connectivity', 'cable_length_m'
+    ],
+    power_banks: [
+        'battery_capacity_mah', 'battery_type', 'ports_usb_a', 'ports_usb_c',
+        'max_output_w', 'fast_charging', 'weight_g', 'dimensions_mm'
+    ],
+    portable_speakers: [
+        'power_w', 'frequency_response_hz', 'bluetooth_version', 'battery_life_hours',
+        'water_resistance', 'voice_assistant', 'weight_g', 'dimensions_mm'
+    ],
+    cpus: [
+        'cpu_brand', 'cpu_model', 'cpu_cores', 'cpu_threads',
+        'cpu_base_freq', 'cpu_boost_freq', 'socket', 'tdp_w',
+        'process_tech_nm', 'integrated_graphics', 'cache_l3_mb'
+    ],
+    motherboards: [
+        'socket', 'chipset', 'form_factor', 'ram_type',
+        'ram_slots', 'max_ram', 'pcie_version', 'm2_slots',
+        'ports_sata', 'ports_usb', 'wifi_support'
+    ],
+    ram: [
+        'ram_type', 'capacity_gb', 'memory_speed_mhz', 'latency_cl',
+        'module_count', 'voltage_v', 'rgb_support', 'warranty_years'
+    ],
+    graphics_cards: [
+        'gpu_brand', 'gpu_model', 'vram_size', 'memory_bus_width_bit',
+        'boost_clock_mhz', 'tdp_w', 'power_connector', 'output_ports',
+        'ray_tracing_support'
+    ],
+    external_drives: [
+        'storage_type', 'capacity_gb', 'interface', 'read_speed_mbs',
+        'write_speed_mbs', 'form_factor', 'water_resistance', 'warranty_years'
+    ],
     storage: [
+        'storage_type', 'capacity_gb', 'interface', 'read_speed_mbs',
+        'write_speed_mbs', 'form_factor', 'warranty_years'
+    ],
+    drivers: [
         'storage_type', 'capacity_gb', 'interface', 'read_speed_mbs',
         'write_speed_mbs', 'form_factor', 'warranty_years'
     ],
@@ -5960,7 +6040,7 @@ function updateManualSpecFields() {
       groupDiv.className = 'manual-spec-group';
 
       specKeys.forEach(specKey => {
-        const displayName = window.specKeyTranslations?.ru?.[specKey] || specKey;
+        const displayName = window.specKeyTranslations?.[specKey] || specKey;
 
         const fieldGroup = document.createElement('div');
         fieldGroup.className = 'form-group';
@@ -6166,6 +6246,8 @@ function openAdminTab(tabName) {
         loadAnalyticsData();
     } else if (tabName === 'users') {
         loadUsersTable();
+    } else if (tabName === 'priceHistory') {
+        fetchAdminPriceSyncStatus();
     }
     //Для 'parser' и 'manualAdd' ничего загружать не нужно, только открыть форму
 }
@@ -6299,68 +6381,6 @@ function renderPriceHistoryList(entries) {
         `;
     }).join('');
 }
-
-//Обработчик отправки формы добавления
-document.getElementById('addPriceHistoryForm')?.addEventListener('submit', async function(e) {
-    e.preventDefault();
-
-    if (!currentPriceHistoryProduct) {
-        showCustomNotification('Пожалуйста, сначала выберите товар.', 'info');
-        return;
-    }
-
-    const storeName = document.getElementById('addStoreName').value.trim();
-    const price = parseFloat(document.getElementById('addPrice').value);
-    const date = document.getElementById('addDate').value;
-
-    if (!storeName || isNaN(price) || price < 0 || !date) {
-        showCustomNotification('Пожалуйста, заполните все поля формы корректно.', 'info');
-        return;
-    }
-
-    const token = localStorage.getItem('techAggregatorToken');
-    try {
-        const response = await fetch('http://localhost:3000/api/admin/price-history', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify({
-                productId: currentPriceHistoryProduct,
-                storeName: storeName,
-                price: price,
-                date: date
-            })
-        });
-
-        if (!response.ok) {
-            if (response.status === 401) {
-                localStorage.removeItem('techAggregatorToken');
-                currentUser = null;
-                updateAuthButtons();
-                showCustomNotification('Сессия истекла. Пожалуйста, войдите снова.', 'warning');
-                //window.location.href = 'auth.html';
-                return;
-            }
-            const errorData = await response.json().catch(() => ({ error: `HTTP ${response.status}` }));
-            throw new Error(errorData.error || `HTTP ${response.status}`);
-        }
-
-        const result = await response.json();
-        console.log('Новая запись истории цен добавлена:', result);
-
-        showCustomNotification('Запись истории цен добавлена.', 'success');
-        //Сбросим форму
-        resetPriceHistoryForm();
-        //Перезагрузим историю для текущего товара
-        loadPriceHistoryForProduct();
-
-    } catch (error) {
-        console.error('Ошибка добавления записи истории цен:', error);
-        showCustomNotification(`Ошибка добавления: ${error.message}`, 'error');
-    }
-});
 
 //Сброс формы добавления
 function resetPriceHistoryForm() {
@@ -7583,6 +7603,7 @@ async function loadAndDisplayPriceHistory(productId, productName) {
 
     //Отрисовываем список
     renderPriceHistoryList(historyData);
+    updateAdminPriceSyncSingleButtons();
 
   } catch (error) {
     console.error('Ошибка загрузки истории цен:', error);
@@ -7786,6 +7807,287 @@ document.getElementById('addPriceHistoryForm').addEventListener('submit', async 
 });
 
 //Админ поиск
+function adminPriceSyncEscapeCell(val) {
+  if (val === null || val === undefined) return '';
+  return String(val)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function getAdminPriceSyncProxy() {
+  const el = document.getElementById('priceSyncProxyInput');
+  const v = el && el.value.trim();
+  return v || null;
+}
+
+function closeAdminPriceSyncModal() {
+  const modal = document.getElementById('priceSyncPreviewModal');
+  if (modal) modal.style.display = 'none';
+}
+
+function showAdminPriceSyncModal(title, payload) {
+  const modal = document.getElementById('priceSyncPreviewModal');
+  const tbody = document.getElementById('priceSyncPreviewTableBody');
+  const sumEl = document.getElementById('priceSyncModalSummary');
+  const titleEl = document.getElementById('priceSyncModalTitle');
+  if (!modal || !tbody || !sumEl || !titleEl) return;
+
+  titleEl.textContent = title || 'Результаты проверки цен';
+  const sum = payload.summary || {};
+  sumEl.textContent = `Всего: ${sum.total ?? 0}; успешно: ${sum.ok ?? 0}; ошибки: ${sum.error ?? 0}; пропуски: ${sum.skipped ?? 0}.`;
+  const rows = payload.results || [];
+  tbody.innerHTML = rows
+    .map(
+      (r) => `
+    <tr>
+      <td>${adminPriceSyncEscapeCell(r.productName)} <small>(ID ${r.productId})</small></td>
+      <td>${adminPriceSyncEscapeCell(r.storeName)}</td>
+      <td>${r.oldPrice != null ? adminPriceSyncEscapeCell(String(r.oldPrice)) : '—'}</td>
+      <td>${r.newPrice != null ? adminPriceSyncEscapeCell(String(r.newPrice)) : '—'}</td>
+      <td>${adminPriceSyncEscapeCell(r.status)}</td>
+      <td>${adminPriceSyncEscapeCell(r.message)}</td>
+    </tr>`
+    )
+    .join('');
+  modal.style.display = 'flex';
+}
+
+async function fetchAdminPriceSyncStatus() {
+  const box = document.getElementById('priceSyncStatusDisplay');
+  if (!box) return;
+  const token = localStorage.getItem('techAggregatorToken');
+  if (!token) return;
+  box.textContent = 'Загрузка статуса…';
+  box.style.whiteSpace = 'pre-line';
+  try {
+    const res = await fetch('http://localhost:3000/api/admin/prices/sync-status', {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    if (!res.ok) {
+      if (res.status === 401) {
+        localStorage.removeItem('techAggregatorToken');
+        currentUser = null;
+        updateAuthButtons();
+        showCustomNotification('Сессия истекла. Войдите снова.', 'warning');
+        return;
+      }
+      throw new Error(`HTTP ${res.status}`);
+    }
+    const s = await res.json();
+    const lines = [];
+    if (s.lastAutoSyncAt) {
+      lines.push(`Последнее автообновление: ${new Date(s.lastAutoSyncAt).toLocaleString('ru-RU')}.`);
+    } else {
+      lines.push('Автообновление ещё ни разу не завершалось.');
+    }
+    if (s.lastAutoSyncSummary) {
+      lines.push(
+        `Итог последнего прохода: успешных позиций ${s.lastAutoSyncSummary.ok}, записано в БД ${s.lastAutoSyncSummary.applied}.`
+      );
+    }
+    if (s.lastAutoSyncError) {
+      lines.push(`Ошибка: ${s.lastAutoSyncError}`);
+    }
+    if (s.autoSyncRunning) {
+      lines.push('Сейчас выполняется фоновое обновление.');
+    }
+    lines.push(`Интервал между запросами при сборе: ${s.delayMs} мс. Предпросмотр до ${s.maxPreviewStores} позиций за один запрос.`);
+    box.textContent = lines.join('\n');
+  } catch (e) {
+    box.textContent = 'Не удалось загрузить статус: ' + e.message;
+  }
+}
+
+function updateAdminPriceSyncSingleButtons() {
+  const idEl = document.getElementById('selectedProductId');
+  const id = idEl && idEl.value;
+  const has = id !== undefined && id !== null && String(id).trim() !== '';
+  const b1 = document.getElementById('btnPriceSyncPreviewOne');
+  const b2 = document.getElementById('btnPriceSyncApplyOne');
+  if (b1) b1.disabled = !has;
+  if (b2) b2.disabled = !has;
+}
+
+async function runAdminPriceSyncPreviewAll() {
+  const token = localStorage.getItem('techAggregatorToken');
+  if (!token) {
+    showCustomNotification('Нужна авторизация.', 'error');
+    return;
+  }
+  showCustomNotification('Собираем цены по ссылкам — подождите.', 'info');
+  try {
+    const res = await fetch('http://localhost:3000/api/admin/prices/sync-preview', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        proxy: getAdminPriceSyncProxy(),
+        productIds: null,
+        maxStores: null
+      })
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || `HTTP ${res.status}`);
+    }
+    lastAdminPriceSyncPreview = await res.json();
+    const applyBtn = document.getElementById('btnPriceSyncApply');
+    if (applyBtn) applyBtn.disabled = false;
+    showAdminPriceSyncModal('Предпросмотр (каталог)', lastAdminPriceSyncPreview);
+  } catch (e) {
+    console.error(e);
+    showCustomNotification(`Предпросмотр: ${e.message}`, 'error');
+  }
+}
+
+async function runAdminPriceSyncApplyPreview() {
+  const token = localStorage.getItem('techAggregatorToken');
+  if (!token || !lastAdminPriceSyncPreview || !Array.isArray(lastAdminPriceSyncPreview.results)) {
+    showCustomNotification('Сначала выполните предпросмотр каталога.', 'info');
+    return;
+  }
+  const applyBtn = document.getElementById('btnPriceSyncApply');
+  if (applyBtn) applyBtn.disabled = true;
+  try {
+    const res = await fetch('http://localhost:3000/api/admin/prices/sync-apply', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify({ results: lastAdminPriceSyncPreview.results })
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || `HTTP ${res.status}`);
+    }
+    const data = await res.json();
+    lastAdminPriceSyncPreview = null;
+    const appliedCount = typeof data.applied === 'number' ? data.applied : 0;
+    showCustomNotification(`Применено записей: ${appliedCount}.`, 'success');
+    closeAdminPriceSyncModal();
+    fetchAdminPriceSyncStatus();
+  } catch (e) {
+    console.error(e);
+    showCustomNotification(`Применение: ${e.message}`, 'error');
+    if (applyBtn) applyBtn.disabled = false;
+  }
+}
+
+async function runAdminPriceSyncBackgroundJob() {
+  const token = localStorage.getItem('techAggregatorToken');
+  if (!token) {
+    showCustomNotification('Нужна авторизация.', 'error');
+    return;
+  }
+  try {
+    const res = await fetch('http://localhost:3000/api/admin/manual-price-update', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || `HTTP ${res.status}`);
+    }
+    const data = await res.json();
+    showCustomNotification(data.message || 'Запущено фоновое обновление.', 'success');
+    fetchAdminPriceSyncStatus();
+  } catch (e) {
+    console.error(e);
+    showCustomNotification(e.message, 'error');
+  }
+}
+
+async function runAdminPriceSyncPreviewSingle() {
+  const token = localStorage.getItem('techAggregatorToken');
+  const idVal = document.getElementById('selectedProductId') && document.getElementById('selectedProductId').value;
+  const productId = parseInt(idVal, 10);
+  if (!token || !productId) {
+    showCustomNotification('Сначала найдите и выберите товар.', 'info');
+    return;
+  }
+  showCustomNotification('Проверяем цены для товара…', 'info');
+  try {
+    const res = await fetch(`http://localhost:3000/api/admin/prices/sync-product/${productId}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify({ dryRun: true, proxy: getAdminPriceSyncProxy() })
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || `HTTP ${res.status}`);
+    }
+    const data = await res.json();
+    showAdminPriceSyncModal(`Предпросмотр: товар ID ${productId}`, data);
+  } catch (e) {
+    console.error(e);
+    showCustomNotification(`Предпросмотр товара: ${e.message}`, 'error');
+  }
+}
+
+async function runAdminPriceSyncApplySingle() {
+  const token = localStorage.getItem('techAggregatorToken');
+  const idVal = document.getElementById('selectedProductId') && document.getElementById('selectedProductId').value;
+  const productId = parseInt(idVal, 10);
+  const productName = document.getElementById('selectedProductTitle') && document.getElementById('selectedProductTitle').textContent;
+  if (!token || !productId) {
+    showCustomNotification('Сначала найдите и выберите товар.', 'info');
+    return;
+  }
+  if (!confirm('Записать полученные цены в историю и обновить текущие цены для этого товара?')) {
+    return;
+  }
+  try {
+    const res = await fetch(`http://localhost:3000/api/admin/prices/sync-product/${productId}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify({ dryRun: false, proxy: getAdminPriceSyncProxy() })
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || `HTTP ${res.status}`);
+    }
+    const data = await res.json();
+    const n = data.applied && typeof data.applied.applied === 'number' ? data.applied.applied : null;
+    showCustomNotification(
+      n != null ? `Обновлено позиций: ${n}.` : 'Обновление выполнено.',
+      'success'
+    );
+    closeAdminPriceSyncModal();
+    fetchAdminPriceSyncStatus();
+    if (productName) {
+      await loadAndDisplayPriceHistory(productId, productName);
+    }
+  } catch (e) {
+    console.error(e);
+    showCustomNotification(`Обновление товара: ${e.message}`, 'error');
+  }
+}
+
+function initializeAdminPriceSyncControls() {
+  document.getElementById('btnPriceSyncRefreshStatus')?.addEventListener('click', fetchAdminPriceSyncStatus);
+  document.getElementById('btnPriceSyncPreview')?.addEventListener('click', runAdminPriceSyncPreviewAll);
+  document.getElementById('btnPriceSyncApply')?.addEventListener('click', runAdminPriceSyncApplyPreview);
+  document.getElementById('btnPriceSyncBackground')?.addEventListener('click', runAdminPriceSyncBackgroundJob);
+  document.getElementById('btnPriceSyncPreviewOne')?.addEventListener('click', runAdminPriceSyncPreviewSingle);
+  document.getElementById('btnPriceSyncApplyOne')?.addEventListener('click', runAdminPriceSyncApplySingle);
+  document.getElementById('btnPriceSyncModalClose')?.addEventListener('click', closeAdminPriceSyncModal);
+  const modal = document.getElementById('priceSyncPreviewModal');
+  const panel = document.getElementById('priceSyncModalPanel');
+  modal?.addEventListener('click', closeAdminPriceSyncModal);
+  panel?.addEventListener('click', (e) => e.stopPropagation());
+}
+
 function initializeAdminProductSearch() {
   const searchInputId = 'adminPriceHistorySearchInput';
   const suggestionsContainerId = 'adminPriceHistorySearchSuggestions';
