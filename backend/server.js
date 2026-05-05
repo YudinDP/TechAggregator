@@ -455,7 +455,15 @@ function normalizeProductSpecs(rawSpecs, category) {
 }
 
 app.use(cors({
-  origin: ['http://localhost:5500', 'http://127.0.0.1:5500'] //Live Server
+  origin: [
+    'http://localhost:5500',      // Live Server (основной)
+    'http://127.0.0.1:5500',      // Live Server (альтернатива)
+    'http://localhost:3000',      // Если фронт тоже на 3000
+    'http://192.168.1.100:5500',  // Локальная сеть (замените на ваш IP)
+    'https://tech-nozone.ru',     // Продакшн (на всякий случай)
+    'http://tech-nozone.ru'
+  ],
+  credentials: true  // Разрешает отправку cookies/токенов
 }));
 app.use(express.json());
 app.use((req, res, next) => {
@@ -859,6 +867,16 @@ app.get('/api/products/:id/price-history', async (req, res) => {
       ],
     });
 
+    const currentPriceRows = await prisma.price.findMany({
+      where: { productId: productId },
+      select: { storeName: true, url: true }
+    });
+    const urlByStore = currentPriceRows.reduce((acc, row) => {
+      const key = String(row.storeName || '').trim();
+      if (key && row.url) acc[key] = row.url;
+      return acc;
+    }, {});
+
     console.log(`Found ${priceHistoryRecords.length} records for product ID: ${productId}`); //Лог для отладки
 
     //Если записи не найдены
@@ -877,7 +895,8 @@ app.get('/api/products/:id/price-history', async (req, res) => {
       //Chart.js лучше работает с объектами {x: Date, y: Number}
       acc[storeName].push({
         x: new Date(record.date).toISOString(), //Используем ISO строку для Chart.js
-        y: parseFloat(record.price) //Преобразуем Decimal в Number
+        y: parseFloat(record.price), //Преобразуем Decimal в Number
+        url: urlByStore[storeName] || ''
       });
       return acc;
     }, {});
@@ -3083,53 +3102,6 @@ app.use((error, req, res, next) => {
   next(error);
 });
 
-app.post('/api/admin/parse-product', authenticateToken, requireAdminRole, async (req, res) => {
-    const { url, category, proxy } = req.body;
-    
-    if (!url) {
-        return res.status(400).json({ error: 'URL товара обязателен.' });
-    }
-    
-    let parsedUrl;
-    try {
-        parsedUrl = new URL(url);
-    } catch (e) {
-        return res.status(400).json({ error: 'Неверный формат URL.' });
-    }
-    
-    //Проверка поддерживаемых доменов
-    const supportedDomains = ['market.yandex.ru', 'www.wildberries.ru'];
-    if (!supportedDomains.some(domain => parsedUrl.hostname.includes(domain))) {
-        return res.status(400).json({ error: 'Поддержка сайта не реализована или не указан в API Systems (только Яндекс.Маркет или Wildberries).' });
-    }
-    
-    console.log(` Пытаемся извлечь ID модели из URL: ${url}`);
-    const modelInfo = extractModelIdFromUrl(url);
-    if (!modelInfo) {
-        return res.status(400).json({ error: 'Не удалось извлечь ID модели из URL.' });
-    }
-    
-    const { id: modelId, source } = modelInfo;
-    console.log(`  Извлечён ID модели: ${modelId}, источник: ${source}`);
-    
-    try {
-        const parsedData = await fetchProductSpecsFromApiSystems(modelId, source);
-        
-       
-        parsedData.category = category || null;
-        
-        console.log('  Финальные данные для возврата:', parsedData);
-        res.json({
-            message: 'Парсинг завершён (данные получены через API Systems).',
-            parsedData: parsedData
-        });
-    } catch (error) {
-        console.error('  Ошибка при парсинге через API Systems:', error.message);
-        res.status(500).json({ error: `Ошибка при получении данных через API Systems: ${error.message}` });
-    }
-});
-
-
 app.get('/api/test-fetch', authenticateToken, requireAdminRole, async (req, res) => {
   const { url, proxy } = req.query; //Получаем URL и proxy из query параметров
 
@@ -3467,62 +3439,99 @@ app.get('/api/test-parse', authenticateToken, requireAdminRole, async (req, res)
   }
 });
 
-async function parseProductFromYandexMarket(url) {
-//Извлекаем ID модели из URL
-const match = url.match(/\/(\d+)(?:[\/?#]|$)/);
-if (!match) throw new Error('Не удалось извлечь ID из URL');
-const modelId = parseInt(match[1], 10);
-//Запрос к API Systems
-const response = await axios.get('http://market.apisystem.name/models/${modelId}/specification', {
-  params: { api_key: process.env.API_SYSTEMS_API_KEY, format: 'json' },
-  timeout: 10000
-});
-if (response.data.status !== 'OK') throw new Error('API Systems вернул ошибку');
-const fields = response.data;
-//Сбор характеристик
-const specs = {};
-if (Array.isArray(fields.specifications)) {
-  fields.specifications.forEach(s => { if (s.name && s.value) specs[s.name] = s.value.toString(); });
-}
-return {
-  source: 'API Systems (yandex_market)',
-  name: fields.product_name || 'Неизвестное название',
-  price: null, //API /specification не возвращает цену
-  imageUrl: fields.prev_image || null,
-  sourceUrl: url,
-  specs: specs
-};
+function coerceApiSystemsPrice(value) {
+    if (value == null || value === '') return null;
+    const n = typeof value === 'number' ? value : parseFloat(String(value).replace(/\s/g, '').replace(',', '.'));
+    if (!Number.isFinite(n) || n <= 0) return null;
+    return Math.round(n);
 }
 
-  function extractModelIdFromUrl(urlString) {
+function normalizeComparableUrl(urlString) {
     try {
-        const parsedUrl = new URL(urlString);
-        const hostname = parsedUrl.hostname;
-        const pathname = parsedUrl.pathname;
-
-        if (hostname.includes('yandex.ru') && pathname.includes('/card/')) {
-            //Пример URL: https://market.yandex.ru/card/smartfon-xiaomi-redmi-note-15-pro-12512gb-4g-dual-nano-sim-global-black/5143908602?...
-            //Ищем последнюю группу цифр в pathname
-            const match = pathname.match(/\/(\d+)(?:[\/?#]|$)/);
-            if (match) {
-                return { id: parseInt(match[1], 10), source: 'yandex_market' };
-            }
-        } else if (hostname.includes('wb.ru') && pathname.includes('/detail/')) { //Пример для Wildberries
-            //Пример URL: https://www.wildberries.ru/catalog/12345678/detail.aspx?...
-            const match = pathname.match(/\/catalog\/(\d+)\/detail/);
-            if (match) {
-                return { id: parseInt(match[1], 10), source: 'wildberries' };
-            }
-        }
-        //Добавьте другие источники по мере необходимости
-    } catch (e) {
-        console.error('Ошибка парсинга URL для извлечения ID:', e);
+        const u = new URL(urlString);
+        const host = u.hostname.replace(/^www\./i, '').toLowerCase();
+        const path = (u.pathname || '').replace(/\/+$/, '').toLowerCase();
+        return `${host}${path}`;
+    } catch {
+        return null;
     }
-    return { id: null, source: null };
 }
 
+async function fetchPriceFromApiSystemsByUrl(urlString) {
+    const modelInfo = extractModelIdFromUrl(urlString);
+    if (!modelInfo?.id) {
+        throw new Error('Не удалось извлечь ID товара из ссылки (нужна карточка Яндекс.Маркета или Wildberries).');
+    }
+    if (modelInfo.source === 'wildberries') {
+        const wbOfferData = await fetchWildberriesOfferPriceFromApiSystems(modelInfo.id, urlString);
+        return {
+            price: wbOfferData.price,
+            parsedName: wbOfferData.parsedName,
+            source: modelInfo.source
+        };
+    }
+    const data = await fetchProductSpecsFromApiSystems(modelInfo.id, modelInfo.source);
+    return {
+        price: coerceApiSystemsPrice(data.price),
+        parsedName: data.name || null,
+        source: modelInfo.source
+    };
+}
 
-//--- Автообновление цен по ссылкам магазинов (DNS / Ozon / Яндекс.Маркет) ---
+async function fetchWildberriesOfferPriceFromApiSystems(modelId, requestedUrl = null) {
+    if (!API_SYSTEMS_KEY) {
+        throw new Error('API_KEY для API Systems не найден в переменных окружения.');
+    }
+
+    const offersUrl = `http://wb.apisystem.name/models/${modelId}/offers`;
+    const response = await axios.get(offersUrl, {
+        params: {
+            api_key: API_SYSTEMS_KEY,
+            format: 'json',
+            count: 10,
+            page: 1
+        },
+        timeout: 10000
+    });
+
+    if (response.status !== 200) {
+        throw new Error(`API Systems WB offers вернул статус ${response.status}`);
+    }
+
+    const payload = response.data || {};
+    if (payload.status !== 'OK') {
+        throw new Error(`API Systems WB offers вернул ошибку: ${payload.status || 'UNKNOWN'}`);
+    }
+
+    const offers = Array.isArray(payload.offers) ? payload.offers : [];
+    let price = coerceApiSystemsPrice(payload.price_min) || coerceApiSystemsPrice(payload.price_avg);
+    let parsedName = null;
+
+    if (offers.length > 0) {
+        const requestedNorm = requestedUrl ? normalizeComparableUrl(requestedUrl) : null;
+        let offer = null;
+
+        if (requestedNorm) {
+            offer = offers.find((o) => normalizeComparableUrl(o.url || o.product_url) === requestedNorm) || null;
+        }
+        if (!offer && requestedNorm) {
+            offer = offers.find((o) => {
+                const n = normalizeComparableUrl(o.url || o.product_url);
+                return n && (n.includes(requestedNorm) || requestedNorm.includes(n));
+            }) || null;
+        }
+        if (!offer) {
+            offer = offers.find((o) => coerceApiSystemsPrice(o.price_wb_pay) || coerceApiSystemsPrice(o.price)) || offers[0];
+        }
+
+        price = price || coerceApiSystemsPrice(offer.price_wb_pay) || coerceApiSystemsPrice(offer.price);
+        parsedName = offer.offer_name || null;
+    }
+
+    return { price, parsedName };
+}
+
+//--- Автообновление цен по ссылкам магазинов (DNS / Ozon / Яндекс.Маркет / Wildberries) ---
 async function fetchParsedPriceForStoreUrl(url, proxy = null) {
   if (!url || typeof url !== 'string') {
     throw new Error('Пустая ссылка');
@@ -3544,15 +3553,40 @@ async function fetchParsedPriceForStoreUrl(url, proxy = null) {
   if (host.includes('ozon.ru')) {
     const data = await parseProductFromOzon(trimmed, proxy);
     const price = data.price != null ? Math.round(Number(data.price)) : null;
-    return { price: Number.isFinite(price) ? price : null, parsedName: data.name || null, source: data.source };
+    return { price: Number.isFinite(price) ? price : null, parsedName: data.name || null, source: data.source, storeName: null };
   }
-  if (host.includes('market.yandex.ru') || host.includes('yandex.ru')) {
-    const data = await parseProductFromYandexMarket(trimmed, proxy);
-    const price = data.price != null ? Math.round(Number(data.price)) : null;
-    return { price: Number.isFinite(price) ? price : null, parsedName: data.name || null, source: data.source };
+  if (host.includes('wildberries.ru') || host.includes('wb.ru')) {
+    const api = await fetchPriceFromApiSystemsByUrl(trimmed);
+    return {
+      price: api.price,
+      parsedName: api.parsedName,
+      source: 'API Systems (wildberries)',
+      storeName: 'Wildberries'
+    };
+  }
+  if (host.includes('market.yandex.ru') || (host.includes('yandex.ru') && (parsedUrl.pathname.includes('/card/') || parsedUrl.pathname.includes('/product--')))) {
+    let parsedName = null;
+    let price = null;
+    try {
+      const api = await fetchPriceFromApiSystemsByUrl(trimmed);
+      price = api.price;
+      parsedName = api.parsedName;
+    } catch (e) {
+      console.warn('[PRICE SYNC] API Systems (Я.М):', e.message);
+    }
+    if (price == null) {
+      const htmlPrice = await extractPriceFromYandexMarket(trimmed);
+      price = htmlPrice != null ? Math.round(Number(htmlPrice)) : null;
+    }
+    return {
+      price: Number.isFinite(price) ? price : null,
+      parsedName,
+      source: 'API Systems / Яндекс.Маркет',
+      storeName: 'Yandex Market'
+    };
   }
 
-  throw new Error(`Домен не поддерживается для автообновления (${host}). Укажите ссылку DNS-Shop, Ozon или Яндекс.Маркет.`);
+  throw new Error(`Домен не поддерживается для автообновления (${host}). Укажите ссылку DNS-Shop, Ozon, Яндекс.Маркет или Wildberries.`);
 }
 
 async function collectPriceSyncResults(options = {}) {
@@ -3741,7 +3775,7 @@ app.get('/api/admin/prices/sync-status', authenticateToken, requireAdminRole, as
       delayMs: PRICE_SYNC_DELAY_MS,
       maxPreviewStores: PRICE_SYNC_MAX_PREVIEW,
       autoMaxStoresPerRun: PRICE_SYNC_AUTO_MAX,
-      supportedHosts: ['dns-shop.ru', 'ozon.ru', 'market.yandex.ru', 'yandex.ru']
+      supportedHosts: ['dns-shop.ru', 'ozon.ru', 'market.yandex.ru', 'yandex.ru', 'wildberries.ru', 'wb.ru']
     });
   } catch (e) {
     res.status(500).json({ error: e.message });
@@ -3807,6 +3841,30 @@ app.post('/api/admin/manual-price-update', authenticateToken, requireAdminRole, 
   res.json({
     message: `Запущено фоновое обновление (до ${PRICE_SYNC_AUTO_MAX} магазинов за проход). Интервал авто: 3 дня.`
   });
+});
+
+app.post('/api/admin/fetch-price-from-url', authenticateToken, requireAdminRole, async (req, res) => {
+  try {
+    const { url } = req.body || {};
+    if (!url || typeof url !== 'string') {
+      return res.status(400).json({ error: 'Укажите URL карточки товара.' });
+    }
+    const trimmed = url.trim();
+    const parsed = await fetchParsedPriceForStoreUrl(trimmed, null);
+    if (parsed.price == null || !Number.isFinite(parsed.price)) {
+      return res.status(422).json({
+        error: 'Не удалось получить цену по ссылке (API или страница не вернули цену).',
+        parsedName: parsed.parsedName || null
+      });
+    }
+    res.json({
+      price: parsed.price,
+      storeName: parsed.storeName,
+      parsedName: parsed.parsedName || null
+    });
+  } catch (e) {
+    res.status(400).json({ error: e.message || String(e) });
+  }
 });
 
 
@@ -3887,14 +3945,16 @@ app.post('/api/admin/parse-product', authenticateToken, requireAdminRole, async 
     let parsedUrl;
     try { parsedUrl = new URL(url); } catch (e) { return res.status(400).json({ error: 'Неверный формат URL.' }); }
 
-    const supportedDomains = ['market.yandex.ru', 'www.wildberries.ru'];
-    if (!supportedDomains.some(domain => parsedUrl.hostname.includes(domain))) {
-        return res.status(400).json({ error: 'Поддержка сайта не реализована.' });
+    const host = parsedUrl.hostname.toLowerCase();
+    const isYm = host.includes('market.yandex.ru') || (host.includes('yandex.ru') && (parsedUrl.pathname.includes('/card/') || parsedUrl.pathname.includes('/product--')));
+    const isWb = host.includes('wildberries.ru') || host.includes('wb.ru');
+    if (!isYm && !isWb) {
+        return res.status(400).json({ error: 'Поддерживаются только Яндекс.Маркет и Wildberries (через API Systems).' });
     }
 
     console.log(`  Извлечение ID модели из URL: ${url}`);
     const modelInfo = extractModelIdFromUrl(url);
-    if (!modelInfo) return res.status(400).json({ error: 'Не удалось извлечь ID модели.' });
+    if (!modelInfo?.id) return res.status(400).json({ error: 'Не удалось извлечь ID модели из ссылки.' });
 
     const { id: modelId, source } = modelInfo;
     console.log(`  ID: ${modelId}, Источник: ${source}`);
@@ -3903,15 +3963,36 @@ app.post('/api/admin/parse-product', authenticateToken, requireAdminRole, async 
         //1. Получаем характеристики через API Systems
         const parsedData = await fetchProductSpecsFromApiSystems(modelId, source);
         parsedData.category = category || null;
+        parsedData.sourceUrl = parsedData.sourceUrl || url;
 
-        //2. Автоматически извлекаем цену, если это Яндекс Маркет
+        //2. Цена: API Systems + для Яндекс.Маркета дополнительно разбор страницы при отсутствии цены в API
+        let marketPrice = coerceApiSystemsPrice(parsedData.price);
         if (source === 'yandex_market') {
-            const marketPrice = await extractPriceFromYandexMarket(url);
-            if (marketPrice) {
-                parsedData.price = marketPrice;
-                parsedData.priceSource = 'Яндекс Маркет';
-                console.log(` 💰 Цена найдена автоматически: ${marketPrice} ₽`);
+            parsedData.priceStoreName = 'Yandex Market';
+            if (marketPrice != null) {
+                parsedData.priceSource = 'Яндекс Маркет (API Systems)';
+            } else {
+                const htmlPrice = await extractPriceFromYandexMarket(url);
+                if (htmlPrice) {
+                    marketPrice = Math.round(Number(htmlPrice));
+                    parsedData.priceSource = 'Яндекс Маркет (страница)';
+                }
             }
+        } else if (source === 'wildberries') {
+            parsedData.priceStoreName = 'Wildberries';
+            if (marketPrice == null) {
+                try {
+                    const wbOfferPrice = await fetchPriceFromApiSystemsByUrl(url);
+                    marketPrice = wbOfferPrice.price;
+                } catch (wbErr) {
+                    console.warn('⚠️ Не удалось получить цену WB через offers:', wbErr.message);
+                }
+            }
+            parsedData.priceSource = marketPrice != null ? 'Wildberries (API Systems offers)' : null;
+        }
+        parsedData.price = marketPrice;
+        if (marketPrice) {
+            console.log(` 💰 Цена: ${marketPrice} ₽ (${parsedData.priceSource || 'источник не указан'})`);
         }
 
         //3. НОРМАЛИЗАЦИЯ ХАРАКТЕРИСТИК (без дублей!)
@@ -4246,29 +4327,29 @@ async function extractPriceFromYandexMarket(url) {
 function extractModelIdFromUrl(urlString) {
     try {
         const parsedUrl = new URL(urlString);
-        const hostname = parsedUrl.hostname;
+        const hostname = parsedUrl.hostname.toLowerCase();
         const pathname = parsedUrl.pathname;
 
-        if (hostname.includes('yandex.ru') && pathname.includes('/card/')) {
-            //Пример URL: https://market.yandex.ru/product--smartfon-apple-iphone-17/5378254037?...
-            //Или: https://market.yandex.ru/card/smartfon-apple-iphone-17-512gb/5378254037?...
-            //Ищем последнюю группу цифр в pathname после '/'
+        const isYandexMarketHost = hostname.includes('market.yandex.ru')
+            || (hostname.includes('yandex.ru') && (pathname.includes('/card/') || pathname.includes('/product--')));
+
+        if (isYandexMarketHost) {
             const match = pathname.match(/\/(\d+)(?:[\/?#]|$)/);
             if (match) {
                 return { id: parseInt(match[1], 10), source: 'yandex_market' };
             }
-        } else if (hostname.includes('wb.ru') && pathname.includes('/detail/')) {
-            //Пример URL: https://www.wildberries.ru/catalog/12345678/detail.aspx?...
-            const match = pathname.match(/\/catalog\/(\d+)\/detail/);
+        }
+
+        if (hostname.includes('wildberries.ru') || hostname.includes('wb.ru')) {
+            const match = pathname.match(/\/catalog\/(\d+)\/detail/i);
             if (match) {
                 return { id: parseInt(match[1], 10), source: 'wildberries' };
             }
         }
-        //Добавьте другие источники по мере необходимости
     } catch (e) {
         console.error('Ошибка парсинга URL для извлечения ID:', e);
     }
-    return { id: null, source: null };
+    return null;
 }
 
 

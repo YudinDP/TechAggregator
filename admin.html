@@ -520,6 +520,7 @@
                             <!-- Блоки цен будут добавляться сюда -->
                         </div>
                         <button type="button" class="btn btn-outline" onclick="addManualPriceEntry()">+ Добавить цену и ссылку</button>
+                        <button type="button" class="btn btn-outline" onclick="fillManualPricesFromUrls()">Подставить цены по ссылкам (Яндекс, WB)</button>
                     </div>
 
                     <div class="form-actions">
@@ -537,7 +538,7 @@
                     <form id="parseProductForm">
                         <div class="form-group">
                             <label for="parseUrl">URL товара *</label>
-                            <input type="url" id="parseUrl" required placeholder="https://example.com/product">
+                            <input type="url" id="parseUrl" required placeholder="Ссылка на карточку: market.yandex.ru или wildberries.ru">
                         </div>
                         <div class="form-group">
                             <label for="parseCategory">Категория *</label>
@@ -607,7 +608,7 @@
 
   <div class="admin-price-sync-section" style="margin-bottom: 1.75rem; padding: 1rem 1.25rem; border: 1px solid #e5e7eb; border-radius: 10px; background: #f9fafb;">
     <h4 style="margin-top: 0;">Автообновление цен по ссылкам</h4>
-    <p style="color: #6b7280; font-size: 0.9rem; margin-bottom: 0.75rem;">Поддерживаются DNS-Shop, Ozon, Яндекс.Маркет. Серверное автообновление каталога — не чаще одного раза в 3 дня; здесь можно получить предпросмотр и применить изменения вручную.</p>
+    <p style="color: #6b7280; font-size: 0.9rem; margin-bottom: 0.75rem;">Поддерживаются DNS-Shop, Ozon, Яндекс.Маркет и Wildberries (цены ЯМ и WB — через API Systems и при необходимости со страницы ЯМ). Серверное автообновление каталога — не чаще одного раза в 3 дня; для выбранного товара ниже можно обновить цены по сохранённым ссылкам.</p>
     <div id="priceSyncStatusDisplay" style="font-size: 0.85rem; margin-bottom: 0.75rem; line-height: 1.5;"></div>
     <div class="form-group">
       <label for="priceSyncProxyInput">Прокси (опционально)</label>
@@ -623,8 +624,8 @@
       <h5 style="margin-top: 0;">Текущий товар</h5>
       <p style="color: #6b7280; font-size: 0.85rem; margin-bottom: 0.5rem;">Выберите товар поиском ниже, затем проверьте или примените цены только для него.</p>
       <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
-        <button type="button" class="btn btn-secondary" id="btnPriceSyncPreviewOne" disabled>Предпросмотр для товара</button>
-        <button type="button" class="btn btn-primary" id="btnPriceSyncApplyOne" disabled>Обновить цены товара</button>
+        <button type="button" class="btn btn-secondary" id="btnPriceSyncPreviewOne" disabled>Предпросмотр цен (в т.ч. ЯМ, WB)</button>
+        <button type="button" class="btn btn-primary" id="btnPriceSyncApplyOne" disabled>Обновить цены товара по ссылкам</button>
       </div>
     </div>
   </div>
@@ -736,7 +737,7 @@
             <p>&copy; 2024 TechAggregator. Все права защищены.</p>
         </div>
     </footer>
-
+    <script src="config.js"></script>
     <script src="script.js"></script>
     <script>
 

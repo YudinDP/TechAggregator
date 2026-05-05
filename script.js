@@ -6092,6 +6092,8 @@ function addManualPriceEntry() {
               <option value="DNS">DNS</option>
               <option value="MVideo">М.Видео</option>
               <option value="OZON">OZON</option>
+              <option value="Wildberries">Wildberries</option>
+              <option value="Yandex Market">Яндекс Маркет</option>
               <option value="Citilink">Ситилинк</option>
               <option value="Eldorado">Эльдорадо</option>
               <option value="Other">Другой</option>
@@ -6109,6 +6111,73 @@ function addManualPriceEntry() {
   `;
 
   container.appendChild(priceEntryDiv);
+}
+
+async function fillManualPricesFromUrls() {
+  const token = localStorage.getItem('techAggregatorToken');
+  if (!token) {
+    showCustomNotification('Нужна авторизация администратора.', 'error');
+    return;
+  }
+  const entries = document.querySelectorAll('.manual-price-entry');
+  if (!entries.length) {
+    showCustomNotification('Добавьте блоки «Магазин» и укажите ссылки на Яндекс.Маркет или Wildberries.', 'info');
+    return;
+  }
+  let filled = 0;
+  let skipped = 0;
+  for (const entry of entries) {
+    const urlInput = entry.querySelector('[id^="priceUrl_"]');
+    const priceInput = entry.querySelector('[id^="priceValue_"]');
+    const storeSelect = entry.querySelector('[id^="priceStore_"]');
+    const rawUrl = urlInput && urlInput.value ? urlInput.value.trim() : '';
+    if (!rawUrl) {
+      skipped += 1;
+      continue;
+    }
+    let host = '';
+    try {
+      host = new URL(rawUrl).hostname.toLowerCase();
+    } catch {
+      skipped += 1;
+      continue;
+    }
+    const isYm = host.includes('market.yandex.ru') || (host.includes('yandex.ru') && (rawUrl.includes('/card/') || rawUrl.includes('/product--')));
+    const isWb = host.includes('wildberries.ru') || host.includes('wb.ru');
+    if (!isYm && !isWb) {
+      skipped += 1;
+      continue;
+    }
+    try {
+      const response = await fetch('http://localhost:3000/api/admin/fetch-price-from-url', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ url: rawUrl })
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(data.error || `HTTP ${response.status}`);
+      }
+      if (priceInput && data.price != null) {
+        priceInput.value = String(data.price);
+      }
+      if (storeSelect && data.storeName) {
+        storeSelect.value = data.storeName;
+      }
+      filled += 1;
+    } catch (e) {
+      console.warn('fetch-price-from-url:', e);
+      skipped += 1;
+    }
+  }
+  if (filled) {
+    showCustomNotification(`Подставлено цен по ссылкам: ${filled}.`, 'success');
+  } else {
+    showCustomNotification('Не удалось получить цены. Проверьте ссылки на карточки Яндекс.Маркета или Wildberries.', 'warning');
+  }
 }
 
 //Удаление блока цены и ссылки
@@ -7359,14 +7428,21 @@ function displayParsedResult(parsedData, message) {
     const resultContainer = document.getElementById('parseResult');
     if (!resultContainer) return;
 
-    //Начальная цена (если парсер нашел цену с Яндекса)
-    //Теперь здесь формируется ПОЛНАЯ строка с ценой, ссылкой и магазином
-    const initialPriceRow = parsedData.price ? `
+    //Начальная строка цены (Яндекс.Маркет / Wildberries — из API Systems и при необходимости со страницы)
+    const priceStore = parsedData.priceStoreName || 'Yandex Market';
+    const hasInitialPriceContext = parsedData.price != null || parsedData.sourceUrl || parsedData.priceStoreName;
+    const initialPriceRow = hasInitialPriceContext ? `
         <div class="price-row" style="display: flex; gap: 10px; margin-bottom: 5px;">
             <select class="price-store-select" style="flex: 1;">
-                <option value="Яндекс Маркет" selected>Яндекс Маркет</option>
+                <option value="DNS" ${priceStore === 'DNS' ? 'selected' : ''}>DNS</option>
+                <option value="OZON" ${priceStore === 'OZON' ? 'selected' : ''}>OZON</option>
+                <option value="Wildberries" ${priceStore === 'Wildberries' ? 'selected' : ''}>Wildberries</option>
+                <option value="Citilink" ${priceStore === 'Citilink' ? 'selected' : ''}>Citilink</option>
+                <option value="MVideo" ${priceStore === 'MVideo' ? 'selected' : ''}>M.Video</option>
+                <option value="Yandex Market" ${priceStore === 'Yandex Market' ? 'selected' : ''}>Яндекс Маркет</option>
+                <option value="Other" ${priceStore === 'Other' ? 'selected' : ''}>Другой</option>
             </select>
-            <input type="number" class="price-value-input" value="${parsedData.price}" style="flex: 1;" placeholder="Цена">
+            <input type="number" class="price-value-input" value="${parsedData.price != null ? parsedData.price : ''}" style="flex: 1;" placeholder="Цена">
             <input type="url" class="price-url-input" value="${parsedData.sourceUrl || ''}" style="flex: 1.5;" placeholder="Ссылка на товар">
             <button type="button" class="btn btn-danger btn-small" onclick="this.parentElement.remove()">✕</button>
         </div>
@@ -8219,7 +8295,8 @@ function renderPriceHistoryList(entries) {
       flatList.push({
         storeName: storeName,
         date: entry.x,
-        price: entry.y
+        price: entry.y,
+        url: entry.url || ''
       });
     });
   }
@@ -8233,6 +8310,7 @@ function renderPriceHistoryList(entries) {
           <th scope="col">Магазин</th>
           <th scope="col">Дата</th>
           <th scope="col">Цена (₽)</th>
+          <th scope="col">Ссылка на покупку</th>
         </tr>
       </thead>
       <tbody>
@@ -8241,6 +8319,7 @@ function renderPriceHistoryList(entries) {
             <td>${entry.storeName}</td>
             <td>${new Date(entry.date).toLocaleString('ru-RU')}</td>
             <td>${formatPrice(entry.price)}</td>
+            <td>${entry.url ? `<a href="${entry.url}" target="_blank" rel="noopener noreferrer">Открыть</a>` : '—'}</td>
           </tr>
         `).join('')}
       </tbody>

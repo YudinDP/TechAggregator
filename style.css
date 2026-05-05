@@ -3976,3 +3976,88 @@ body {
 .calc-bar-fill {
     box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
+
+/* ================== УЗКИЕ ЭКРАНЫ: ОБЩИЙ ФИКС ================== */
+@media (max-width: 768px) {
+  html, body {
+    overflow-x: hidden;
+  }
+
+  .container {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .main {
+    overflow-x: hidden;
+  }
+
+  .products-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+  }
+
+  .product-card {
+    padding: 0.8rem;
+  }
+
+  .product-card img {
+    height: 140px;
+  }
+
+  .product-actions {
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+
+  .tab-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.6rem;
+  }
+
+  .recommendations-filters {
+    grid-template-columns: 1fr 1fr;
+    align-items: stretch;
+  }
+
+  .recommendations-filters .filter-col {
+    min-width: 0;
+  }
+
+  .price-history-table,
+  .table {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+
+  .admin-tab-content {
+    padding: 1rem;
+  }
+}
+
+@media (max-width: 420px) {
+  .products-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.55rem;
+  }
+
+  .product-card {
+    padding: 0.6rem;
+    border-radius: 8px;
+  }
+
+  .product-card img {
+    height: 120px;
+  }
+
+  .product-price {
+    font-size: 1rem;
+  }
+
+  .nav-search-container {
+    min-width: 0;
+  }
+}
