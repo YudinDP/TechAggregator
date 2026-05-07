@@ -13,6 +13,9 @@
   gap: 20px;
   transition: transform 0.3s ease;
 }
+.carousel-container {
+  overflow: hidden;
+}
 .carousel-item {
   min-width: 250px;
   background: white;
@@ -20,6 +23,10 @@
   padding: 16px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
   cursor: pointer;
+}
+@media (max-width: 768px) {
+  .carousel-item { min-width: 185px; padding: 12px; }
+  .carousel-item img { height: 130px; }
 }
 .carousel-item img {
   width: 100%;
@@ -225,13 +232,24 @@ document.addEventListener('DOMContentLoaded', async function () {
     const products = await loadProductsFromAPI();
     if (!products || products.length === 0) return;
 
-    allPopularProducts = products.filter(p => p.rating >= 4.5).slice(0, 8);
+    allPopularProducts = [...products]
+      .sort((a, b) => getPopularityScore(b) - getPopularityScore(a))
+      .slice(0, 10);
     renderCarousel();
     startAutoScroll();
+    bindCarouselControls();
   } catch (err) {
     console.error('Ошибка инициализации:', err);
   }
 });
+
+function getPopularityScore(product) {
+  const rating = Number(product?.rating || 0);
+  const views = Number(product?.views || product?.viewsCount || product?.viewCount || 0);
+  const favorites = Number(product?.favoritesCount || 0);
+  const reviews = Number(product?.reviewsCount || 0);
+  return rating * 100 + views + favorites * 20 + reviews * 10;
+}
 
 function renderCarousel() {
   const track = document.getElementById('PopularProductsCarousel');
@@ -269,21 +287,34 @@ function updateCarouselPosition() {
   const track = document.getElementById('PopularProductsCarousel');
   if (!track) return;
 
-  const itemWidth = 300; 
-  const offset = -carouselCurrentIndex * itemWidth - 15;
+  const visible = window.innerWidth <= 768 ? 2 : 4;
+  const maxIndex = Math.max(0, allPopularProducts.length - visible);
+  if (carouselCurrentIndex > maxIndex) carouselCurrentIndex = maxIndex;
+  if (carouselCurrentIndex < 0) carouselCurrentIndex = 0;
+
+  const firstItem = track.querySelector('.carousel-item');
+  const styles = window.getComputedStyle(track);
+  const gap = parseFloat(styles.columnGap || styles.gap || '20') || 20;
+  const step = firstItem ? (firstItem.getBoundingClientRect().width + gap) : (window.innerWidth <= 768 ? 205 : 300);
+  const offset = -carouselCurrentIndex * step;
   
   track.style.transform = `translateX(${offset}px)`;
   track.style.transition = 'transform 0.5s ease-in-out';
 
   //Обновляем кнопки
   document.getElementById('prevBtn').disabled = carouselCurrentIndex === 0;
-  document.getElementById('nextBtn').disabled = carouselCurrentIndex >= allPopularProducts.length - 4;
+  document.getElementById('nextBtn').disabled = carouselCurrentIndex >= allPopularProducts.length - visible;
 }
 
 
 function nextSlide() {
-  if (carouselCurrentIndex < allPopularProducts.length - 4) {
+  const visible = window.innerWidth <= 768 ? 2 : 4;
+  if (carouselCurrentIndex < allPopularProducts.length - visible) {
     carouselCurrentIndex++;
+    updateCarouselPosition();
+    resetAutoScroll();
+  } else {
+    carouselCurrentIndex = 0;
     updateCarouselPosition();
     resetAutoScroll();
   }
@@ -294,36 +325,46 @@ function prevSlide() {
     carouselCurrentIndex--;
     updateCarouselPosition();
     resetAutoScroll();
+  } else {
+    const visible = window.innerWidth <= 768 ? 2 : 4;
+    carouselCurrentIndex = Math.max(0, allPopularProducts.length - visible);
+    updateCarouselPosition();
+    resetAutoScroll();
   }
 }
 
 //Прокрутка карусели
 function startAutoScroll() {
-  if (allPopularProducts.length <= 4) return;
+  const visible = window.innerWidth <= 768 ? 2 : 4;
+  if (allPopularProducts.length <= visible) return;
   
   autoScrollInterval = setInterval(() => {
-    if (carouselCurrentIndex < allPopularProducts.length - 4) {
+    if (carouselCurrentIndex < allPopularProducts.length - visible) {
       carouselCurrentIndex++;
       updateCarouselPosition();
     } else {
-      setTimeout(() => {
-        carouselCurrentIndex = 0;
-        const track = document.getElementById('PopularProductsCarousel');
-        if (track) {
-          track.style.transition = 'none';
-          updateCarouselPosition();
-          requestAnimationFrame(() => {
-            if (track) track.style.transition = 'transform 0.5s ease-in-out';
-          });
-        }
-      }, 500);
+      carouselCurrentIndex = 0;
+      updateCarouselPosition();
     }
-  }, 7000);
+  }, 5000);
 }
 
 function resetAutoScroll() {
   clearInterval(autoScrollInterval);
   startAutoScroll();
+}
+
+function bindCarouselControls() {
+  const prev = document.getElementById('prevBtn');
+  const next = document.getElementById('nextBtn');
+  if (prev) prev.addEventListener('click', prevSlide);
+  if (next) next.addEventListener('click', nextSlide);
+
+  const track = document.getElementById('PopularProductsCarousel');
+  if (track) {
+    track.addEventListener('mouseenter', () => clearInterval(autoScrollInterval));
+    track.addEventListener('mouseleave', () => startAutoScroll());
+  }
 }
 
 function getCategoryName(categoryKey) {
@@ -339,6 +380,10 @@ function getCategoryName(categoryKey) {
 
 window.addEventListener('beforeunload', () => {
   clearInterval(autoScrollInterval);
+});
+window.addEventListener('resize', () => {
+  updateCarouselPosition();
+  resetAutoScroll();
 });
 </script>
 

@@ -37,6 +37,7 @@ let currentTableSearchField = '';
 let currentTableSearchValue = '';
 let priceHistoryChartInstance = null;
 let lastAdminPriceSyncPreview = null;
+let lastAdminPriceSyncPreviewSingle = null;
 let similarModeTargetId = null;
 //Карта перевода ключей
 window.specKeyTranslations = {
@@ -344,6 +345,58 @@ const VALUE_CALCULATOR_CONFIG = {
         },
         scale: 10000
     },
+    monitors: {
+        baseScore: 28,
+        weights: { screen_size: 2.2, screen_refresh_rate: 0.4, brightness_cd_m2: 0.02 },
+        bonuses: {
+            screen_resolution: { '4k': 20, 'qhd': 14, '2k': 12, 'full hd': 5 },
+            screen_technology: { 'oled': 20, 'ips': 10, 'va': 8 },
+            hdr_support: { 'hdr': 6 }
+        },
+        scale: 10000
+    },
+    graphics_cards: {
+        baseScore: 40,
+        weights: { vram_gb: 4, boost_clock_mhz: 0.01, tdp_w: -0.01 },
+        bonuses: {
+            gpu_model: { 'rtx 50': 35, 'rtx 40': 28, 'rtx 30': 18, 'rx 7': 25, 'rx 6': 16 },
+            ray_tracing: { 'есть': 10 }
+        },
+        scale: 10000
+    },
+    cpus: {
+        baseScore: 38,
+        weights: { cpu_cores: 2.5, cpu_threads: 1.2, cpu_speed: 3, cache_l3_mb: 0.5, tdp_w: -0.03 },
+        bonuses: {
+            cpu_model: { 'ryzen 9': 20, 'ryzen 7': 14, 'core i9': 20, 'core i7': 14, 'ultra 9': 20, 'ultra 7': 14 }
+        },
+        scale: 10000
+    },
+    motherboards: {
+        baseScore: 20,
+        weights: { memory_slots: 2, max_memory_gb: 0.1, m2_slots: 2, usb_ports: 0.4 },
+        bonuses: {
+            chipset: { 'x670': 14, 'z790': 14, 'b650': 10, 'b760': 10 },
+            wifi: { 'wi-fi': 6 }
+        },
+        scale: 10000
+    },
+    ram: {
+        baseScore: 18,
+        weights: { ram_size: 2.2, ram_frequency_mhz: 0.01, cl_latency: -0.4 },
+        bonuses: {
+            ram_type: { 'ddr5': 10, 'ddr4': 6 }
+        },
+        scale: 10000
+    },
+    drivers: {
+        baseScore: 15,
+        weights: { storage_capacity: 0.03, read_speed_mb_s: 0.01, write_speed_mb_s: 0.01 },
+        bonuses: {
+            storage_type: { 'nvme': 14, 'ssd': 10, 'hdd': 2 }
+        },
+        scale: 10000
+    },
     default: { baseScore: 35, weights: {}, bonuses: {}, scale: 10000 }
 };
 
@@ -435,6 +488,7 @@ function calculateValueScore(product, price, marketPrice = null) {
         }
     }
 
+    //3. Корректировка на основе соотношения с рыночной ценой
     //3. Корректировка на основе соотношения с рыночной ценой
     let priceFactor = 1;
     if (marketPrice && marketPrice > 0 && price > 0) {
@@ -1094,7 +1148,7 @@ function initializeProductPage() {
 }
 
 //Вывод данных по устройству в product.html
-function displayProduct(product) {
+async function displayProduct(product) {
   document.getElementById('loading').style.display = 'none';
   document.getElementById('productContent').style.display = 'block';
 
@@ -1131,19 +1185,35 @@ function displayProduct(product) {
   }
 
   //Цены с графиками
+  let storeSignals = [];
   const priceList = document.getElementById('priceList');
   if (priceList && product.prices) {
-    
     const sortedPrices = [...product.prices].sort((a, b) => a.price - b.price);
-    
+    try {
+      const sigRes = await fetch(`http://localhost:3000/api/products/${product.id}/store-signals`);
+      if (sigRes.ok) storeSignals = await sigRes.json();
+    } catch (_) {}
+    const signalsMap = new Map(
+      (storeSignals || []).map((s) => [String(s.storeName || '').toLowerCase(), s])
+    );
 
-    priceList.innerHTML = sortedPrices.map(price => `
+    priceList.innerHTML = sortedPrices.map(price => {
+      const storeName = price.store || price.storeName || 'Магазин';
+      const sig = signalsMap.get(String(storeName).toLowerCase()) || null;
+      const ratingText = sig?.rating != null ? `⭐ ${Number(sig.rating).toFixed(1)}` : '⭐ —';
+      const reviewsText = sig?.reviewsCount != null ? `(${sig.reviewsCount} отзывов)` : '(нет данных)';
+      const stockLow = sig?.stock != null && Number(sig.stock) < 10;
+      const stockText = sig?.stock != null ? `Осталось товара: ${sig.stock}` : 'Осталось товара: —';
+      return `
       <div class="price-item">
-        <div class="store-info">${price.store}</div>
+        <div class="store-info">${storeName}</div>
         <div>${formatPrice(price.price)} ₽</div>
-        <a href="${price.url}" target="_blank" class="buy-button" onclick="trackPurchase(${product.id}, '${String(price.store || '').replace(/'/g, "\\'")}')">Купить</a>
+        <a href="${price.url}" target="_blank" class="buy-button" onclick="trackPurchase(${product.id}, '${String(storeName).replace(/'/g, "\\'")}')">Купить</a>
+        <div style="font-size:0.82rem;color:#475569;margin-top:4px;">${ratingText} ${reviewsText}</div>
+        <div style="font-size:0.82rem;color:${stockLow ? '#b91c1c' : '#475569'};font-weight:${stockLow ? '700' : '500'};">${stockText}${stockLow ? ' ⚠️ мало' : ''}</div>
       </div>
-    `).join('');
+    `;
+    }).join('');
   }
 
   const historySection = document.getElementById('priceChartContainer'); 
@@ -1157,13 +1227,13 @@ function displayProduct(product) {
   //Отзывы
   loadProductReviews(product.id);
 
-  loadAndRenderPriceHistory(product.id, product.prices || []);
+  loadAndRenderPriceHistory(product.id, product.prices || [], storeSignals || []);
   renderValueCalculator(product, document.getElementById('valueCalculatorContainer'));
   
 }
 
 //Загрузка и формат данных по истории цен
-async function loadAndRenderPriceHistory(productId, currentPrices = []) {
+async function loadAndRenderPriceHistory(productId, currentPrices = [], storeSignals = []) {
   console.log(`Requesting price history for product ID: ${productId}`);
 
   //Показываем индикатор загрузки, скрываем canvas (если он был)
@@ -1190,7 +1260,7 @@ async function loadAndRenderPriceHistory(productId, currentPrices = []) {
     //Вызываем функцию для отрисовки графика
     renderPriceChart(container, priceHistoryData);
     renderGeneralPriceInsights(currentPrices, priceHistoryData);
-    renderStorePriceInsights(currentPrices, priceHistoryData);
+    renderStorePriceInsights(currentPrices, priceHistoryData, storeSignals);
 
   } catch (error) {
     console.error('Error loading price history:', error);
@@ -1199,7 +1269,7 @@ async function loadAndRenderPriceHistory(productId, currentPrices = []) {
     //Показываем сообщение об ошибке в контейнере
     container.innerHTML = `<p style="color: red; text-align: center;">Ошибка загрузки истории цен: ${error.message}</p>`;
     renderGeneralPriceInsights(currentPrices, {});
-    renderStorePriceInsights(currentPrices, {});
+    renderStorePriceInsights(currentPrices, {}, storeSignals);
   }
 }
 
@@ -1366,7 +1436,7 @@ function renderGeneralPriceInsights(currentPrices, priceHistoryData) {
   `;
 }
 
-function renderStorePriceInsights(currentPrices, priceHistoryData) {
+function renderStorePriceInsights(currentPrices, priceHistoryData, storeSignals = []) {
   const listEl = document.getElementById('storeInsightsList');
   if (!listEl) return;
 
@@ -1392,6 +1462,26 @@ function renderStorePriceInsights(currentPrices, priceHistoryData) {
   const avgMarketPrice = normalizedPrices.reduce((sum, item) => sum + item.price, 0) / normalizedPrices.length;
   const sortedByPrice = [...normalizedPrices].sort((a, b) => a.price - b.price);
 
+  const signalsMap = new Map(
+    (Array.isArray(storeSignals) ? storeSignals : []).map((s) => [String(s.storeName || '').toLowerCase(), s])
+  );
+
+  const describeSignalTakeaway = (signal) => {
+    if (!signal) return null;
+    const rating = Number(signal.rating);
+    const stock = Number(signal.stock);
+    const hasRating = Number.isFinite(rating);
+    const hasStock = Number.isFinite(stock);
+
+    if (hasRating && rating >= 4.5) {
+      if (hasStock && stock < 10) return 'Хороший рейтинг и осталось мало товара: проверенный товар.';
+      return 'Хороший рейтинг: проверенный товар по отзывам покупателей.';
+    }
+    if (hasStock && stock < 10) return 'Осталось мало: если цена подходит, лучше не откладывать покупку.';
+    if (hasRating && rating < 3.8) return 'Рейтинг ниже среднего: перед покупкой лучше изучить отзывы подробнее.';
+    return null;
+  };
+
   listEl.innerHTML = sortedByPrice.map((storeEntry) => {
     const storeColor = getStoreColor(storeEntry.store);
     const cardBg = hexToRgba(storeColor, 0.16);
@@ -1401,6 +1491,23 @@ function renderStorePriceInsights(currentPrices, priceHistoryData) {
     const storeForecast = forecastPrice(storeHistory, storeEntry.price);
     const evaluation = evaluatePriceSituation(storeEntry.price, avgMarketPrice, storeTrend);
     const diffPct = ((storeEntry.price - avgMarketPrice) / avgMarketPrice) * 100;
+    const signal = signalsMap.get(String(storeEntry.store || '').toLowerCase()) || null;
+    const hasRating = signal?.rating != null && Number.isFinite(Number(signal.rating));
+    const hasReviews = signal?.reviewsCount != null && Number.isFinite(Number(signal.reviewsCount));
+    const hasStock = signal?.stock != null && Number.isFinite(Number(signal.stock));
+    const ratingText = hasRating ? `⭐ ${Number(signal.rating).toFixed(1)}` : null;
+    const reviewsText = hasReviews ? `${signal.reviewsCount} отзывов` : null;
+    const stockText = hasStock ? `${signal.stock} шт.` : null;
+    const signalTakeaway = describeSignalTakeaway(signal);
+    const ratingLine = (ratingText || reviewsText)
+      ? `<p><strong>Рейтинг/отзывы:</strong> ${[ratingText, reviewsText].filter(Boolean).join(', ')}</p>`
+      : '';
+    const stockLine = stockText
+      ? `<p><strong>Осталось товара:</strong> ${stockText}${Number(signal.stock) < 10 ? ' ⚠️ мало' : ''}</p>`
+      : '';
+    const signalLine = signalTakeaway
+      ? `<p><strong>Вывод по отзывам и остатку:</strong> ${signalTakeaway}</p>`
+      : '';
 
     return `
       <div class="store-insight-card price-insights--${evaluation.status}" style="background: ${cardBg}; border-color: ${storeColor}; color: #111111;">
@@ -1410,6 +1517,9 @@ function renderStorePriceInsights(currentPrices, priceHistoryData) {
         <p><strong>Тренд:</strong> ${describeTrendShort(storeTrend)}</p>
         <p><strong>Прогноз:</strong> ${describeForecastShort(storeForecast)}</p>
         <p><strong>Рекомендация:</strong> ${evaluation.shortDecision}</p>
+        ${ratingLine}
+        ${stockLine}
+        ${signalLine}
       </div>
     `;
   }).join('');
@@ -1804,6 +1914,8 @@ function getStoreColor(storeName) {
     'm.video': '#dc2626', //На случай, если приходит 'М.Видео' как 'M.Video'
     'eldorado': '#10b981', //Изумрудный (Эльдорадо)
     'citilink': '#8b5cf6', //Фиолетовый (Ситилинк)
+    'megamarket': '#22c55e', //Зелёный (СберMegaMarket)
+    'regard': '#6366f1', //Индиго (Regard / Регард)
     'avito': '#059669', //Тёмно-зелёный (Avito)
     'avito marketplace': '#059669', //На случай, если приходит полное название
     'yandex market': '#ff9900', //Жёлтый (Яндекс.Маркет)
@@ -4110,60 +4222,8 @@ function navigateToCategory(category) {
   window.location.href = `catalog.html?category=${category}`;
 }
 
-let currentIndex = 0;
-const carouselTrack = document.getElementById('popularProductsCarousel');
-const prevBtn = document.getElementById('prevBtn');
-const nextBtn = document.getElementById('nextBtn');
-const visibleItemsCount = 4; //Количество видимых элементов (может быть динамическим)
-
-function renderCarousel() {
-    const carouselTrack = document.getElementById('PopularProductsCarousel');
-  if (!carouselTrack) return;
-    carouselTrack.innerHTML = '';
-    const itemsToShow = Math.min(popularProducts.length, visibleItemsCount);
-    const startIndex = Math.max(0, Math.min(currentIndex, popularProducts.length - itemsToShow));
-
-    for (let i = startIndex; i < startIndex + itemsToShow && i < popularProducts.length; i++) {
-        const product = popularProducts[i];
-        const itemElement = document.createElement('div');
-        itemElement.className = 'carousel-item';
-        itemElement.onclick = () => window.location.href = `product.html?id=${product.id}`; //Предполагаемая страница товара
-        itemElement.innerHTML = `
-            <img src="${product.image}" alt="${product.name}">
-            <div class="carousel-item-info">
-                <div class="carousel-item-name">${product.name}</div>
-                <div class="carousel-item-category">${getCategoryName(product.category)}</div>
-                <div class="carousel-item-price">${formatPrice(product.price)} ₽</div>
-            </div>
-        `;
-        carouselTrack.appendChild(itemElement);
-    }
-
-    //Обновляем состояние кнопок
-    prevBtn.disabled = startIndex === 0;
-    nextBtn.disabled = startIndex + itemsToShow >= popularProducts.length;
-}
-
-function nextSlide() {
-    if ((currentIndex + visibleItemsCount) < popularProducts.length) {
-        currentIndex += 1; //Прокручиваем по одному элементу
-        renderCarousel();
-    }
-}
-
-function prevSlide() {
-    if (currentIndex > 0) {
-        currentIndex -= 1; //Прокручиваем по одному элементу
-        renderCarousel();
-    }
-}
-
-//Инициализация карусели
-document.addEventListener('DOMContentLoaded', function() {
-    renderCarousel();
-    nextBtn.addEventListener('click', nextSlide);
-    prevBtn.addEventListener('click', prevSlide);
-});
+//Карусель главной страницы инициализируется в index.html (inline-скрипт).
+//Здесь не дублируем логику, чтобы избежать конфликтов и ошибок на других страницах.
 //Глобальная функция для использования на других страницах
 window.addToComparison = addToComparison;
 window.updateComparisonCounter = updateComparisonCounter;
@@ -4198,7 +4258,7 @@ async function loadProfileDataFromAPI() {
       throw new Error(`HTTP ${profileRes.status}: ${profileRes.statusText}`);
     }
 
-    const { user } = await profileRes.json();
+    const { user, stats } = await profileRes.json();
     console.log('loadProfileDataFromAPI: Данные профиля загружены:', user);
 
   
@@ -4215,6 +4275,13 @@ async function loadProfileDataFromAPI() {
       });
       userJoinDateElement.textContent = `Дата регистрации: ${joinDate}`;
     }
+
+    const statFavorites = document.getElementById('statFavorites');
+    const statComparisons = document.getElementById('statComparisons');
+    const statViews = document.getElementById('statViews');
+    if (statFavorites) statFavorites.textContent = String(stats?.favoritesCount ?? 0);
+    if (statComparisons) statComparisons.textContent = String(stats?.comparisonsCount ?? 0);
+    if (statViews) statViews.textContent = String(stats?.viewsCount ?? 0);
 
     const adminButton = document.getElementById('adminPanelButton');
     if (adminButton) {
@@ -4250,6 +4317,7 @@ async function loadProfileDataFromAPI() {
       window.favorites = favoriteProducts; //Или просто favorites, если она объявлена глобально
       //Вызываем функцию отрисовки
       renderFavoritesPreview(favoriteProducts);
+      if (statFavorites) statFavorites.textContent = String(favoriteProducts.length);
     } catch (favError) {
       console.error('loadProfileDataFromAPI: Ошибка загрузки избранного:', favError);
       //Очищаем контейнер или показываем ошибку
@@ -4282,6 +4350,7 @@ async function loadProfileDataFromAPI() {
       window.comparisons = comparisonProducts; //Или просто comparisons
       //Вызываем функцию отрисовки
       renderComparisonsPreview(comparisonProducts);
+      if (statComparisons) statComparisons.textContent = String(comparisonProducts.length);
     } catch (compError) {
       console.error('loadProfileDataFromAPI: Ошибка загрузки сравнений:', compError);
       //Очищаем контейнер или показываем ошибку
@@ -4290,12 +4359,49 @@ async function loadProfileDataFromAPI() {
       //Очищаем глобальную переменную
       window.comparisons = [];
     }
-    
+    try {
+      const alertsRes = await fetch('http://localhost:3000/api/profile/alerts', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (alertsRes.ok) {
+        const alerts = await alertsRes.json();
+        renderAlertsPreview(alerts);
+      } else {
+        renderAlertsPreview([]);
+      }
+    } catch (_) {
+      renderAlertsPreview([]);
+    }
 
   } catch (error) {
     console.error('loadProfileDataFromAPI: Ошибка загрузки профиля:', error);
     showCustomNotification('Ошибка загрузки данных профиля', 'error');
   }
+}
+
+function renderAlertsPreview(alerts) {
+  const container = document.getElementById('alertsPreview');
+  const noMsg = document.getElementById('noAlertsMessage');
+  if (!container) return;
+  container.innerHTML = '';
+  const list = Array.isArray(alerts) ? alerts : [];
+  if (!list.length) {
+    if (noMsg) noMsg.style.display = 'block';
+    return;
+  }
+  if (noMsg) noMsg.style.display = 'none';
+  list.slice(0, 20).forEach((a) => {
+    const el = document.createElement('div');
+    el.className = 'comparison-group';
+    el.style.marginBottom = '10px';
+    const when = a.createdAt ? new Date(a.createdAt).toLocaleString('ru-RU') : '';
+    el.innerHTML = `
+      <div class="comparison-title">${a.productName || 'Товар'} • ${a.storeName || 'Магазин'}</div>
+      <div class="comparison-items"><div class="comparison-item">${a.message || ''}</div></div>
+      <div style="font-size:0.8rem;color:#64748b;margin-top:4px;">${when}</div>
+    `;
+    container.appendChild(el);
+  });
 }
         //Функция для получения русского названия категории
         function getCategoryName(categoryKey) {
@@ -5824,11 +5930,12 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             
             const url = document.getElementById('parseUrl')?.value.trim();
+            const query = document.getElementById('parseName')?.value.trim() || null;
             const category = document.getElementById('parseCategory')?.value.trim() || null;
             const proxy = document.getElementById('parseProxy')?.value.trim() || null;
 
-            if (!url) {
-                showCustomNotification('Пожалуйста, введите URL товара.', 'info');
+            if (!url && !query) {
+                showCustomNotification('Укажите URL или название устройства.', 'info');
                 return;
             }
 
@@ -5838,7 +5945,7 @@ document.addEventListener('DOMContentLoaded', () => {
             submitBtn.innerText = '⏳ Загрузка...';
 
             try {
-                await sendParseRequest(url, category, proxy);
+                await sendParseRequest(url || null, category, proxy, query);
             } finally {
                 submitBtn.disabled = false;
                 submitBtn.innerText = originalText;
@@ -6095,6 +6202,9 @@ function addManualPriceEntry() {
               <option value="Wildberries">Wildberries</option>
               <option value="Yandex Market">Яндекс Маркет</option>
               <option value="Citilink">Ситилинк</option>
+              <option value="MegaMarket">Мегамаркет</option>
+              <option value="Regard">Regard (Регард)</option>
+              <option value="AliExpress">AliExpress</option>
               <option value="Eldorado">Эльдорадо</option>
               <option value="Other">Другой</option>
           </select>
@@ -6121,7 +6231,10 @@ async function fillManualPricesFromUrls() {
   }
   const entries = document.querySelectorAll('.manual-price-entry');
   if (!entries.length) {
-    showCustomNotification('Добавьте блоки «Магазин» и укажите ссылки на Яндекс.Маркет или Wildberries.', 'info');
+    showCustomNotification(
+      'Добавьте блоки «Магазин» и укажите ссылки на карточку (Яндекс.Маркет, Wildberries, DNS, Ozon, Мегамаркет, Ситилинк, Regard, AliExpress).',
+      'info'
+    );
     return;
   }
   let filled = 0;
@@ -6135,16 +6248,9 @@ async function fillManualPricesFromUrls() {
       skipped += 1;
       continue;
     }
-    let host = '';
     try {
-      host = new URL(rawUrl).hostname.toLowerCase();
+      new URL(rawUrl);
     } catch {
-      skipped += 1;
-      continue;
-    }
-    const isYm = host.includes('market.yandex.ru') || (host.includes('yandex.ru') && (rawUrl.includes('/card/') || rawUrl.includes('/product--')));
-    const isWb = host.includes('wildberries.ru') || host.includes('wb.ru');
-    if (!isYm && !isWb) {
       skipped += 1;
       continue;
     }
@@ -6176,7 +6282,10 @@ async function fillManualPricesFromUrls() {
   if (filled) {
     showCustomNotification(`Подставлено цен по ссылкам: ${filled}.`, 'success');
   } else {
-    showCustomNotification('Не удалось получить цены. Проверьте ссылки на карточки Яндекс.Маркета или Wildberries.', 'warning');
+    showCustomNotification(
+      'Не удалось получить цены. Проверьте корректность ссылок и доступность API-ключей (WB/Я.Маркет/eBay/PricesAPI).',
+      'warning'
+    );
   }
 }
 
@@ -7384,7 +7493,7 @@ async function addProductToDatabase(productData) {
 }
 
 //Отправка на парсинг
-async function sendParseRequest(url, category, proxy = null) {
+async function sendParseRequest(url, category, proxy = null, query = null) {
     const token = localStorage.getItem('techAggregatorToken');
     if (!token) {
         showCustomNotification('Требуется авторизация администратора', 'error');
@@ -7392,7 +7501,7 @@ async function sendParseRequest(url, category, proxy = null) {
     }
 
     try {
-        console.log('📤 Отправка запроса на парсинг:', { url, category, proxy });
+        console.log('📤 Отправка запроса на парсинг:', { url, query, category, proxy });
         
         const response = await fetch('http://localhost:3000/api/admin/parse-product', {
             method: 'POST',
@@ -7400,7 +7509,7 @@ async function sendParseRequest(url, category, proxy = null) {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`
             },
-            body: JSON.stringify({ url, category, proxy })
+            body: JSON.stringify({ url, query, productName: query, parseName: query, category, proxy })
         });
 
         if (!response.ok) {
@@ -7428,25 +7537,42 @@ function displayParsedResult(parsedData, message) {
     const resultContainer = document.getElementById('parseResult');
     if (!resultContainer) return;
 
-    //Начальная строка цены (Яндекс.Маркет / Wildberries — из API Systems и при необходимости со страницы)
-    const priceStore = parsedData.priceStoreName || 'Yandex Market';
-    const hasInitialPriceContext = parsedData.price != null || parsedData.sourceUrl || parsedData.priceStoreName;
-    const initialPriceRow = hasInitialPriceContext ? `
+    const storeOptions = `
+      <option value="Wildberries">Wildberries</option>
+      <option value="Yandex Market">Яндекс Маркет</option>
+      <option value="eBay">eBay</option>
+      <option value="PricesAPI">PricesAPI</option>
+      <option value="DNS">DNS</option>
+      <option value="OZON">OZON</option>
+      <option value="Citilink">Citilink</option>
+      <option value="MegaMarket">Мегамаркет</option>
+      <option value="Regard">Regard</option>
+      <option value="AliExpress">AliExpress</option>
+      <option value="MVideo">M.Video</option>
+      <option value="Other">Другой</option>
+    `;
+
+    const initialRowsData = Array.isArray(parsedData.prices) && parsedData.prices.length
+      ? parsedData.prices
+      : (parsedData.price != null || parsedData.sourceUrl || parsedData.priceStoreName)
+        ? [{ storeName: parsedData.priceStoreName || 'Yandex Market', price: parsedData.price, url: parsedData.sourceUrl || '' }]
+        : [];
+
+    const initialPriceRows = initialRowsData.map((row) => {
+      const selectedStore = row.storeName || 'Other';
+      const optionExists = storeOptions.includes(`value="${selectedStore}"`);
+      const optionsMarkup = optionExists
+        ? storeOptions.replace(`value="${selectedStore}"`, `value="${selectedStore}" selected`)
+        : `${storeOptions}<option value="${selectedStore}" selected>${selectedStore}</option>`;
+      return `
         <div class="price-row" style="display: flex; gap: 10px; margin-bottom: 5px;">
-            <select class="price-store-select" style="flex: 1;">
-                <option value="DNS" ${priceStore === 'DNS' ? 'selected' : ''}>DNS</option>
-                <option value="OZON" ${priceStore === 'OZON' ? 'selected' : ''}>OZON</option>
-                <option value="Wildberries" ${priceStore === 'Wildberries' ? 'selected' : ''}>Wildberries</option>
-                <option value="Citilink" ${priceStore === 'Citilink' ? 'selected' : ''}>Citilink</option>
-                <option value="MVideo" ${priceStore === 'MVideo' ? 'selected' : ''}>M.Video</option>
-                <option value="Yandex Market" ${priceStore === 'Yandex Market' ? 'selected' : ''}>Яндекс Маркет</option>
-                <option value="Other" ${priceStore === 'Other' ? 'selected' : ''}>Другой</option>
-            </select>
-            <input type="number" class="price-value-input" value="${parsedData.price != null ? parsedData.price : ''}" style="flex: 1;" placeholder="Цена">
-            <input type="url" class="price-url-input" value="${parsedData.sourceUrl || ''}" style="flex: 1.5;" placeholder="Ссылка на товар">
-            <button type="button" class="btn btn-danger btn-small" onclick="this.parentElement.remove()">✕</button>
+          <select class="price-store-select" style="flex: 1;">${optionsMarkup}</select>
+          <input type="number" class="price-value-input" value="${row.price != null ? row.price : ''}" style="flex: 1;" placeholder="Цена, RUB">
+          <input type="url" class="price-url-input" value="${row.url || ''}" style="flex: 1.5;" placeholder="Ссылка на товар">
+          <button type="button" class="btn btn-danger btn-small" onclick="this.parentElement.remove()">✕</button>
         </div>
-    ` : '';
+      `;
+    }).join('');
 
     //Начальные характеристики (уже нормализованные сервером)
     let specsHtml = '';
@@ -7524,7 +7650,7 @@ function displayParsedResult(parsedData, message) {
             </div>
             <div style="margin-top: 15px;">
                 <label style="font-weight: bold;">Цены в магазинах</label>
-                <div id="pricesContainer" style="margin-top: 5px;">${initialPriceRow}</div>
+                <div id="pricesContainer" style="margin-top: 5px;">${initialPriceRows}</div>
                 <button type="button" class="btn btn-secondary" style="margin-top: 5px;" onclick="addPriceRow()">+ Цена магазина</button>
             </div>
             <p style="color: #6b7280; margin-top: 15px;">${message || 'Проверьте данные и нажмите "Сохранить".'}</p>
@@ -7545,15 +7671,20 @@ function addPriceRow() {
   div.style.cssText = 'display: flex; gap: 10px; margin-bottom: 5px;';
   div.innerHTML = `
     <select class="price-store-select" style="flex: 1;">
+      <option value="Wildberries">Wildberries</option>
+      <option value="Yandex Market">Яндекс Маркет</option>
+      <option value="eBay">eBay</option>
+      <option value="PricesAPI">PricesAPI</option>
       <option value="DNS">DNS</option>
       <option value="OZON">OZON</option>
-      <option value="Wildberries">Wildberries</option>
       <option value="Citilink">Citilink</option>
+      <option value="MegaMarket">Мегамаркет</option>
+      <option value="Regard">Regard</option>
+      <option value="AliExpress">AliExpress</option>
       <option value="MVideo">M.Video</option>
-      <option value="Yandex Market">Яндекс Маркет</option>
       <option value="Other">Другой</option>
     </select>
-    <input type="number" class="price-value-input" style="flex: 1;" placeholder="Цена">
+    <input type="number" class="price-value-input" style="flex: 1;" placeholder="Цена, RUB">
     <input type="url" class="price-url-input" style="flex: 1.5;" placeholder="Ссылка на товар">
     <button type="button" class="btn btn-danger btn-small" onclick="this.parentElement.remove()">✕</button>
   `;
@@ -8101,6 +8232,7 @@ async function runAdminPriceSyncPreviewSingle() {
       throw new Error(err.error || `HTTP ${res.status}`);
     }
     const data = await res.json();
+    lastAdminPriceSyncPreviewSingle = data;
     showAdminPriceSyncModal(`Предпросмотр: товар ID ${productId}`, data);
   } catch (e) {
     console.error(e);
@@ -8117,30 +8249,52 @@ async function runAdminPriceSyncApplySingle() {
     showCustomNotification('Сначала найдите и выберите товар.', 'info');
     return;
   }
-  if (!confirm('Записать полученные цены в историю и обновить текущие цены для этого товара?')) {
+  if (!confirm('Записать в БД цены из предпросмотра и обновить историю?')) {
     return;
   }
   try {
-    const res = await fetch(`http://localhost:3000/api/admin/prices/sync-product/${productId}`, {
+    let payloadResults = null;
+    if (
+      lastAdminPriceSyncPreviewSingle &&
+      Array.isArray(lastAdminPriceSyncPreviewSingle.results) &&
+      lastAdminPriceSyncPreviewSingle.results.some((r) => r && Number(r.productId) === productId)
+    ) {
+      payloadResults = lastAdminPriceSyncPreviewSingle.results;
+    }
+
+    const endpoint = payloadResults
+      ? 'http://localhost:3000/api/admin/prices/sync-apply'
+      : `http://localhost:3000/api/admin/prices/sync-product/${productId}`;
+
+    const body = payloadResults
+      ? JSON.stringify({ results: payloadResults })
+      : JSON.stringify({ dryRun: false, proxy: getAdminPriceSyncProxy() });
+
+    const res = await fetch(endpoint, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${token}`
       },
-      body: JSON.stringify({ dryRun: false, proxy: getAdminPriceSyncProxy() })
+      body
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
       throw new Error(err.error || `HTTP ${res.status}`);
     }
     const data = await res.json();
-    const n = data.applied && typeof data.applied.applied === 'number' ? data.applied.applied : null;
+    const n = typeof data.applied === 'number'
+      ? data.applied
+      : data.applied && typeof data.applied.applied === 'number'
+        ? data.applied.applied
+        : null;
     showCustomNotification(
       n != null ? `Обновлено позиций: ${n}.` : 'Обновление выполнено.',
       'success'
     );
     closeAdminPriceSyncModal();
     fetchAdminPriceSyncStatus();
+    lastAdminPriceSyncPreviewSingle = null;
     if (productName) {
       await loadAndDisplayPriceHistory(productId, productName);
     }

@@ -520,7 +520,7 @@
                             <!-- Блоки цен будут добавляться сюда -->
                         </div>
                         <button type="button" class="btn btn-outline" onclick="addManualPriceEntry()">+ Добавить цену и ссылку</button>
-                        <button type="button" class="btn btn-outline" onclick="fillManualPricesFromUrls()">Подставить цены по ссылкам (Яндекс, WB)</button>
+                        <button type="button" class="btn btn-outline" onclick="fillManualPricesFromUrls()">Подставить цены по ссылкам (Яндекс, WB, DNS, Ozon и др.)</button>
                     </div>
 
                     <div class="form-actions">
@@ -534,11 +534,24 @@
             
             <div id="parser" class="admin-tab-content">
                 <h3>Парсер товаров</h3>
+                <div style="margin: 0.75rem 0 1rem; padding: 0.9rem 1rem; border: 1px solid #e5e7eb; border-radius: 10px; background: #f9fafb;">
+                    <h4 style="margin: 0 0 0.5rem;">Поддерживаемые источники и примеры ссылок</h4>
+                    <p style="margin: 0 0 0.5rem; color:#475569; font-size: 0.9rem;">
+                        Парсинг и обновление цен работает через API-источники: <strong>API Systems (WB/Яндекс.Маркет)</strong>, <strong>PricesAPI.io</strong>, <strong>eBay Browse API</strong>.
+                        По возможности используйте URL карточки; если URL нет — можно ввести только название.
+                    </p>
+                    <ul style="margin: 0; padding-left: 1.2rem; color:#475569; font-size: 0.9rem; line-height: 1.45;">
+                        <li><strong>Wildberries:</strong> <code>https://www.wildberries.ru/catalog/123456/detail.aspx</code> или <code>https://wb.ru/catalog/123456/detail.aspx</code></li>
+                        <li><strong>Яндекс.Маркет:</strong> <code>https://market.yandex.ru/card/123456/spec</code> (и вариации <code>/card/</code>, <code>/product--</code>)</li>
+                        <li><strong>eBay:</strong> <code>https://www.ebay.com/itm/123456789012</code> (требуются <code>EBAY_CLIENT_ID</code>/<code>EBAY_CLIENT_SECRET</code> в <code>.env</code>)</li>
+                        <li><strong>PricesAPI:</strong> поддерживает поиск по названию и по URL карточки магазина в поддерживаемых странах. По умолчанию используется country <code>us</code> (настраивается <code>PRICESAPI_COUNTRY</code>).</li>
+                    </ul>
+                </div>
                 <div class="parse-form-container">
                     <form id="parseProductForm">
                         <div class="form-group">
-                            <label for="parseUrl">URL товара *</label>
-                            <input type="url" id="parseUrl" required placeholder="Ссылка на карточку: market.yandex.ru или wildberries.ru">
+                            <label for="parseUrl">URL товара (опционально)</label>
+                            <input type="url" id="parseUrl" placeholder="Ссылка на карточку (WB / Я.Маркет / eBay и т.д.)">
                         </div>
                         <div class="form-group">
                             <label for="parseCategory">Категория *</label>
@@ -587,7 +600,7 @@
                         
                         <div class="form-group">
                             <label for="parseName">Название устройства (опционально)</label>
-                            <input type="text" id="parseName" placeholder="Введите название...">
+                            <input type="text" id="parseName" placeholder="Можно без URL: Samsung Galaxy S24 Ultra 512GB">
                         </div>
                         <div class="form-group">
                             <label for="parseDescription">Описание (опционально)</label>
@@ -608,7 +621,11 @@
 
   <div class="admin-price-sync-section" style="margin-bottom: 1.75rem; padding: 1rem 1.25rem; border: 1px solid #e5e7eb; border-radius: 10px; background: #f9fafb;">
     <h4 style="margin-top: 0;">Автообновление цен по ссылкам</h4>
-    <p style="color: #6b7280; font-size: 0.9rem; margin-bottom: 0.75rem;">Поддерживаются DNS-Shop, Ozon, Яндекс.Маркет и Wildberries (цены ЯМ и WB — через API Systems и при необходимости со страницы ЯМ). Серверное автообновление каталога — не чаще одного раза в 3 дня; для выбранного товара ниже можно обновить цены по сохранённым ссылкам.</p>
+    <p style="color: #6b7280; font-size: 0.9rem; margin-bottom: 0.75rem;">
+      Обновление выполняется через API-источники: <strong>API Systems (WB/Яндекс.Маркет)</strong>, <strong>eBay API</strong>, <strong>PricesAPI.io</strong>.
+      Все цены приводятся к рублям перед записью в историю. Для eBay/PricesAPI можно обновлять цены как по названию товара, так и по заранее сохранённым ссылкам (если ссылка ведёт на поддерживаемую площадку/страницу).
+      Серверное автообновление каталога — не чаще одного раза в 3 дня; для выбранного товара ниже можно обновить цены в любой момент.
+    </p>
     <div id="priceSyncStatusDisplay" style="font-size: 0.85rem; margin-bottom: 0.75rem; line-height: 1.5;"></div>
     <div class="form-group">
       <label for="priceSyncProxyInput">Прокси (опционально)</label>
@@ -805,10 +822,10 @@
                 let endpoint = '';
                 let title = '';
                 if (type === 'reviews') {
-                    endpoint = 'http://localhost:3000/api/admin/reviews';
+                    endpoint = '/api/admin/reviews';
                     title = 'Отзывы на модерации';
                 } else if (type === 'requests') {
-                    endpoint = 'http://localhost:3000/api/admin/requests';
+                    endpoint = '/api/admin/requests';
                     title = 'Запросы на добавление';
                 } else {
                     console.error('Неизвестный тип модерации:', type);
@@ -904,7 +921,7 @@
         async function loadAnalyticsData() {
             const token = localStorage.getItem('techAggregatorToken');
             try {
-                const statsRes = await fetch('http://localhost:3000/api/admin/analytics/stats', {
+                const statsRes = await fetch('/api/admin/analytics/stats', {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 if (!statsRes.ok) throw new Error(await statsRes.text());
@@ -925,7 +942,7 @@
                 document.querySelector('#dailyViews ~ .stat-change').textContent = `${dailyViewsChange > 0 ? '+' : ''}${dailyViewsChange}%`;
                 document.querySelector('#purchaseClicks ~ .stat-change').textContent = `${purchaseChange > 0 ? '+' : ''}${purchaseChange}%`;
 
-                const searchesRes = await fetch('http://localhost:3000/api/admin/analytics/popular-searches', {
+                const searchesRes = await fetch('/api/admin/analytics/popular-searches', {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 if (searchesRes.ok) {
@@ -951,7 +968,7 @@
 
             try {
                 const token = localStorage.getItem('techAggregatorToken');
-                const response = await fetch('http://localhost:3000/api/admin/users', {
+                const response = await fetch('/api/admin/users', {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
 
@@ -1045,7 +1062,7 @@
 
             const token = localStorage.getItem('techAggregatorToken');
             try {
-                const response = await fetch(`http://localhost:3000/api/admin/users/${currentMessageUserId}/send-message`, {
+                const response = await fetch(`/api/admin/users/${currentMessageUserId}/send-message`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -1073,7 +1090,7 @@
             if (confirm(`Вы уверены, что хотите удалить пользователя ID ${userId}?`)) {
                 const token = localStorage.getItem('techAggregatorToken');
                 try {
-                    const response = await fetch(`http://localhost:3000/api/admin/users/${userId}`, {
+                    const response = await fetch(`/api/admin/users/${userId}`, {
                         method: 'DELETE',
                         headers: { 'Authorization': `Bearer ${token}` }
                     });
@@ -1091,7 +1108,7 @@
             const token = localStorage.getItem('techAggregatorToken');
             try {
                 //Загрузка статистики
-                const statsRes = await fetch('http://localhost:3000/api/admin/dashboard-stats', {
+                const statsRes = await fetch('/api/admin/dashboard-stats', {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 if (statsRes.ok) {
