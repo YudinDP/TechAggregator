@@ -16,6 +16,40 @@ const StealthPlugin = require('puppeteer-extra-plugin-stealth');
 const OpenAI = require('openai');
 const Groq = require('groq-sdk');
 const API_SYSTEMS_KEY = process.env.API_SYSTEMS_API_KEY;
+
+function readEnvValue(...keys) {
+  for (const key of keys) {
+    const raw = process.env[key];
+    if (raw == null) continue;
+    const normalized = String(raw).trim().replace(/^['"]|['"]$/g, '');
+    if (normalized) return normalized;
+  }
+  return null;
+}
+
+const PRICESAPI_KEY = readEnvValue('PRICESAPI_KEY', 'PRICES_API_KEY', 'PRICE_API_KEY');
+const PRICESAPI_BASE = 'https://api.pricesapi.io/api/v1';
+const EBAY_CLIENT_ID = readEnvValue('EBAY_CLIENT_ID', 'EBAY_APP_ID', 'EBAY_CLIENTID');
+const EBAY_CLIENT_SECRET = readEnvValue('EBAY_CLIENT_SECRET', 'EBAY_CERT_ID', 'EBAY_CLIENTSECRET');
+const EBAY_BASE = readEnvValue('EBAY_BASE') || 'https://api.ebay.com';
+const EBAY_SANDBOX_BASE = 'https://api.sandbox.ebay.com';
+let ebayTokenCache = { token: null, expiresAt: 0, base: null };
+const PRICESAPI_DEFAULT_COUNTRY = (readEnvValue('PRICESAPI_COUNTRY', 'PRICES_API_COUNTRY') || 'us').toLowerCase();
+const PRICESAPI_FALLBACK_COUNTRIES = String(readEnvValue('PRICESAPI_FALLBACK_COUNTRIES') || 'us,de,gb,fr,pl')
+  .split(',')
+  .map((c) => c.trim().toLowerCase())
+  .filter(Boolean);
+const EBAY_OAUTH_SCOPES = [
+  'https://api.ebay.com/oauth/api_scope/buy.browse',
+  'https://api.ebay.com/oauth/api_scope/buy.browse.readonly',
+  'https://api.ebay.com/oauth/api_scope'
+];
+
+function isLikelySandboxEbayCredentials(clientId, clientSecret) {
+  const id = String(clientId || '').toUpperCase();
+  const secret = String(clientSecret || '').toUpperCase();
+  return id.includes('-SBX-') || secret.startsWith('SBX-');
+}
 puppeteer.use(StealthPlugin()); //Применяем плагин
 
 //Импортируем адаптер для Prisma 7+
@@ -40,6 +74,8 @@ const PRICE_SYNC_DELAY_MS = parseInt(process.env.PRICE_SYNC_DELAY_MS || '3500', 
 const PRICE_SYNC_MAX_PREVIEW = parseInt(process.env.PRICE_SYNC_MAX_PER_PREVIEW || '120', 10);
 const PRICE_SYNC_AUTO_MAX = parseInt(process.env.PRICE_SYNC_AUTO_MAX_STORES || '80', 10);
 const THREE_DAYS_MS = 3 * 24 * 60 * 60 * 1000;
+const STORE_SIGNALS_FILE = path.join(__dirname, 'data', 'store-signals.json');
+const USER_ALERTS_FILE = path.join(__dirname, 'data', 'user-alerts.json');
 
 function readPriceSyncState() {
   try {
@@ -54,6 +90,62 @@ function writePriceSyncState(patch) {
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
   const prev = readPriceSyncState();
   fs.writeFileSync(PRICE_SYNC_STATE_FILE, JSON.stringify({ ...prev, ...patch }, null, 2), 'utf8');
+}
+
+function readJsonFileSafe(filePath, fallback = {}) {
+  try {
+    return JSON.parse(fs.readFileSync(filePath, 'utf8'));
+  } catch {
+    return fallback;
+  }
+}
+
+function writeJsonFileSafe(filePath, value) {
+  const dir = path.dirname(filePath);
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(filePath, JSON.stringify(value, null, 2), 'utf8');
+}
+
+function readStoreSignals() {
+  return readJsonFileSafe(STORE_SIGNALS_FILE, { items: [] });
+}
+
+function writeStoreSignals(data) {
+  writeJsonFileSafe(STORE_SIGNALS_FILE, data || { items: [] });
+}
+
+function readUserAlerts() {
+  return readJsonFileSafe(USER_ALERTS_FILE, { items: [] });
+}
+
+function writeUserAlerts(data) {
+  writeJsonFileSafe(USER_ALERTS_FILE, data || { items: [] });
+}
+
+function pruneExpiredAlerts() {
+  const now = Date.now();
+  const state = readUserAlerts();
+  const items = Array.isArray(state.items) ? state.items : [];
+  const fresh = items.filter((i) => {
+    if (!i || !i.expiresAt) return false;
+    const exp = new Date(i.expiresAt).getTime();
+    return Number.isFinite(exp) && exp > now;
+  });
+  if (fresh.length !== items.length) {
+    writeUserAlerts({ items: fresh });
+  }
+  return fresh;
+}
+
+function addUserAlerts(alerts) {
+  if (!Array.isArray(alerts) || !alerts.length) return;
+  const existing = pruneExpiredAlerts();
+  const byKey = new Map(existing.map((a) => [`${a.userId}:${a.productId}:${a.storeName}:${a.type}`, a]));
+  for (const a of alerts) {
+    const key = `${a.userId}:${a.productId}:${a.storeName}:${a.type}`;
+    byKey.set(key, a);
+  }
+  writeUserAlerts({ items: Array.from(byKey.values()) });
 }
 
 function delay(ms) {
@@ -607,12 +699,17 @@ app.get('/api/profile', async (req, res) => {
     const payload = jwt.verify(token, JWT_SECRET);
     const user = await prisma.user.findUnique({
       where: { id: payload.id },
-      select: { id: true, email: true, fullName: true, createdAt: true }
+      select: { id: true, email: true, fullName: true, createdAt: true, role: true }
     });
     if (!user) {
       return res.status(404).json({ error: 'Пользователь не найден' });
     }
-    res.json({ user });
+    const [favoritesCount, comparisonsCount, viewsCount] = await Promise.all([
+      prisma.favorite.count({ where: { userId: payload.id } }),
+      prisma.comparison.count({ where: { userId: payload.id } }),
+      prisma.viewLog.count({ where: { userId: payload.id } })
+    ]);
+    res.json({ user, stats: { favoritesCount, comparisonsCount, viewsCount } });
   } catch (err) {
     console.error('Ошибка профиля:', err);
     res.status(401).json({ error: 'Неверный токен' });
@@ -642,6 +739,90 @@ app.get('/api/favorites', async (req, res) => {
     res.json(favorites.map(f => f.product));
   } catch (err) {
     console.error('Ошибка избранного:', err);
+    res.status(401).json({ error: 'Неверный токен' });
+  }
+});
+
+app.get('/api/profile/alerts', async (req, res) => {
+  const token = req.headers.authorization?.split(' ')[1];
+  if (!token) return res.status(401).json({ error: 'Требуется авторизация' });
+  try {
+    const payload = jwt.verify(token, JWT_SECRET);
+    const persisted = pruneExpiredAlerts().filter((a) => a.userId === payload.id);
+    const favorites = await prisma.favorite.findMany({
+      where: { userId: payload.id },
+      include: {
+        product: {
+          include: {
+            prices: true
+          }
+        }
+      }
+    });
+
+    const signalsState = readStoreSignals();
+    const signalItems = Array.isArray(signalsState.items) ? signalsState.items : [];
+    const now = new Date();
+    const runtimeAlerts = [];
+
+    for (const fav of favorites) {
+      const product = fav.product;
+      if (!product?.id) continue;
+      const prices = Array.isArray(product.prices) ? product.prices : [];
+      for (const priceRow of prices) {
+        const storeName = String(priceRow.storeName || '').trim();
+        if (!storeName) continue;
+        const prevRows = await prisma.priceHistory.findMany({
+          where: { productId: product.id, storeName },
+          orderBy: { date: 'desc' },
+          take: 2
+        });
+        if (prevRows.length >= 2) {
+          const prevPrice = Number(prevRows[1].price);
+          const currPrice = Number(priceRow.price);
+          if (prevPrice > 0 && currPrice > 0 && currPrice < prevPrice) {
+            const dropPct = ((prevPrice - currPrice) / prevPrice) * 100;
+            if (dropPct >= 5) {
+              runtimeAlerts.push({
+                id: `rt_${payload.id}_${product.id}_${storeName}_price_drop`,
+                userId: payload.id,
+                productId: product.id,
+                productName: product.name,
+                storeName,
+                type: 'price_drop',
+                message: `Товар "${product.name}" в магазине ${storeName} подешевел на ${dropPct.toFixed(1)}%.`,
+                createdAt: now.toISOString(),
+                expiresAt: new Date(now.getTime() + THREE_DAYS_MS).toISOString()
+              });
+            }
+          }
+        }
+        const signal = signalItems.find((s) => Number(s.productId) === Number(product.id) && String(s.storeName || '').toLowerCase() === storeName.toLowerCase());
+        const stock = Number(signal?.stock);
+        if (Number.isFinite(stock) && stock >= 0 && stock < 10) {
+          runtimeAlerts.push({
+            id: `rt_${payload.id}_${product.id}_${storeName}_low_stock`,
+            userId: payload.id,
+            productId: product.id,
+            productName: product.name,
+            storeName,
+            type: 'low_stock',
+            message: `Товар "${product.name}" в магазине ${storeName}: осталось мало (${Math.round(stock)}).`,
+            createdAt: now.toISOString(),
+            expiresAt: new Date(now.getTime() + THREE_DAYS_MS).toISOString()
+          });
+        }
+      }
+    }
+
+    const dedup = new Map();
+    [...persisted, ...runtimeAlerts].forEach((a) => {
+      const key = `${a.userId}:${a.productId}:${a.storeName}:${a.type}`;
+      dedup.set(key, a);
+    });
+    const items = Array.from(dedup.values()).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    res.json(items);
+  } catch (err) {
     res.status(401).json({ error: 'Неверный токен' });
   }
 });
@@ -2204,6 +2385,349 @@ async function parseProductFromOzon(url, proxy = null) {
     throw new Error(`Ошибка парсинга с OZON (puppeteer): ${error.message}`);
   }
 }
+
+function getWebStorePuppeteerProfile(hostname) {
+  const raw = String(hostname || '').toLowerCase();
+  const host = raw.replace(/^www\./, '');
+  if (host === 'megamarket.ru' || host.endsWith('.megamarket.ru')) {
+    return { key: 'megamarket', storeName: 'MegaMarket', sourceLabel: 'Megamarket (puppeteer)' };
+  }
+  if (host === 'citilink.ru' || host.endsWith('.citilink.ru')) {
+    return { key: 'citilink', storeName: 'Citilink', sourceLabel: 'Citilink (puppeteer)' };
+  }
+  if (
+    host === 'regard.ru' ||
+    host.endsWith('.regard.ru') ||
+    host === 'redgard.ru' ||
+    host.endsWith('.redgard.ru')
+  ) {
+    return { key: 'regard', storeName: 'Regard', sourceLabel: 'Regard / Регард (puppeteer)' };
+  }
+  if (host.includes('aliexpress.')) {
+    return { key: 'aliexpress', storeName: 'AliExpress', sourceLabel: 'AliExpress (puppeteer)' };
+  }
+  return null;
+}
+
+async function parseProductFromWebStore(url, proxy = null, profile = null) {
+  const hostname = (() => {
+    try {
+      return new URL(url).hostname;
+    } catch {
+      return '';
+    }
+  })();
+  const storeProfile = profile || getWebStorePuppeteerProfile(hostname);
+  if (!storeProfile) {
+    throw new Error('Домен не поддерживается веб-парсером магазинов.');
+  }
+
+  console.log(`Парсим товар (${storeProfile.key}, puppeteer): ${url}`);
+
+  let browser;
+  try {
+    const launchOptions = {
+      headless: true,
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-accelerated-2d-canvas',
+        '--no-first-run',
+        '--no-zygote',
+        '--disable-gpu',
+        '--disable-web-security',
+        '--disable-features=VizDisplayCompositor,VizDisplayRenderer,VizDisplayCompositorGPU',
+        '--disable-background-timer-throttling',
+        '--disable-backgrounding-occluded-windows',
+        '--disable-renderer-backgrounding',
+        '--disable-ipc-flooding-protection',
+        '--disable-background-networking',
+        '--lang=ru-RU,en-US',
+        '--timezone-policy=host'
+      ]
+    };
+    if (proxy) {
+      launchOptions.args.push(`--proxy-server=${proxy}`);
+    }
+
+    browser = await puppeteer.launch(launchOptions);
+    const page = await browser.newPage();
+    await page.setExtraHTTPHeaders({
+      Accept:
+        'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+      'Accept-Language': 'ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7',
+      'Upgrade-Insecure-Requests': '1'
+    });
+    await page.setUserAgent(
+      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
+    );
+    await page.setViewport({ width: 1365, height: 900 });
+
+    await page.evaluateOnNewDocument(() => {
+      Object.defineProperty(navigator, 'webdriver', {
+        get: () => undefined
+      });
+      Object.defineProperty(navigator, 'languages', {
+        get: () => ['ru-RU', 'ru', 'en-US', 'en']
+      });
+    });
+
+    const response = await page.goto(url, {
+      waitUntil: 'networkidle2',
+      timeout: storeProfile.key === 'aliexpress' ? 55000 : 45000
+    });
+    const status = response.status();
+    if (status === 401 || status === 403 || status === 429) {
+      throw new Error(`Магазин вернул статус ${status} (доступ или лимиты). При необходимости укажите прокси.`);
+    }
+
+    await page.evaluate(() =>
+      window.scrollBy(0, Math.min(window.innerHeight, Math.floor(window.innerHeight * 0.6)))
+    );
+    await page.waitForTimeout(1200);
+
+    await page.waitForSelector('body', { timeout: 6000 }).catch(() => {});
+    if (storeProfile.key === 'citilink') {
+      await page
+        .waitForSelector('[data-meta-price], meta[itemprop="price"], script[type="application/ld+json"]', {
+          timeout: 9000
+        })
+        .catch(() => {});
+    }
+
+    const data = await page.evaluate((siteKey) => {
+      const normPrice = (n) =>
+        typeof n === 'number' && n > 0 && n < 1e9 && Number.isFinite(n)
+          ? Math.round(n)
+          : null;
+
+      const digitsFromStr = (s) => {
+        if (!s) return null;
+        const digits = String(s).replace(/\s/g, '').replace(/[^\d]/g, '');
+        if (!digits) return null;
+        const n = parseInt(digits, 10);
+        return normPrice(n);
+      };
+
+      const safeJsonParse = (text) => {
+        try {
+          return JSON.parse(text);
+        } catch {
+          return null;
+        }
+      };
+
+      let name = '';
+      let price = null;
+      let imageUrl = null;
+      const specs = {};
+
+      const firstH1 = document.querySelector('h1');
+      if (firstH1?.innerText) {
+        name = firstH1.innerText.trim();
+      }
+
+      document.querySelectorAll('script[type="application/ld+json"]').forEach((el) => {
+        const jo = safeJsonParse(el.textContent.trim());
+        if (!jo) return;
+        const list = Array.isArray(jo) ? jo : [jo];
+        for (const obj of list) {
+          const t = obj['@type'];
+          const isProduct =
+            t === 'Product' ||
+            (Array.isArray(t) && t.includes('Product')) ||
+            t === undefined ||
+            t === null;
+          if (obj.name && isProduct) {
+            if (!name) name = String(obj.name).trim();
+          }
+          const offers = obj.offers || obj.Offers || null;
+          if (offers) {
+            const o = Array.isArray(offers) ? offers[0] : offers;
+            const pRaw = o.price || o.Price || o.lowPrice || o.highPrice || o.priceSpecification?.price;
+            if (!price && pRaw != null) {
+              price = normPrice(Number(String(pRaw).replace(/[^\d.]/g, '')));
+            }
+          }
+          if (!imageUrl) {
+            const img = obj.image;
+            imageUrl =
+              typeof img === 'string'
+                ? img
+                : Array.isArray(img) && img[0]
+                  ? img[0]
+                  : typeof img?.url === 'string'
+                    ? img.url
+                    : null;
+          }
+        }
+      });
+
+      if (!price) {
+        const metaPx = document.querySelector('meta[itemprop="price"]')?.getAttribute('content');
+        price = digitsFromStr(metaPx);
+      }
+      if (!name) {
+        const ogTitle =
+          document.querySelector('meta[property="og:title"]')?.content ||
+          document.querySelector('meta[name="twitter:title"]')?.content ||
+          '';
+        if (ogTitle) name = ogTitle.trim();
+      }
+      if (!imageUrl) {
+        imageUrl =
+          document.querySelector('meta[property="og:image"]')?.content ||
+          document.querySelector('meta[property="og:image:url"]')?.content ||
+          null;
+      }
+
+      document.querySelectorAll('table tbody tr').forEach((row) => {
+        const cells = row.querySelectorAll('th, td');
+        if (cells.length >= 2) {
+          const k = cells[0].innerText.trim();
+          const v = cells[1].innerText.trim();
+          if (k.length > 1 && v.length > 0 && k.length < 120) specs[k] = v;
+        }
+      });
+
+      if (siteKey === 'citilink') {
+        const px = document.querySelector('[data-meta-price]')?.getAttribute('data-meta-price');
+        price = price || digitsFromStr(px);
+      }
+
+      if (siteKey === 'regard') {
+        const rg =
+          document.querySelector('.Prices_current') ||
+          document.querySelector('[class*="ProductPrice_current"]');
+        price = price || digitsFromStr(rg?.innerText);
+      }
+
+      if (siteKey === 'megamarket') {
+        const nextEl = document.getElementById('__NEXT_DATA__');
+        if (nextEl) {
+          const next = safeJsonParse(nextEl.textContent);
+          if (next?.props?.pageProps) {
+            const walkPrice = (o, depth) => {
+              if (depth > 22 || !o || typeof o !== 'object') return null;
+              for (const k of Object.keys(o)) {
+                const lk = k.toLowerCase();
+                if (/price|saleprice|discountprice|offerprice/i.test(k) && typeof o[k] === 'number') {
+                  const n = normPrice(o[k]);
+                  if (n) return n;
+                }
+                const r = walkPrice(o[k], depth + 1);
+                if (r) return r;
+              }
+              return null;
+            };
+            const p = walkPrice(next.props.pageProps, 0);
+            if (!price && p) price = p;
+          }
+        }
+        if (!price) {
+          const mm = document.querySelector(
+            '[itemprop="price"][content], [itemprop="price"], [data-chp-id="goodsPriceFinal"] span'
+          );
+          if (mm) {
+            price =
+              digitsFromStr(mm.getAttribute && mm.getAttribute('content')) ||
+              digitsFromStr(mm.innerText || mm.textContent);
+          }
+          if (!price) {
+            let best = null;
+            document.querySelectorAll('[class*="price"], [class*="Price"], [itemprop="price"]').forEach((el) => {
+              const cand = digitsFromStr(
+                (el.getAttribute && el.getAttribute('content')) || el.innerText || el.textContent || ''
+              );
+              if (cand && cand >= 100 && (!best || cand < best)) best = cand;
+            });
+            if (best) price = best;
+          }
+        }
+      }
+
+      if (siteKey === 'aliexpress') {
+        const html = document.documentElement.innerHTML.slice(0, 400000);
+
+        if (html && !price) {
+          let mSku = html.match(/"skuAmount"\s*:\s*\{\s*"value"\s*:\s*"(\d+)"\s*\}/);
+          if (!mSku) mSku = html.match(/"skuAmount"\s*:\s*\{[^}]{0,200}?"value"\s*:\s*"?(\d+)"?/);
+          if (mSku?.[1]) price = digitsFromStr(mSku[1]);
+
+          let mQuoted = html.match(/"couponPrice"\s*:\s*"(\d+[.,]\d+)/i);
+          if (!mQuoted) mQuoted = html.match(/"sellPrice"\s*:\s*"([\d\s.,]+)"?/);
+          if (!price && mQuoted?.[1]) price = digitsFromStr(mQuoted[1]);
+        }
+
+        if (!price) {
+          price = digitsFromStr(
+            document.querySelector('[product-stage] [aria-label*="Rub"]')?.getAttribute?.('aria-label')
+          );
+        }
+        try {
+          if (typeof window.runParams === 'object' && window.runParams.details) {
+            const d =
+              typeof window.runParams.details === 'string'
+                ? safeJsonParse(window.runParams.details.toString())
+                : window.runParams.details;
+            if (d?.priceModule?.salePriceSimple) price = digitsFromStr(d.priceModule.salePriceSimple);
+          }
+        } catch (e) {
+          //
+        }
+
+        try {
+          if (typeof window._d_c_ === 'object' && window._d_c_.data?.root?.fields?.productInfo) {
+            const pi = window._d_c_.data.root.fields.productInfo;
+            const v = pi.skuPriceMap || pi.bestAmount || pi.sale_price;
+            if (v?.value) price = digitsFromStr(String(v.value));
+            else price = digitsFromStr(String(pi?.couponPriceFormatted || pi?.couponPriceSimple || pi?.price));
+          }
+        } catch (e) {
+          //
+        }
+      }
+
+      if (!name) {
+        const t = document.title || '';
+        if (t.trim()) name = t.split('|')[0].trim();
+      }
+
+      if (imageUrl && !/^https?:/i.test(imageUrl)) {
+        imageUrl =
+          imageUrl.startsWith('//') ? `https:${imageUrl}` : new URL(imageUrl, location.href).href;
+      }
+
+      return { name: name || 'Неизвестное название', price, imageUrl, specs };
+    }, storeProfile.key);
+
+    await browser.close();
+    browser = null;
+
+    console.log(`   Извлечено (${storeProfile.sourceLabel}):`, {
+      name: data.name,
+      price: data.price,
+      specs: Object.keys(data.specs || {}).length
+    });
+
+    return {
+      source: storeProfile.sourceLabel,
+      name: data.name,
+      price: data.price != null ? Math.round(Number(data.price)) : null,
+      imageUrl: data.imageUrl || null,
+      sourceUrl: url,
+      specs: data.specs || {}
+    };
+  } catch (error) {
+    if (browser) {
+      await browser.close().catch(console.error);
+    }
+    console.error(`   Ошибка парсинга (${storeProfile.key}):`, error.message);
+    throw new Error(`Ошибка парсинга (${storeProfile.storeName}, puppeteer): ${error.message}`);
+  }
+}
+
 /*
 app.post('/api/admin/parse-product', authenticateToken, requireAdminRole, async (req, res) => {
   const { url, category, proxy } = req.body;
@@ -3446,6 +3970,13 @@ function coerceApiSystemsPrice(value) {
     return Math.round(n);
 }
 
+function coerceMarketParserPrice(value) {
+    if (value == null || value === '') return null;
+    const n = typeof value === 'number' ? value : parseFloat(String(value).replace(/\s/g, '').replace(',', '.'));
+    if (!Number.isFinite(n) || n <= 0) return null;
+    return Math.round(n);
+}
+
 function normalizeComparableUrl(urlString) {
     try {
         const u = new URL(urlString);
@@ -3455,6 +3986,289 @@ function normalizeComparableUrl(urlString) {
     } catch {
         return null;
     }
+}
+
+const MARKETPARSER_API_KEY = process.env.MARKETPARSER_API_KEY || null;
+const MARKETPARSER_BASE_URL = process.env.MARKETPARSER_BASE_URL || 'https://cp2.marketparser.ru/api/v2';
+const marketParserCampaignCache = new Map();
+
+function getMarketParserSourceKeyForHost(hostname) {
+    const raw = String(hostname || '').toLowerCase().replace(/^www\./, '');
+
+    if (raw.includes('dns-shop.ru')) return 'dns';
+    if (raw.includes('ozon.ru')) return 'ozon';
+    if (raw === 'megamarket.ru' || raw.endsWith('.megamarket.ru')) return 'megamarket';
+    if (raw.includes('mvideo.ru') || raw.includes('m-video.ru')) return 'mvideo';
+    if (raw.includes('avito.ru')) return 'avito';
+
+    return null;
+}
+
+function isMarketParserHostSupported(hostname) {
+    return !!getMarketParserSourceKeyForHost(hostname);
+}
+
+function getMarketParserCampaignIdFromEnvBySource(sourceKey) {
+    if (sourceKey === 'dns') return process.env.MARKETPARSER_CAMPAIGN_ID_DNS || null;
+    if (sourceKey === 'ozon') return process.env.MARKETPARSER_CAMPAIGN_ID_OZON || null;
+    if (sourceKey === 'megamarket') return process.env.MARKETPARSER_CAMPAIGN_ID_MEGAMARKET || null;
+    if (sourceKey === 'mvideo') return process.env.MARKETPARSER_CAMPAIGN_ID_MVIDEO || null;
+    if (sourceKey === 'avito') return process.env.MARKETPARSER_CAMPAIGN_ID_AVITO || null;
+    return null;
+}
+
+function getStoreNameForHost(hostname) {
+    const raw = String(hostname || '').toLowerCase().replace(/^www\./, '');
+    if (raw.includes('dns-shop.ru')) return 'DNS';
+    if (raw.includes('ozon.ru')) return 'OZON';
+    if (raw === 'megamarket.ru' || raw.endsWith('.megamarket.ru')) return 'MegaMarket';
+    if (raw.includes('mvideo.ru') || raw.includes('m-video.ru')) return 'MVideo';
+    if (raw.includes('avito.ru')) return 'Avito';
+    if (raw.includes('citilink.ru')) return 'Citilink';
+    if (raw.includes('regard.ru') || raw.includes('redgard.ru')) return 'Regard';
+    if (raw.includes('aliexpress.')) return 'AliExpress';
+    if (raw.includes('wildberries.ru') || raw.includes('wb.ru')) return 'Wildberries';
+    if (raw.includes('market.yandex.ru') || raw.includes('yandex.ru')) return 'Yandex Market';
+    if (raw.includes('ebay.')) return 'eBay';
+    return null;
+}
+
+async function resolveMarketParserCampaignIdForHost(hostname) {
+    const sourceKey = getMarketParserSourceKeyForHost(hostname);
+    if (!sourceKey) return null;
+
+    const envCampaignId = getMarketParserCampaignIdFromEnvBySource(sourceKey);
+    if (envCampaignId) return String(envCampaignId).trim();
+
+    if (marketParserCampaignCache.has(sourceKey)) {
+        return marketParserCampaignCache.get(sourceKey);
+    }
+
+    const campaignsData = await marketParserRequest('GET', '/campaigns.json', { timeout: 20000 });
+    const campaigns = campaignsData?.response?.campaigns || [];
+    const list = Array.isArray(campaigns) ? campaigns : [];
+    if (!list.length) return null;
+
+    const keywordMap = {
+        dns: ['dns', 'днс'],
+        ozon: ['ozon', 'озон'],
+        megamarket: ['megamarket', 'mega market', 'мегамаркет', 'сбермегамаркет'],
+        mvideo: ['mvideo', 'm.video', 'мвидео', 'м.видео'],
+        avito: ['avito', 'авито']
+    };
+    const kws = keywordMap[sourceKey] || [];
+
+    const matched = list.find((c) => {
+        const nm = String(c?.name || '').toLowerCase();
+        return kws.some((kw) => nm.includes(kw));
+    });
+
+    const id = matched?.id != null ? String(matched.id) : null;
+    if (id) marketParserCampaignCache.set(sourceKey, id);
+    return id;
+}
+
+async function marketParserRequest(method, path, { params = undefined, data = undefined, timeout = 20000 } = {}) {
+    if (!MARKETPARSER_API_KEY) {
+        throw new Error('MARKETPARSER_API_KEY не задан. Добавьте ключ в переменные окружения.');
+    }
+    const url = `${MARKETPARSER_BASE_URL}${path.startsWith('/') ? '' : '/'}${path}`;
+    try {
+        const res = await axios.request({
+            method,
+            url,
+            params,
+            data,
+            timeout,
+            headers: {
+                'Api-Key': MARKETPARSER_API_KEY,
+                'Content-Type': 'application/json'
+            }
+        });
+        return res.data;
+    } catch (e) {
+        const status = e?.response?.status;
+        const payload = e?.response?.data;
+        const message = payload?.message || e?.message || 'Ошибка MarketParser';
+        if (status) throw new Error(`MarketParser HTTP ${status}: ${message}`);
+        throw new Error(`MarketParser: ${message}`);
+    }
+}
+
+async function marketParserWaitCampaignPriceProcessed(campaignId, { timeoutMs = 90000, pollMs = 2500 } = {}) {
+    const started = Date.now();
+    while (Date.now() - started < timeoutMs) {
+        const info = await marketParserRequest('GET', `/campaigns/${campaignId}/price.json`, { timeout: 20000 });
+        const isOk = !!(info?.response?.isSuccessfullyProcessed ?? info?.response?.price?.isSuccessfullyProcessed);
+        if (isOk) return true;
+        await delay(pollMs);
+    }
+    throw new Error('MarketParser: прайс кампании не обработан вовремя (timeout).');
+}
+
+async function marketParserWaitReportFinished(campaignId, reportId, { timeoutMs = 120000, pollMs = 2500 } = {}) {
+    const started = Date.now();
+    while (Date.now() - started < timeoutMs) {
+        const info = await marketParserRequest('GET', `/campaigns/${campaignId}/reports/${reportId}.json`, { timeout: 20000 });
+        const r = info?.response || null;
+        if (r?.isSuccessfullyFinished) return r;
+        if (r?.status === 'ERROR') throw new Error('MarketParser: отчёт завершился со статусом ERROR.');
+        await delay(pollMs);
+    }
+    throw new Error('MarketParser: отчёт не завершился вовремя (timeout).');
+}
+
+function coerceSpecsFromMarketParserProduct(product) {
+    if (!product || typeof product !== 'object') return {};
+    const candidates = [
+        product.specs,
+        product.properties,
+        product.params,
+        product.characteristics,
+        product.attributes,
+        product.features,
+        product.details
+    ].filter(Boolean);
+
+    for (const c of candidates) {
+        if (c && typeof c === 'object' && !Array.isArray(c)) return c;
+        if (Array.isArray(c)) {
+            const out = {};
+            for (const item of c) {
+                const k = item?.name || item?.key || item?.title;
+                const v = item?.value || item?.val || item?.text;
+                if (k && v != null) out[String(k).trim()] = String(v).trim();
+            }
+            if (Object.keys(out).length) return out;
+        }
+    }
+
+    const custom = product.custom;
+    if (custom && typeof custom === 'object' && !Array.isArray(custom)) {
+        const maybe = custom.specs || custom.properties || custom.params || null;
+        if (maybe && typeof maybe === 'object') return maybe;
+    }
+
+    return {};
+}
+
+function coerceImageUrlFromMarketParserProduct(product) {
+    if (!product || typeof product !== 'object') return null;
+    const candidates = [
+        product.imageUrl,
+        product.image_url,
+        product.image,
+        product.picture,
+        product.photo,
+        product.previewImage,
+        product.preview_image,
+        product.prev_image
+    ].filter(Boolean);
+    for (const c of candidates) {
+        if (typeof c === 'string' && c.trim()) return c.trim();
+        if (Array.isArray(c) && c[0] && typeof c[0] === 'string') return c[0];
+    }
+    if (Array.isArray(product.photos) && product.photos[0]?.url) return product.photos[0].url;
+    return null;
+}
+
+function coerceNameFromMarketParserProduct(product, fallbackUrl) {
+    const raw = product?.name || product?.title || product?.productName || product?.product_name || null;
+    if (raw && typeof raw === 'string') {
+        const t = raw.trim();
+        if (t && (!fallbackUrl || t !== fallbackUrl)) return t;
+    }
+    return null;
+}
+
+function coercePriceFromMarketParserProduct(product) {
+    if (!product || typeof product !== 'object') return null;
+    const direct = coerceMarketParserPrice(
+        product.price ??
+            product.currentPrice ??
+            product.salePrice ??
+            product.minPrice ??
+            product.min_price ??
+            product.medianPrice ??
+            product.averagePrice
+    );
+    if (direct) return direct;
+
+    const offers = Array.isArray(product.offers) ? product.offers : [];
+    const offerPrices = offers
+        .map((o) => coerceMarketParserPrice(o?.price ?? o?.salePrice ?? o?.currentPrice))
+        .filter((n) => n != null);
+    if (offerPrices.length) return Math.min(...offerPrices);
+    return null;
+}
+
+async function fetchProductFromMarketParserByUrl(urlString, { timeoutMs = 180000 } = {}) {
+    let parsedUrl;
+    try {
+        parsedUrl = new URL(urlString);
+    } catch {
+        throw new Error('Некорректный URL');
+    }
+
+    const host = parsedUrl.hostname.toLowerCase();
+    const campaignId = await resolveMarketParserCampaignIdForHost(host);
+    if (!campaignId) {
+        throw new Error(
+            `Для домена ${host} не найдена кампания MarketParser. Укажите MARKETPARSER_CAMPAIGN_ID_* в .env или создайте кампанию с понятным названием (OZON/DNS/MegaMarket/MVideo/Avito), чтобы автоопределение сработало.`
+        );
+    }
+
+    const ourId = normalizeComparableUrl(urlString) || urlString;
+
+    await marketParserRequest('POST', `/campaigns/${campaignId}/price.json`, {
+        timeout: 30000,
+        data: {
+            products: [
+                {
+                    name: urlString,
+                    id: ourId,
+                    custom: { source_url: urlString }
+                }
+            ]
+        }
+    });
+
+    await marketParserWaitCampaignPriceProcessed(campaignId, { timeoutMs: Math.min(timeoutMs, 120000), pollMs: 2500 });
+
+    const report = await marketParserRequest('POST', `/campaigns/${campaignId}/reports.json`, { timeout: 20000, data: {} });
+    const reportId = report?.response?.id || report?.response?.report?.id || null;
+    if (!reportId) throw new Error('MarketParser: не удалось получить reportId при создании отчёта.');
+
+    await marketParserWaitReportFinished(campaignId, reportId, { timeoutMs, pollMs: 2500 });
+
+    const results = await marketParserRequest('GET', `/campaigns/${campaignId}/reports/${reportId}/results.json`, {
+        timeout: 30000,
+        params: { per_page: 100 }
+    });
+
+    const products = results?.response?.products || results?.response?.items || results?.response || [];
+    const list = Array.isArray(products) ? products : [];
+    const product =
+        list.find((p) => String(p?.ourId || p?.our_id || '').trim() === String(ourId).trim()) ||
+        list.find((p) => normalizeComparableUrl(p?.custom?.source_url || '') === normalizeComparableUrl(urlString)) ||
+        list[0] ||
+        null;
+
+    if (!product) throw new Error('MarketParser: результаты отчёта пустые.');
+
+    const name = coerceNameFromMarketParserProduct(product, urlString);
+    const price = coercePriceFromMarketParserProduct(product);
+    const imageUrl = coerceImageUrlFromMarketParserProduct(product);
+    const specs = coerceSpecsFromMarketParserProduct(product);
+
+    return {
+        source: 'MarketParser',
+        name: name || null,
+        price,
+        imageUrl: imageUrl || null,
+        sourceUrl: urlString,
+        specs: specs || {}
+    };
 }
 
 async function fetchPriceFromApiSystemsByUrl(urlString) {
@@ -3531,8 +4345,571 @@ async function fetchWildberriesOfferPriceFromApiSystems(modelId, requestedUrl = 
     return { price, parsedName };
 }
 
+async function requestEbayAccessTokenForBase(baseUrl) {
+    const credentials = Buffer.from(`${EBAY_CLIENT_ID}:${EBAY_CLIENT_SECRET}`).toString('base64');
+    let lastError = null;
+    for (const scope of EBAY_OAUTH_SCOPES) {
+        try {
+            const response = await axios.post(
+                `${baseUrl}/identity/v1/oauth2/token`,
+                new URLSearchParams({
+                    grant_type: 'client_credentials',
+                    scope
+                }).toString(),
+                {
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        Authorization: `Basic ${credentials}`
+                    },
+                    timeout: 15000
+                }
+            );
+            return {
+                token: response.data.access_token,
+                expiresInMs: Number(response.data.expires_in || 7200) * 1000,
+                base: baseUrl
+            };
+        } catch (e) {
+            lastError = e;
+            if (e?.response?.data?.error !== 'invalid_scope') {
+                break;
+            }
+        }
+    }
+    throw lastError || new Error('eBay OAuth token request failed');
+}
+
+async function getEbayAccessToken() {
+    if (!EBAY_CLIENT_ID || !EBAY_CLIENT_SECRET) {
+        throw new Error('EBAY_CLIENT_ID и EBAY_CLIENT_SECRET не заданы в .env');
+    }
+    const now = Date.now();
+    if (ebayTokenCache.token && ebayTokenCache.base && now < ebayTokenCache.expiresAt - 60000) {
+        return { token: ebayTokenCache.token, base: ebayTokenCache.base };
+    }
+
+    const preferred = EBAY_BASE;
+    const sandboxCreds = isLikelySandboxEbayCredentials(EBAY_CLIENT_ID, EBAY_CLIENT_SECRET);
+    const preferredResolved = preferred || (sandboxCreds ? EBAY_SANDBOX_BASE : 'https://api.ebay.com');
+    const baseByCreds = sandboxCreds ? EBAY_SANDBOX_BASE : 'https://api.ebay.com';
+    const allowSandboxFallback = String(process.env.EBAY_ALLOW_SANDBOX_FALLBACK || 'false').toLowerCase() === 'true';
+    const initial = preferredResolved === EBAY_SANDBOX_BASE ? EBAY_SANDBOX_BASE : baseByCreds;
+    const fallback = initial === EBAY_SANDBOX_BASE ? 'https://api.ebay.com' : EBAY_SANDBOX_BASE;
+    const candidates = [initial, ...(allowSandboxFallback ? [fallback] : [])];
+
+    let lastError = null;
+    for (const baseUrl of candidates) {
+        try {
+            const tokenData = await requestEbayAccessTokenForBase(baseUrl);
+            ebayTokenCache = {
+                token: tokenData.token,
+                expiresAt: now + tokenData.expiresInMs,
+                base: baseUrl
+            };
+            console.log('[eBay] OAuth token acquired for base:', baseUrl);
+            return { token: tokenData.token, base: baseUrl };
+        } catch (err) {
+            lastError = err;
+            console.warn(
+                '[eBay] Token request failed for base:',
+                baseUrl,
+                err.response?.status || err.message,
+                `(clientIdLen=${String(EBAY_CLIENT_ID || '').length}, secretLen=${String(EBAY_CLIENT_SECRET || '').length})`
+            );
+        }
+    }
+    const details = lastError?.response?.data ? JSON.stringify(lastError.response.data) : (lastError?.message || 'unknown');
+    throw new Error(`eBay OAuth failed for prod/sandbox. ${details}`);
+}
+
+function coerceNumberPrice(priceLike) {
+    if (priceLike == null) return null;
+    const raw = typeof priceLike === 'number' ? String(priceLike) : String(priceLike).replace(',', '.');
+    const n = Number(raw.replace(/[^\d.]/g, ''));
+    if (!Number.isFinite(n) || n <= 0) return null;
+    return Math.round(n);
+}
+
+function normalizeCurrencyCode(raw) {
+    const codeRaw = String(raw || '').trim();
+    if (!codeRaw) return 'RUB';
+
+    const code = codeRaw.toUpperCase();
+    // символы / варианты названий валют
+    if (code.includes('₽') || code === 'RUR' || code === 'RUB' || code.includes('RUB')) return 'RUB';
+    if (code.includes('USD') || code.includes('US$')) return 'USD';
+    if (code.includes('EUR')) return 'EUR';
+    if (code.includes('CNY') || code.includes('YUAN')) return 'CNY';
+    if (code.includes('KZT')) return 'KZT';
+    if (code.includes('BYN')) return 'BYN';
+
+    return code;
+}
+
+function convertToRub(amount, currency = 'RUB') {
+    const value = Number(amount);
+    if (!Number.isFinite(value) || value <= 0) return null;
+    const code = normalizeCurrencyCode(currency);
+    if (code === 'RUB') return Math.round(value);
+
+    const rates = {
+        USD: Number(process.env.FX_USD_RUB || 92),
+        EUR: Number(process.env.FX_EUR_RUB || 100),
+        CNY: Number(process.env.FX_CNY_RUB || 12.7),
+        KZT: Number(process.env.FX_KZT_RUB || 0.19),
+        BYN: Number(process.env.FX_BYN_RUB || 28.5)
+    };
+    const rate = rates[code];
+    if (!Number.isFinite(rate) || rate <= 0) {
+        // Если API внезапно прислал неизвестный код валюты, но цена выглядит валидной,
+        // не даём “пропасть” офферу — считаем, что это RUB.
+        console.warn(`[FX] Неизвестная валюта '${currency}' (норм: ${code}). Считаю как RUB.`);
+        return Math.round(value);
+    }
+    return Math.round(value * rate);
+}
+
+function extractStoreSignalsFromOffer(offer = {}) {
+    const rating = Number(offer.rating ?? offer.score ?? offer.storeRating ?? NaN);
+    const reviewsCount = Number(offer.reviewsCount ?? offer.review_count ?? offer.reviews ?? NaN);
+    const stock =
+        Number(offer.stock ?? offer.quantity ?? offer.qty ?? offer.availableQuantity ?? offer.availabilityCount ?? NaN);
+
+    return {
+        rating: Number.isFinite(rating) ? Math.max(0, Math.min(5, rating)) : null,
+        reviewsCount: Number.isFinite(reviewsCount) && reviewsCount >= 0 ? Math.round(reviewsCount) : null,
+        stock: Number.isFinite(stock) && stock >= 0 ? Math.round(stock) : null
+    };
+}
+
+function transliterateRuToLat(text) {
+    const map = {
+        а: 'a', б: 'b', в: 'v', г: 'g', д: 'd', е: 'e', ё: 'e', ж: 'zh', з: 'z', и: 'i', й: 'y',
+        к: 'k', л: 'l', м: 'm', н: 'n', о: 'o', п: 'p', р: 'r', с: 's', т: 't', у: 'u', ф: 'f',
+        х: 'h', ц: 'ts', ч: 'ch', ш: 'sh', щ: 'sch', ъ: '', ы: 'y', ь: '', э: 'e', ю: 'yu', я: 'ya'
+    };
+    return String(text || '')
+        .toLowerCase()
+        .split('')
+        .map((ch) => (Object.prototype.hasOwnProperty.call(map, ch) ? map[ch] : ch))
+        .join('');
+}
+
+function extractEbayLegacyItemIdFromUrl(urlString) {
+    try {
+        const parsed = new URL(urlString);
+        const pathname = parsed.pathname || '';
+        const direct = pathname.match(/\/itm\/(?:[^/]+\/)?(\d+)/i);
+        if (direct?.[1]) return direct[1];
+        const alt = pathname.match(/\/(\d{9,})/);
+        if (alt?.[1]) return alt[1];
+        return parsed.searchParams.get('item') || null;
+    } catch {
+        return null;
+    }
+}
+
+function mapEbayItemToUnified(item) {
+    const aspects = {};
+    const localizedAspects = Array.isArray(item?.localizedAspects) ? item.localizedAspects : [];
+    for (const aspect of localizedAspects) {
+        const key = String(aspect?.name || '').trim();
+        const vals = Array.isArray(aspect?.value) ? aspect.value : [];
+        const value = vals.filter(Boolean).join(', ').trim();
+        if (key && value) aspects[key] = value;
+    }
+    return {
+        source: 'eBay API',
+        name: item?.title || null,
+        price: coerceNumberPrice(item?.price?.value),
+        imageUrl: item?.image?.imageUrl || item?.thumbnailImages?.[0]?.imageUrl || null,
+        sourceUrl: item?.itemWebUrl || null,
+        specs: aspects
+    };
+}
+
+async function searchEbayItems(query, limit = 5) {
+    const { token, base } = await getEbayAccessToken();
+    const response = await axios.get(`${base}/buy/browse/v1/item_summary/search`, {
+        params: {
+            q: query,
+            limit: Math.min(Math.max(parseInt(limit, 10) || 5, 1), 20),
+            filter: 'buyingOptions:{FIXED_PRICE}'
+        },
+        headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+            'X-EBAY-C-MARKETPLACE-ID': 'EBAY_US'
+        },
+        timeout: 20000
+    });
+    return Array.isArray(response?.data?.itemSummaries) ? response.data.itemSummaries : [];
+}
+
+async function fetchEbayProductByUrlOrQuery({ url = null, query = null }) {
+    const itemId = url ? extractEbayLegacyItemIdFromUrl(url) : null;
+    const { token, base } = await getEbayAccessToken();
+
+    if (itemId) {
+        const detailResp = await axios.get(`${base}/buy/browse/v1/item/get_item_by_legacy_id`, {
+            params: { legacy_item_id: itemId },
+            headers: {
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'application/json',
+                'X-EBAY-C-MARKETPLACE-ID': 'EBAY_US'
+            },
+            timeout: 20000
+        });
+        return mapEbayItemToUnified(detailResp.data || {});
+    }
+
+    if (!query || !String(query).trim()) {
+        throw new Error('Для eBay не удалось извлечь item_id из URL и не передан query.');
+    }
+
+    const found = await searchEbayItems(String(query).trim(), 1);
+    const first = found[0];
+    if (!first) {
+        throw new Error('eBay не вернул результатов по запросу.');
+    }
+
+    return {
+        source: 'eBay API',
+        name: first.title || null,
+        price: convertToRub(first?.price?.value, first?.price?.currency || 'USD'),
+        imageUrl: first?.image?.imageUrl || null,
+        sourceUrl: first?.itemWebUrl || url || null,
+        specs: {}
+    };
+}
+
+function buildPricesApiHeaderVariants() {
+    const k = String(PRICESAPI_KEY || '').trim();
+    const variants = [{ 'x-api-key': k }];
+    variants.push({ Authorization: `Bearer ${k}` });
+    return variants;
+}
+
+async function requestPricesApiGet(pathname, params, timeoutMs) {
+    let lastErr = null;
+    for (const headers of buildPricesApiHeaderVariants()) {
+        try {
+            return await axios.get(`${PRICESAPI_BASE}${pathname}`, {
+                params,
+                headers,
+                timeout: timeoutMs
+            });
+        } catch (e) {
+            lastErr = e;
+            const code = e?.response?.data?.error?.code || '';
+            const message = String(e?.response?.data?.error?.message || '');
+            const authIssue = code === 'VALIDATION_ERROR' || /api key/i.test(message);
+            if (!authIssue) break;
+        }
+    }
+    throw lastErr;
+}
+
+async function searchProductsInPricesApi(query, country = PRICESAPI_DEFAULT_COUNTRY, limit = 5) {
+    if (!PRICESAPI_KEY) {
+        throw new Error('PRICESAPI_KEY не задан в .env');
+    }
+    try {
+        const requestParams = {
+            q: query,
+            country,
+            limit: Math.min(Math.max(parseInt(limit, 10) || 5, 1), 10)
+        };
+        const response = await requestPricesApiGet('/products/search', requestParams, 30000);
+        const ok = !!response?.data?.success;
+        if (!ok) {
+            const msg = response?.data?.error?.message || response?.data?.message || 'unknown';
+            throw new Error(`PricesAPI search: not success. ${msg}`);
+        }
+        return Array.isArray(response.data?.data?.results) ? response.data.data.results : [];
+    } catch (err) {
+        const status = err.response?.status;
+        const data = err.response?.data;
+        const code = data?.error?.code || null;
+        const supported = Array.isArray(data?.error?.supported) ? data.error.supported : null;
+        console.error('[PricesAPI search] ERROR', {
+            status,
+            country,
+            query: query ? String(query).slice(0, 120) : null,
+            code,
+            supported,
+            data
+        });
+
+        if (status === 404 && code === 'SEARCH_EMPTY') {
+            console.warn('[PricesAPI search] No results for query:', query ? String(query).slice(0, 120) : null);
+            return [];
+        }
+
+        // COUNTRY_NOT_SUPPORTED: выбираем рабочую страну из supported (или fallback на US/DE)
+        if (status === 400 && code === 'COUNTRY_NOT_SUPPORTED') {
+            const preferences = ['us', 'de', 'gb', 'pl', 'fr'];
+            const supportedLower = (supported || []).map((c) => String(c).toLowerCase());
+            const pick =
+                supportedLower.find((c) => c === PRICESAPI_DEFAULT_COUNTRY) ||
+                preferences.find((p) => supportedLower.includes(p)) ||
+                supportedLower[0] ||
+                'us';
+
+            console.warn('[PricesAPI search] Retry with supported country:', pick);
+            const response2 = await requestPricesApiGet('/products/search', {
+                q: query,
+                country: pick,
+                limit: Math.min(Math.max(parseInt(limit, 10) || 5, 1), 10)
+            }, 30000);
+            if (response2?.data?.success) {
+                return Array.isArray(response2.data?.data?.results) ? response2.data.data.results : [];
+            }
+        }
+
+        throw err;
+    }
+}
+
+async function fetchPricesApiOffers(productId, country = PRICESAPI_DEFAULT_COUNTRY) {
+    if (!PRICESAPI_KEY) {
+        throw new Error('PRICESAPI_KEY не задан в .env');
+    }
+    try {
+        const response = await requestPricesApiGet(`/products/${productId}/offers`, { country }, 60000);
+        if (!response?.data?.success) {
+            const msg = response?.data?.error?.message || response?.data?.message || 'unknown';
+            throw new Error(`PricesAPI offers: not success. ${msg}`);
+        }
+        return Array.isArray(response.data?.data?.offers) ? response.data.data.offers : [];
+    } catch (err) {
+        const status = err.response?.status;
+        const data = err.response?.data;
+        const code = data?.error?.code || null;
+        const supported = Array.isArray(data?.error?.supported) ? data.error.supported : null;
+        console.error('[PricesAPI offers] ERROR', {
+            status,
+            country,
+            productId,
+            code,
+            supported,
+            data
+        });
+
+        if (status === 400 && code === 'COUNTRY_NOT_SUPPORTED') {
+            const preferences = ['us', 'de', 'gb', 'pl', 'fr'];
+            const supportedLower = (supported || []).map((c) => String(c).toLowerCase());
+            const pick =
+                supportedLower.find((c) => c === PRICESAPI_DEFAULT_COUNTRY) ||
+                preferences.find((p) => supportedLower.includes(p)) ||
+                supportedLower[0] ||
+                'us';
+
+            console.warn('[PricesAPI offers] Retry with supported country:', pick);
+            const response2 = await requestPricesApiGet(`/products/${productId}/offers`, { country: pick }, 60000);
+            if (response2?.data?.success) {
+                return Array.isArray(response2.data?.data?.offers) ? response2.data.data.offers : [];
+            }
+        }
+
+        throw err;
+    }
+}
+
+function mapPricesApiOffersToUnified(offers = []) {
+    const list = Array.isArray(offers) ? offers : [];
+    return list
+        .map((o) => {
+            const priceRub = convertToRub(o.price, o.currency || 'RUB');
+            return {
+                storeName: o.merchant || o.store || o.source || 'PricesAPI',
+                priceRub,
+                url: o.url || o.link || '',
+                source: 'PricesAPI.io',
+                originalPrice: coerceNumberPrice(o.price),
+                originalCurrency: normalizeCurrencyCode(o.currency || 'RUB'),
+                storeSignals: extractStoreSignalsFromOffer(o)
+            };
+        })
+        .filter((o) => o.priceRub != null);
+}
+
+function pickBestPricesApiOffer(offers, requestedUrl = null) {
+    const list = Array.isArray(offers) ? offers : [];
+    const requestedNorm = requestedUrl ? normalizeComparableUrl(requestedUrl) : null;
+    if (!list.length) return null;
+
+    if (requestedNorm) {
+        const exact = list.find((o) => normalizeComparableUrl(o.url || o.link || '') === requestedNorm);
+        if (exact) return exact;
+    }
+    const withPrice = list
+        .map((o) => ({ raw: o, p: coerceNumberPrice(o.price) }))
+        .filter((x) => x.p != null)
+        .sort((a, b) => a.p - b.p);
+    return withPrice.length ? withPrice[0].raw : list[0];
+}
+
+async function fetchPricesApiProductByUrlOrQuery({ url = null, query = null, country = PRICESAPI_DEFAULT_COUNTRY }) {
+    const normalizeQuery = (q) => String(q || '')
+        .replace(/\([^)]*\)/g, ' ')
+        .replace(/\+/g, ' ')
+        .replace(/[^\p{L}\p{N}\s-]/gu, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+    const queries = [];
+    if (url && String(url).trim()) queries.push(String(url).trim());
+    if (query && String(query).trim()) {
+        const raw = String(query).trim();
+        const cleaned = normalizeQuery(raw);
+        const transliterated = transliterateRuToLat(cleaned || raw);
+        const compactModel = (cleaned || raw)
+            .split(' ')
+            .filter((part) => part.length > 1)
+            .slice(0, 5)
+            .join(' ');
+        queries.push(raw);
+        if (cleaned && cleaned !== raw) queries.push(cleaned);
+        if (transliterated && transliterated !== cleaned && transliterated !== raw) queries.push(transliterated);
+        if (compactModel && compactModel !== raw && compactModel !== cleaned) queries.push(compactModel);
+    }
+    const uniqueQueries = Array.from(new Set(queries.filter(Boolean)));
+    if (!uniqueQueries.length) {
+        throw new Error('Для PricesAPI требуется URL или query.');
+    }
+
+    let product = null;
+    const countryCandidates = Array.from(new Set([country, PRICESAPI_DEFAULT_COUNTRY, ...PRICESAPI_FALLBACK_COUNTRIES].filter(Boolean)));
+    for (const candidateQuery of uniqueQueries) {
+        for (const countryCode of countryCandidates) {
+            const results = await searchProductsInPricesApi(candidateQuery, countryCode, 5);
+            product = results[0] || null;
+            if (product?.id) {
+                console.log('[PricesAPI] matched query candidate:', candidateQuery.slice(0, 120), 'country:', countryCode);
+                country = countryCode;
+                break;
+            }
+        }
+        if (product?.id) break;
+    }
+    if (!product?.id) {
+        throw new Error('PricesAPI не вернул подходящий товар (SEARCH_EMPTY).');
+    }
+    const offers = await fetchPricesApiOffers(product.id, country);
+    const bestOffer = pickBestPricesApiOffer(offers, url);
+    return {
+        source: 'PricesAPI.io',
+        name: product.title || null,
+        price: convertToRub(bestOffer?.price, bestOffer?.currency || 'RUB'),
+        imageUrl: product.image || null,
+        sourceUrl: bestOffer?.url || bestOffer?.link || null,
+        specs: {},
+        priceStoreName: bestOffer?.merchant || bestOffer?.store || bestOffer?.source || 'PricesAPI',
+        priceSource: 'PricesAPI.io'
+    };
+}
+
+async function collectApiOffersForProduct({ productName, sourceUrl = null, country = PRICESAPI_DEFAULT_COUNTRY }) {
+    const rows = [];
+
+    if (sourceUrl) {
+        try {
+            const u = new URL(sourceUrl);
+            const host = String(u.hostname || '').toLowerCase();
+            if (host.includes('wildberries.ru') || host.includes('wb.ru') || host.includes('market.yandex.ru') || host.includes('yandex.ru')) {
+                const api = await fetchPriceFromApiSystemsByUrl(sourceUrl);
+                if (api?.price != null) {
+                    const storeName = host.includes('wildberries.ru') || host.includes('wb.ru') ? 'Wildberries' : 'Yandex Market';
+                    rows.push({
+                        storeName,
+                        price: coerceNumberPrice(api.price),
+                        url: sourceUrl,
+                        source: 'API Systems',
+                        parsedName: api.parsedName || null,
+                        storeSignals: { rating: null, reviewsCount: null, stock: null }
+                    });
+                }
+            }
+        } catch {
+            // ignore invalid URL, continue with name-based APIs
+        }
+    }
+
+    if (productName && EBAY_CLIENT_ID && EBAY_CLIENT_SECRET) {
+        try {
+            const ebayItems = await searchEbayItems(productName, 3);
+            const best = ebayItems
+                .map((item) => ({
+                    item,
+                    rub: convertToRub(item?.price?.value, item?.price?.currency || 'USD')
+                }))
+                .filter((x) => x.rub != null)
+                .sort((a, b) => a.rub - b.rub)[0];
+            if (best) {
+                const sellerRatingPct = Number(best.item?.seller?.feedbackPercentage ?? NaN);
+                const sellerRating5 = Number.isFinite(sellerRatingPct) ? Math.max(0, Math.min(5, sellerRatingPct / 20)) : null;
+                const sellerReviews = Number(best.item?.seller?.feedbackScore ?? NaN);
+                const stockCount = Number(best.item?.estimatedAvailabilities?.[0]?.estimatedAvailableQuantity ?? NaN);
+                rows.push({
+                    storeName: 'eBay',
+                    price: best.rub,
+                    url: best.item?.itemWebUrl || '',
+                    source: 'eBay API',
+                    parsedName: best.item?.title || null,
+                    storeSignals: {
+                        rating: Number.isFinite(sellerRating5) ? sellerRating5 : null,
+                        reviewsCount: Number.isFinite(sellerReviews) ? Math.round(sellerReviews) : null,
+                        stock: Number.isFinite(stockCount) ? Math.round(stockCount) : null
+                    }
+                });
+            }
+        } catch (e) {
+            console.warn('[PRICE SYNC] eBay API by name:', e.message);
+        }
+    }
+
+    if (PRICESAPI_KEY && (productName || sourceUrl)) {
+        try {
+            const searchQuery = productName || sourceUrl;
+            const pricesCountry = country || PRICESAPI_DEFAULT_COUNTRY;
+            const products = await searchProductsInPricesApi(searchQuery, pricesCountry, 1);
+            const first = products[0];
+            if (first?.id) {
+                const offers = await fetchPricesApiOffers(first.id, pricesCountry);
+                const mapped = mapPricesApiOffersToUnified(offers);
+                console.log('[PricesAPI by name] ', {
+                    searchQuery: searchQuery ? String(searchQuery).slice(0, 80) : null,
+                    country: pricesCountry,
+                    productId: first.id,
+                    offersCount: Array.isArray(offers) ? offers.length : 0,
+                    mappedCount: Array.isArray(mapped) ? mapped.length : 0
+                });
+                for (const offer of mapped) {
+                    rows.push({
+                        storeName: offer.storeName,
+                        price: offer.priceRub,
+                        url: offer.url,
+                        source: offer.source,
+                        parsedName: first.title || productName || null,
+                        storeSignals: offer.storeSignals || { rating: null, reviewsCount: null, stock: null }
+                    });
+                }
+            }
+        } catch (e) {
+            console.warn('[PRICE SYNC] PricesAPI by name/url:', e.message);
+        }
+    }
+
+    const dedup = new Map();
+    for (const row of rows) {
+        const key = `${String(row.storeName || '').toLowerCase()}::${normalizeComparableUrl(row.url || '') || ''}`;
+        if (!dedup.has(key)) dedup.set(key, row);
+    }
+    return Array.from(dedup.values());
+}
+
 //--- Автообновление цен по ссылкам магазинов (DNS / Ozon / Яндекс.Маркет / Wildberries) ---
-async function fetchParsedPriceForStoreUrl(url, proxy = null) {
+async function fetchParsedPriceForStoreUrl(url, proxy = null, context = {}) {
   if (!url || typeof url !== 'string') {
     throw new Error('Пустая ссылка');
   }
@@ -3544,29 +4921,23 @@ async function fetchParsedPriceForStoreUrl(url, proxy = null) {
     throw new Error('Некорректный URL');
   }
   const host = parsedUrl.hostname.toLowerCase();
+  const contextProductName = context?.productName ? String(context.productName).trim() : null;
+  const contextCountry = context?.country ? String(context.country).trim() : PRICESAPI_DEFAULT_COUNTRY;
 
-  if (host.includes('dns-shop.ru')) {
-    const data = await parseProductFromDnsShop(trimmed, proxy);
-    const price = data.price != null ? Math.round(Number(data.price)) : null;
-    return { price: Number.isFinite(price) ? price : null, parsedName: data.name || null, source: data.source };
-  }
-  if (host.includes('ozon.ru')) {
-    const data = await parseProductFromOzon(trimmed, proxy);
-    const price = data.price != null ? Math.round(Number(data.price)) : null;
-    return { price: Number.isFinite(price) ? price : null, parsedName: data.name || null, source: data.source, storeName: null };
-  }
   if (host.includes('wildberries.ru') || host.includes('wb.ru')) {
     const api = await fetchPriceFromApiSystemsByUrl(trimmed);
     return {
       price: api.price,
       parsedName: api.parsedName,
       source: 'API Systems (wildberries)',
-      storeName: 'Wildberries'
+      storeName: 'Wildberries',
+      storeSignals: { rating: null, reviewsCount: null, stock: null }
     };
   }
   if (host.includes('market.yandex.ru') || (host.includes('yandex.ru') && (parsedUrl.pathname.includes('/card/') || parsedUrl.pathname.includes('/product--')))) {
     let parsedName = null;
     let price = null;
+    let source = 'API Systems / Яндекс.Маркет';
     try {
       const api = await fetchPriceFromApiSystemsByUrl(trimmed);
       price = api.price;
@@ -3574,19 +4945,63 @@ async function fetchParsedPriceForStoreUrl(url, proxy = null) {
     } catch (e) {
       console.warn('[PRICE SYNC] API Systems (Я.М):', e.message);
     }
+
+    // Старое рабочее поведение: если API Systems не вернул цену — пробуем цену со страницы.
     if (price == null) {
-      const htmlPrice = await extractPriceFromYandexMarket(trimmed);
-      price = htmlPrice != null ? Math.round(Number(htmlPrice)) : null;
+      try {
+        const htmlPrice = await extractPriceFromYandexMarket(trimmed);
+        if (htmlPrice != null) {
+          price = Math.round(Number(htmlPrice));
+          source = 'Яндекс Маркет (страница)';
+        }
+      } catch (e) {
+        console.warn('[PRICE SYNC] Я.М HTML fallback failed:', e.message);
+      }
     }
     return {
       price: Number.isFinite(price) ? price : null,
       parsedName,
-      source: 'API Systems / Яндекс.Маркет',
-      storeName: 'Yandex Market'
+      source,
+      storeName: 'Yandex Market',
+      storeSignals: { rating: null, reviewsCount: null, stock: null }
+    };
+  }
+  if (host.includes('ebay.')) {
+    const ebayData = await fetchEbayProductByUrlOrQuery({
+      url: trimmed,
+      query: contextProductName || null
+    });
+    return {
+      price: coerceNumberPrice(ebayData.price),
+      parsedName: ebayData.name || null,
+      source: 'eBay API',
+      storeName: 'eBay',
+      storeSignals: { rating: null, reviewsCount: null, stock: null }
     };
   }
 
-  throw new Error(`Домен не поддерживается для автообновления (${host}). Укажите ссылку DNS-Shop, Ozon, Яндекс.Маркет или Wildberries.`);
+  try {
+    const pricesApiData = await fetchPricesApiProductByUrlOrQuery({
+      url: trimmed,
+      query: contextProductName || null,
+      country: contextCountry
+    });
+    if (pricesApiData.price != null) {
+      return {
+        price: pricesApiData.price,
+        parsedName: pricesApiData.name || null,
+        source: 'PricesAPI.io',
+        storeName: pricesApiData.priceStoreName || 'PricesAPI',
+        storeSignals: { rating: null, reviewsCount: null, stock: null }
+      };
+    }
+  } catch (e) {
+    console.warn('[PRICE SYNC] PricesAPI fallback:', e.message);
+  }
+
+  throw new Error(
+    `Не удалось получить цену по API для домена (${host}). Поддерживаются API-источники: Яндекс.Маркет, Wildberries, eBay, PricesAPI.`
+  );
 }
 
 async function collectPriceSyncResults(options = {}) {
@@ -3613,6 +5028,42 @@ async function collectPriceSyncResults(options = {}) {
   let processed = 0;
 
   outer: for (const product of products) {
+    const apiOfferRows = await collectApiOffersForProduct({
+      productName: product.name,
+      sourceUrl: product.prices?.[0]?.url || null,
+      country: PRICESAPI_DEFAULT_COUNTRY
+    });
+    const existingByStore = new Map(
+      (product.prices || []).map((p) => [String(p.storeName || '').toLowerCase(), p])
+    );
+
+    for (const offer of apiOfferRows) {
+      if (processed >= maxStores) break outer;
+
+      // Чтобы не дублировать уже существующие строки цен (WB/ЯМ и т.д.),
+      // API-офферы добавляем только для магазинов, которых ещё нет в БД у товара.
+      const offerKey = String(offer.storeName || '').toLowerCase();
+      const existing = existingByStore.get(offerKey) || null;
+      if (existing) continue;
+
+      results.push({
+        productId: product.id,
+        productName: product.name,
+        priceId: existing?.id || null,
+        storeName: offer.storeName,
+        url: offer.url || existing?.url || '',
+        oldPrice: existing?.price ?? null,
+        newPrice: offer.price,
+        status: offer.price != null ? 'ok' : 'error',
+        message: offer.price != null ? null : 'API не вернул цену',
+        parsedName: offer.parsedName || null,
+        source: offer.source || 'API',
+        storeSignals: offer.storeSignals || null
+      });
+      processed += 1;
+      if (throttleDelay > 0) await delay(throttleDelay);
+    }
+
     for (const priceRow of product.prices) {
       if (processed >= maxStores) break outer;
 
@@ -3631,7 +5082,10 @@ async function collectPriceSyncResults(options = {}) {
       }
 
       try {
-        const parsed = await fetchParsedPriceForStoreUrl(String(priceRow.url).trim(), proxy);
+        const parsed = await fetchParsedPriceForStoreUrl(String(priceRow.url).trim(), proxy, {
+          productName: product.name,
+          country: PRICESAPI_DEFAULT_COUNTRY
+        });
         processed += 1;
         if (throttleDelay > 0) await delay(throttleDelay);
 
@@ -3641,7 +5095,8 @@ async function collectPriceSyncResults(options = {}) {
             newPrice: null,
             status: 'error',
             message: 'Цена на странице не найдена (сайт/API не вернул цену)',
-            parsedName: parsed.parsedName
+            parsedName: parsed.parsedName,
+            storeSignals: parsed.storeSignals || null
           });
         } else {
           results.push({
@@ -3649,7 +5104,8 @@ async function collectPriceSyncResults(options = {}) {
             newPrice: parsed.price,
             status: 'ok',
             message: null,
-            parsedName: parsed.parsedName
+            parsedName: parsed.parsedName,
+            storeSignals: parsed.storeSignals || null
           });
         }
       } catch (err) {
@@ -3677,7 +5133,7 @@ async function collectPriceSyncResults(options = {}) {
 }
 
 async function applyPriceSyncResults(resultRows) {
-  const toWrite = resultRows.filter((r) => r && r.status === 'ok' && r.newPrice != null && r.priceId);
+  const toWrite = resultRows.filter((r) => r && r.status === 'ok' && r.newPrice != null);
   const now = new Date();
   let updated = 0;
 
@@ -3685,29 +5141,110 @@ async function applyPriceSyncResults(resultRows) {
     const newPrice = Math.round(Number(row.newPrice));
     if (!Number.isFinite(newPrice) || newPrice < 0) continue;
 
-    const priceRow = await prisma.price.findFirst({
-      where: { id: row.priceId, productId: row.productId }
-    });
-    if (!priceRow) continue;
+    let priceRow = null;
+    if (row.priceId) {
+      priceRow = await prisma.price.findFirst({
+        where: { id: row.priceId, productId: row.productId }
+      });
+    }
+    if (!priceRow) {
+      priceRow = await prisma.price.findFirst({
+        where: {
+          productId: row.productId,
+          storeName: row.storeName
+        }
+      });
+    }
 
-    await prisma.$transaction([
+    const txOps = [
       prisma.priceHistory.create({
         data: {
           productId: row.productId,
-          storeName: priceRow.storeName,
+          storeName: row.storeName || priceRow?.storeName || 'Unknown',
           price: newPrice,
           date: now
         }
-      }),
-      prisma.price.update({
-        where: { id: priceRow.id },
-        data: {
-          price: newPrice,
-          recordedAt: now
-        }
       })
-    ]);
+    ];
+
+    if (priceRow) {
+      txOps.push(
+        prisma.price.update({
+          where: { id: priceRow.id },
+          data: {
+            price: newPrice,
+            recordedAt: now,
+            url: row.url || priceRow.url || ''
+          }
+        })
+      );
+    } else {
+      txOps.push(
+        prisma.price.create({
+          data: {
+            productId: row.productId,
+            storeName: row.storeName || 'Unknown',
+            price: newPrice,
+            url: row.url || '',
+            recordedAt: now
+          }
+        })
+      );
+    }
+
+    await prisma.$transaction(txOps);
     updated += 1;
+
+    const signals = row.storeSignals && typeof row.storeSignals === 'object' ? row.storeSignals : null;
+    const hasSignals =
+      signals &&
+      (signals.rating != null || signals.reviewsCount != null || signals.stock != null);
+    if (hasSignals) {
+      const signalsState = readStoreSignals();
+      const items = Array.isArray(signalsState.items) ? signalsState.items : [];
+      const key = `${row.productId}:${row.storeName || priceRow?.storeName || 'Unknown'}`;
+      const filtered = items.filter((i) => `${i.productId}:${i.storeName}` !== key);
+      filtered.push({
+        productId: row.productId,
+        storeName: row.storeName || priceRow?.storeName || 'Unknown',
+        rating: signals.rating ?? null,
+        reviewsCount: signals.reviewsCount ?? null,
+        stock: signals.stock ?? null,
+        updatedAt: now.toISOString()
+      });
+      writeStoreSignals({ items: filtered });
+    }
+
+    const oldPriceNum = row.oldPrice != null ? Number(row.oldPrice) : null;
+    const dropPct =
+      oldPriceNum && oldPriceNum > 0
+        ? ((oldPriceNum - newPrice) / oldPriceNum) * 100
+        : 0;
+    const lowStock = hasSignals && signals?.stock != null && Number(signals.stock) >= 0 && Number(signals.stock) < 10;
+    if (dropPct > 5 || lowStock) {
+      const favUsers = await prisma.favorite.findMany({
+        where: { productId: row.productId },
+        select: { userId: true }
+      });
+      const alerts = favUsers.map((u) => {
+        const type = lowStock ? 'low_stock' : 'price_drop';
+        const baseMessage = lowStock
+          ? `Товар "${row.productName}" в магазине ${row.storeName || priceRow?.storeName || 'Unknown'}: осталось мало (${signals.stock}).`
+          : `Товар "${row.productName}" в магазине ${row.storeName || priceRow?.storeName || 'Unknown'} подешевел на ${dropPct.toFixed(1)}%.`;
+        return {
+          id: `a_${Date.now()}_${u.userId}_${row.productId}_${Math.random().toString(36).slice(2, 8)}`,
+          userId: u.userId,
+          productId: row.productId,
+          productName: row.productName,
+          storeName: row.storeName || priceRow?.storeName || 'Unknown',
+          type,
+          message: baseMessage,
+          createdAt: now.toISOString(),
+          expiresAt: new Date(now.getTime() + THREE_DAYS_MS).toISOString()
+        };
+      });
+      addUserAlerts(alerts);
+    }
   }
 
   return { applied: updated };
@@ -3775,7 +5312,24 @@ app.get('/api/admin/prices/sync-status', authenticateToken, requireAdminRole, as
       delayMs: PRICE_SYNC_DELAY_MS,
       maxPreviewStores: PRICE_SYNC_MAX_PREVIEW,
       autoMaxStoresPerRun: PRICE_SYNC_AUTO_MAX,
-      supportedHosts: ['dns-shop.ru', 'ozon.ru', 'market.yandex.ru', 'yandex.ru', 'wildberries.ru', 'wb.ru']
+      supportedHosts: [
+        'dns-shop.ru',
+        'ozon.ru',
+        'market.yandex.ru',
+        'yandex.ru',
+        'wildberries.ru',
+        'wb.ru',
+        'ebay.com',
+        'mvideo.ru',
+        'm-video.ru',
+        'avito.ru',
+        'megamarket.ru',
+        'citilink.ru',
+        'regard.ru',
+        'redgard.ru',
+        'aliexpress.com',
+        'aliexpress.ru'
+      ]
     });
   } catch (e) {
     res.status(500).json({ error: e.message });
@@ -3939,63 +5493,112 @@ async function parseProductWithGPT(url, htmlContent = null) {
 }
 
 app.post('/api/admin/parse-product', authenticateToken, requireAdminRole, async (req, res) => {
-    const { url, category, proxy } = req.body;
-    if (!url) return res.status(400).json({ error: 'URL товара обязателен.' });
+    const body = req.body || {};
+    const { url, category, proxy, query, productName, parseName, name, title } = body;
+    const fallbackQuery = [query, productName, parseName, name, title].find((v) => typeof v === 'string' && v.trim()) || null;
+    if (!url && !fallbackQuery) return res.status(400).json({ error: 'Укажите URL товара или query (название).' });
 
-    let parsedUrl;
-    try { parsedUrl = new URL(url); } catch (e) { return res.status(400).json({ error: 'Неверный формат URL.' }); }
-
-    const host = parsedUrl.hostname.toLowerCase();
-    const isYm = host.includes('market.yandex.ru') || (host.includes('yandex.ru') && (parsedUrl.pathname.includes('/card/') || parsedUrl.pathname.includes('/product--')));
-    const isWb = host.includes('wildberries.ru') || host.includes('wb.ru');
-    if (!isYm && !isWb) {
-        return res.status(400).json({ error: 'Поддерживаются только Яндекс.Маркет и Wildberries (через API Systems).' });
+    let parsedUrl = null;
+    if (url) {
+        try { parsedUrl = new URL(url); } catch (e) { return res.status(400).json({ error: 'Неверный формат URL.' }); }
     }
 
-    console.log(`  Извлечение ID модели из URL: ${url}`);
-    const modelInfo = extractModelIdFromUrl(url);
-    if (!modelInfo?.id) return res.status(400).json({ error: 'Не удалось извлечь ID модели из ссылки.' });
+    const host = parsedUrl?.hostname?.toLowerCase() || '';
+    const isYm =
+      !!host && (host.includes('market.yandex.ru') ||
+      (host.includes('yandex.ru') &&
+        (parsedUrl.pathname.includes('/card/') || parsedUrl.pathname.includes('/product--'))));
+    const isWb = !!host && (host.includes('wildberries.ru') || host.includes('wb.ru'));
+    const isEbay = !!host && host.includes('ebay.');
 
-    const { id: modelId, source } = modelInfo;
-    console.log(`  ID: ${modelId}, Источник: ${source}`);
+    console.log(`  Парсинг карточки: url=${url || 'N/A'}, query=${fallbackQuery || 'N/A'}`);
 
     try {
-        //1. Получаем характеристики через API Systems
-        const parsedData = await fetchProductSpecsFromApiSystems(modelId, source);
-        parsedData.category = category || null;
-        parsedData.sourceUrl = parsedData.sourceUrl || url;
+        let parsedData;
 
-        //2. Цена: API Systems + для Яндекс.Маркета дополнительно разбор страницы при отсутствии цены в API
-        let marketPrice = coerceApiSystemsPrice(parsedData.price);
-        if (source === 'yandex_market') {
-            parsedData.priceStoreName = 'Yandex Market';
-            if (marketPrice != null) {
-                parsedData.priceSource = 'Яндекс Маркет (API Systems)';
-            } else {
-                const htmlPrice = await extractPriceFromYandexMarket(url);
-                if (htmlPrice) {
-                    marketPrice = Math.round(Number(htmlPrice));
-                    parsedData.priceSource = 'Яндекс Маркет (страница)';
-                }
+        if (isYm || isWb) {
+            const modelInfo = extractModelIdFromUrl(url);
+            if (!modelInfo?.id) {
+                return res.status(400).json({ error: 'Не удалось извлечь ID модели из ссылки.' });
             }
-        } else if (source === 'wildberries') {
-            parsedData.priceStoreName = 'Wildberries';
-            if (marketPrice == null) {
-                try {
-                    const wbOfferPrice = await fetchPriceFromApiSystemsByUrl(url);
-                    marketPrice = wbOfferPrice.price;
-                } catch (wbErr) {
-                    console.warn('⚠️ Не удалось получить цену WB через offers:', wbErr.message);
+            const { id: modelId, source } = modelInfo;
+            console.log(`  API Systems: modelId=${modelId}, источник=${source}`);
+
+            parsedData = await fetchProductSpecsFromApiSystems(modelId, source);
+            parsedData.category = category || null;
+            parsedData.sourceUrl = parsedData.sourceUrl || url;
+
+            let marketPrice = coerceApiSystemsPrice(parsedData.price);
+            if (source === 'yandex_market') {
+                parsedData.priceStoreName = 'Yandex Market';
+                if (marketPrice != null) {
+                    parsedData.priceSource = 'Яндекс Маркет (API Systems)';
                 }
+            } else if (source === 'wildberries') {
+                parsedData.priceStoreName = 'Wildberries';
+                if (marketPrice == null) {
+                    try {
+                        const wbOfferPrice = await fetchPriceFromApiSystemsByUrl(url);
+                        marketPrice = wbOfferPrice.price;
+                    } catch (wbErr) {
+                        console.warn('⚠️ Не удалось получить цену WB через offers:', wbErr.message);
+                    }
+                }
+                parsedData.priceSource = marketPrice != null ? 'Wildberries (API Systems offers)' : null;
             }
-            parsedData.priceSource = marketPrice != null ? 'Wildberries (API Systems offers)' : null;
-        }
-        parsedData.price = marketPrice;
-        if (marketPrice) {
-            console.log(` 💰 Цена: ${marketPrice} ₽ (${parsedData.priceSource || 'источник не указан'})`);
+            parsedData.price = marketPrice;
+            if (marketPrice) {
+                console.log(` 💰 Цена: ${marketPrice} ₽ (${parsedData.priceSource || 'источник не указан'})`);
+            }
+        } else if (isEbay) {
+            parsedData = await fetchEbayProductByUrlOrQuery({
+                url: url || null,
+                query: fallbackQuery || null
+            });
+            parsedData.category = category || null;
+            parsedData.sourceUrl = parsedData.sourceUrl || url || null;
+            parsedData.priceStoreName = 'eBay';
+            parsedData.priceSource = parsedData.price != null ? 'eBay API' : null;
+        } else {
+            parsedData = await fetchPricesApiProductByUrlOrQuery({
+                url: url || null,
+                query: fallbackQuery || null,
+                country: PRICESAPI_DEFAULT_COUNTRY
+            });
+            parsedData.category = category || null;
+            parsedData.sourceUrl = parsedData.sourceUrl || url || null;
         }
 
-        //3. НОРМАЛИЗАЦИЯ ХАРАКТЕРИСТИК (без дублей!)
+        if ((!parsedData.specs || !Object.keys(parsedData.specs).length) && parsedData.name) {
+            try {
+                const aiSpecs = await parseProductWithGroq(parsedData.name, parsedData.sourceUrl || url || null);
+                if (aiSpecs?.specs && typeof aiSpecs.specs === 'object') {
+                    parsedData.specs = aiSpecs.specs;
+                }
+            } catch (specErr) {
+                console.warn('⚠️ Не удалось дополнить характеристики через GROQ:', specErr.message);
+            }
+        }
+
+        const aggregatedOffers = await collectApiOffersForProduct({
+            productName: parsedData.name || fallbackQuery || null,
+            sourceUrl: parsedData.sourceUrl || url || null,
+            country: PRICESAPI_DEFAULT_COUNTRY
+        });
+        parsedData.prices = aggregatedOffers.map((o) => ({
+            storeName: o.storeName,
+            price: o.price,
+            url: o.url || '',
+            source: o.source || 'API'
+        }));
+        if (!parsedData.price && parsedData.prices.length) {
+            parsedData.price = parsedData.prices[0].price;
+            parsedData.priceStoreName = parsedData.prices[0].storeName;
+            parsedData.sourceUrl = parsedData.sourceUrl || parsedData.prices[0].url || null;
+            parsedData.priceSource = parsedData.prices[0].source || 'API';
+        }
+
+        //НОРМАЛИЗАЦИЯ ХАРАКТЕРИСТИК (без дублей!)
         const SYNONYM_MAP = {
             screen_size: ['диагональ экрана', 'диагональ', 'размер экрана', 'экран', 'дисплей'],
             screen_resolution: ['разрешение экрана', 'разрешение дисплея'],
@@ -4324,6 +5927,260 @@ async function extractPriceFromYandexMarket(url) {
     }
 }
 
+async function extractPriceFromStoreHtml(url, hostHint = null) {
+    const headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+        'Accept-Language': 'ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7'
+    };
+    const response = await axios.get(url, { timeout: 18000, headers });
+    const html = String(response.data || '');
+    const $ = cheerio.load(html);
+    const host = String(hostHint || new URL(url).hostname).toLowerCase();
+
+    const parsePriceText = (input) => {
+        if (input == null) return null;
+        const cleaned = String(input).replace(/\u00a0/g, ' ').trim();
+        const digits = cleaned.replace(/\s/g, '').replace(/[^\d]/g, '');
+        if (!digits) return null;
+        const n = parseInt(digits, 10);
+        return Number.isFinite(n) && n > 0 ? n : null;
+    };
+
+    const fromSelectors = (selectors) => {
+        for (const sel of selectors) {
+            const el = $(sel).first();
+            if (!el || !el.length) continue;
+            const candidate = el.attr('content') || el.attr('data-price') || el.attr('value') || el.text();
+            const price = parsePriceText(candidate);
+            if (price) return price;
+        }
+        return null;
+    };
+
+    let price = fromSelectors([
+        'meta[itemprop="price"]',
+        '[itemprop="price"][content]',
+        '[data-price]',
+        '[data-meta-price]',
+        '[data-testid*="price"]'
+    ]);
+
+    if (!price && host.includes('dns-shop.ru')) {
+        price = fromSelectors([
+            '[data-product-price]',
+            '[data-marker="price"] span',
+            '.product-buy__price',
+            '.price_g'
+        ]);
+    }
+
+    if (!price && host.includes('ozon.ru')) {
+        price = fromSelectors([
+            '[data-widget="webPrice"] [data-price]',
+            '[data-widget="webPrice"] span',
+            '[class*="c-price"] span',
+            '[data-widget="price"] span'
+        ]);
+    }
+
+    if (!price && host.includes('megamarket.ru')) {
+        price = fromSelectors([
+            '[itemprop="price"][content]',
+            '[data-chp-id="goodsPriceFinal"] span',
+            '[class*="price"]'
+        ]);
+    }
+
+    if (!price && host.includes('aliexpress.')) {
+        const patterns = [
+            /"skuAmount"\s*:\s*\{\s*"value"\s*:\s*"(\d+)"/i,
+            /"couponPrice"\s*:\s*"([\d.,]+)"/i,
+            /"salePriceSimple"\s*:\s*"([\d.,]+)"/i,
+            /"price"\s*:\s*"([\d.,]+)"/i
+        ];
+        for (const re of patterns) {
+            const m = html.match(re);
+            if (m?.[1]) {
+                const p = parsePriceText(m[1]);
+                if (p) {
+                    price = p;
+                    break;
+                }
+            }
+        }
+    }
+
+    if (!price) {
+        const ldRegexes = [
+            /"price"\s*:\s*"?(?<price>\d+(?:[.,]\d+)?)"?/i,
+            /"lowPrice"\s*:\s*"?(?<price>\d+(?:[.,]\d+)?)"?/i
+        ];
+        for (const re of ldRegexes) {
+            const m = html.match(re);
+            const raw = m?.groups?.price || m?.[1];
+            if (raw) {
+                const p = parsePriceText(raw);
+                if (p) {
+                    price = p;
+                    break;
+                }
+            }
+        }
+    }
+
+    return price ? Math.round(price) : null;
+}
+
+async function extractStoreSignalsFromHtml(url, hostHint = null) {
+    try {
+        const headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+            'Accept-Language': 'ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7'
+        };
+        const response = await axios.get(url, { timeout: 18000, headers });
+        const html = String(response.data || '');
+        const $ = cheerio.load(html);
+        const host = String(hostHint || new URL(url).hostname).toLowerCase();
+
+        const parseNum = (v) => {
+            if (v == null) return null;
+            const m = String(v).replace(',', '.').match(/(\d+(?:\.\d+)?)/);
+            if (!m) return null;
+            const n = parseFloat(m[1]);
+            return Number.isFinite(n) ? n : null;
+        };
+        const parseIntNum = (v) => {
+            const n = parseNum(v);
+            return n == null ? null : Math.round(n);
+        };
+
+        let rating = null;
+        let reviewsCount = null;
+        let stock = null;
+
+        const ratingMeta =
+            $('meta[itemprop="ratingValue"]').attr('content') ||
+            $('meta[property="product:rating:value"]').attr('content') ||
+            $('meta[name="rating"]').attr('content');
+        rating = parseNum(ratingMeta);
+
+        const reviewsMeta =
+            $('meta[itemprop="reviewCount"]').attr('content') ||
+            $('meta[property="product:rating:count"]').attr('content');
+        reviewsCount = parseIntNum(reviewsMeta);
+
+        if (!rating || !reviewsCount) {
+            const allText = $('body').text().replace(/\s+/g, ' ');
+            if (!rating) {
+                const r = allText.match(/рейтинг[^0-9]{0,12}(\d+(?:[.,]\d+)?)/i) || allText.match(/(\d+(?:[.,]\d+)?)\s*из\s*5/i);
+                rating = parseNum(r?.[1]);
+            }
+            if (!reviewsCount) {
+                const c = allText.match(/(\d[\d\s]{0,8})\s*отзыв/i) || allText.match(/отзыв[^0-9]{0,12}(\d[\d\s]{0,8})/i);
+                reviewsCount = parseIntNum(c?.[1]);
+            }
+        }
+
+        const stockPatterns = [
+            /в\s*наличии[^0-9]{0,10}(\d{1,4})/i,
+            /остал(?:ось|ся)[^0-9]{0,10}(\d{1,4})/i,
+            /(\d{1,4})\s*шт\.\s*в\s*наличии/i
+        ];
+        const htmlText = html.replace(/\s+/g, ' ');
+        for (const re of stockPatterns) {
+            const m = htmlText.match(re);
+            if (m?.[1]) {
+                stock = parseIntNum(m[1]);
+                if (stock != null) break;
+            }
+        }
+
+        if (host.includes('wildberries.ru') || host.includes('wb.ru')) {
+            const mRating = html.match(/"productValuation"\s*:\s*(\d+(?:\.\d+)?)/i);
+            const mFeedback = html.match(/"feedbacks"\s*:\s*(\d+)/i);
+            const mQty = html.match(/"quantity"\s*:\s*(\d+)/i);
+            rating = rating ?? parseNum(mRating?.[1]);
+            reviewsCount = reviewsCount ?? parseIntNum(mFeedback?.[1]);
+            stock = stock ?? parseIntNum(mQty?.[1]);
+        }
+
+        if (host.includes('market.yandex.ru') || host.includes('yandex.ru')) {
+            const mRating = html.match(/"rating(Value)?"\s*:\s*"?(?<v>\d+(?:\.\d+)?)"?/i);
+            const mReviews = html.match(/"reviewCount"\s*:\s*"?(?<v>\d+)"?/i);
+            rating = rating ?? parseNum(mRating?.groups?.v || mRating?.[2]);
+            reviewsCount = reviewsCount ?? parseIntNum(mReviews?.groups?.v || mReviews?.[1]);
+        }
+
+        return {
+            rating: rating != null ? Math.max(0, Math.min(5, rating)) : null,
+            reviewsCount: reviewsCount != null && reviewsCount >= 0 ? reviewsCount : null,
+            stock: stock != null && stock >= 0 ? stock : null
+        };
+    } catch {
+        return { rating: null, reviewsCount: null, stock: null };
+    }
+}
+
+async function extractPriceWithPuppeteerLite(url, proxy = null) {
+    let browser = null;
+    try {
+        const launchOptions = {
+            headless: true,
+            args: [
+                '--no-sandbox',
+                '--disable-setuid-sandbox',
+                '--disable-dev-shm-usage',
+                '--disable-gpu',
+                '--lang=ru-RU'
+            ]
+        };
+        if (proxy) launchOptions.args.push(`--proxy-server=${proxy}`);
+
+        browser = await puppeteer.launch(launchOptions);
+        const page = await browser.newPage();
+        await page.setUserAgent(
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
+        );
+        await page.setViewport({ width: 1366, height: 900 });
+        await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 35000 });
+        await page.waitForTimeout(1200);
+
+        const html = await page.content();
+        const $ = cheerio.load(html);
+        const parsePriceText = (input) => {
+            if (!input) return null;
+            const digits = String(input).replace(/\u00a0/g, ' ').replace(/\s/g, '').replace(/[^\d]/g, '');
+            if (!digits) return null;
+            const n = parseInt(digits, 10);
+            return Number.isFinite(n) && n > 0 ? n : null;
+        };
+        const selectors = [
+            'meta[itemprop="price"]',
+            '[itemprop="price"][content]',
+            '[data-price]',
+            '[data-meta-price]',
+            '[class*="price"]',
+            '[data-testid*="price"]'
+        ];
+        for (const sel of selectors) {
+            const el = $(sel).first();
+            if (!el || !el.length) continue;
+            const candidate = el.attr('content') || el.attr('data-price') || el.text();
+            const p = parsePriceText(candidate);
+            if (p) return Math.round(p);
+        }
+        const m = html.match(/"price"\s*:\s*"?(?<price>\d+(?:[.,]\d+)?)"?/i);
+        const p = parsePriceText(m?.groups?.price || m?.[1]);
+        return p ? Math.round(p) : null;
+    } catch {
+        return null;
+    } finally {
+        if (browser) await browser.close().catch(() => {});
+    }
+}
+
 function extractModelIdFromUrl(urlString) {
     try {
         const parsedUrl = new URL(urlString);
@@ -4444,6 +6301,19 @@ app.get('/api/products/:id/prices', async (req, res) => {
   } catch (error) {
     console.error('Error fetching product prices:', error);
     res.status(500).json({ error: 'Не удалось загрузить текущие цены' });
+  }
+});
+
+app.get('/api/products/:id/store-signals', async (req, res) => {
+  try {
+    const productId = parseInt(req.params.id, 10);
+    if (isNaN(productId)) return res.status(400).json({ error: 'Invalid product ID' });
+    const state = readStoreSignals();
+    const items = Array.isArray(state.items) ? state.items : [];
+    const rows = items.filter((i) => Number(i.productId) === productId);
+    res.json(rows);
+  } catch (e) {
+    res.status(500).json({ error: 'Не удалось получить сигналы магазинов' });
   }
 });
 
