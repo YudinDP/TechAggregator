@@ -54,6 +54,7 @@ model Price {
   id         Int      @id @default(autoincrement())
   productId  Int
   storeName  String
+  sellerName String?
   price      Int
   url        String?
   recordedAt DateTime @default(now())
@@ -121,6 +122,7 @@ model PriceHistory {
   id        Int       @id @default(autoincrement())
   productId Int
   storeName String    @db.VarChar(255)
+  sellerName String?  @db.VarChar(255)
   price     Decimal   @db.Decimal(10, 2)
   date      DateTime? @default(now()) @db.Timestamp(6)
   createdAt DateTime? @default(now()) @db.Timestamp(6)

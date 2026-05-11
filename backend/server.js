@@ -63,6 +63,15 @@ const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
 //const prisma = new PrismaClient();
 
+async function ensureSellerColumns() {
+  try {
+    await prisma.$executeRawUnsafe('ALTER TABLE "Price" ADD COLUMN IF NOT EXISTS "sellerName" TEXT');
+    await prisma.$executeRawUnsafe('ALTER TABLE "PriceHistory" ADD COLUMN IF NOT EXISTS "sellerName" VARCHAR(255)');
+  } catch (e) {
+    console.warn('[DB] Не удалось проверить/добавить sellerName колонки:', e.message);
+  }
+}
+
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -112,6 +121,54 @@ function readStoreSignals() {
 
 function writeStoreSignals(data) {
   writeJsonFileSafe(STORE_SIGNALS_FILE, data || { items: [] });
+}
+
+function mergeStoreSignalsObjects(prev, next) {
+  const a = prev && typeof prev === 'object' ? prev : {};
+  const b = next && typeof next === 'object' ? next : {};
+  return {
+    rating: b.rating != null && Number.isFinite(Number(b.rating)) ? Number(b.rating) : a.rating != null ? a.rating : null,
+    reviewsCount:
+      b.reviewsCount != null && Number.isFinite(Number(b.reviewsCount))
+        ? Math.round(Number(b.reviewsCount))
+        : a.reviewsCount != null
+          ? a.reviewsCount
+          : null,
+    stock:
+      b.stock != null && Number.isFinite(Number(b.stock)) && Number(b.stock) >= 0
+        ? Math.round(Number(b.stock))
+        : a.stock != null
+          ? a.stock
+          : null
+  };
+}
+
+function upsertStoreSignalsItem(productId, storeName, sellerName, signals, { mergeWithExisting = true } = {}) {
+  const pid = Number(productId);
+  if (!Number.isFinite(pid)) return;
+  const signalStore = String(storeName || 'Unknown').trim() || 'Unknown';
+  const signalSeller = sellerName ? String(sellerName).trim() : null;
+  const state = readStoreSignals();
+  const items = Array.isArray(state.items) ? state.items : [];
+  const rowKey = (i) =>
+    `${Number(i.productId)}:${String(i.storeName || '').trim()}:${i.sellerName ? String(i.sellerName).trim() : ''}`;
+  const key = `${pid}:${signalStore}:${signalSeller || ''}`;
+  const existingRow = items.find((i) => rowKey(i) === key) || null;
+  const merged = mergeWithExisting ? mergeStoreSignalsObjects(existingRow, signals) : mergeStoreSignalsObjects({}, signals);
+  const hasAny =
+    merged.rating != null || merged.reviewsCount != null || merged.stock != null;
+  if (!hasAny) return;
+  const filtered = items.filter((i) => rowKey(i) !== key);
+  filtered.push({
+    productId: pid,
+    storeName: signalStore,
+    sellerName: signalSeller || null,
+    rating: merged.rating ?? null,
+    reviewsCount: merged.reviewsCount ?? null,
+    stock: merged.stock ?? null,
+    updatedAt: new Date().toISOString()
+  });
+  writeStoreSignals({ items: filtered });
 }
 
 function readUserAlerts() {
@@ -649,11 +706,18 @@ app.post('/api/auth/login', async (req, res) => {
 
 app.get('/api/products', async (req, res) => {
   try {
+    const search = String(req.query.search || req.query.q || '').trim();
     const products = await prisma.product.findMany({
+      where: search
+        ? {
+            name: { contains: search, mode: 'insensitive' }
+          }
+        : undefined,
       include: {
         specs: true,
         prices: true
-      }
+      },
+      take: search ? 120 : undefined
     });
     res.json(products);
   } catch (error) {
@@ -670,6 +734,9 @@ app.get('/api/test', (req, res) => {
 //Запуск сервера
 app.listen(PORT, () => {
   console.log(` Сервер запущен на http://localhost:${PORT}`);
+  ensureSellerColumns().catch((e) => {
+    console.warn('[DB] ensureSellerColumns startup error:', e.message);
+  });
   setInterval(() => {
     try {
       scheduleAutomaticPriceSyncIfDue();
@@ -771,9 +838,11 @@ app.get('/api/profile/alerts', async (req, res) => {
       const prices = Array.isArray(product.prices) ? product.prices : [];
       for (const priceRow of prices) {
         const storeName = String(priceRow.storeName || '').trim();
+        const sellerName = String(priceRow.sellerName || '').trim();
+        const displayStoreName = sellerName ? `${storeName} (${sellerName})` : storeName;
         if (!storeName) continue;
         const prevRows = await prisma.priceHistory.findMany({
-          where: { productId: product.id, storeName },
+          where: { productId: product.id, storeName, sellerName: sellerName || null },
           orderBy: { date: 'desc' },
           take: 2
         });
@@ -784,30 +853,34 @@ app.get('/api/profile/alerts', async (req, res) => {
             const dropPct = ((prevPrice - currPrice) / prevPrice) * 100;
             if (dropPct >= 5) {
               runtimeAlerts.push({
-                id: `rt_${payload.id}_${product.id}_${storeName}_price_drop`,
+                id: `rt_${payload.id}_${product.id}_${storeName}_${sellerName || 'no_seller'}_price_drop`,
                 userId: payload.id,
                 productId: product.id,
                 productName: product.name,
-                storeName,
+                storeName: displayStoreName,
                 type: 'price_drop',
-                message: `Товар "${product.name}" в магазине ${storeName} подешевел на ${dropPct.toFixed(1)}%.`,
+                message: `Товар "${product.name}" в магазине ${displayStoreName} подешевел на ${dropPct.toFixed(1)}%.`,
                 createdAt: now.toISOString(),
                 expiresAt: new Date(now.getTime() + THREE_DAYS_MS).toISOString()
               });
             }
           }
         }
-        const signal = signalItems.find((s) => Number(s.productId) === Number(product.id) && String(s.storeName || '').toLowerCase() === storeName.toLowerCase());
+        const signal = signalItems.find((s) =>
+          Number(s.productId) === Number(product.id) &&
+          String(s.storeName || '').toLowerCase() === storeName.toLowerCase() &&
+          String(s.sellerName || '').toLowerCase() === sellerName.toLowerCase()
+        );
         const stock = Number(signal?.stock);
         if (Number.isFinite(stock) && stock >= 0 && stock < 10) {
           runtimeAlerts.push({
-            id: `rt_${payload.id}_${product.id}_${storeName}_low_stock`,
+            id: `rt_${payload.id}_${product.id}_${storeName}_${sellerName || 'no_seller'}_low_stock`,
             userId: payload.id,
             productId: product.id,
             productName: product.name,
-            storeName,
+            storeName: displayStoreName,
             type: 'low_stock',
-            message: `Товар "${product.name}" в магазине ${storeName}: осталось мало (${Math.round(stock)}).`,
+            message: `Товар "${product.name}" в магазине ${displayStoreName}: осталось мало (${Math.round(stock)}).`,
             createdAt: now.toISOString(),
             expiresAt: new Date(now.getTime() + THREE_DAYS_MS).toISOString()
           });
@@ -1038,22 +1111,24 @@ app.get('/api/products/:id/price-history', async (req, res) => {
       },
       select: {
         storeName: true, //Выбираем имя магазина
+        sellerName: true,
         price: true,     //Выбираем цену
         date: true,      //Выбираем дату
         //id и createdAt не обязательны для графика, можно не включать
       },
       orderBy: [
         { storeName: 'asc' }, //Сначала сортируем по магазину
+        { sellerName: 'asc' },
         { date: 'asc' }       //Потом по дате
       ],
     });
 
     const currentPriceRows = await prisma.price.findMany({
       where: { productId: productId },
-      select: { storeName: true, url: true }
+      select: { storeName: true, sellerName: true, url: true }
     });
     const urlByStore = currentPriceRows.reduce((acc, row) => {
-      const key = String(row.storeName || '').trim();
+      const key = `${String(row.storeName || '').trim()}::${String(row.sellerName || '').trim()}`;
       if (key && row.url) acc[key] = row.url;
       return acc;
     }, {});
@@ -1069,15 +1144,17 @@ app.get('/api/products/:id/price-history', async (req, res) => {
     //Группируем записи по магазинам для удобства построения графика
     const groupedByStore = priceHistoryRecords.reduce((acc, record) => {
       const storeName = record.storeName;
-      if (!acc[storeName]) {
-        acc[storeName] = [];
+      const sellerName = String(record.sellerName || '').trim();
+      const displayStoreName = sellerName ? `${storeName} (${sellerName})` : storeName;
+      if (!acc[displayStoreName]) {
+        acc[displayStoreName] = [];
       }
       //Преобразуем Decimal (Prisma) в Number и форматируем дату, если нужно
       //Chart.js лучше работает с объектами {x: Date, y: Number}
-      acc[storeName].push({
+      acc[displayStoreName].push({
         x: new Date(record.date).toISOString(), //Используем ISO строку для Chart.js
         y: parseFloat(record.price), //Преобразуем Decimal в Number
-        url: urlByStore[storeName] || ''
+        url: urlByStore[`${storeName}::${sellerName}`] || ''
       });
       return acc;
     }, {});
@@ -1615,6 +1692,7 @@ app.put('/api/admin/table/:tableName/:id', authenticateToken, requireAdminRole, 
         id: 'Int',
         productId: 'Int',
         storeName: 'String',
+        sellerName: 'String?',
         price: 'Int', 
         url: 'String',
         recordedAt: 'DateTime',
@@ -1655,6 +1733,7 @@ app.put('/api/admin/table/:tableName/:id', authenticateToken, requireAdminRole, 
         id: 'Int',
         productId: 'Int',
         storeName: 'String',
+        sellerName: 'String?',
         price: 'Int', //или Float/Decimal
         date: 'DateTime',
       },
@@ -2790,6 +2869,7 @@ app.post('/api/admin/manual-add-product', authenticateToken, requireAdminRole, a
     }
 
     try {
+        await ensureSellerColumns();
         //Транзакция гарантирует, что либо всё сохранится, либо ничего
         const newProduct = await prisma.$transaction(async (tx) => {
             //1. Создаем основной товар
@@ -2820,16 +2900,29 @@ app.post('/api/admin/manual-add-product', authenticateToken, requireAdminRole, a
             if (prices && Array.isArray(prices) && prices.length > 0) {
                 await Promise.all(prices.map(p => {
                     const storeName = p.storeName ? p.storeName.trim() : 'Unknown';
+                    const sellerName = p.sellerName ? String(p.sellerName).trim() : null;
                     const price = parseFloat(p.price);
                     
                     if (storeName && !isNaN(price)) {
                         //Сохраняем текущую цену
                         const priceRecord = tx.price.create({
-                          data: { productId: product.id, storeName: storeName, price: price, url: p.url || '' }
+                          data: {
+                            productId: product.id,
+                            storeName: storeName,
+                            sellerName: sellerName || null,
+                            price: price,
+                            url: p.url || ''
+                          }
                           });
                         //Сохраняем запись в историю
                         const historyRecord = tx.priceHistory.create({
-                            data: { productId: product.id, storeName: storeName, price: price, date: new Date() }
+                            data: {
+                              productId: product.id,
+                              storeName: storeName,
+                              sellerName: sellerName || null,
+                              price: price,
+                              date: new Date()
+                            }
                         });
                         return Promise.all([priceRecord, historyRecord]);
                     }
@@ -2841,11 +2934,24 @@ app.post('/api/admin/manual-add-product', authenticateToken, requireAdminRole, a
         });
 
         console.log('✅ Товар создан:', newProduct.name);
+        try {
+          await refreshStoreSignalsForProduct(newProduct.id);
+        } catch (sigErr) {
+          console.warn('[store-signals] после manual-add-product:', sigErr.message || sigErr);
+        }
         res.status(201).json(newProduct);
 
     } catch (error) {
         console.error('❌ Ошибка создания товара:', error);
-        res.status(500).json({ error: 'Не удалось сохранить товар' });
+        const isMissingSellerColumn =
+          String(error?.message || '').includes('sellerName') &&
+          String(error?.message || '').toLowerCase().includes('column');
+        if (isMissingSellerColumn) {
+          return res.status(500).json({
+            error: 'В БД отсутствуют новые поля sellerName. Перезапустите сервер (автодобавление колонок) или примените миграцию.'
+          });
+        }
+        res.status(500).json({ error: `Не удалось сохранить товар: ${error.message}` });
     }
 });
 
@@ -2874,7 +2980,7 @@ app.get('/api/admin/price-history/:productId', authenticateToken, requireAdminRo
 
 //POST /api/admin/price-history - Добавить новую запись в историю цен
 app.post('/api/admin/price-history', authenticateToken, requireAdminRole, async (req, res) => {
-    const { productId, storeName, price, date } = req.body;
+    const { productId, storeName, sellerName, price, date, url: purchaseUrl } = req.body;
 
     //Валидация
     if (!productId || !storeName || typeof price !== 'number' || isNaN(price) || price < 0 || !date) {
@@ -2891,6 +2997,7 @@ app.post('/api/admin/price-history', authenticateToken, requireAdminRole, async 
             data: {
                 productId: productId,
                 storeName: storeName,
+                sellerName: sellerName ? String(sellerName).trim() : null,
                 price: price,
                 date: parsedDate
             }
@@ -2901,17 +3008,22 @@ app.post('/api/admin/price-history', authenticateToken, requireAdminRole, async 
         const existingPrice = await prisma.price.findFirst({
             where: {
                 productId: productId,
-                storeName: storeName
+                storeName: storeName,
+                sellerName: sellerName ? String(sellerName).trim() : null
             }
         });
+
+        const urlTrimmed =
+          purchaseUrl != null && String(purchaseUrl).trim() !== '' ? String(purchaseUrl).trim() : null;
 
         if (existingPrice) {
             //Если запись есть — обновляем цену и дату записи
             await prisma.price.update({
                 where: { id: existingPrice.id },
-                data: { 
-                    price: price, 
-                    recordedAt: new Date() //Обновляем время фиксации цены
+                data: {
+                    price: price,
+                    recordedAt: new Date(),
+                    ...(urlTrimmed ? { url: urlTrimmed } : {})
                 }
             });
         } else {
@@ -2920,8 +3032,9 @@ app.post('/api/admin/price-history', authenticateToken, requireAdminRole, async 
                 data: {
                     productId: productId,
                     storeName: storeName,
+                    sellerName: sellerName ? String(sellerName).trim() : null,
                     price: price,
-                    url: '', //Пустая ссылка по умолчанию, так как в форме истории её нет
+                    url: urlTrimmed || '',
                     recordedAt: new Date()
                 }
             });
@@ -2990,20 +3103,20 @@ app.delete('/api/admin/price-history/:id', authenticateToken, requireAdminRole, 
 
 app.get('/api/admin/products', authenticateToken, requireAdminRole, async (req, res) => {
   try {
-    //Загружаем продукты, возможно, с пагинацией/поиском в будущем
-    //Выбираем только нужные поля
+    const q = String(req.query.search || req.query.q || '').trim();
     const products = await prisma.product.findMany({
+      where: q
+        ? {
+            name: { contains: q, mode: 'insensitive' }
+          }
+        : undefined,
       select: {
         id: true,
         name: true,
-        category: true,
-        //imageUrl: true, //Опционально
-        //rating: true,  //Опционально
-        //isActive: true, //Опционально
-        //createdAt: true, //Опционально
-        //updatedAt: true, //Опционально
+        category: true
       },
-      orderBy: { id: 'asc' } //Сортировка
+      orderBy: { id: 'asc' },
+      take: q ? 80 : undefined
     });
 
     res.json(products);
@@ -3066,6 +3179,7 @@ app.post('/api/admin/products', authenticateToken, requireAdminRole, async (req,
                                 data: {
                                     productId: product.id,
                                     storeName: priceEntry.storeName.trim(),
+                                    sellerName: priceEntry.sellerName ? String(priceEntry.sellerName).trim() : null,
                                     price: priceEntry.price,
                                     url: priceEntry.url.trim()
                                 }
@@ -3080,6 +3194,11 @@ app.post('/api/admin/products', authenticateToken, requireAdminRole, async (req,
         });
         
         console.log('Новый товар создан с характеристиками и ценами:', newProduct);
+        try {
+          await refreshStoreSignalsForProduct(newProduct.id);
+        } catch (sigErr) {
+          console.warn('[store-signals] после POST /api/admin/products:', sigErr.message || sigErr);
+        }
         res.status(201).json(newProduct);
         
     } catch (error) {
@@ -4281,6 +4400,7 @@ async function fetchPriceFromApiSystemsByUrl(urlString) {
         return {
             price: wbOfferData.price,
             parsedName: wbOfferData.parsedName,
+            sellerName: wbOfferData.sellerName || null,
             source: modelInfo.source
         };
     }
@@ -4288,6 +4408,7 @@ async function fetchPriceFromApiSystemsByUrl(urlString) {
     return {
         price: coerceApiSystemsPrice(data.price),
         parsedName: data.name || null,
+        sellerName: data.sellerName || null,
         source: modelInfo.source
     };
 }
@@ -4320,6 +4441,7 @@ async function fetchWildberriesOfferPriceFromApiSystems(modelId, requestedUrl = 
     const offers = Array.isArray(payload.offers) ? payload.offers : [];
     let price = coerceApiSystemsPrice(payload.price_min) || coerceApiSystemsPrice(payload.price_avg);
     let parsedName = null;
+    let sellerName = null;
 
     if (offers.length > 0) {
         const requestedNorm = requestedUrl ? normalizeComparableUrl(requestedUrl) : null;
@@ -4340,9 +4462,18 @@ async function fetchWildberriesOfferPriceFromApiSystems(modelId, requestedUrl = 
 
         price = price || coerceApiSystemsPrice(offer.price_wb_pay) || coerceApiSystemsPrice(offer.price);
         parsedName = offer.offer_name || null;
+        const raw =
+          offer.shop_name ||
+          offer.seller_name ||
+          offer.supplier_name ||
+          offer.supplier ||
+          offer.vendor_name ||
+          offer.store_name ||
+          offer.shop;
+        if (raw != null && String(raw).trim()) sellerName = String(raw).trim();
     }
 
-    return { price, parsedName };
+    return { price, parsedName, sellerName };
 }
 
 async function requestEbayAccessTokenForBase(baseUrl) {
@@ -4723,6 +4854,7 @@ function mapPricesApiOffersToUnified(offers = []) {
             const priceRub = convertToRub(o.price, o.currency || 'RUB');
             return {
                 storeName: o.merchant || o.store || o.source || 'PricesAPI',
+                sellerName: o.seller || o.merchant || null,
                 priceRub,
                 url: o.url || o.link || '',
                 source: 'PricesAPI.io',
@@ -4805,6 +4937,7 @@ async function fetchPricesApiProductByUrlOrQuery({ url = null, query = null, cou
         sourceUrl: bestOffer?.url || bestOffer?.link || null,
         specs: {},
         priceStoreName: bestOffer?.merchant || bestOffer?.store || bestOffer?.source || 'PricesAPI',
+        sellerName: bestOffer?.merchant || bestOffer?.seller || null,
         priceSource: 'PricesAPI.io'
     };
 }
@@ -4822,6 +4955,7 @@ async function collectApiOffersForProduct({ productName, sourceUrl = null, count
                     const storeName = host.includes('wildberries.ru') || host.includes('wb.ru') ? 'Wildberries' : 'Yandex Market';
                     rows.push({
                         storeName,
+                        sellerName: null,
                         price: coerceNumberPrice(api.price),
                         url: sourceUrl,
                         source: 'API Systems',
@@ -4852,6 +4986,7 @@ async function collectApiOffersForProduct({ productName, sourceUrl = null, count
                 const stockCount = Number(best.item?.estimatedAvailabilities?.[0]?.estimatedAvailableQuantity ?? NaN);
                 rows.push({
                     storeName: 'eBay',
+                    sellerName: best.item?.seller?.username || null,
                     price: best.rub,
                     url: best.item?.itemWebUrl || '',
                     source: 'eBay API',
@@ -4887,6 +5022,7 @@ async function collectApiOffersForProduct({ productName, sourceUrl = null, count
                 for (const offer of mapped) {
                     rows.push({
                         storeName: offer.storeName,
+                        sellerName: offer.sellerName || null,
                         price: offer.priceRub,
                         url: offer.url,
                         source: offer.source,
@@ -4902,7 +5038,7 @@ async function collectApiOffersForProduct({ productName, sourceUrl = null, count
 
     const dedup = new Map();
     for (const row of rows) {
-        const key = `${String(row.storeName || '').toLowerCase()}::${normalizeComparableUrl(row.url || '') || ''}`;
+        const key = `${String(row.storeName || '').toLowerCase()}::${String(row.sellerName || '').toLowerCase()}::${normalizeComparableUrl(row.url || '') || ''}`;
         if (!dedup.has(key)) dedup.set(key, row);
     }
     return Array.from(dedup.values());
@@ -4926,22 +5062,25 @@ async function fetchParsedPriceForStoreUrl(url, proxy = null, context = {}) {
 
   if (host.includes('wildberries.ru') || host.includes('wb.ru')) {
     const api = await fetchPriceFromApiSystemsByUrl(trimmed);
-    return {
+    return enrichParsedResultWithHtmlSignals(trimmed, {
       price: api.price,
       parsedName: api.parsedName,
       source: 'API Systems (wildberries)',
       storeName: 'Wildberries',
+      sellerName: api.sellerName || null,
       storeSignals: { rating: null, reviewsCount: null, stock: null }
-    };
+    });
   }
   if (host.includes('market.yandex.ru') || (host.includes('yandex.ru') && (parsedUrl.pathname.includes('/card/') || parsedUrl.pathname.includes('/product--')))) {
     let parsedName = null;
     let price = null;
+    let sellerName = null;
     let source = 'API Systems / Яндекс.Маркет';
     try {
       const api = await fetchPriceFromApiSystemsByUrl(trimmed);
       price = api.price;
       parsedName = api.parsedName;
+      sellerName = api.sellerName || null;
     } catch (e) {
       console.warn('[PRICE SYNC] API Systems (Я.М):', e.message);
     }
@@ -4958,26 +5097,28 @@ async function fetchParsedPriceForStoreUrl(url, proxy = null, context = {}) {
         console.warn('[PRICE SYNC] Я.М HTML fallback failed:', e.message);
       }
     }
-    return {
+    return enrichParsedResultWithHtmlSignals(trimmed, {
       price: Number.isFinite(price) ? price : null,
       parsedName,
       source,
       storeName: 'Yandex Market',
+      sellerName,
       storeSignals: { rating: null, reviewsCount: null, stock: null }
-    };
+    });
   }
   if (host.includes('ebay.')) {
     const ebayData = await fetchEbayProductByUrlOrQuery({
       url: trimmed,
       query: contextProductName || null
     });
-    return {
+    return enrichParsedResultWithHtmlSignals(trimmed, {
       price: coerceNumberPrice(ebayData.price),
       parsedName: ebayData.name || null,
       source: 'eBay API',
       storeName: 'eBay',
+      sellerName: ebayData.sellerName || null,
       storeSignals: { rating: null, reviewsCount: null, stock: null }
-    };
+    });
   }
 
   try {
@@ -4987,13 +5128,14 @@ async function fetchParsedPriceForStoreUrl(url, proxy = null, context = {}) {
       country: contextCountry
     });
     if (pricesApiData.price != null) {
-      return {
+      return enrichParsedResultWithHtmlSignals(trimmed, {
         price: pricesApiData.price,
         parsedName: pricesApiData.name || null,
         source: 'PricesAPI.io',
         storeName: pricesApiData.priceStoreName || 'PricesAPI',
+        sellerName: pricesApiData.sellerName || null,
         storeSignals: { rating: null, reviewsCount: null, stock: null }
-      };
+      });
     }
   } catch (e) {
     console.warn('[PRICE SYNC] PricesAPI fallback:', e.message);
@@ -5028,41 +5170,8 @@ async function collectPriceSyncResults(options = {}) {
   let processed = 0;
 
   outer: for (const product of products) {
-    const apiOfferRows = await collectApiOffersForProduct({
-      productName: product.name,
-      sourceUrl: product.prices?.[0]?.url || null,
-      country: PRICESAPI_DEFAULT_COUNTRY
-    });
-    const existingByStore = new Map(
-      (product.prices || []).map((p) => [String(p.storeName || '').toLowerCase(), p])
-    );
-
-    for (const offer of apiOfferRows) {
-      if (processed >= maxStores) break outer;
-
-      // Чтобы не дублировать уже существующие строки цен (WB/ЯМ и т.д.),
-      // API-офферы добавляем только для магазинов, которых ещё нет в БД у товара.
-      const offerKey = String(offer.storeName || '').toLowerCase();
-      const existing = existingByStore.get(offerKey) || null;
-      if (existing) continue;
-
-      results.push({
-        productId: product.id,
-        productName: product.name,
-        priceId: existing?.id || null,
-        storeName: offer.storeName,
-        url: offer.url || existing?.url || '',
-        oldPrice: existing?.price ?? null,
-        newPrice: offer.price,
-        status: offer.price != null ? 'ok' : 'error',
-        message: offer.price != null ? null : 'API не вернул цену',
-        parsedName: offer.parsedName || null,
-        source: offer.source || 'API',
-        storeSignals: offer.storeSignals || null
-      });
-      processed += 1;
-      if (throttleDelay > 0) await delay(throttleDelay);
-    }
+    // Обновляем только уже сохранённые у товара источники цен (по ссылкам в БД).
+    // Новые магазины/продавцы добавляет только админ вручную — не подмешиваем API-офферы из поиска.
 
     for (const priceRow of product.prices) {
       if (processed >= maxStores) break outer;
@@ -5072,6 +5181,7 @@ async function collectPriceSyncResults(options = {}) {
         productName: product.name,
         priceId: priceRow.id,
         storeName: priceRow.storeName,
+        sellerName: priceRow.sellerName || null,
         url: priceRow.url,
         oldPrice: priceRow.price
       };
@@ -5151,7 +5261,8 @@ async function applyPriceSyncResults(resultRows) {
       priceRow = await prisma.price.findFirst({
         where: {
           productId: row.productId,
-          storeName: row.storeName
+          storeName: row.storeName,
+          sellerName: row.sellerName || null
         }
       });
     }
@@ -5161,6 +5272,7 @@ async function applyPriceSyncResults(resultRows) {
         data: {
           productId: row.productId,
           storeName: row.storeName || priceRow?.storeName || 'Unknown',
+          sellerName: row.sellerName || priceRow?.sellerName || null,
           price: newPrice,
           date: now
         }
@@ -5174,6 +5286,7 @@ async function applyPriceSyncResults(resultRows) {
           data: {
             price: newPrice,
             recordedAt: now,
+            sellerName: row.sellerName || priceRow.sellerName || null,
             url: row.url || priceRow.url || ''
           }
         })
@@ -5184,6 +5297,7 @@ async function applyPriceSyncResults(resultRows) {
           data: {
             productId: row.productId,
             storeName: row.storeName || 'Unknown',
+            sellerName: row.sellerName || null,
             price: newPrice,
             url: row.url || '',
             recordedAt: now
@@ -5195,25 +5309,14 @@ async function applyPriceSyncResults(resultRows) {
     await prisma.$transaction(txOps);
     updated += 1;
 
-    const signals = row.storeSignals && typeof row.storeSignals === 'object' ? row.storeSignals : null;
+    const signals = row.storeSignals && typeof row.storeSignals === 'object' ? row.storeSignals : {};
+    const signalStore = row.storeName || priceRow?.storeName || 'Unknown';
+    const signalSeller = row.sellerName || priceRow?.sellerName || null;
+    upsertStoreSignalsItem(row.productId, signalStore, signalSeller, signals, { mergeWithExisting: true });
+
     const hasSignals =
       signals &&
       (signals.rating != null || signals.reviewsCount != null || signals.stock != null);
-    if (hasSignals) {
-      const signalsState = readStoreSignals();
-      const items = Array.isArray(signalsState.items) ? signalsState.items : [];
-      const key = `${row.productId}:${row.storeName || priceRow?.storeName || 'Unknown'}`;
-      const filtered = items.filter((i) => `${i.productId}:${i.storeName}` !== key);
-      filtered.push({
-        productId: row.productId,
-        storeName: row.storeName || priceRow?.storeName || 'Unknown',
-        rating: signals.rating ?? null,
-        reviewsCount: signals.reviewsCount ?? null,
-        stock: signals.stock ?? null,
-        updatedAt: now.toISOString()
-      });
-      writeStoreSignals({ items: filtered });
-    }
 
     const oldPriceNum = row.oldPrice != null ? Number(row.oldPrice) : null;
     const dropPct =
@@ -5247,6 +5350,14 @@ async function applyPriceSyncResults(resultRows) {
     }
   }
 
+  for (const row of resultRows) {
+    if (!row || row.status === 'ok' || row.status === 'skipped') continue;
+    const sig = row.storeSignals && typeof row.storeSignals === 'object' ? row.storeSignals : null;
+    if (!sig) continue;
+    if (sig.rating == null && sig.reviewsCount == null && sig.stock == null) continue;
+    upsertStoreSignalsItem(row.productId, row.storeName, row.sellerName, sig, { mergeWithExisting: true });
+  }
+
   return { applied: updated };
 }
 
@@ -5269,7 +5380,7 @@ async function runAutomaticPriceSyncJob() {
     });
 
     const okRows = results.filter((r) => r.status === 'ok');
-    const applyRes = await applyPriceSyncResults(okRows);
+    const applyRes = await applyPriceSyncResults(results);
 
     writePriceSyncState({
       autoSyncRunning: false,
@@ -5380,7 +5491,7 @@ app.post('/api/admin/prices/sync-product/:productId', authenticateToken, require
     });
 
     if (!dryRun) {
-      const applyRes = await applyPriceSyncResults(data.results.filter((r) => r.status === 'ok'));
+      const applyRes = await applyPriceSyncResults(data.results);
       return res.json({ ...data, applied: applyRes });
     }
 
@@ -5414,6 +5525,7 @@ app.post('/api/admin/fetch-price-from-url', authenticateToken, requireAdminRole,
     res.json({
       price: parsed.price,
       storeName: parsed.storeName,
+      sellerName: parsed.sellerName || null,
       parsedName: parsed.parsedName || null
     });
   } catch (e) {
@@ -5587,6 +5699,7 @@ app.post('/api/admin/parse-product', authenticateToken, requireAdminRole, async 
         });
         parsedData.prices = aggregatedOffers.map((o) => ({
             storeName: o.storeName,
+            sellerName: o.sellerName || null,
             price: o.price,
             url: o.url || '',
             source: o.source || 'API'
@@ -5850,12 +5963,21 @@ async function fetchProductSpecsFromApiSystems(modelId, source) {
             specsCount: Object.keys(specs).length 
         });
         
+        const sellerName =
+          fields.shop_name ||
+          fields.seller_name ||
+          fields.supplier_name ||
+          fields.shop ||
+          fields.vendor_name ||
+          null;
+
         return {
             source: `API Systems (${source})`,
             name: name,
             price: price,
             imageUrl: imageUrl,
             sourceUrl: fields.url || null,
+            sellerName: sellerName && String(sellerName).trim() ? String(sellerName).trim() : null,
             specs: specs,
         };
         
@@ -6121,6 +6243,60 @@ async function extractStoreSignalsFromHtml(url, hostHint = null) {
     } catch {
         return { rating: null, reviewsCount: null, stock: null };
     }
+}
+
+async function enrichParsedResultWithHtmlSignals(trimmedUrl, parsedLike) {
+  const out = {
+    ...parsedLike,
+    storeSignals: parsedLike.storeSignals && typeof parsedLike.storeSignals === 'object'
+      ? { ...parsedLike.storeSignals }
+      : { rating: null, reviewsCount: null, stock: null }
+  };
+  if (!trimmedUrl || typeof trimmedUrl !== 'string') return out;
+  try {
+    let hostHint = null;
+    try {
+      hostHint = new URL(trimmedUrl).hostname;
+    } catch {
+      return out;
+    }
+    const htmlSig = await extractStoreSignalsFromHtml(trimmedUrl, hostHint);
+    const base = out.storeSignals;
+    out.storeSignals = {
+      rating: htmlSig.rating ?? base.rating ?? null,
+      reviewsCount: htmlSig.reviewsCount ?? base.reviewsCount ?? null,
+      stock: htmlSig.stock ?? base.stock ?? null
+    };
+  } catch {
+    /* ignore */
+  }
+  return out;
+}
+
+async function refreshStoreSignalsForProduct(productId, { gapMs = 500 } = {}) {
+  const pid = Number(productId);
+  if (!Number.isFinite(pid)) return;
+  const prices = await prisma.price.findMany({ where: { productId: pid } });
+  for (const row of prices) {
+    const u = row.url && String(row.url).trim();
+    if (!u) continue;
+    try {
+      const enriched = await enrichParsedResultWithHtmlSignals(u, {
+        price: row.price,
+        parsedName: null,
+        source: 'product-init',
+        storeName: row.storeName,
+        sellerName: row.sellerName || null,
+        storeSignals: { rating: null, reviewsCount: null, stock: null }
+      });
+      upsertStoreSignalsItem(pid, row.storeName, row.sellerName, enriched.storeSignals, {
+        mergeWithExisting: true
+      });
+    } catch (e) {
+      console.warn(`[store-signals] product ${pid} url ${u}:`, e.message || e);
+    }
+    if (gapMs > 0) await delay(gapMs);
+  }
 }
 
 async function extractPriceWithPuppeteerLite(url, proxy = null) {

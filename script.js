@@ -1114,6 +1114,8 @@ function initializeProductPage() {
 
   //Устанавливаем глобальную переменную для кнопок
   currentProductId = productId;
+  initializeProductSpecsToggle();
+  initializeHeaderRevealOnScrollUp();
 
   //Ждём, пока demoProducts загрузится из API
   let attempts = 0;
@@ -1149,6 +1151,58 @@ function initializeProductPage() {
       }
     }
   }, 100);
+}
+
+function initializeProductSpecsToggle() {
+  const specsList = document.getElementById('productSpecs');
+  const specsTitle = document.querySelector('.product-specs h3');
+  if (!specsList || !specsTitle) return;
+
+  let toggleBtn = document.getElementById('productSpecsToggleBtn');
+  if (!toggleBtn) {
+    toggleBtn = document.createElement('button');
+    toggleBtn.id = 'productSpecsToggleBtn';
+    toggleBtn.className = 'specs-toggle-btn';
+    toggleBtn.type = 'button';
+    toggleBtn.setAttribute('aria-controls', 'productSpecs');
+    specsTitle.insertAdjacentElement('afterend', toggleBtn);
+  }
+
+  const setExpanded = (expanded) => {
+    specsList.classList.toggle('specs-list--collapsed', !expanded);
+    toggleBtn.textContent = expanded ? 'Скрыть характеристики' : 'Показать характеристики';
+    toggleBtn.setAttribute('aria-expanded', String(expanded));
+  };
+
+  if (!toggleBtn.dataset.bound) {
+    toggleBtn.addEventListener('click', () => {
+      const expanded = toggleBtn.getAttribute('aria-expanded') !== 'true';
+      setExpanded(expanded);
+    });
+    toggleBtn.dataset.bound = '1';
+  }
+
+  setExpanded(true);
+}
+
+function initializeHeaderRevealOnScrollUp() {
+  if (window.__headerRevealInitialized) return;
+  const header = document.querySelector('.header');
+  if (!header) return;
+  window.__headerRevealInitialized = true;
+
+  let lastScrollY = window.scrollY || 0;
+  window.addEventListener('scroll', () => {
+    const currentY = window.scrollY || 0;
+
+    if (currentY <= 0 || currentY < lastScrollY) {
+      header.classList.remove('header--hidden');
+    } else if (currentY > lastScrollY + 6) {
+      header.classList.add('header--hidden');
+    }
+
+    lastScrollY = currentY;
+  }, { passive: true });
 }
 
 //Вывод данных по устройству в product.html
@@ -1198,21 +1252,23 @@ async function displayProduct(product) {
       if (sigRes.ok) storeSignals = await sigRes.json();
     } catch (_) {}
     const signalsMap = new Map(
-      (storeSignals || []).map((s) => [String(s.storeName || '').toLowerCase(), s])
+      (storeSignals || []).map((s) => [getStoreSellerKey(s.storeName, s.sellerName), s])
     );
 
     priceList.innerHTML = sortedPrices.map(price => {
       const storeName = price.store || price.storeName || 'Магазин';
-      const sig = signalsMap.get(String(storeName).toLowerCase()) || null;
+      const sellerName = price.sellerName || null;
+      const displayStoreName = buildStoreDisplayName(storeName, sellerName);
+      const sig = signalsMap.get(getStoreSellerKey(storeName, sellerName)) || null;
       const ratingText = sig?.rating != null ? `⭐ ${Number(sig.rating).toFixed(1)}` : '⭐ —';
       const reviewsText = sig?.reviewsCount != null ? `(${sig.reviewsCount} отзывов)` : '(нет данных)';
       const stockLow = sig?.stock != null && Number(sig.stock) < 10;
       const stockText = sig?.stock != null ? `Осталось товара: ${sig.stock}` : 'Осталось товара: —';
       return `
       <div class="price-item">
-        <div class="store-info">${storeName}</div>
+        <div class="store-info">${displayStoreName}</div>
         <div>${formatPrice(price.price)} ₽</div>
-        <a href="${price.url}" target="_blank" class="buy-button" onclick="trackPurchase(${product.id}, '${String(storeName).replace(/'/g, "\\'")}')">Купить</a>
+        <a href="${price.url}" target="_blank" class="buy-button" onclick="trackPurchase(${product.id}, '${String(displayStoreName).replace(/'/g, "\\'")}')">Купить</a>
         <div style="font-size:0.82rem;color:#475569;margin-top:4px;">${ratingText} ${reviewsText}</div>
         <div style="font-size:0.82rem;color:${stockLow ? '#b91c1c' : '#475569'};font-weight:${stockLow ? '700' : '500'};">${stockText}${stockLow ? ' ⚠️ мало' : ''}</div>
       </div>
@@ -1294,8 +1350,8 @@ function renderPriceChart(container, data) {
   const canvas = document.createElement('canvas');
   container.appendChild(canvas);
 
-  const datasets = Object.entries(data).map(([storeName, storeData]) => {
-    const color = getStoreColor(storeName);
+  const datasets = Object.entries(data).map(([storeName, storeData], seriesIndex) => {
+    const color = getDistinctSeriesColorForLabel(storeName, seriesIndex);
     return {
       label: storeName,
      
@@ -1304,7 +1360,7 @@ function renderPriceChart(container, data) {
         y: point.y
       })),
       borderColor: color,
-      backgroundColor: color + '20',
+      backgroundColor: hexToRgbaString(color, 0.2),
       borderWidth: 2,
       pointRadius: 4,
       pointHoverRadius: 6,
@@ -1399,7 +1455,7 @@ function renderGeneralPriceInsights(currentPrices, priceHistoryData) {
   const normalizedPrices = Array.isArray(currentPrices)
     ? currentPrices
         .map((item) => ({
-          store: item.store || item.storeName || 'Магазин',
+          store: buildStoreDisplayName(item.store || item.storeName || 'Магазин', item.sellerName || null),
           price: Number(item.price)
         }))
         .filter((item) => Number.isFinite(item.price) && item.price > 0)
@@ -1427,7 +1483,7 @@ function renderGeneralPriceInsights(currentPrices, priceHistoryData) {
   const decisionText = evaluation.decisionText;
 
   const marketDeltaPct = ((bestOffer.price - avgMarketPrice) / avgMarketPrice) * 100;
-  const productTrendText = describeTrend(productTrend.trend);
+  const productTrendText = describeTrend(productTrend.trend, avgMarketPrice);
   const productForecastText = describeForecast(productForecast, 'по рынку в целом');
 
   insightsEl.className = `price-insights price-insights--${status}`;
@@ -1446,10 +1502,15 @@ function renderStorePriceInsights(currentPrices, priceHistoryData, storeSignals 
 
   const normalizedPrices = Array.isArray(currentPrices)
     ? currentPrices
-        .map((item) => ({
-          store: item.store || item.storeName || 'Магазин',
-          price: Number(item.price)
-        }))
+        .map((item) => {
+          const storeNameRaw = item.storeName || item.store || 'Магазин';
+          const sellerNameRaw = item.sellerName || null;
+          return {
+            store: buildStoreDisplayName(storeNameRaw, sellerNameRaw),
+            signalKey: getStoreSellerKey(storeNameRaw, sellerNameRaw),
+            price: Number(item.price)
+          };
+        })
         .filter((item) => Number.isFinite(item.price) && item.price > 0)
     : [];
 
@@ -1467,7 +1528,7 @@ function renderStorePriceInsights(currentPrices, priceHistoryData, storeSignals 
   const sortedByPrice = [...normalizedPrices].sort((a, b) => a.price - b.price);
 
   const signalsMap = new Map(
-    (Array.isArray(storeSignals) ? storeSignals : []).map((s) => [String(s.storeName || '').toLowerCase(), s])
+    (Array.isArray(storeSignals) ? storeSignals : []).map((s) => [getStoreSellerKey(s.storeName, s.sellerName), s])
   );
 
   const describeSignalTakeaway = (signal) => {
@@ -1478,7 +1539,7 @@ function renderStorePriceInsights(currentPrices, priceHistoryData, storeSignals 
     const hasStock = Number.isFinite(stock);
 
     if (hasRating && rating >= 4.5) {
-      if (hasStock && stock < 10) return 'Хороший рейтинг и осталось мало товара: проверенный товар.';
+      if (hasStock && stock < 10) return 'Хороший рейтинг и осталось мало товара: проверенный товар. Можно покупать';
       return 'Хороший рейтинг: проверенный товар по отзывам покупателей.';
     }
     if (hasStock && stock < 10) return 'Осталось мало: если цена подходит, лучше не откладывать покупку.';
@@ -1486,8 +1547,10 @@ function renderStorePriceInsights(currentPrices, priceHistoryData, storeSignals 
     return null;
   };
 
-  listEl.innerHTML = sortedByPrice.map((storeEntry) => {
-    const storeColor = getStoreColor(storeEntry.store);
+  listEl.innerHTML = sortedByPrice.map((storeEntry, idx) => {
+    const storeColor =
+      getColorForHistorySeriesLabel(priceHistoryData, storeEntry.store) ||
+      getDistinctSeriesColorForLabel(storeEntry.store, idx);
     const cardBg = hexToRgba(storeColor, 0.16);
     const historyStoreKey = findHistoryStoreKey(priceHistoryData, storeEntry.store);
     const storeHistory = normalizeStoreHistory((historyStoreKey && priceHistoryData?.[historyStoreKey]) || []);
@@ -1495,7 +1558,7 @@ function renderStorePriceInsights(currentPrices, priceHistoryData, storeSignals 
     const storeForecast = forecastPrice(storeHistory, storeEntry.price);
     const evaluation = evaluatePriceSituation(storeEntry.price, avgMarketPrice, storeTrend);
     const diffPct = ((storeEntry.price - avgMarketPrice) / avgMarketPrice) * 100;
-    const signal = signalsMap.get(String(storeEntry.store || '').toLowerCase()) || null;
+    const signal = signalsMap.get(storeEntry.signalKey) || null;
     const hasRating = signal?.rating != null && Number.isFinite(Number(signal.rating));
     const hasReviews = signal?.reviewsCount != null && Number.isFinite(Number(signal.reviewsCount));
     const hasStock = signal?.stock != null && Number.isFinite(Number(signal.stock));
@@ -1518,7 +1581,6 @@ function renderStorePriceInsights(currentPrices, priceHistoryData, storeSignals 
         <h4 style="color: #111111;">${storeEntry.store}</h4>
         <p><strong>Цена:</strong> ${formatPrice(storeEntry.price)} ₽ (${diffPct >= 0 ? '+' : ''}${diffPct.toFixed(1)}% к рынку)</p>
         <p><strong>Изменение за период:</strong> ${describeRecentDelta(storeTrend)}</p>
-        <p><strong>Тренд:</strong> ${describeTrendShort(storeTrend)}</p>
         <p><strong>Прогноз:</strong> ${describeForecastShort(storeForecast)}</p>
         <p><strong>Рекомендация:</strong> ${evaluation.shortDecision}</p>
         ${ratingLine}
@@ -1558,6 +1620,53 @@ function evaluatePriceSituation(price, avgMarketPrice, trend) {
   };
 }
 
+/** Рекомендация по карточке продавца: опирается на прогноз цены, без короткого «тренда» по медианам. */
+function evaluateStoreFromForecast(price, avgMarketPrice, forecast) {
+  const isBelowMarket = price <= avgMarketPrice * 0.98;
+  const isAboveMarket = price >= avgMarketPrice * 1.02;
+  const dir = forecast?.direction || 'flat';
+  const deltaPct = Number(forecast?.deltaPct);
+  const meaningfulUp = dir === 'up' && Number.isFinite(deltaPct) && deltaPct > 2;
+  const meaningfulDown = dir === 'down' && Number.isFinite(deltaPct) && deltaPct < -2;
+
+  if (isBelowMarket && !meaningfulUp) {
+    return {
+      status: 'buy',
+      decisionText:
+        'Цена ниже средней по рынку; прогноз не указывает на сильный рост — выгодное время покупки у этого продавца.',
+      shortDecision: 'Выгодное предложение.'
+    };
+  }
+  if (isBelowMarket && meaningfulUp) {
+    return {
+      status: 'wait',
+      decisionText:
+        'Цена сейчас привлекательная, но прогноз допускает рост — при отсутствии срочности можно понаблюдать.',
+      shortDecision: 'Возможен рост цены.'
+    };
+  }
+  if (isAboveMarket && (meaningfulUp || dir === 'flat')) {
+    return {
+      status: 'wait',
+      decisionText:
+        'Цена выше средней по рынку; прогноз не су́лит заметного снижения — имеет смысл сравнить другие магазины.',
+      shortDecision: 'Сравните с конкурентами.'
+    };
+  }
+  if (isAboveMarket && meaningfulDown) {
+    return {
+      status: 'neutral',
+      decisionText: 'Цена выше средней, но прогноз допускает снижение — можно подождать несколько дней.',
+      shortDecision: 'Возможно снижение.'
+    };
+  }
+  return {
+    status: 'neutral',
+    decisionText: 'Цена близка к среднерыночной; решение зависит от сроков и условий доставки.',
+    shortDecision: 'Нейтрально.'
+  };
+}
+
 function normalizeStoreHistory(historyArray) {
   if (!Array.isArray(historyArray)) return [];
   return historyArray
@@ -1574,6 +1683,24 @@ function findHistoryStoreKey(priceHistoryData, storeName) {
   if (priceHistoryData[storeName]) return storeName;
   const normalizedTarget = String(storeName || '').trim().toLowerCase();
   return Object.keys(priceHistoryData).find((key) => key.trim().toLowerCase() === normalizedTarget) || null;
+}
+
+/** Цвет линии на графике и карточки аналитики — один порядок ключей, что у Chart.js (Object.keys). */
+function buildPriceHistorySeriesColorMap(priceHistoryData) {
+  const map = new Map();
+  if (!priceHistoryData || typeof priceHistoryData !== 'object') return map;
+  Object.keys(priceHistoryData).forEach((label, index) => {
+    map.set(label, getDistinctSeriesColorForLabel(label, index));
+  });
+  return map;
+}
+
+function getColorForHistorySeriesLabel(priceHistoryData, displayLabel) {
+  const map = buildPriceHistorySeriesColorMap(priceHistoryData);
+  if (map.has(displayLabel)) return map.get(displayLabel);
+  const key = findHistoryStoreKey(priceHistoryData, displayLabel);
+  if (key && map.has(key)) return map.get(key);
+  return null;
 }
 
 function hexToRgba(hexColor, alpha = 1) {
@@ -1646,7 +1773,7 @@ function forecastPrice(seriesPoints, fallbackPrice) {
     return { direction: 'flat', predictedPrice: fallbackPrice, deltaPct: 0 };
   }
 
-  const recent = seriesPoints.slice(-20);
+  const recent = seriesPoints.slice(-28);
   const lastKnown = recent[recent.length - 1].price;
 
   if (recent.length < 5) {
@@ -1664,24 +1791,30 @@ function forecastPrice(seriesPoints, fallbackPrice) {
   const weightedQuadratic = weightedQuadraticRegression(xValues, yValues);
   const predLinear = weightedLinear.predict(xTarget);
   const predQuadratic = weightedQuadratic.predict(xTarget);
-  const useQuadratic = Number.isFinite(weightedQuadratic.r2) && weightedQuadratic.r2 > weightedLinear.r2 + 0.03;
+  const useQuadratic =
+    Number.isFinite(weightedQuadratic.r2) &&
+    weightedQuadratic.r2 > weightedLinear.r2 + 0.025 &&
+    recent.length >= 8;
   const rawPredictedPrice = Math.max(1, useQuadratic ? predQuadratic : predLinear);
 
-  const smoothed = exponentialSmoothingForecast(yValues, 0.35, horizonDays);
+  const regRmse = computeRegressionRmse(yValues, xValues, useQuadratic ? weightedQuadratic : weightedLinear);
+  const blendRegWeight = Number.isFinite(regRmse) && lastKnown > 0 && regRmse / lastKnown < 0.06 ? 0.68 : 0.58;
+
+  const smoothed = exponentialSmoothingForecast(yValues, 0.32, horizonDays);
   const blendedPredictedPrice = Number.isFinite(smoothed)
-    ? rawPredictedPrice * 0.7 + smoothed * 0.3
+    ? rawPredictedPrice * blendRegWeight + smoothed * (1 - blendRegWeight)
     : rawPredictedPrice;
   const rawDeltaPct = lastKnown > 0 ? ((blendedPredictedPrice - lastKnown) / lastKnown) * 100 : 0;
 
   //Убираем аномальные скачки прогноза через ограничение по волатильности
   const maxRecentMovePct = getRecentVolatilityPercent(recent);
-  const maxAllowedDeltaPct = Math.min(20, Math.max(4, maxRecentMovePct * 1.8 + 2));
+  const maxAllowedDeltaPct = Math.min(18, Math.max(3.5, maxRecentMovePct * 1.65 + 1.5));
   const boundedDeltaPct = clamp(rawDeltaPct, -maxAllowedDeltaPct, maxAllowedDeltaPct);
 
   const historicalMin = Math.min(...recent.map((point) => point.price));
   const historicalMax = Math.max(...recent.map((point) => point.price));
-  const volatilityFloor = historicalMin * 0.85;
-  const volatilityCeil = historicalMax * 1.15;
+  const volatilityFloor = historicalMin * 0.86;
+  const volatilityCeil = historicalMax * 1.14;
 
   const predictedByDelta = lastKnown * (1 + boundedDeltaPct / 100);
   const predictedPrice = clamp(predictedByDelta, volatilityFloor, volatilityCeil);
@@ -1782,13 +1915,31 @@ function computeR2(actual, predicted) {
   return 1 - ssRes / ssTot;
 }
 
-function exponentialSmoothingForecast(values, alpha = 0.35, steps = 1) {
+function computeRegressionRmse(yValues, xValues, model) {
+  if (!model || typeof model.predict !== 'function' || !Array.isArray(yValues) || !yValues.length) return null;
+  const predicted = xValues.map((x) => model.predict(x));
+  if (predicted.length !== yValues.length) return null;
+  let sse = 0;
+  for (let i = 0; i < yValues.length; i += 1) {
+    const d = yValues[i] - predicted[i];
+    sse += d * d;
+  }
+  const rmse = Math.sqrt(sse / yValues.length);
+  return Number.isFinite(rmse) ? rmse : null;
+}
+
+function exponentialSmoothingForecast(values, alpha = 0.32, horizonSteps = 1) {
   if (!Array.isArray(values) || !values.length) return null;
-  let s = values[0];
-  for (let i = 1; i < values.length; i += 1) {
+  if (values.length === 1) return values[0];
+  let sPrev = values[0];
+  let s = alpha * values[1] + (1 - alpha) * sPrev;
+  for (let i = 2; i < values.length; i += 1) {
+    sPrev = s;
     s = alpha * values[i] + (1 - alpha) * s;
   }
-  return s;
+  const steps = Math.max(1, Math.min(30, Number(horizonSteps) || 1));
+  const trendPerStep = s - sPrev;
+  return s + trendPerStep * steps;
 }
 
 function getRecentVolatilityPercent(seriesPoints) {
@@ -1821,11 +1972,13 @@ function median(values) {
   return sorted[mid];
 }
 
-function describeTrend(trend) {
-  if (!trend) return 'Данных недостаточно.';
-  if (trend.direction === 'up') return `цена росла примерно на ${Math.abs(trend.deltaPct).toFixed(1)}% за последний период.`;
-  if (trend.direction === 'down') return `цена снижалась примерно на ${Math.abs(trend.deltaPct).toFixed(1)}% за последний период.`;
-  return 'существенных колебаний за последний период не выявлено.';
+function describeTrend(trend, basePrice = null) {
+  if (!trend || !Number.isFinite(trend.deltaPct)) return 'Данных недостаточно.';
+  const deltaPct = Number(trend.deltaPct);
+  const sign = deltaPct >= 0 ? '+' : '';
+  const rubDelta = Number.isFinite(basePrice) && basePrice > 0 ? (basePrice * deltaPct) / 100 : null;
+  const rubPart = rubDelta == null ? '' : `, ~${sign}${formatPrice(rubDelta)} ₽`;
+  return `изменение ${sign}${deltaPct.toFixed(2)}%${rubPart} за последний период.`;
 }
 
 function describeTrendShort(trend) {
@@ -1846,13 +1999,17 @@ function describeForecast(forecast, scopeLabel) {
   if (!forecast || !Number.isFinite(forecast.predictedPrice)) {
     return `Прогноз ${scopeLabel} пока недоступен.`;
   }
+  const algorithmLabel =
+    forecast.model === 'quadratic+exp'
+      ? 'взвешенная квадратичная регрессия + экспоненциальное сглаживание'
+      : 'взвешенная линейная регрессия + экспоненциальное сглаживание';
   if (forecast.direction === 'up') {
-    return `По расширенной модели тренда ${scopeLabel} цена может вырасти до ${formatPrice(forecast.predictedPrice)} ₽ в ближайшую неделю.`;
+    return `По алгоритму (${algorithmLabel}) ${scopeLabel} цена может вырасти до ${formatPrice(forecast.predictedPrice)} ₽ в ближайшую неделю.`;
   }
   if (forecast.direction === 'down') {
-    return `По расширенной модели тренда ${scopeLabel} цена может снизиться до ${formatPrice(forecast.predictedPrice)} ₽ в ближайшую неделю.`;
+    return `По алгоритму (${algorithmLabel}) ${scopeLabel} цена может снизиться до ${formatPrice(forecast.predictedPrice)} ₽ в ближайшую неделю.`;
   }
-  return `По расширенной модели тренда ${scopeLabel} ожидается стабильный уровень около ${formatPrice(forecast.predictedPrice)} ₽ в ближайшую неделю.`;
+  return `По алгоритму (${algorithmLabel}) ${scopeLabel} ожидается уровень около ${formatPrice(forecast.predictedPrice)} ₽ в ближайшую неделю.`;
 }
 
 function describeForecastShort(forecast) {
@@ -1890,8 +2047,8 @@ async function renderMiniPriceChartInComparison(containerId, productId) {
     chartContainer.appendChild(canvas);
 
     //Подготовим данные, как в renderPriceChart
-    const datasets = Object.entries(data).map(([storeName, storeData]) => {
-      const color = getStoreColor(storeName);
+    const datasets = Object.entries(data).map(([storeName, storeData], seriesIndex) => {
+      const color = getDistinctSeriesColorForLabel(storeName, seriesIndex);
       return {
         label: storeName,
         data: storeData.map(point => ({
@@ -1899,7 +2056,7 @@ async function renderMiniPriceChartInComparison(containerId, productId) {
           y: point.y
         })),
         borderColor: color,
-        backgroundColor: color + '20',
+        backgroundColor: hexToRgbaString(color, 0.2),
         borderWidth: 1, 
         pointRadius: 2, 
         pointHoverRadius: 3,
@@ -2003,54 +2160,180 @@ async function renderMiniPriceChartInComparison(containerId, productId) {
   }
 }
 
-//Вспомогательная функция для генерации случайного цвета
-function getStoreColor(storeName) {
-  //Приводим имя магазина к нижнему регистру для нечувствительности к регистру
-  const normalizedStoreName = storeName.toLowerCase();
+function getStoreSellerKey(storeName, sellerName = null) {
+  const store = String(storeName || '').trim().toLowerCase();
+  const seller = String(sellerName || '').trim().toLowerCase();
+  return `${store}::${seller}`;
+}
 
-  //Определяем цвета для известных магазинов
-  const colorMap = {
-    'dns': '#f97316', //Оранжевый (DNS-shop)
-    'dns-shop': '#f97316', //На случай, если приходит 'DNS-shop'
-    'dns shop': '#f97316', //На случай, если приходит 'DNS Shop'
-    'ozon': '#1d4ed8', //Синий (OZON)
-    'ozon.ru': '#1d4ed8', //На случай, если приходит 'OZON.ru'
-    'mvideo': '#dc2626', //Красный (М.Видео)
-    'm.video': '#dc2626', //На случай, если приходит 'М.Видео' как 'M.Video'
-    'eldorado': '#10b981', //Изумрудный (Эльдорадо)
-    'citilink': '#8b5cf6', //Фиолетовый (Ситилинк)
-    'megamarket': '#22c55e', //Зелёный (СберMegaMarket)
-    'regard': '#6366f1', //Индиго (Regard / Регард)
-    'avito': '#059669', //Тёмно-зелёный (Avito)
-    'avito marketplace': '#059669', //На случай, если приходит полное название
-    'yandex market': '#ff9900', //Жёлтый (Яндекс.Маркет)
-    'wildberries': '#ff0000', //Ярко-красный (Wildberries)
-    'aliexpress': '#ff6600', //Оранжево-красный (AliExpress)
-    'amazon': '#ff9900', //Жёлтый (Amazon)
-    'ebay': '#0a3069', //Тёмно-синий (eBay)
-    'bestbuy': '#003b64', //Тёмно-синий (Best Buy)
-    'walmart': '#007dc6', 
-    'target': '#cc0000', 
-    'apple': '#a2aaad', 
-    'samsung': '#1428a0', 
-    'xiaomi': '#ff6600', 
-    'huawei': '#e01e24', 
-    'google': '#4285f4', 
-    'asus': '#000000', 
-    'lenovo': '#d9006c', 
-    'hp': '#0096d6', 
-    'dell': '#007db8', 
-    'acer': '#83004c', 
-    'msi': '#ff0000', 
-    'lg': '#005fa7', 
-    'sony': '#000000', 
-    'nokia': '#085a9e', 
-    'lg electronics': '#005fa7', 
-    'apple inc.': '#a2aaad', 
-  };
+function buildStoreDisplayName(storeName, sellerName = null) {
+  const cleanStore = String(storeName || '').trim() || 'Магазин';
+  const cleanSeller = String(sellerName || '').trim();
+  return cleanSeller ? `${cleanStore} (${cleanSeller})` : cleanStore;
+}
 
-  //Возвращаем цвет из карты, если он найден, иначе возвращаем серый как резервный вариант
-  return colorMap[normalizedStoreName] || '#9ca3af'; //'#9ca3af' - серый цвет по умолчанию
+/** Дата YYYY-MM-DD в локальном календаре (для input type="date"). */
+function formatLocalDateYMD(d = new Date()) {
+  const z = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${z(d.getMonth() + 1)}-${z(d.getDate())}`;
+}
+
+function hslToHex(h, s, l) {
+  const S = s / 100;
+  const L = l / 100;
+  const C = (1 - Math.abs(2 * L - 1)) * S;
+  const X = C * (1 - Math.abs(((h / 60) % 2) - 1));
+  const m = L - C / 2;
+  let r1 = 0;
+  let g1 = 0;
+  let b1 = 0;
+  if (h < 60) {
+    r1 = C;
+    g1 = X;
+  } else if (h < 120) {
+    r1 = X;
+    g1 = C;
+  } else if (h < 180) {
+    g1 = C;
+    b1 = X;
+  } else if (h < 240) {
+    g1 = X;
+    b1 = C;
+  } else if (h < 300) {
+    r1 = X;
+    b1 = C;
+  } else {
+    r1 = C;
+    b1 = X;
+  }
+  const r = Math.round((r1 + m) * 255);
+  const g = Math.round((g1 + m) * 255);
+  const b = Math.round((b1 + m) * 255);
+  return `#${[r, g, b].map((v) => v.toString(16).padStart(2, '0')).join('')}`;
+}
+
+/** Устойчивый «разный» цвет линии для каждого продавца/легенды графика. */
+function getDistinctSeriesColorForLabel(label, index = 0) {
+  const str = `${String(label || '')}|${index}`;
+  let hash = 2166136261;
+  for (let i = 0; i < str.length; i += 1) {
+    hash ^= str.charCodeAt(i);
+    hash = Math.imul(hash, 16777619);
+  }
+  const h = Math.abs(hash) % 360;
+  const s = 58 + (Math.abs(hash >>> 8) % 24);
+  const l = 44 + (Math.abs(hash >>> 16) % 12);
+  return hslToHex(h, s, l);
+}
+
+function hexToRgbaString(hex, alpha = 0.2) {
+  const h = String(hex || '').trim().replace('#', '');
+  if (!/^[0-9a-fA-F]{6}$/.test(h)) return `rgba(148, 163, 184, ${alpha})`;
+  const r = parseInt(h.slice(0, 2), 16);
+  const g = parseInt(h.slice(2, 4), 16);
+  const b = parseInt(h.slice(4, 6), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+let __adminPriceUrlAutofillSeq = 0;
+function scheduleAdminPriceUrlAutofill(rowEl, urlInput) {
+  const run = ++__adminPriceUrlAutofillSeq;
+  urlInput._autofillRun = run;
+  clearTimeout(urlInput._autofillTimer);
+  urlInput._autofillTimer = setTimeout(() => {
+    if (urlInput._autofillRun !== run) return;
+    tryAdminAutofillPriceFromUrl(rowEl, urlInput);
+  }, 700);
+}
+
+async function tryAdminAutofillPriceFromUrl(rowEl, urlInput) {
+  const token = localStorage.getItem('techAggregatorToken');
+  if (!token || !rowEl || !urlInput) return;
+  const raw = String(urlInput.value || '').trim();
+  if (!raw) return;
+  try {
+    new URL(raw);
+  } catch {
+    return;
+  }
+  if (rowEl.getAttribute('data-url-fetching') === '1') return;
+  rowEl.setAttribute('data-url-fetching', '1');
+  try {
+    const response = await fetch('http://localhost:3000/api/admin/fetch-price-from-url', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify({ url: raw })
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) return;
+
+    const priceInput = rowEl.querySelector('.price-value-input, [id^="priceValue_"], #newPrice');
+    const storeSelect = rowEl.querySelector('.price-store-select, [id^="priceStore_"], #newStoreName');
+    const sellerInput = rowEl.querySelector('.price-seller-input, [id^="priceSeller_"], #newSellerName');
+
+    if (priceInput && data.price != null && Number.isFinite(Number(data.price))) {
+      priceInput.value = String(Math.round(Number(data.price)));
+    }
+    if (storeSelect && data.storeName) {
+      const v = String(data.storeName);
+      const opt = Array.from(storeSelect.options).find((o) => o.value === v);
+      if (opt) storeSelect.value = v;
+      else {
+        const other = Array.from(storeSelect.options).find((o) => o.value === 'Other');
+        if (other) storeSelect.value = 'Other';
+      }
+    }
+    if (sellerInput && data.sellerName != null && String(data.sellerName).trim()) {
+      sellerInput.value = String(data.sellerName).trim();
+    }
+    if (data.parsedName) {
+      let hint = rowEl.querySelector('.price-fetch-hint');
+      if (!hint) {
+        hint = document.createElement('div');
+        hint.className = 'price-fetch-hint';
+        hint.style.cssText = 'font-size:0.78rem;color:#64748b;margin-top:4px;width:100%;flex-basis:100%;';
+        rowEl.appendChild(hint);
+      }
+      hint.textContent = `По ссылке: ${String(data.parsedName).slice(0, 120)}${String(data.parsedName).length > 120 ? '…' : ''}`;
+    }
+  } catch (_) {
+    /* тихо: пользователь может вводить URL по частям */
+  } finally {
+    rowEl.removeAttribute('data-url-fetching');
+  }
+}
+
+function ensureAdminPriceUrlAutofillWired() {
+  if (window.__priceUrlAutofillWired) return;
+  window.__priceUrlAutofillWired = true;
+  document.addEventListener('input', (e) => {
+    const el = e.target;
+    if (!el || !el.classList || !el.classList.contains('price-url-autofill')) return;
+    const row = el.closest('.manual-price-entry, .price-row, .admin-price-history-manual-row');
+    if (!row) return;
+    scheduleAdminPriceUrlAutofill(row, el);
+  });
+  document.addEventListener(
+    'blur',
+    (e) => {
+      const el = e.target;
+      if (!el || !el.classList || !el.classList.contains('price-url-autofill')) return;
+      const row = el.closest('.manual-price-entry, .price-row, .admin-price-history-manual-row');
+      if (!row) return;
+      const raw = String(el.value || '').trim();
+      if (!raw) return;
+      try {
+        new URL(raw);
+      } catch {
+        return;
+      }
+      setTimeout(() => tryAdminAutofillPriceFromUrl(row, el), 50);
+    },
+    true
+  );
 }
 
 function trackPurchase(productId, store) {
@@ -2733,6 +3016,7 @@ function initializeAdminPage() {
   loadPopularSearches();
   initializeAdminProductSearch();
   initializeAdminPriceSyncControls();
+  ensureAdminPriceUrlAutofillWired();
 }
 
 //Функции для поиска с подсказками
@@ -4184,7 +4468,7 @@ function renderComparisonTable(container) {
 
     const storeLinks = product.prices && product.prices.length > 0
       ? product.prices.map(p =>
-          `<a href="${p.url}" target="_blank" class="store-link" title="${p.store || p.storeName}">${p.store || p.storeName}</a>`
+          `<a href="${p.url}" target="_blank" class="store-link" title="${buildStoreDisplayName(p.store || p.storeName, p.sellerName)}">${buildStoreDisplayName(p.store || p.storeName, p.sellerName)}</a>`
         ).join('<br>')
       : '—';
 
@@ -5238,6 +5522,7 @@ async function loadProductsFromAPI() {
       }, {}),
       prices: p.prices.map(price => ({
         store: price.storeName, 
+        sellerName: price.sellerName || null,
         price: price.price,
         url: price.url.trim()
       }))
@@ -6228,10 +6513,19 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+    if (document.getElementById('manualAddForm')) {
+      initDefaultManualPriceEntries();
+    }
+    const defaultHistoryDate = document.getElementById('newDate');
+    if (defaultHistoryDate && !defaultHistoryDate.value) {
+      defaultHistoryDate.value = formatLocalDateYMD();
+    }
+    ensureAdminPriceUrlAutofillWired();
 });
 
 
 let currentManualCategory = ''; 
+const DEFAULT_PRICE_STORE_SEQUENCE = ['Wildberries', 'Wildberries', 'Yandex Market', 'Yandex Market'];
 
 
 const CATEGORY_TO_SPECS_MAP = {
@@ -6457,13 +6751,13 @@ function updateManualSpecFields() {
 }
 
 //Добавление блока для новой цены и ссылки
-function addManualPriceEntry() {
+function addManualPriceEntry(defaultStoreName = '') {
   const container = document.getElementById('manualPricesList');
   const entryCount = container.children.length;
   const newIndex = entryCount;
 
   const priceEntryDiv = document.createElement('div');
-  priceEntryDiv.className = 'manual-price-entry';
+  priceEntryDiv.className = 'manual-price-entry admin-manual-price-card';
   priceEntryDiv.id = `priceEntry_${newIndex}`;
 
   priceEntryDiv.innerHTML = `
@@ -6491,12 +6785,28 @@ function addManualPriceEntry() {
       </div>
       <div class="form-group">
           <label for="priceUrl_${newIndex}">Ссылка на покупку *</label>
-          <input type="url" id="priceUrl_${newIndex}" required placeholder="https://shop.example.com/product-link">
+          <input type="url" id="priceUrl_${newIndex}" class="price-url-autofill" required placeholder="Вставьте ссылку — цена и магазин подставятся сами">
+      </div>
+      <div class="form-group">
+          <label for="priceSeller_${newIndex}">Продавец *</label>
+          <input type="text" id="priceSeller_${newIndex}" required placeholder="Например: ООО Ромашка">
       </div>
       <button type="button" class="remove-price-btn" onclick="removeManualPriceEntry(${newIndex})">Удалить магазин</button>
   `;
 
   container.appendChild(priceEntryDiv);
+  if (defaultStoreName) {
+    const storeSelect = priceEntryDiv.querySelector(`#priceStore_${newIndex}`);
+    if (storeSelect) storeSelect.value = defaultStoreName;
+  }
+}
+
+function initDefaultManualPriceEntries() {
+  const container = document.getElementById('manualPricesList');
+  if (!container) return;
+  container.innerHTML = '';
+  DEFAULT_PRICE_STORE_SEQUENCE.forEach((store) => addManualPriceEntry(store));
+  ensureAdminPriceUrlAutofillWired();
 }
 
 async function fillManualPricesFromUrls() {
@@ -6519,6 +6829,7 @@ async function fillManualPricesFromUrls() {
     const urlInput = entry.querySelector('[id^="priceUrl_"]');
     const priceInput = entry.querySelector('[id^="priceValue_"]');
     const storeSelect = entry.querySelector('[id^="priceStore_"]');
+    const sellerInput = entry.querySelector('[id^="priceSeller_"]');
     const rawUrl = urlInput && urlInput.value ? urlInput.value.trim() : '';
     if (!rawUrl) {
       skipped += 1;
@@ -6549,6 +6860,9 @@ async function fillManualPricesFromUrls() {
       if (storeSelect && data.storeName) {
         storeSelect.value = data.storeName;
       }
+      if (sellerInput && data.sellerName) {
+        sellerInput.value = data.sellerName;
+      }
       filled += 1;
     } catch (e) {
       console.warn('fetch-price-from-url:', e);
@@ -6577,7 +6891,7 @@ function removeManualPriceEntry(index) {
 function resetManualAddForm() {
   document.getElementById('manualAddForm').reset();
   document.getElementById('manualSpecFieldsContainer').innerHTML = '<p class="placeholder-text">Выберите категорию, чтобы увидеть доступные поля для характеристик.</p>';
-  document.getElementById('manualPricesList').innerHTML = '';
+  initDefaultManualPriceEntries();
   currentManualCategory = '';
   console.log('Форма "Добавление вручную" сброшена.');
 }
@@ -6614,19 +6928,22 @@ document.getElementById('manualAddForm')?.addEventListener('submit', async funct
     const storeInput = entryDiv.querySelector(`[id^='priceStore_']`);
     const priceInput = entryDiv.querySelector(`[id^='priceValue_']`);
     const urlInput = entryDiv.querySelector(`[id^='priceUrl_']`);
+    const sellerInput = entryDiv.querySelector(`[id^='priceSeller_']`);
 
     const storeName = storeInput ? storeInput.value : '';
     const priceValue = priceInput ? parseInt(priceInput.value, 10) : NaN;
     const buyUrl = urlInput ? urlInput.value.trim() : '';
+    const sellerName = sellerInput ? sellerInput.value.trim() : '';
 
-    if (storeName && !isNaN(priceValue) && priceValue >= 0 && buyUrl) {
+    if (storeName && !isNaN(priceValue) && priceValue >= 0 && buyUrl && sellerName) {
       prices.push({
         storeName: storeName,
+        sellerName: sellerName,
         price: priceValue,
         url: buyUrl
       });
     } else {
-      console.warn(`Пропуск неполного блока цены ${i}:`, { storeName, priceValue, buyUrl });
+      console.warn(`Пропуск неполного блока цены ${i}:`, { storeName, sellerName, priceValue, buyUrl });
       showCustomNotification(`Блок цены ${i+1} заполнен не полностью и будет пропущен.`, 'warning');
     }
   }
@@ -7828,11 +8145,21 @@ function displayParsedResult(parsedData, message) {
       <option value="Other">Другой</option>
     `;
 
-    const initialRowsData = Array.isArray(parsedData.prices) && parsedData.prices.length
+    const baseRowsData = Array.isArray(parsedData.prices) && parsedData.prices.length
       ? parsedData.prices
       : (parsedData.price != null || parsedData.sourceUrl || parsedData.priceStoreName)
         ? [{ storeName: parsedData.priceStoreName || 'Yandex Market', price: parsedData.price, url: parsedData.sourceUrl || '' }]
         : [];
+
+    const initialRowsData = [...baseRowsData];
+    const wbRows = initialRowsData.filter((r) => String(r.storeName || '').toLowerCase() === 'wildberries').length;
+    const ymRows = initialRowsData.filter((r) => String(r.storeName || '').toLowerCase() === 'yandex market').length;
+    for (let i = wbRows; i < 2; i += 1) {
+      initialRowsData.push({ storeName: 'Wildberries', sellerName: '', price: '', url: '' });
+    }
+    for (let i = ymRows; i < 2; i += 1) {
+      initialRowsData.push({ storeName: 'Yandex Market', sellerName: '', price: '', url: '' });
+    }
 
     const initialPriceRows = initialRowsData.map((row) => {
       const selectedStore = row.storeName || 'Other';
@@ -7841,10 +8168,11 @@ function displayParsedResult(parsedData, message) {
         ? storeOptions.replace(`value="${selectedStore}"`, `value="${selectedStore}" selected`)
         : `${storeOptions}<option value="${selectedStore}" selected>${selectedStore}</option>`;
       return `
-        <div class="price-row" style="display: flex; gap: 10px; margin-bottom: 5px;">
-          <select class="price-store-select" style="flex: 1;">${optionsMarkup}</select>
-          <input type="number" class="price-value-input" value="${row.price != null ? row.price : ''}" style="flex: 1;" placeholder="Цена, RUB">
-          <input type="url" class="price-url-input" value="${row.url || ''}" style="flex: 1.5;" placeholder="Ссылка на товар">
+        <div class="price-row" style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 5px;">
+          <select class="price-store-select" style="flex: 1; min-width: 140px;">${optionsMarkup}</select>
+          <input type="text" class="price-seller-input" value="${row.sellerName || ''}" style="flex: 1; min-width: 120px;" placeholder="Продавец">
+          <input type="number" class="price-value-input" value="${row.price != null ? row.price : ''}" style="flex: 1; min-width: 100px;" placeholder="Цена, RUB">
+          <input type="url" class="price-url-input price-url-autofill" value="${row.url || ''}" style="flex: 1.5; min-width: 200px;" placeholder="Ссылка — подставится цена и магазин">
           <button type="button" class="btn btn-danger btn-small" onclick="this.parentElement.remove()">✕</button>
         </div>
       `;
@@ -7866,7 +8194,7 @@ function displayParsedResult(parsedData, message) {
     }
 
     resultContainer.innerHTML = `
-        <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; border: 1px solid #e5e7eb;">
+        <div class="admin-parse-edit-panel" style="background: #f8f9fa; padding: 20px; border-radius: 14px; border: 1px solid #e5e7eb;">
             <h3>📦 Редактирование товара перед сохранением</h3>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
                 <div>
@@ -7937,6 +8265,7 @@ function displayParsedResult(parsedData, message) {
         </div>
     `;
     resultContainer.style.display = 'block';
+    ensureAdminPriceUrlAutofillWired();
 }
 
 
@@ -7944,7 +8273,7 @@ function addPriceRow() {
   const container = document.getElementById('pricesContainer');
   const div = document.createElement('div');
   div.className = 'price-row';
-  div.style.cssText = 'display: flex; gap: 10px; margin-bottom: 5px;';
+  div.style.cssText = 'display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 5px;';
   div.innerHTML = `
     <select class="price-store-select" style="flex: 1;">
       <option value="Wildberries">Wildberries</option>
@@ -7960,8 +8289,9 @@ function addPriceRow() {
       <option value="MVideo">M.Video</option>
       <option value="Other">Другой</option>
     </select>
+    <input type="text" class="price-seller-input" style="flex: 1;" placeholder="Продавец">
     <input type="number" class="price-value-input" style="flex: 1;" placeholder="Цена, RUB">
-    <input type="url" class="price-url-input" style="flex: 1.5;" placeholder="Ссылка на товар">
+    <input type="url" class="price-url-input price-url-autofill" style="flex: 1.5; min-width: 200px;" placeholder="Ссылка — подставится цена и магазин">
     <button type="button" class="btn btn-danger btn-small" onclick="this.parentElement.remove()">✕</button>
   `;
   container.appendChild(div);
@@ -8022,17 +8352,14 @@ async function searchProductForPriceHistory() {
     const products = await response.json();
     console.log('Результаты поиска:', products);
 
-    //Предположим, что мы нашли один товар или берем первый из списка
-    const foundProduct = products.find(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()));
-    //Или покажем список и дадим выбрать, если найдено несколько
-    if (!foundProduct) {
+    const ranked = rankAdminPriceHistorySearchResults(products, searchTerm);
+    if (!ranked.length) {
       document.getElementById('priceHistoryResult').style.display = 'none';
       showCustomNotification('Товар не найден.', 'info');
       return;
     }
 
-    //Загружаем историю цен для найденного товара
-    await loadAndDisplayPriceHistory(foundProduct.id, foundProduct.name);
+    await loadAndDisplayPriceHistory(ranked[0].id, ranked[0].name);
 
   } catch (error) {
     console.error('Ошибка поиска товара:', error);
@@ -8073,6 +8400,13 @@ async function loadAndDisplayPriceHistory(productId, productName) {
     //Устанавливаем ID товара в скрытое поле формы
     document.getElementById('selectedProductId').value = productId;
 
+    const historyDateInput = document.getElementById('newDate');
+    if (historyDateInput) historyDateInput.value = formatLocalDateYMD();
+    const historySellerInput = document.getElementById('newSellerName');
+    if (historySellerInput) historySellerInput.value = '';
+    const historyUrlInput = document.getElementById('newPurchaseUrl');
+    if (historyUrlInput) historyUrlInput.value = '';
+
     //Показываем контейнер с результатами
     document.getElementById('priceHistoryResult').style.display = 'block';
 
@@ -8109,8 +8443,8 @@ function renderPriceHistoryChart(data, productName) {
   container.appendChild(canvas);
 
   //Преобразование данных для Chart.js (аналогично loadAndRenderPriceHistory)
-  const datasets = Object.entries(data).map(([storeName, storeData]) => {
-    const color = getStoreColor(storeName); //Предполагаем, что getStoreColor доступна
+  const datasets = Object.entries(data).map(([storeName, storeData], seriesIndex) => {
+    const color = getDistinctSeriesColorForLabel(storeName, seriesIndex);
     return {
       label: storeName,
       data: storeData.map(point => ({
@@ -8118,7 +8452,7 @@ function renderPriceHistoryChart(data, productName) {
         y: point.y
       })),
       borderColor: color,
-      backgroundColor: color + '20', //Добавляем прозрачность (например, RGBA)
+      backgroundColor: hexToRgbaString(color, 0.22),
       fill: false,
       tension: 0.1
     };
@@ -8175,53 +8509,6 @@ function renderPriceHistoryChart(data, productName) {
   priceHistoryChartInstance = new Chart(canvas, config);
 }
 
-function renderPriceHistoryList(entries) {
-  const container = document.getElementById('priceHistoryListContainer');
-  if (!container) return;
-
-  if (!entries || entries.length === 0) {
-    container.innerHTML = '<p>Для этого товара пока нет записей об истории цен.</p>';
-    return;
-  }
-
-  //Предположим, что entries - это объект в формате { storeName: [{x: date, y: price}, ...], ... }
-  //Нужно преобразовать в плоский список для отображения
-  let flatList = [];
-  for (const [storeName, storeEntries] of Object.entries(entries)) {
-    storeEntries.forEach(entry => {
-      flatList.push({
-        storeName: storeName,
-        date: entry.x, //Это строка в формате ISO
-        price: entry.y
-      });
-    });
-  }
-
-  //Сортируем по дате (новые сверху)
-  flatList.sort((a, b) => new Date(b.date) - new Date(a.date));
-
-  container.innerHTML = `
-    <table class="price-history-table">
-      <thead>
-        <tr>
-          <th>Магазин</th>
-          <th>Дата</th>
-          <th>Цена (₽)</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${flatList.map(entry => `
-          <tr>
-            <td>${entry.storeName}</td>
-            <td>${new Date(entry.date).toLocaleString('ru-RU')}</td>
-            <td>${formatPrice(entry.price)}</td>
-          </tr>
-        `).join('')}
-      </tbody>
-    </table>
-  `;
-}
-
 document.getElementById('addPriceHistoryForm').addEventListener('submit', async function (e) {
   e.preventDefault();
 
@@ -8252,8 +8539,10 @@ document.getElementById('addPriceHistoryForm').addEventListener('submit', async 
       body: JSON.stringify({
         productId: parseInt(productId, 10),
         storeName: storeName,
+        sellerName: (document.getElementById('newSellerName')?.value || '').trim() || null,
         price: price,
-        date: date //Отправляем строку, сервер должен её распознать
+        date: date,
+        url: (document.getElementById('newPurchaseUrl')?.value || '').trim() || null
       })
     });
 
@@ -8276,8 +8565,11 @@ document.getElementById('addPriceHistoryForm').addEventListener('submit', async 
 
     //Очищаем форму
     document.getElementById('newStoreName').value = '';
+    document.getElementById('newSellerName').value = '';
     document.getElementById('newPrice').value = '';
-    document.getElementById('newDate').value = '';
+    const urlEl = document.getElementById('newPurchaseUrl');
+    if (urlEl) urlEl.value = '';
+    document.getElementById('newDate').value = formatLocalDateYMD();
 
     //Перезагружаем историю цен для обновления графика и списка
     const productName = document.getElementById('selectedProductTitle').textContent;
@@ -8326,7 +8618,7 @@ function showAdminPriceSyncModal(title, payload) {
       (r) => `
     <tr>
       <td>${adminPriceSyncEscapeCell(r.productName)} <small>(ID ${r.productId})</small></td>
-      <td>${adminPriceSyncEscapeCell(r.storeName)}</td>
+      <td>${adminPriceSyncEscapeCell(buildStoreDisplayName(r.storeName, r.sellerName))}</td>
       <td>${r.oldPrice != null ? adminPriceSyncEscapeCell(String(r.oldPrice)) : '—'}</td>
       <td>${r.newPrice != null ? adminPriceSyncEscapeCell(String(r.newPrice)) : '—'}</td>
       <td>${adminPriceSyncEscapeCell(r.status)}</td>
@@ -8594,6 +8886,103 @@ function initializeAdminPriceSyncControls() {
   panel?.addEventListener('click', (e) => e.stopPropagation());
 }
 
+function escapeAdminSuggestHtml(text) {
+  return String(text ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+/** Выше — точное совпадение и вхождение без «прилипания» буквы к числу (realme gt 7 vs realme gt 7t). */
+function adminPriceHistorySearchRelevanceScore(productName, query) {
+  const n = String(productName || '').toLowerCase().trim();
+  const q = String(query || '').toLowerCase().trim();
+  if (!q || !n) return -1;
+  if (n === q) return 1_000_000;
+  const idx = n.indexOf(q);
+  if (idx !== -1) {
+    const after = n[idx + q.length];
+    const tightEnd =
+      after === undefined ||
+      /\s/.test(after) ||
+      !/[a-zа-яё0-9]/i.test(after);
+    let score = tightEnd ? 800_000 : 200_000;
+    score -= idx;
+    score -= Math.min(n.length, 400) * 0.05;
+    return score;
+  }
+  const words = q.split(/\s+/).filter(Boolean);
+  if (!words.length) return -1;
+  for (const w of words) {
+    if (!n.includes(w)) return -1;
+  }
+  return 50_000 - n.length;
+}
+
+function rankAdminPriceHistorySearchResults(products, query) {
+  const q = String(query || '').trim();
+  if (!q || !Array.isArray(products)) return [];
+  return [...products]
+    .map((p) => ({ p, s: adminPriceHistorySearchRelevanceScore(p.name, q) }))
+    .filter((x) => x.s >= 0)
+    .sort((a, b) => b.s - a.s)
+    .map((x) => x.p);
+}
+
+async function fetchAdminPriceHistorySearchCandidates(query) {
+  const token = localStorage.getItem('techAggregatorToken');
+  if (!token) return [];
+  const q = String(query || '').trim();
+  if (!q) return [];
+  const response = await fetch(
+    `http://localhost:3000/api/admin/products?search=${encodeURIComponent(q)}`,
+    { headers: { Authorization: `Bearer ${token}` } }
+  );
+  if (response.status === 401) {
+    localStorage.removeItem('techAggregatorToken');
+    currentUser = null;
+    updateAuthButtons();
+    showCustomNotification('Сессия истекла. Пожалуйста, войдите снова.', 'warning');
+    window.location.href = 'auth.html';
+    return [];
+  }
+  if (!response.ok) return [];
+  const products = await response.json();
+  return Array.isArray(products) ? products : [];
+}
+
+function showAdminPriceHistorySearchSuggestions(suggEl, products, query, onPick) {
+  if (!suggEl) return;
+  const qEsc = escapeAdminSuggestHtml(query);
+  if (!products.length) {
+    suggEl.innerHTML = `<div class="search-suggestion-item" style="cursor:default;color:#64748b;">Нет совпадений для «${qEsc}»</div>`;
+    suggEl.style.display = 'block';
+    return;
+  }
+  const slice = products.slice(0, 22);
+  suggEl.innerHTML = slice
+    .map(
+      (p) => `
+    <div class="search-suggestion-item admin-ph-suggest-item" role="option" data-id="${p.id}">
+      <div class="search-suggestion-name">${escapeAdminSuggestHtml(p.name)}</div>
+      <div class="search-suggestion-category" style="font-size:0.8rem;color:#64748b;">${escapeAdminSuggestHtml(
+        p.category || ''
+      )} · ID ${p.id}</div>
+    </div>`
+    )
+    .join('');
+  suggEl.style.display = 'block';
+  suggEl.querySelectorAll('.admin-ph-suggest-item').forEach((el) => {
+    el.addEventListener('mousedown', (ev) => {
+      ev.preventDefault();
+      const id = parseInt(el.getAttribute('data-id'), 10);
+      const picked = slice.find((x) => x.id === id);
+      if (picked) onPick(picked.id, picked.name);
+    });
+  });
+}
+
 function initializeAdminProductSearch() {
   const searchInputId = 'adminPriceHistorySearchInput';
   const suggestionsContainerId = 'adminPriceHistorySearchSuggestions';
@@ -8601,57 +8990,57 @@ function initializeAdminProductSearch() {
 
   const searchInput = document.getElementById(searchInputId);
   const searchForm = document.getElementById(searchFormId);
+  const sugg = document.getElementById(suggestionsContainerId);
 
-  if (!searchInput || !searchForm) {
+  if (!searchInput || !searchForm || !sugg) {
     console.warn('Элементы поиска для админ-панели не найдены.');
     return;
   }
+  if (searchForm.dataset.adminPhSearchInit === '1') return;
+  searchForm.dataset.adminPhSearchInit = '1';
 
   let autocompleteTimeout = null;
 
-  searchInput.addEventListener('input', function(e) {
+  searchInput.addEventListener('input', function (e) {
     const query = e.target.value.trim();
-
-    if (autocompleteTimeout) {
-      clearTimeout(autocompleteTimeout);
+    if (autocompleteTimeout) clearTimeout(autocompleteTimeout);
+    if (query.length < 1) {
+      sugg.innerHTML = '';
+      sugg.style.display = 'none';
+      return;
     }
-
-    if (query.length > 0) {
-      autocompleteTimeout = setTimeout(async () => {
-        try {
-          const suggestions = await fetchSearchSuggestions(query);
-          showSearchSuggestions(suggestions, suggestionsContainerId);
-          attachSuggestionHandlers(suggestionsContainerId, function(productId, productName) {
-             loadAndDisplayPriceHistory(productId, productName);
-             document.getElementById(suggestionsContainerId).style.display = 'none';
-          });
-        } catch (error) {
-          console.error('Ошибка автозаполнения в админке:', error);
-          document.getElementById(suggestionsContainerId).innerHTML = '';
-          document.getElementById(suggestionsContainerId).style.display = 'none';
-        }
-      }, 300);
-    } else {
-      document.getElementById(suggestionsContainerId).innerHTML = '';
-      document.getElementById(suggestionsContainerId).style.display = 'none';
-      clearTimeout(autocompleteTimeout);
-    }
+    autocompleteTimeout = setTimeout(async () => {
+      try {
+        const raw = await fetchAdminPriceHistorySearchCandidates(query);
+        const ranked = rankAdminPriceHistorySearchResults(raw, query);
+        showAdminPriceHistorySearchSuggestions(sugg, ranked, query, (productId, productName) => {
+          sugg.style.display = 'none';
+          searchInput.value = productName;
+          loadAndDisplayPriceHistory(productId, productName);
+        });
+      } catch (error) {
+        console.error('Ошибка автозаполнения в админке:', error);
+        sugg.innerHTML = '';
+        sugg.style.display = 'none';
+      }
+    }, 280);
   });
 
-  searchForm.addEventListener('submit', function(e) {
+  searchForm.addEventListener('submit', function (e) {
     e.preventDefault();
     const query = searchInput.value.trim();
-    if (query) {
-      searchProductForPriceHistoryByName(query, function(productId, productName) {
-        loadAndDisplayPriceHistory(productId, productName);
-      });
+    if (!query) {
+      showCustomNotification('Пожалуйста, введите название товара для поиска.', 'info');
+      return;
     }
+    void searchProductForPriceHistoryByName(query, function (productId, productName) {
+      loadAndDisplayPriceHistory(productId, productName);
+      sugg.style.display = 'none';
+    });
   });
 
-  document.addEventListener('click', function(e) {
-    if (!searchInput.contains(e.target) && !document.getElementById(suggestionsContainerId).contains(e.target)) {
-      document.getElementById(suggestionsContainerId).style.display = 'none';
-    }
+  document.addEventListener('click', function (e) {
+    if (!searchForm.contains(e.target)) sugg.style.display = 'none';
   });
 }
 
@@ -8668,47 +9057,23 @@ async function searchProductForPriceHistoryByName(searchTerm, onSuccessCallback)
   }
 
   try {
-    const response = await fetch(`http://localhost:3000/api/products?search=${encodeURIComponent(searchTerm)}`, {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
-
-    if (!response.ok) {
-      if (response.status === 401) {
-        localStorage.removeItem('techAggregatorToken');
-        currentUser = null;
-        updateAuthButtons();
-        showCustomNotification('Сессия истекла. Пожалуйста, войдите снова.', 'warning');
-        window.location.href = 'auth.html';
-        return;
-      }
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-    }
-
-    const products = await response.json();
-    console.log('Результаты поиска (по имени):', products);
-
-    const foundProduct = products.find(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()));
-    if (!foundProduct) {
-      document.getElementById('priceHistoryResult').style.display = 'none';
+    const raw = await fetchAdminPriceHistorySearchCandidates(searchTerm);
+    const ranked = rankAdminPriceHistorySearchResults(raw, searchTerm);
+    if (!ranked.length) {
+      const res = document.getElementById('priceHistoryResult');
+      if (res) res.style.display = 'none';
       showCustomNotification('Товар не найден.', 'info');
       return;
     }
-
+    const best = ranked[0];
     if (onSuccessCallback && typeof onSuccessCallback === 'function') {
-      onSuccessCallback(foundProduct.id, foundProduct.name);
+      onSuccessCallback(best.id, best.name);
     }
-
   } catch (error) {
     console.error('Ошибка поиска товара по имени:', error);
     showCustomNotification(`Ошибка поиска товара: ${error.message}`, 'error');
   }
 }
-
-document.addEventListener('DOMContentLoaded', function () {
-
-  initializeAdminProductSearch();
-
-});
 
 function renderPriceHistoryList(entries) {
   const container = document.getElementById('priceHistoryListContainer');
@@ -8839,18 +9204,28 @@ async function confirmAndSaveParsedDataWithEdit() {
 
     //Сбор цен
     const prices = [];
+    let hasIncompletePriceRow = false;
     document.querySelectorAll('.price-row').forEach(row => {
   const storeSelect = row.querySelector('.price-store-select');
+  const sellerInput = row.querySelector('.price-seller-input');
   const priceInput = row.querySelector('.price-value-input');
   const urlInput = row.querySelector('.price-url-input'); //<-- ДОБАВЛЕНО
   if (storeSelect && priceInput) {
     const price = parseFloat(priceInput.value);
+    const sellerName = sellerInput ? sellerInput.value.trim() : '';
     const url = urlInput ? urlInput.value.trim() : ''; //<-- ДОБАВЛЕНО
-    if (!isNaN(price) && price > 0) {
-      prices.push({ storeName: storeSelect.value, price: price, url: url }); //<-- ДОБАВЛЕНО url
+    const hasAnyValue = storeSelect.value || sellerName || (!isNaN(price) && price > 0) || url;
+    if (!isNaN(price) && price > 0 && sellerName && url) {
+      prices.push({ storeName: storeSelect.value, sellerName, price: price, url: url }); //<-- ДОБАВЛЕНО url
+    } else if (hasAnyValue) {
+      hasIncompletePriceRow = true;
     }
   }
 });
+
+    if (hasIncompletePriceRow) {
+      return showCustomNotification('В блоке цен заполнены не все поля. Для каждой строки укажите магазин, продавца, цену и ссылку.', 'warning');
+    }
 
     const productData = {
         name,

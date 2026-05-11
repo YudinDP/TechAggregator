@@ -327,6 +327,129 @@
             gap: 1rem;
             justify-content: flex-end;
         }
+
+        /* Формы истории цен и блоки цен при добавлении товара */
+        .admin-form-card {
+            margin-top: 1.25rem;
+            padding: 1.25rem 1.35rem;
+            background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06);
+        }
+        .admin-form-card h5 {
+            margin: 0 0 1rem 0;
+            font-size: 1rem;
+            color: #0f172a;
+        }
+        .admin-form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem 1.25rem;
+            align-items: end;
+        }
+        .admin-field label {
+            display: block;
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: #475569;
+            margin-bottom: 0.4rem;
+        }
+        .admin-field input,
+        .admin-field select {
+            width: 100%;
+            padding: 0.65rem 0.85rem;
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            background: #fff;
+            transition: border-color 0.15s, box-shadow 0.15s;
+        }
+        .admin-field input:focus,
+        .admin-field select:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+        }
+        .admin-btn-primary {
+            padding: 0.65rem 1.35rem;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            color: #fff;
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
+            transition: transform 0.12s, box-shadow 0.12s;
+        }
+        .admin-btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 16px rgba(37, 99, 235, 0.4);
+        }
+        .admin-manual-price-card {
+            padding: 1rem 1.15rem;
+            margin-bottom: 1rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            background: #fff;
+            box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+        }
+        .admin-manual-price-card h5 {
+            margin: 0 0 0.75rem 0;
+            font-size: 0.95rem;
+            color: #334155;
+        }
+        .admin-manual-price-card .form-group input,
+        .admin-manual-price-card .form-group select {
+            border-radius: 10px;
+            border: 1px solid #cbd5e1;
+            padding: 0.55rem 0.75rem;
+        }
+        .admin-manual-price-card .remove-price-btn {
+            margin-top: 0.5rem;
+            padding: 0.45rem 0.9rem;
+            border-radius: 8px;
+            border: 1px solid #fecaca;
+            background: #fef2f2;
+            color: #b91c1c;
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+        }
+        .admin-manual-price-card .remove-price-btn:hover {
+            background: #fee2e2;
+        }
+        #parseResult .admin-parse-edit-panel input,
+        #parseResult .admin-parse-edit-panel select,
+        #parseResult .admin-parse-edit-panel textarea {
+            border-radius: 10px;
+            border: 1px solid #cbd5e1;
+            padding: 0.55rem 0.75rem;
+        }
+        #parseResult .admin-parse-edit-panel .price-row {
+            flex-wrap: wrap;
+            align-items: stretch;
+            padding: 0.65rem;
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            margin-bottom: 0.65rem !important;
+        }
+        #parseResult .admin-parse-edit-panel .spec-row {
+            padding: 0.5rem;
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            margin-bottom: 0.5rem !important;
+        }
+        #adminPriceHistorySearchForm {
+            position: relative;
+            max-width: 640px;
+        }
+        #adminPriceHistorySearchSuggestions {
+            max-height: 320px;
+        }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
@@ -623,6 +746,7 @@
     <h4 style="margin-top: 0;">Автообновление цен по ссылкам</h4>
     <p style="color: #6b7280; font-size: 0.9rem; margin-bottom: 0.75rem;">
       Обновление выполняется через API-источники: <strong>API Systems (WB/Яндекс.Маркет)</strong>, <strong>eBay API</strong>, <strong>PricesAPI.io</strong>.
+      Учитываются <strong>только уже сохранённые</strong> у товара строки цен и ссылки на карточки; новые продавцы добавляются вручную в карточке товара.
       Все цены приводятся к рублям перед записью в историю. Для eBay/PricesAPI можно обновлять цены как по названию товара, так и по заранее сохранённым ссылкам (если ссылка ведёт на поддерживаемую площадку/страницу).
       Серверное автообновление каталога — не чаще одного раза в 3 дня; для выбранного товара ниже можно обновить цены в любой момент.
     </p>
@@ -659,7 +783,7 @@
           <thead>
             <tr>
               <th>Товар</th>
-              <th>Магазин</th>
+              <th>Источник</th>
               <th>Было</th>
               <th>Стало</th>
               <th>Статус</th>
@@ -672,12 +796,12 @@
     </div>
   </div>
 
-  <form class="search-form" id="adminPriceHistorySearchForm">
+  <form class="search-form" id="adminPriceHistorySearchForm" style="padding-bottom: 200px;">
     <div class="search-input-container">
-      <input type="text" id="adminPriceHistorySearchInput" class="search-input" placeholder="Поиск товара для истории цен...">
+      <input type="text" id="adminPriceHistorySearchInput" class="search-input" placeholder="Поиск товара для истории цен..." autocomplete="off">
       <button type="submit" class="search-button">🔍</button>
+      <div id="adminPriceHistorySearchSuggestions" class="search-suggestions" style="display: none;"></div>
     </div>
-    <div id="adminPriceHistorySearchSuggestions" class="search-suggestions" style="display: none;"></div>
   </form>
 
   <div id="priceHistoryResult" style="display: none;">
@@ -688,27 +812,49 @@
     <div id="priceHistoryListContainer" style="margin-top: 20px;">
       <!-- Список истории цен будет добавлен сюда -->
     </div>
-    <h5>Добавить новую запись:</h5>
+    <div class="admin-form-card">
+    <h5>Добавить запись в историю</h5>
     <form id="addPriceHistoryForm">
-      <input type="hidden" id="selectedProductId" value=""> <!-- Сюда будет записан ID товара -->
-      <label for="newStoreName">Магазин:</label>
-<select id="newStoreName" required>
-    <option value="">Выберите магазин</option>
-    <option value="DNS">DNS</option>
-    <option value="OZON">OZON</option>
-    <option value="Wildberries">Wildberries</option>
-    <option value="Citilink">Ситилинк</option>
-    <option value="MVideo">М.Видео</option>
-    <option value="Yandex Market">Яндекс Маркет</option>
-    <option value="Eldorado">Эльдорадо</option>
-    <option value="Other">Другой</option>
-</select>
-      <label for="newPrice">Цена:</label>
-      <input type="number" id="newPrice" required>
-      <label for="newDate">Дата:</label>
-      <input type="date" id="newDate" required>
-      <button type="submit">Добавить в историю</button>
+      <input type="hidden" id="selectedProductId" value="">
+      <div class="manual-price-entry admin-price-history-manual-row">
+      <div class="admin-form-grid">
+        <div class="admin-field">
+          <label for="newStoreName">Магазин</label>
+          <select id="newStoreName" class="price-store-select" required>
+            <option value="">Выберите магазин</option>
+            <option value="DNS">DNS</option>
+            <option value="OZON">OZON</option>
+            <option value="Wildberries">Wildberries</option>
+            <option value="Citilink">Ситилинк</option>
+            <option value="MVideo">М.Видео</option>
+            <option value="Yandex Market">Яндекс Маркет</option>
+            <option value="Eldorado">Эльдорадо</option>
+            <option value="Other">Другой</option>
+          </select>
+        </div>
+        <div class="admin-field">
+          <label for="newSellerName">Продавец</label>
+          <input type="text" id="newSellerName" class="price-seller-input" placeholder="Как в карточке источника (можно пусто)">
+        </div>
+        <div class="admin-field">
+          <label for="newPrice">Цена, ₽</label>
+          <input type="number" id="newPrice" class="price-value-input" min="0" step="1" required placeholder="0">
+        </div>
+        <div class="admin-field">
+          <label for="newDate">Дата</label>
+          <input type="date" id="newDate" required>
+        </div>
+        <div class="admin-field" style="align-self: end;">
+          <button type="submit" class="admin-btn-primary" style="width:100%;">Добавить в историю</button>
+        </div>
+      </div>
+      <div class="admin-field" style="margin-top: 1rem;">
+        <label for="newPurchaseUrl">Ссылка на покупку у продавца</label>
+        <input type="url" id="newPurchaseUrl" class="price-url-autofill" placeholder="Вставьте URL карточки — цена, магазин и продавец подставятся автоматически (как при добавлении товара)">
+      </div>
+      </div>
     </form>
+    </div>
   </div>
 </div>
             <!-- Вкладка Аналитика -->

@@ -26,6 +26,11 @@ body {
     position: sticky;
     top: 0;
     z-index: 1000;
+    transition: transform 0.2s ease;
+}
+
+.header.header--hidden {
+    transform: translateY(-115%);
 }
 
 .header .container {
