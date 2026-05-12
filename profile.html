@@ -268,10 +268,26 @@
             .profile-header {
                 flex-direction: column;
                 text-align: center;
+                padding: 1.25rem;
             }
 
             .profile-content {
                 grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+
+            .profile-card {
+                padding: 1.1rem;
+            }
+
+            .profile-card h3 {
+                font-size: 1.05rem;
+                margin-bottom: 0.75rem;
+            }
+
+            .favorites-preview,
+            .comparisons-preview {
+                max-height: 140px;
             }
 
             .profile-stats {
@@ -279,7 +295,15 @@
             }
 
             .profile-actions {
-                flex-direction: column;
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 0.5rem;
+            }
+        }
+
+        @media (min-width: 640px) and (max-width: 1024px) {
+            .profile-content {
+                grid-template-columns: 1fr 1fr;
             }
         }
     </style>
@@ -288,10 +312,10 @@
     <header class="header">
         <div class="container">
             <div class="logo">
-                <h1><a href="index.html" style="color: inherit; text-decoration: none; padding-right: 20%;">tech-nozone</a></h1>
+                <h1><a href="index.html" style="color: inherit; text-decoration: none;">tech-nozone</a></h1>
             </div>
             <nav class="nav">
-                <a href="index.html" class="nav-link" style="padding-left: 5%;">Главная</a>
+                <a href="index.html" class="nav-link">Главная</a>
                 <a href="catalog.html" class="nav-link">Каталог</a>
                 <a href="comparison.html" class="nav-link">Сравнение<span class="comparison-counter">0</span></a>
                 <a href="recommendations.html" class="nav-link">Рекомендации</a>

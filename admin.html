@@ -251,30 +251,30 @@
         }
         .admin-stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: 1.5rem;
-            margin-bottom: 3rem;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
         }
         .stat-card-enhanced {
             background: white;
-            border-radius: 12px;
-            padding: 1.5rem;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-            border-left: 4px solid;
+            border-radius: 10px;
+            padding: 0.85rem 1rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            border-left: 3px solid;
             transition: transform 0.3s, box-shadow 0.3s;
         }
         .stat-card-enhanced:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 14px rgba(0,0,0,0.1);
         }
         .stat-card-enhanced.primary { border-left-color: #2563eb; }
         .stat-card-enhanced.success { border-left-color: #10b981; }
         .stat-card-enhanced.warning { border-left-color: #f59e0b; }
         .stat-card-enhanced.danger { border-left-color: #ef4444; }
-        .stat-icon { font-size: 2rem; margin-bottom: 1rem; display: inline-block; }
-        .stat-title { font-size: 0.9rem; color: #6b7280; margin-bottom: 0.5rem; }
-        .stat-value { font-size: 2rem; font-weight: 700; margin-bottom: 0.5rem; }
-        .stat-change { font-size: 0.85rem; display: flex; align-items: center; gap: 0.25rem; }
+        .stat-icon { font-size: 1.35rem; margin-bottom: 0.35rem; display: inline-block; }
+        .stat-title { font-size: 0.78rem; color: #6b7280; margin-bottom: 0.25rem; }
+        .stat-value { font-size: 1.35rem; font-weight: 700; margin-bottom: 0.25rem; }
+        .stat-change { font-size: 0.78rem; display: flex; align-items: center; gap: 0.25rem; }
         .stat-change.positive { color: #10b981; }
         .stat-change.negative { color: #ef4444; }
         .pagination {
@@ -458,10 +458,10 @@
     <header class="header">
         <div class="container">
             <div class="logo">
-                <h1><a href="index.html" style="color: inherit; text-decoration: none; padding-right: 20%;">tech-nozone</a></h1>
+                <h1><a href="index.html" style="color: inherit; text-decoration: none;">tech-nozone</a></h1>
             </div>
             <nav class="nav">
-                <a href="index.html" class="nav-link" style="padding-left: 5%;">Главная</a>
+                <a href="index.html" class="nav-link">Главная</a>
                 <a href="catalog.html" class="nav-link">Каталог</a>
                 <a href="comparison.html" class="nav-link">Сравнение<span class="comparison-counter">0</span></a>
                 <a href="recommendations.html" class="nav-link">Рекомендации</a>
@@ -744,12 +744,15 @@
 
   <div class="admin-price-sync-section" style="margin-bottom: 1.75rem; padding: 1rem 1.25rem; border: 1px solid #e5e7eb; border-radius: 10px; background: #f9fafb;">
     <h4 style="margin-top: 0;">Автообновление цен по ссылкам</h4>
-    <p style="color: #6b7280; font-size: 0.9rem; margin-bottom: 0.75rem;">
-      Обновление выполняется через API-источники: <strong>API Systems (WB/Яндекс.Маркет)</strong>, <strong>eBay API</strong>, <strong>PricesAPI.io</strong>.
-      Учитываются <strong>только уже сохранённые</strong> у товара строки цен и ссылки на карточки; новые продавцы добавляются вручную в карточке товара.
-      Все цены приводятся к рублям перед записью в историю. Для eBay/PricesAPI можно обновлять цены как по названию товара, так и по заранее сохранённым ссылкам (если ссылка ведёт на поддерживаемую площадку/страницу).
-      Серверное автообновление каталога — не чаще одного раза в 3 дня; для выбранного товара ниже можно обновить цены в любой момент.
+    <p style="color: #4b5563; font-size: 0.88rem; margin-bottom: 0.5rem;">
+      Источники: <strong>API Systems</strong>, <strong>eBay</strong>, <strong>PricesAPI.io</strong>. Цены в рублях. Автообновление каталога — не чаще 1 раза в 3 дня; для товара ниже — вручную в любой момент.
     </p>
+    <details style="margin-bottom: 0.75rem; font-size: 0.85rem; color: #6b7280;">
+      <summary style="cursor: pointer; color: #2563eb;">Подробнее об обновлении</summary>
+      <p style="margin: 0.5rem 0 0;">
+        Учитываются только сохранённые у товара строки цен и ссылки. Для eBay/PricesAPI — по названию или по сохранённым ссылкам на поддерживаемые площадки.
+      </p>
+    </details>
     <div id="priceSyncStatusDisplay" style="font-size: 0.85rem; margin-bottom: 0.75rem; line-height: 1.5;"></div>
     <div class="form-group">
       <label for="priceSyncProxyInput">Прокси (опционально)</label>
@@ -861,7 +864,7 @@
             <div id="analytics" class="admin-tab-content">
                 <h3>Аналитика системы</h3>
                 <p style="color: #6b7280; margin-bottom: 2rem;">Статистика использования и производительности системы</p>
-                <div class="admin-stats-grid" style="margin-bottom: 2rem;">
+                <div class="admin-stats-grid" style="margin-bottom: 1rem;">
                     <div class="stat-card-enhanced primary">
                         <div class="stat-icon">👁️</div>
                         <div class="stat-title">Просмотры за день</div>

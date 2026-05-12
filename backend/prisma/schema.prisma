@@ -147,7 +147,7 @@ model ViewLog {
   @@index([viewedAt])
 }
 
-// НОВАЯ МОДЕЛЬ: История поисковых запросов
+
 model SearchLog {
   id        Int      @id @default(autoincrement())
   query     String // Текст запроса

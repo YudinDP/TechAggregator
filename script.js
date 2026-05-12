@@ -2,6 +2,10 @@
 let currentProductId = null; 
 let currentUser = null;
 let comparisonList = [];
+/** На узком экране показываем пару товаров, начиная с этого индекса */
+let comparisonMobileStart = 0;
+let comparisonHideIdentical = false;
+let comparisonSpecsCollapsed = false;
 let favorites = [];
 let currentFilters = {};
 let selectedCheckboxes = {};
@@ -519,31 +523,53 @@ async function renderValueCalculator(product, container) {
     const priceValues = (product.prices || []).map(p => p.price).filter(p => p > 0);
     const minPrice = priceValues.length > 0 ? Math.min(...priceValues) : 10000;
 
-    //Рендерим UI сразу, чтобы пользователь не ждал
-    container.innerHTML = `
-        <div class="value-calc-block">
-            <h3 style="margin: 0 0 10px; font-size: 1.1rem; color: #1e293b;">💡 Калькулятор выгоды</h3>
-            <p style="margin: 0 0 15px; color: #64748b; font-size: 0.9rem;">
-                Система отталкивается не только от рыночной цены, но и от характеристик
-            </p>
-            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
-                <label style="font-weight: 500;">Цена (₽):</label>
-                <input type="number" class="calc-price-input" value="${minPrice}" step="100" min="0"
-                       style="width: 140px; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 1rem;">
-            </div>
-            <div class="calc-result-box" style="background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0;">
-                <div class="calc-bar-bg" style="height: 10px; background: #e5e7eb; border-radius: 5px; overflow: hidden; margin-bottom: 10px;">
-                    <div class="calc-bar-fill" style="height: 100%; width: 0%; background: #3b82f6; transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);"></div>
+    //Определяем, отрисовываем ли калькулятор внутри таблицы сравнения —
+    //в этом случае используем компактный интерфейс без лишних надписей
+    const inComparison = !!container.closest('.value-calc-cell');
+    if (inComparison) {
+        container.innerHTML = `
+            <div class="value-calc-block value-calc-block--compact">
+                <div class="vc-input-row">
+                    <input type="number" class="calc-price-input" value="${minPrice}" step="100" min="0" aria-label="Цена для расчёта индекса выгоды">
+                    <span class="vc-currency">₽</span>
                 </div>
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
-                    <span style="font-size: 0.95rem; color: #475569;">Индекс выгоды:</span>
-                    <strong class="calc-score-value" style="font-size: 1.3rem; color: #0f172a;">—</strong>
+                <div class="vc-bar-bg">
+                    <div class="calc-bar-fill"></div>
                 </div>
-                <div class="calc-interpretation" style="font-weight: 600; font-size: 0.95rem;"></div>
-                <div class="market-price-display" style="margin-top: 8px; font-size: 0.85rem; color: #64748b; min-height: 1.2em;"></div>
+                <div class="vc-score-row">
+                    <span class="vc-score-label">Индекс:</span>
+                    <strong class="calc-score-value">—</strong>
+                </div>
+                <div class="calc-interpretation"></div>
+                <div class="market-price-display"></div>
             </div>
-        </div>
-    `;
+        `;
+    } else {
+        container.innerHTML = `
+            <div class="value-calc-block">
+                <h3 style="margin: 0 0 10px; font-size: 1.1rem; color: #1e293b;">💡 Калькулятор выгоды</h3>
+                <p style="margin: 0 0 15px; color: #64748b; font-size: 0.9rem;">
+                    Система отталкивается не только от рыночной цены, но и от характеристик
+                </p>
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
+                    <label style="font-weight: 500;">Цена (₽):</label>
+                    <input type="number" class="calc-price-input" value="${minPrice}" step="100" min="0"
+                           style="width: 140px; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 1rem;">
+                </div>
+                <div class="calc-result-box" style="background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                    <div class="calc-bar-bg" style="height: 10px; background: #e5e7eb; border-radius: 5px; overflow: hidden; margin-bottom: 10px;">
+                        <div class="calc-bar-fill" style="height: 100%; width: 0%; background: #3b82f6; transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);"></div>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                        <span style="font-size: 0.95rem; color: #475569;">Индекс выгоды:</span>
+                        <strong class="calc-score-value" style="font-size: 1.3rem; color: #0f172a;">—</strong>
+                    </div>
+                    <div class="calc-interpretation" style="font-weight: 600; font-size: 0.95rem;"></div>
+                    <div class="market-price-display" style="margin-top: 8px; font-size: 0.85rem; color: #64748b; min-height: 1.2em;"></div>
+                </div>
+            </div>
+        `;
+    }
 
     const input = container.querySelector('.calc-price-input');
     const barFill = container.querySelector('.calc-bar-fill');
@@ -559,18 +585,26 @@ async function renderValueCalculator(product, container) {
     //Загружаем рыночную цену асинхронно
     let marketPrice = null;
     if (product.id) {
-        marketPriceDisplay.textContent = '📊 Загрузка рыночной цены...';
+        marketPriceDisplay.textContent = inComparison
+            ? '📊 Загрузка…'
+            : '📊 Загрузка рыночной цены...';
         try {
             marketPrice = await getMarketPrice(product.id);
             if (marketPrice && marketPriceDisplay) {
-                marketPriceDisplay.textContent = `📊 Средняя рыночная цена: ${Math.round(marketPrice).toLocaleString('ru-RU')} ₽`;
+                marketPriceDisplay.textContent = inComparison
+                    ? `📊 Рынок: ${Math.round(marketPrice).toLocaleString('ru-RU')} ₽`
+                    : `📊 Средняя рыночная цена: ${Math.round(marketPrice).toLocaleString('ru-RU')} ₽`;
             } else if (marketPriceDisplay) {
-                marketPriceDisplay.textContent = '📊 Рыночная цена: данные недоступны';
+                marketPriceDisplay.textContent = inComparison
+                    ? '📊 Рынок: нет данных'
+                    : '📊 Рыночная цена: данные недоступны';
             }
         } catch (e) {
             console.warn('⚠️ Ошибка загрузки рыночной цены:', e);
             if (marketPriceDisplay) {
-                marketPriceDisplay.textContent = '📊 Рыночная цена: ошибка загрузки';
+                marketPriceDisplay.textContent = inComparison
+                    ? '📊 Ошибка загрузки'
+                    : '📊 Рыночная цена: ошибка загрузки';
             }
         }
     }
@@ -2065,26 +2099,55 @@ async function renderMiniPriceChartInComparison(containerId, productId) {
       };
     });
 
+    //Компактный форматтер цены для оси Y: 100к, 1.2М
+    const formatCompactPrice = (value) => {
+      const abs = Math.abs(value);
+      if (abs >= 1_000_000) {
+        return (value / 1_000_000).toFixed(abs >= 10_000_000 ? 0 : 1).replace(/\.0$/, '') + 'М';
+      }
+      if (abs >= 1000) {
+        return Math.round(value / 1000) + 'к';
+      }
+      return String(Math.round(value));
+    };
+
     //Упрощённая конфигурация для мини-графика
     const config = {
       type: 'line',
       data: { datasets: datasets },
       options: {
         responsive: true,
-        maintainAspectRatio: false, 
+        maintainAspectRatio: false,
+        layout: {
+          padding: { left: 0, right: 4, top: 4, bottom: 0 }
+        },
         plugins: {
           legend: {
-            display: true, 
+            display: true,
             position: 'bottom',
+            align: 'start',
             labels: {
-              
-              font: { size: 10 }
+              font: { size: 9 },
+              boxWidth: 8,
+              boxHeight: 8,
+              padding: 4,
+              usePointStyle: true,
+              //Усечение длинных названий магазинов/продавцов, чтобы помещались
+              generateLabels: function(chart) {
+                const defaultLabels = Chart.defaults.plugins.legend.labels.generateLabels(chart);
+                return defaultLabels.map((label) => {
+                  if (typeof label.text === 'string' && label.text.length > 22) {
+                    label.text = label.text.slice(0, 20) + '…';
+                  }
+                  return label;
+                });
+              }
             }
           },
           tooltip: {
             mode: 'index',
             intersect: false,
-            
+
             bodyFont: { size: 11 },
             titleFont: { size: 12 },
             callbacks: {
@@ -2119,27 +2182,25 @@ async function renderMiniPriceChartInComparison(containerId, productId) {
                 day: 'dd.MM'
               }
             },
-            
-            title: {
-              display: false 
-            },
+            title: { display: false },
             grid: { display: true },
             ticks: {
-              maxRotation: 0, 
-              autoSkip: true, 
-              maxTicksLimit: 3, 
-              font: { size: 10 } 
+              maxRotation: 0,
+              autoSkip: true,
+              maxTicksLimit: 3,
+              font: { size: 9 }
             }
           },
           y: {
-            title: {
-              display: false 
-            },
+            title: { display: false },
             grid: { display: true },
             ticks: {
-              maxTicksLimit: 3, 
-              font: { size: 10 } 
-              
+              maxTicksLimit: 3,
+              font: { size: 9 },
+              //Компактный формат: 89к вместо 89 000 — экономит место по горизонтали
+              callback: function(value) {
+                return formatCompactPrice(value);
+              }
             }
           }
         }
@@ -2495,6 +2556,7 @@ function getMinPrice(product) {
   if (!product.prices || product.prices.length === 0) return null;
   return Math.min(...product.prices.map(p => p.price));
 }
+window.getMinPrice = getMinPrice;
 
 function getCategoryName(category) {
     const names = {
@@ -2548,9 +2610,9 @@ function updateAuthButtons() {
 
   if (currentUser) {
     authButtons.innerHTML = `
-      <span style="margin-right: 1rem;">Привет, ${currentUser.name}</span>
-      <a href="profile.html" class="btn btn-outline">Профиль</a>
-      <button class="btn btn-outline" onclick="logout()">Выйти</button>
+      <span class="nav-user-greeting" title="${currentUser.name}">Привет, ${currentUser.name}</span>
+      <a href="profile.html" class="btn btn-outline btn-nav-tight">Профиль</a>
+      <button type="button" class="btn btn-outline btn-nav-tight" onclick="logout()">Выйти</button>
     `;
   } else {
     authButtons.innerHTML = `
@@ -2662,6 +2724,9 @@ async function addToComparison(productId) {
     if (addRes.ok) {
       showCustomNotification(`${product.name} добавлен в сравнение`, 'success');
       updateComparisonCounter();
+      if (window.location.pathname.includes('comparison.html')) {
+        initializeComparisonPage();
+      }
       if (window.location.pathname.includes('profile.html')) {
         loadProfileDataFromAPI();
       }
@@ -2769,22 +2834,35 @@ async function removeFromComparison(productId) {
   }
 }
 
-//Полная очистка сравнения
-function clearComparison() {
-    if (comparisonList.length === 0) {
-        showNotification('Список пуст', 'info');
-        return;
-    }
-    
-    comparisonList = [];
-    localStorage.removeItem('techAggregatorComparison');
-    updateComparisonCounter();
-    
-    if (window.location.pathname.includes('comparison.html') && window.comparisonReload) {
-        window.comparisonReload();
-    }
-    
-    showNotification('Сравнение очищено', 'info');
+//Полная очистка сравнения (сервер + UI)
+async function clearComparison() {
+  if (!comparisonList.length) {
+    showNotification('Список пуст', 'info');
+    return;
+  }
+  const token = localStorage.getItem('techAggregatorToken');
+  if (!token) {
+    showCustomNotification('Войдите в аккаунт', 'info');
+    return;
+  }
+  try {
+    await Promise.all(
+      comparisonList.map((p) =>
+        fetch(`http://localhost:3000/api/comparisons/${p.id}`, {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${token}` }
+        })
+      )
+    );
+  } catch (err) {
+    console.error('Ошибка очистки сравнения:', err);
+  }
+  comparisonList = [];
+  comparisonMobileStart = 0;
+  localStorage.removeItem('techAggregatorComparison');
+  updateComparisonDisplay();
+  updateComparisonCounter();
+  showNotification('Сравнение очищено', 'info');
 }
 
 //Уведомления
@@ -2907,97 +2985,182 @@ function closeAddProductModal() {
     document.getElementById('addProductModal').style.display = 'none';
 }
 
-//Обновляем функцию updateComparisonDisplay
+function getComparisonProductsForView() {
+  if (!comparisonList || !comparisonList.length) return [];
+  const mobile =
+    typeof window.matchMedia === 'function' &&
+    window.matchMedia('(max-width: 768px)').matches;
+  if (mobile && comparisonList.length > 2) {
+    const start = Math.min(
+      comparisonMobileStart,
+      Math.max(0, comparisonList.length - 2)
+    );
+    return comparisonList.slice(start, start + 2);
+  }
+  return comparisonList.slice();
+}
+
+function comparisonNormalizeSpecText(val) {
+  if (val === undefined || val === null) return '—';
+  return String(val)
+    .trim()
+    .replace(/\s+/g, ' ');
+}
+
+function comparisonSpecRowIsUniform(products, specKey) {
+  if (products.length < 2) return true;
+  const vals = products.map((p) => {
+    const v =
+      p.specs && p.specs[specKey] !== undefined ? p.specs[specKey] : '—';
+    return comparisonNormalizeSpecText(v);
+  });
+  return vals.every((v) => v === vals[0]);
+}
+
+function comparisonShiftPair(delta) {
+  const n = comparisonList.length;
+  if (n <= 2) return;
+  comparisonMobileStart = Math.max(
+    0,
+    Math.min(comparisonMobileStart + delta, n - 2)
+  );
+  const tableContent = document.getElementById('tableContent');
+  if (tableContent) renderComparisonTable(tableContent);
+}
+
+function comparisonSwapVisiblePair() {
+  const mobile =
+    typeof window.matchMedia === 'function' &&
+    window.matchMedia('(max-width: 768px)').matches;
+  if (!mobile || comparisonList.length < 2) return;
+  const idx = Math.min(
+    comparisonMobileStart,
+    Math.max(0, comparisonList.length - 2)
+  );
+  const tmp = comparisonList[idx];
+  comparisonList[idx] = comparisonList[idx + 1];
+  comparisonList[idx + 1] = tmp;
+  const tableContent = document.getElementById('tableContent');
+  if (tableContent) renderComparisonTable(tableContent);
+}
+
+function comparisonToggleHideIdentical(checked) {
+  comparisonHideIdentical = !!checked;
+  const tableContent = document.getElementById('tableContent');
+  if (tableContent) renderComparisonTable(tableContent);
+}
+
+function comparisonScrollTable(direction) {
+  const wrap = document.querySelector('#tableContent .comparison-scroll-wrap');
+  if (!wrap) return;
+  const step = Math.max(200, Math.floor(wrap.clientWidth * 0.75));
+  wrap.scrollBy({ left: direction * step, behavior: 'smooth' });
+}
+
+function comparisonToggleSpecsCollapsed() {
+  comparisonSpecsCollapsed = !comparisonSpecsCollapsed;
+  const wrap = document.querySelector('.comparison-table-inner');
+  if (wrap) {
+    wrap.classList.toggle('comparison-specs-collapsed', comparisonSpecsCollapsed);
+  }
+  const label = comparisonSpecsCollapsed
+    ? 'Развернуть характеристики'
+    : 'Свернуть характеристики';
+  ['toggleBtn'].forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = label;
+  });
+}
+
+function wireComparisonControlsToggle() {
+  const label = comparisonSpecsCollapsed
+    ? 'Развернуть характеристики'
+    : 'Свернуть характеристики';
+  ['toggleBtn'].forEach((id) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.disabled = !comparisonList || comparisonList.length === 0;
+    el.textContent = label;
+    el.onclick = () => comparisonToggleSpecsCollapsed();
+  });
+}
+
 function updateComparisonDisplay() {
-    console.log('updateComparisonDisplay: товаров =', comparisonList.length);
-    
-    const emptyState = document.getElementById('emptyComparison');
-    const comparisonTable = document.getElementById('comparisonTable');
-    const comparisonCount = document.getElementById('comparisonCount');
-    const comparisonCategory = document.getElementById('comparisonCategory');
-    const comparisonContent = document.getElementById('comparisonContent');
-    
-    //Проверяем элементы
-    const elementsFound = {
-        emptyState: !!emptyState,
-        comparisonTable: !!comparisonTable,
-        comparisonCount: !!comparisonCount,
-        comparisonCategory: !!comparisonCategory,
-        comparisonContent: !!comparisonContent
-    };
-    console.log('Найденные элементы:', elementsFound);
-    
-    if (!emptyState || !comparisonTable) {
-        console.error('Критические элементы не найдены');
-        return;
+  const emptyState = document.getElementById('emptyState');
+  const comparisonTable = document.getElementById('comparisonTable');
+  const tableContent = document.getElementById('tableContent');
+  const comparisonCount = document.getElementById('comparisonCount');
+  const comparisonCategory = document.getElementById('comparisonCategory');
+  const comparisonHeaderRow = document.getElementById('comparisonHeaderRow');
+  const comparisonControls = document.getElementById('comparisonControls');
+  const comparisonEmptyTitle = document.getElementById('comparisonEmptyTitle');
+  const comparisonEmptyText = document.getElementById('comparisonEmptyText');
+  const comparisonEmptyAction = document.getElementById('comparisonEmptyAction');
+  const isAuthorized = Boolean(localStorage.getItem('techAggregatorToken'));
+
+  if (!comparisonTable) {
+    window.comparisonList = comparisonList;
+    updateComparisonCounter();
+    return;
+  }
+
+  if (!comparisonList || comparisonList.length === 0) {
+    if (emptyState) {
+      emptyState.classList.remove('hidden');
+      emptyState.classList.add('visible');
     }
-    
-    if (comparisonList.length === 0) {
-        console.log('Показываем пустое состояние');
-        emptyState.style.display = 'block';
-        comparisonTable.style.display = 'none';
-        if (comparisonCount) comparisonCount.textContent = '0';
-        if (comparisonCategory) {
-            comparisonCategory.textContent = 'Выберите товары для сравнения';
-            comparisonCategory.style.color = '#6b7280';
-        }
-    } else {
-        console.log('Показываем таблицу сравнения');
-        emptyState.style.display = 'none';
-        comparisonTable.style.display = 'block';
-        
-        //Обновляем счетчик
-        if (comparisonCount) {
-            comparisonCount.textContent = comparisonList.length;
-            console.log('Счетчик обновлен:', comparisonList.length);
-        }
-        
-        //Обновляем информацию о категории
-        if (comparisonCategory && comparisonList.length > 0) {
-            const categoryName = getCategoryName(comparisonList[0].category);
-            comparisonCategory.innerHTML = `
+    if (comparisonHeaderRow) comparisonHeaderRow.style.display = 'none';
+    if (comparisonControls) comparisonControls.style.display = 'none';
+    comparisonTable.style.display = 'none';
+    comparisonTable.classList.add('hidden');
+    if (tableContent) tableContent.innerHTML = '';
+    if (comparisonCount) comparisonCount.textContent = '0';
+    if (comparisonCategory && isAuthorized) {
+      comparisonCategory.textContent = 'Выберите товары для сравнения';
+      comparisonCategory.style.color = '#6b7280';
+    }
+    if (comparisonEmptyTitle && comparisonEmptyText && comparisonEmptyAction) {
+      if (!isAuthorized) {
+        comparisonEmptyTitle.textContent = 'Авторизуйтесь чтобы сравнивать товары';
+        comparisonEmptyText.textContent = '';
+        comparisonEmptyAction.href = 'auth.html';
+        comparisonEmptyAction.textContent = 'Перейти к авторизации';
+      } else {
+        comparisonEmptyTitle.textContent = 'Товаров в сравнении нет';
+        comparisonEmptyText.textContent = '';
+        comparisonEmptyAction.href = 'catalog.html';
+        comparisonEmptyAction.textContent = 'Перейти в каталог';
+      }
+    }
+  } else {
+    if (emptyState) {
+      emptyState.classList.add('hidden');
+      emptyState.classList.remove('visible');
+    }
+    if (comparisonHeaderRow) comparisonHeaderRow.style.display = 'flex';
+    if (comparisonControls) comparisonControls.style.display = 'flex';
+    comparisonTable.style.display = 'block';
+    comparisonTable.classList.remove('hidden');
+    if (comparisonCount) {
+      comparisonCount.textContent = String(comparisonList.length);
+    }
+    if (comparisonCategory) {
+      const categoryName = getCategoryName(comparisonList[0].category);
+      comparisonCategory.innerHTML = `
                 <span style="font-weight: 600; color: #2563eb;">${categoryName}</span>
                 <span style="color: #6b7280; margin-left: 1rem;">
                     ${comparisonList.length} товар${comparisonList.length > 1 ? 'а' : ''} для сравнения
                 </span>
             `;
-        }
-        
-        //Отрисовываем таблицу сравнения
-        if (comparisonContent) {
-            console.log('Начинаем отрисовку в comparisonContent');
-            renderComparisonTable(comparisonContent);
-        } else {
-            console.error('Элемент comparisonContent не найден');
-            //Пробуем создать его
-            createComparisonContent();
-        }
     }
-    
-    //Обновляем счетчик в шапке
-    updateComparisonCounter();
-}
+    if (tableContent) {
+      renderComparisonTable(tableContent);
+    }
+  }
 
-function createComparisonContent() {
-    console.log('Создаем элемент comparisonContent');
-    const comparisonTable = document.getElementById('comparisonTable');
-    if (comparisonTable) {
-        //Находим или создаем контейнер для контента
-        let content = document.getElementById('comparisonContent');
-        if (!content) {
-            content = document.createElement('div');
-            content.id = 'comparisonContent';
-            //Вставляем после кнопок управления
-            const controls = comparisonTable.querySelector('.comparison-controls');
-            if (controls && controls.nextSibling) {
-                controls.parentNode.insertBefore(content, controls.nextSibling);
-            } else {
-                comparisonTable.appendChild(content);
-            }
-            console.log('Создан новый элемент comparisonContent');
-        }
-        renderComparisonTable(content);
-    }
+  window.comparisonList = comparisonList;
+  wireComparisonControlsToggle();
+  updateComparisonCounter();
 }
 
 
@@ -3105,8 +3268,8 @@ async function initializeComparisonPage() {
   console.log('--- Начало инициализации сравнения ---');
   const token = localStorage.getItem('techAggregatorToken');
   if (!token) {
-    showCustomNotification('Войдите в аккаунт', 'info');
-    //window.location.href = 'auth.html';
+    comparisonList = [];
+    updateComparisonDisplay();
     return;
   }
 
@@ -3191,17 +3354,14 @@ async function initializeComparisonPage() {
     console.log('--- Сформирован comparisonList (итоговый):', comparisonList);
     console.log('--- Длина comparisonList:', comparisonList.length);
 
-    //Ищем контейнер и отрисовываем таблицу
-    const container = document.querySelector('.comparison-container') || document.getElementById('comparisonTable');
-    if (container) {
-      console.log('Контейнер для таблицы найден, рендерим...');
-      renderComparisonTable(container);
-    } else {
-      console.error('Контейнер .comparison-container или #comparisonTable не найден на странице comparison.html');
+    const maxStart = Math.max(0, comparisonList.length - 2);
+    if (comparisonMobileStart > maxStart) {
+      comparisonMobileStart = maxStart;
     }
 
-    updateComparisonCounter();
+    updateComparisonDisplay();
 
+    window.comparisonReload = initializeComparisonPage;
   } catch (err) {
     console.error('Ошибка инициализации сравнения:', err);
     showCustomNotification('Не удалось загрузить сравнение', 'error');
@@ -3213,32 +3373,6 @@ function showEmptyState() {
   document.getElementById('emptyState')?.classList.add('visible');
   document.getElementById('comparisonTable')?.classList.add('hidden');
   document.getElementById('comparisonCount').textContent = '0';
-}
-
-//Обновляем функцию clearComparison:
-function clearComparison() {
-    comparisonList = [];
-    localStorage.removeItem('techAggregatorComparison');
-    updateComparisonDisplay();
-    updateComparisonCounter();
-    showNotification('Список сравнения очищен');
-}
-
-//Обновляем функцию updateComparisonDisplay для страницы сравнения:
-function updateComparisonDisplay() {
-    const emptyState = document.getElementById('comparisonEmpty');
-    const content = document.getElementById('comparisonContent');
-    
-    if (!emptyState || !content) return;
-    
-    if (comparisonList.length === 0) {
-        emptyState.style.display = 'block';
-        content.style.display = 'none';
-    } else {
-        emptyState.style.display = 'none';
-        content.style.display = 'block';
-        renderComparisonTable();
-    }
 }
 
 //Добавляем функцию загрузки предложенных товаров:
@@ -4414,98 +4548,197 @@ function renderComparisonTable(container) {
     return;
   }
 
-  console.log('renderComparisonTable: начинаем рендер, товаров:', comparisonList.length);
+  const products = getComparisonProductsForView();
+  const mobile =
+    typeof window.matchMedia === 'function' &&
+    window.matchMedia('(max-width: 768px)').matches;
+  const showPairNav = mobile && comparisonList.length > 2;
 
-  //Собираем все характеристики
   const allSpecs = new Set();
-  comparisonList.forEach(product => {
+  products.forEach((product) => {
     if (product && product.specs) {
-      Object.keys(product.specs).forEach(key => allSpecs.add(key));
+      Object.keys(product.specs).forEach((key) => allSpecs.add(key));
     }
   });
-  const specsArray = Array.from(allSpecs);
+  let specsArray = Array.from(allSpecs);
+  if (comparisonHideIdentical && products.length > 1) {
+    specsArray = specsArray.filter(
+      (sk) => !comparisonSpecRowIsUniform(products, sk)
+    );
+  }
 
-  //Генерируем HTML таблицу
-  let tableHTML = `
+  const innerCollapsed = comparisonSpecsCollapsed
+    ? ' comparison-specs-collapsed'
+    : '';
+
+  const mobileStrip = showPairNav
+    ? `
+    <div class="comparison-mobile-strip" role="toolbar" aria-label="Навигация по столбцам сравнения">
+      <button type="button" class="btn btn-outline btn-small comparison-pair-btn" onclick="comparisonShiftPair(-1)"
+        ${comparisonMobileStart <= 0 ? ' disabled' : ''} title="Предыдущий товар" aria-label="Предыдущий товар">◀</button>
+      <span class="comparison-pair-indicator" aria-live="polite">${comparisonMobileStart + 1}–${comparisonMobileStart + 2} из ${comparisonList.length}</span>
+      <button type="button" class="btn btn-outline btn-small comparison-pair-btn" onclick="comparisonShiftPair(1)"
+        ${comparisonMobileStart >= comparisonList.length - 2 ? ' disabled' : ''} title="Следующий товар" aria-label="Следующий товар">▶</button>
+      <label class="comparison-hide-identical-label"><input type="checkbox" id="comparisonHideIdenticalCb"${
+        comparisonHideIdentical ? ' checked' : ''
+      } onchange="comparisonToggleHideIdentical(this.checked)"> Только отличия</label>
+    </div>`
+    : '';
+
+  const hideIdenticalDesktop =
+    !showPairNav && products.length > 1
+      ? `
+    <div class="comparison-desktop-strip">
+      <label class="comparison-hide-identical-label"><input type="checkbox" id="comparisonHideIdenticalCbDesk"${
+        comparisonHideIdentical ? ' checked' : ''
+      } onchange="comparisonToggleHideIdentical(this.checked)"> Скрыть одинаковые характеристики</label>
+    </div>`
+      : '';
+
+  const specRowsHtml = specsArray
+    .map((specKey) => {
+      const russianName = specKeyTranslations[specKey] || specKey;
+      const uniform = comparisonSpecRowIsUniform(products, specKey);
+      return `
+            <tr class="comparison-spec-row">
+              <td class="spec-label fixed-col">${russianName}</td>
+              ${products
+                .map((product) => {
+                  const raw =
+                    product.specs && product.specs[specKey] !== undefined
+                      ? product.specs[specKey]
+                      : '—';
+                  const cellClass =
+                    !uniform && products.length > 1
+                      ? 'spec-value spec-value-diff'
+                      : 'spec-value';
+                  return `<td class="${cellClass}">${raw}</td>`;
+                })
+                .join('')}
+            </tr>
+          `;
+    })
+    .join('');
+
+  const priceUniform =
+    products.length < 2
+      ? true
+      : products.every((p) => {
+          const a = getMinPrice(p);
+          const b = getMinPrice(products[0]);
+          return (
+            comparisonNormalizeSpecText(a === null ? '—' : String(a)) ===
+            comparisonNormalizeSpecText(b === null ? '—' : String(b))
+          );
+        });
+
+  const tableScrollNav =
+    comparisonList.length > 1
+      ? `<div class="comparison-table-scroll-nav" role="toolbar" aria-label="Прокрутка таблицы по горизонтали">
+      <button type="button" class="btn btn-outline btn-small" onclick="comparisonScrollTable(-1)" title="Прокрутить влево">⟵</button>
+      <span class="comparison-table-scroll-hint">Прокрутка таблицы</span>
+      <button type="button" class="btn btn-outline btn-small" onclick="comparisonScrollTable(1)" title="Прокрутить вправо">⟶</button>
+    </div>`
+      : '';
+
+  const tableHTML = `
+    <div class="comparison-table-inner${innerCollapsed}">
+      ${mobileStrip}
+      ${hideIdenticalDesktop}
+      ${tableScrollNav}
+      <div class="comparison-scroll-wrap">
     <table class="comparison-table">
       <thead>
         <tr>
           <th class="spec-header fixed-col">Характеристика</th>
-          ${comparisonList.map(product => `
+          ${products
+            .map(
+              (product) => `
             <th class="product-header-cell">
-              <button class="remove-comparison-btn" onclick="removeFromComparison(${product.id})">×</button>
-              <img src="${product.image || 'https://via.placeholder.com/60?text=Нет'}" alt="${product.name}" class="product-img">
-              <div class="product-name">${product.name}</div>
-              <div class="product-price">${formatPrice(getMinPrice(product))} ₽</div>
+              <div class="product-header-inner">
+                <button type="button" class="remove-comparison-btn" onclick="removeFromComparison(${product.id})" title="Убрать из сравнения" aria-label="Убрать ${product.name} из сравнения">×</button>
+                <img src="${product.image || 'https://via.placeholder.com/60?text=Нет'}" alt="${product.name}" class="product-img">
+                <div class="product-name">${product.name}</div>
+                <div class="product-price">${formatPrice(getMinPrice(product))} ₽</div>
+              </div>
             </th>
-          `).join('')}
+          `
+            )
+            .join('')}
         </tr>
       </thead>
       <tbody>
-        
-        ${specsArray.map(specKey => {
-          const russianName = specKeyTranslations[specKey] || specKey;
-          return `
-            <tr>
-              <td class="spec-label fixed-col">${russianName}</td>
-              ${comparisonList.map(product => `
-                <td class="spec-value">
-                  ${product.specs && product.specs[specKey] !== undefined ? product.specs[specKey] : '—'}
-                </td>
-              `).join('')}
-            </tr>
-          `;
-        }).join('')}
-
-        
+        ${specRowsHtml}
         <tr class="price-row">
-  <td class="spec-label fixed-col">Цены и покупка</td>
-  ${comparisonList.map(product => {
-    const minPrice = getMinPrice(product);
-    const priceStr = minPrice !== null
-      ? `<span class="price-value">${formatPrice(minPrice)} ₽</span>`
-      : '—';
-
-    const storeLinks = product.prices && product.prices.length > 0
-      ? product.prices.map(p =>
-          `<a href="${p.url}" target="_blank" class="store-link" title="${buildStoreDisplayName(p.store || p.storeName, p.sellerName)}">${buildStoreDisplayName(p.store || p.storeName, p.sellerName)}</a>`
-        ).join('<br>')
-      : '—';
-
-    return `<td class="price-cell">
-              <div>${priceStr}</div>
+          <td class="spec-label fixed-col">Цены и покупка</td>
+          ${products
+            .map((product) => {
+              const storeLinks =
+                product.prices && product.prices.length > 0
+                  ? product.prices
+                      .map((p) => {
+                        const displayName = buildStoreDisplayName(
+                          p.store || p.storeName,
+                          p.sellerName
+                        );
+                        const priceText =
+                          p.price != null
+                            ? `${formatPrice(p.price)} ₽`
+                            : '—';
+                        return `<div class="store-price-row">
+                          <a href="${p.url}" target="_blank" class="store-link" title="${displayName}">${displayName}</a>
+                          <span class="store-price-value">${priceText}</span>
+                        </div>`;
+                      })
+                      .join('')
+                  : '<div class="store-price-empty">—</div>';
+              const cellClass =
+                !priceUniform && products.length > 1
+                  ? 'price-cell price-cell-diff'
+                  : 'price-cell';
+              return `<td class="${cellClass}">
               <div class="store-links">${storeLinks}</div>
             </td>`;
-  }).join('')}
-</tr>
+            })
+            .join('')}
+        </tr>
         <tr class="value-calc-row">
           <td class="spec-label fixed-col">Калькулятор выгоды</td>
-          ${comparisonList.map(product => `
+          ${products
+            .map(
+              (product) => `
             <td class="value-calc-cell">
               <div id="valueCalcContainer-${product.id}"></div>
             </td>
-          `).join('')}
+          `
+            )
+            .join('')}
         </tr>
         <tr class="mini-chart-row">
           <td class="spec-label fixed-col">История цен</td>
-          ${comparisonList.map(product => `
+          ${products
+            .map(
+              (product) => `
             <td class="mini-chart-cell">
-              <div id="miniChartContainer-${product.id}" style="height: 200px; width: 100%; display: flex; justify-content: center; align-items: center;">
-                
-              </div>
+              <div id="miniChartContainer-${product.id}" class="mini-chart-canvas-wrap"></div>
             </td>
-          `).join('')}
+          `
+            )
+            .join('')}
         </tr>
       </tbody>
     </table>
+      </div>
+    </div>
   `;
 
   container.innerHTML = tableHTML;
 
-  //Отрисовка графиков
   setTimeout(() => {
-    comparisonList.forEach(product => {
-      const valueCalcContainer = document.getElementById(`valueCalcContainer-${product.id}`);
+    products.forEach((product) => {
+      const valueCalcContainer = document.getElementById(
+        `valueCalcContainer-${product.id}`
+      );
       if (valueCalcContainer) {
         renderValueCalculator(product, valueCalcContainer);
       }
@@ -4513,17 +4746,19 @@ function renderComparisonTable(container) {
       const containerId = `miniChartContainer-${product.id}`;
       const chartContainer = document.getElementById(containerId);
       if (chartContainer) {
-        //Проверяем, определён ли Chart
         if (typeof Chart === 'undefined') {
-            console.error('Chart.js не загружен для мини-графика товара ID:', product.id);
-            chartContainer.innerHTML = '<p style="color: red;">Chart.js не загружен</p>';
-            return;
+          console.error(
+            'Chart.js не загружен для мини-графика товара ID:',
+            product.id
+          );
+          chartContainer.innerHTML =
+            '<p style="color: red;">Chart.js не загружен</p>';
+          return;
         }
-        //Вызываем функцию для отрисовки мини-графика в этом контейнере
         renderMiniPriceChartInComparison(containerId, product.id);
       }
     });
-  }, 100); //Небольшая задержка, чтобы DOM был готов
+  }, 100);
 }
 
 
@@ -4563,6 +4798,10 @@ function showCustomNotification(message, type = 'info', duration = 5000) {
     
     //Добавляем в контейнер
     container.appendChild(notification);
+    const maxNotes = 4;
+    while (container.children.length > maxNotes) {
+      container.firstElementChild?.remove();
+    }
     
     //Автоматическое закрытие через указанное время
     const closeTimeout = setTimeout(() => {
@@ -7212,6 +7451,22 @@ async function deletePriceHistoryEntry(entryId) {
 
 //Рекоммендации
 function initializeRecommendationsPage() {
+  const recommendationsAuthState = document.getElementById('recommendationsAuthState');
+  const recommendationsTabs = document.querySelector('.recommendations-tabs');
+  const recommendationsLayout = document.querySelector('.recommendations-layout');
+  const token = localStorage.getItem('techAggregatorToken');
+
+  if (!token) {
+    if (recommendationsAuthState) recommendationsAuthState.classList.remove('hidden');
+    if (recommendationsTabs) recommendationsTabs.classList.add('hidden');
+    if (recommendationsLayout) recommendationsLayout.classList.add('hidden');
+    return;
+  }
+
+  if (recommendationsAuthState) recommendationsAuthState.classList.add('hidden');
+  if (recommendationsTabs) recommendationsTabs.classList.remove('hidden');
+  if (recommendationsLayout) recommendationsLayout.classList.remove('hidden');
+
   //Загружаем рекомендации для всех вкладок
   loadRecommendationsByType('popular');
   loadRecommendationsByType('trending');

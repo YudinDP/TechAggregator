@@ -40,37 +40,49 @@
             justify-content: center;
         }
 
-        .recommendations-filters {
-            background: white;
-            border: 1px solid #e5e7eb;
-            border-radius: 12px;
-            padding: 1rem;
+        .recommendations-layout {
+            margin-top: 0;
+        }
+        
+        .filters-sidebar {
+            max-height: calc(100vh - 180px);
+            overflow-y: auto;
+            top: 120px;
+        }
+        
+        .filters-sidebar::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .filters-sidebar::-webkit-scrollbar-track {
+            background: #f5f5f5;
+            border-radius: 3px;
+        }
+        
+        .filters-sidebar::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 3px;
+        }
+        
+        .filters-sidebar h3 {
+            margin-top: 0;
             margin-bottom: 1.5rem;
-            display: grid;
-            grid-template-columns: 2fr 1fr 1fr 1fr 1fr auto;
-            gap: 0.75rem;
-            align-items: end;
+            padding-bottom: 0.75rem;
+            border-bottom: 2px solid #3b82f6;
+            color: #1f2937;
         }
-
-        .recommendations-filters .filter-col {
+        
+        .filter-actions {
             display: flex;
-            flex-direction: column;
-            gap: 0.4rem;
+            gap: 0.75rem;
+            margin-top: 2rem;
+            padding-top: 1rem;
+            border-top: 1px solid #e5e7eb;
         }
-
-        .recommendations-filters label {
-            font-size: 0.85rem;
-            font-weight: 600;
-            color: #374151;
-        }
-
-        .recommendations-filters input,
-        .recommendations-filters select {
-            width: 100%;
-            padding: 0.55rem 0.7rem;
-            border: 1px solid #d1d5db;
-            border-radius: 8px;
-            font-size: 0.9rem;
+        
+        .filter-actions .btn {
+            flex: 1;
+            padding: 0.6rem;
         }
         
         .tab-btn {
@@ -107,7 +119,7 @@
         .tab-content {
             animation: fadeIn 0.5s ease;
         }
-        
+
         .tab-header {
             display: flex;
             justify-content: space-between;
@@ -385,9 +397,17 @@
         }
         
         @media (max-width: 768px) {
+            .recommendations-tabs {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 0.45rem;
+                margin-bottom: 1rem;
+            }
             .tab-btn {
-                padding: 0.75rem 1rem;
-                font-size: 0.9rem;
+                padding: 0.55rem 0.65rem;
+                font-size: 0.82rem;
+                justify-content: center;
+                width: auto;
             }
             
             .ai-form-grid {
@@ -402,8 +422,8 @@
                 font-size: 2rem;
             }
 
-            .recommendations-filters {
-                grid-template-columns: 1fr 1fr;
+            .recommendations-layout {
+                margin-top: 0.75rem;
             }
         }
     </style>
@@ -412,10 +432,10 @@
     <header class="header">
     <div class="container">
         <div class="logo">
-            <h1><a href="index.html" style="color: inherit; text-decoration: none; padding-right: 20%;">tech-nozone</a></h1>
+            <h1><a href="index.html" style="color: inherit; text-decoration: none;">tech-nozone</a></h1>
         </div>
         <nav class="nav">
-            <a href="index.html" class="nav-link" style="padding-left: 5%;">Главная</a>
+            <a href="index.html" class="nav-link">Главная</a>
             <a href="catalog.html" class="nav-link">Каталог</a>
             <a href="comparison.html" class="nav-link">Сравнение<span class="comparison-counter">0</span></a>
             <a href="recommendations.html" class="nav-link active">Рекомендации</a>
@@ -442,6 +462,11 @@
 
     <main class="main">
 <div class="container recommendations-page">
+<div id="recommendationsAuthState" class="empty-state hidden">
+    <h3 style="margin: 0 0 15px 0; color: #374151;">Авторизуйтесь чтобы просматривать рекомендации</h3>
+    <p style="color: #6b7280; margin: 0 0 25px 0; max-width: 400px; margin-left: auto; margin-right: auto;"></p>
+    <a href="auth.html" class="btn btn-primary">Перейти к авторизации</a>
+</div>
 <div class="page-header">
 </div>
 <div class="recommendations-tabs">
@@ -463,37 +488,53 @@
 </button>
 </div>
 
-<div class="recommendations-filters">
-    <div class="filter-col">
-        <label for="recommendationsSearch">Поиск</label>
-        <input id="recommendationsSearch" type="text" placeholder="Название или характеристика">
-    </div>
-    <div class="filter-col">
-        <label for="recommendationsCategory">Категория</label>
-        <select id="recommendationsCategory">
-            <option value="">Все категории</option>
-        </select>
-    </div>
-    <div class="filter-col">
-        <label for="recommendationsMinPrice">Цена от</label>
-        <input id="recommendationsMinPrice" type="number" min="0" placeholder="0">
-    </div>
-    <div class="filter-col">
-        <label for="recommendationsMaxPrice">Цена до</label>
-        <input id="recommendationsMaxPrice" type="number" min="0" placeholder="Любая">
-    </div>
-    <div class="filter-col">
-        <label for="recommendationsSort">Сортировка</label>
-        <select id="recommendationsSort">
-            <option value="relevance">По релевантности</option>
-            <option value="rating">По рейтингу</option>
-            <option value="price_asc">По цене (возр.)</option>
-            <option value="price_desc">По цене (убыв.)</option>
-            <option value="name">По названию</option>
-        </select>
-    </div>
-    <button id="recommendationsResetFilters" class="btn btn-secondary">Сбросить</button>
-</div>
+<div class="catalog-layout recommendations-layout">
+    <aside class="filters-sidebar" id="recFiltersPanel">
+        <h3>Фильтры</h3>
+        <div class="filter-group">
+            <label for="recommendationsSearch">Поиск</label>
+            <input id="recommendationsSearch" type="text" placeholder="Название или характеристика">
+        </div>
+        <div class="filter-group">
+            <label for="recommendationsCategory">Категория</label>
+            <select id="recommendationsCategory">
+                <option value="">Все категории</option>
+            </select>
+        </div>
+        <div class="filter-group">
+            <label>Цена, руб.</label>
+            <div class="price-range">
+                <input id="recommendationsMinPrice" type="number" min="0" placeholder="от">
+                <input id="recommendationsMaxPrice" type="number" min="0" placeholder="до">
+            </div>
+        </div>
+        <div class="filter-actions">
+            <button id="recommendationsResetFilters" class="btn btn-secondary">Сбросить все</button>
+            <button id="recommendationsApplyFilters" class="btn btn-primary" onclick="applyRecommendationsFilters()">Применить</button>
+        </div>
+    </aside>
+    <section class="products-section">
+        <div class="catalog-mobile-drawer-triggers">
+            <button type="button" class="btn btn-outline btn-small" id="btnRecOpenFilters">Фильтры</button>
+            <button type="button" class="btn btn-outline btn-small" id="btnRecOpenSort">Сортировка</button>
+        </div>
+        <div class="catalog-drawer-backdrop" id="recDrawerBackdrop" hidden></div>
+        <div class="section-header">
+            <h2>Подборки рекомендаций</h2>
+            <div class="sort-panel-drawer" id="recSortPanel">
+                <div class="sort-options">
+                    <label for="recommendationsSort">Сортировка:</label>
+                    <select id="recommendationsSort">
+                        <option value="relevance">По релевантности</option>
+                        <option value="rating">По рейтингу</option>
+                        <option value="price_asc">По цене (возр.)</option>
+                        <option value="price_desc">По цене (убыв.)</option>
+                        <option value="name">По названию</option>
+                    </select>
+                    <button class="btn btn-primary" style="padding:10px" onclick="applyRecommendationsFilters()">Применить</button>
+                </div>
+            </div>
+        </div>
 
 <div id="popular" class="tab-content active">
 <div class="tab-header">
@@ -571,6 +612,8 @@
     </div>
 </div>
 
+</div> <!-- /.products-section -->
+</div> <!-- /.catalog-layout -->
 </div> <!-- /.container recommendations-page -->
 </main>
 
@@ -581,6 +624,35 @@
     </footer>
     <script src="config.js"></script>
     <script src="script.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const bd = document.getElementById('recDrawerBackdrop');
+  const filt = document.getElementById('recFiltersPanel');
+  const sortP = document.getElementById('recSortPanel');
+  function closeRecDrawers() {
+    if (bd) bd.hidden = true;
+    filt?.classList.remove('is-open');
+    sortP?.classList.remove('is-open');
+  }
+  document.getElementById('btnRecOpenFilters')?.addEventListener('click', () => {
+    closeRecDrawers();
+    if (bd) bd.hidden = false;
+    filt?.classList.add('is-open');
+  });
+  document.getElementById('btnRecOpenSort')?.addEventListener('click', () => {
+    closeRecDrawers();
+    if (bd) bd.hidden = false;
+    sortP?.classList.add('is-open');
+  });
+  bd?.addEventListener('click', closeRecDrawers);
+  document.getElementById('recommendationsResetFilters')?.addEventListener('click', () => {
+    setTimeout(closeRecDrawers, 150);
+  });
+  document.getElementById('recommendationsApplyFilters')?.addEventListener('click', () => {
+    setTimeout(closeRecDrawers, 150);
+  });
+});
+</script>
 
 </body>
 </html>
