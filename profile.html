@@ -39,28 +39,6 @@
             border: 4px solid #e5e7eb;
         }
 
-        .avatar-upload-btn {
-            position: absolute;
-            bottom: 0;
-            right: 0;
-            background: #2563eb;
-            color: white;
-            border: none;
-            border-radius: 50%;
-            width: 32px;
-            height: 32px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1rem;
-            transition: background-color 0.3s;
-        }
-
-        .avatar-upload-btn:hover {
-            background: #1d4ed8;
-        }
-
         .profile-info {
             flex: 1;
         }
@@ -341,8 +319,7 @@
         <div class="profile-container">
             <div class="profile-header">
                 <div class="profile-avatar-container">
-                    <img src="https://via.placeholder.com/120x120/cccccc/666666?text=АВ" alt="Аватар" class="profile-avatar" id="profileAvatar">
-                    <button class="avatar-upload-btn" onclick="changeAvatar()">+</button>
+                    <img src="sources/default-user-avatar.png" alt="Аватар" class="profile-avatar" id="profileAvatar">
                 </div>
                 <div class="profile-info">
                     <h2 id="userName">Иван Петров</h2>
@@ -425,9 +402,6 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 //Функции действий
-function uploadAvatar() {
-  alert('Функция загрузки аватара будет реализована позже');
-}
 function editProfile() {
   alert('Функция редактирования профиля будет реализована позже');
 }

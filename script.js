@@ -1573,11 +1573,11 @@ function renderStorePriceInsights(currentPrices, priceHistoryData, storeSignals 
     const hasStock = Number.isFinite(stock);
 
     if (hasRating && rating >= 4.5) {
-      if (hasStock && stock < 10) return 'Хороший рейтинг и осталось мало товара: проверенный товар. Можно покупать';
+      if (hasStock && stock < 10) return 'Хороший рейтинг и осталось мало товара. Проверенный товар. Стоит поторопиться с решением.';
       return 'Хороший рейтинг: проверенный товар по отзывам покупателей.';
     }
     if (hasStock && stock < 10) return 'Осталось мало: если цена подходит, лучше не откладывать покупку.';
-    if (hasRating && rating < 3.8) return 'Рейтинг ниже среднего: перед покупкой лучше изучить отзывы подробнее.';
+    if (hasRating && rating < 4.0) return 'Рейтинг ниже среднего: перед покупкой лучше изучить отзывы подробнее.';
     return null;
   };
 
@@ -2469,6 +2469,8 @@ async function loadProductReviews(productId) {
 
       //Используем userName из отзыва (или fullName из связанного user, если доступен)
       const displayName = review.user?.fullName || review.userName || 'Аноним';
+      const displayNameSafe = escapeHtml(displayName);
+      const avatarUrl = getDefaultUserAvatarUrl();
 
       
       //Если поле null или undefined или пустая строка, показываем "Без комментария"
@@ -2478,9 +2480,12 @@ async function loadProductReviews(productId) {
       return `
         <div class="review-item">
           <div class="review-header">
-            <div>
-              <strong>${displayName}</strong>
-              ${review.verified ? '<span class="verified-badge">✓ Проверенный покупатель</span>' : ''}
+            <div class="review-author">
+              <img class="review-author-avatar" src="${avatarUrl}" alt="" width="40" height="40">
+              <div class="review-author-text">
+                <strong>${displayNameSafe}</strong>
+                ${review.verified ? '<span class="verified-badge">✓ Проверенный покупатель</span>' : ''}
+              </div>
             </div>
             <div class="review-rating-and-date">
               <div class="review-rating">
@@ -3755,13 +3760,18 @@ function createReviewHTML(review) {
         month: 'long',
         day: 'numeric'
     });
-    
+    const nameSafe = escapeHtml(review.userName || '');
+    const avatarUrl = getDefaultUserAvatarUrl();
+
     return `
         <div class="review-item">
             <div class="review-header">
-                <div>
-                    <strong>${review.userName}</strong>
-                    ${review.verified ? '<span class="verified-badge">✓ Проверенный покупатель</span>' : ''}
+                <div class="review-author">
+                    <img class="review-author-avatar" src="${avatarUrl}" alt="" width="40" height="40">
+                    <div class="review-author-text">
+                        <strong>${nameSafe}</strong>
+                        ${review.verified ? '<span class="verified-badge">✓ Проверенный покупатель</span>' : ''}
+                    </div>
                 </div>
                 <div class="review-rating">
                     <span class="rating-stars">${getStarRating(review.rating)}</span>
@@ -5003,6 +5013,29 @@ window.addToComparison = addToComparison;
 window.updateComparisonCounter = updateComparisonCounter;
 window.showCustomNotification = showCustomNotification;
 
+// Единый аватар для всех пользователей — замените файл `sources/default-user-avatar.png` при необходимости.
+window.DEFAULT_USER_AVATAR_URL = window.DEFAULT_USER_AVATAR_URL || 'sources/default-user-avatar.png';
+function getDefaultUserAvatarUrl() {
+  return window.DEFAULT_USER_AVATAR_URL || 'sources/default-user-avatar.png';
+}
+function applyDefaultUserAvatarToDOM() {
+  const url = getDefaultUserAvatarUrl();
+  document.querySelectorAll('.user-avatar-img').forEach((img) => {
+    img.src = url;
+  });
+  document.querySelectorAll('.user-avatar-bg').forEach((div) => {
+    div.style.backgroundImage = `url("${url}")`;
+  });
+  const profileImg = document.getElementById('profileAvatar');
+  if (profileImg) profileImg.src = url;
+}
+function escapeHtml(s) {
+  return String(s ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
 
 //Загрузка данных профиля с сервера
 async function loadProfileDataFromAPI() {
@@ -5049,6 +5082,8 @@ async function loadProfileDataFromAPI() {
       });
       userJoinDateElement.textContent = `Дата регистрации: ${joinDate}`;
     }
+
+    applyDefaultUserAvatarToDOM();
 
     const statFavorites = document.getElementById('statFavorites');
     const statComparisons = document.getElementById('statComparisons');
@@ -6258,8 +6293,8 @@ function renderCrudTable(container, data, tableName, searchField = '', searchVal
   const primaryKey = 'id';
 
   const searchControlsHTML = `
-    <div class="table-search-controls" style="margin-bottom: 1rem; padding: 1rem; background: #f8f9fa; border-radius: 8px; display: flex; gap: 1rem; align-items: end;">
-      <div class="form-group">
+    <div class="admin-table-search-controls table-search-controls">
+      <div class="form-group admin-table-search-field">
         <label for="tableSearchField">Поиск по столбцу:</label>
         <select id="tableSearchField" class="table-search-field-select" onchange="searchTableDataDebounced()">
           <option value="">(Все столбцы)</option>
@@ -6270,19 +6305,22 @@ function renderCrudTable(container, data, tableName, searchField = '', searchVal
           `).join('')}
         </select>
       </div>
-      <div class="form-group">
+      <div class="form-group admin-table-search-field">
         <label for="tableSearchValue">Значение:</label>
         <input type="text" id="tableSearchValue" class="table-search-value-input"
                placeholder="Введите значение для поиска..." value="${searchValue}"
                oninput="searchTableDataDebounced()"> 
       </div>
-      <button class="btn btn-primary btn-small" onclick="searchTableData()">Найти</button>
-      <button class="btn btn-outline btn-small" onclick="resetTableSearch()">Сброс</button>
+      <div class="admin-table-search-buttons">
+        <button type="button" class="btn btn-primary btn-small" onclick="searchTableData()">Найти</button>
+        <button type="button" class="btn btn-outline btn-small" onclick="resetTableSearch()">Сброс</button>
+      </div>
     </div>
   `;
 
   let tableHTML = `
     ${searchControlsHTML} 
+    <div class="admin-crud-table-scroll">
     <table class="crud-table">
       <thead>
         <tr>
@@ -6307,6 +6345,7 @@ function renderCrudTable(container, data, tableName, searchField = '', searchVal
         `).join('')}
       </tbody>
     </table>
+    </div>
   `;
 
   container.innerHTML = tableHTML;
@@ -7780,13 +7819,20 @@ function filterAndSortRecommendationProducts(products, type) {
   return result;
 }
 
-async function applyRecommendationsFilters() {
+function closeRecommendationsMobileDrawersIfAny() {
+  if (typeof window.__closeRecommendationsMobileDrawers === 'function') {
+    window.__closeRecommendationsMobileDrawers();
+  }
+}
+
+async function applyRecommendationsFilters(opts = {}) {
   recommendationFilters.query = document.getElementById('recommendationsSearch')?.value || '';
   recommendationFilters.category = document.getElementById('recommendationsCategory')?.value || '';
   recommendationFilters.minPrice = document.getElementById('recommendationsMinPrice')?.value || '';
   recommendationFilters.maxPrice = document.getElementById('recommendationsMaxPrice')?.value || '';
   recommendationFilters.sortBy = document.getElementById('recommendationsSort')?.value || 'relevance';
   await renderRecommendationsByType(getActiveRecommendationTabType());
+  if (opts.closeMobileDrawers) closeRecommendationsMobileDrawersIfAny();
 }
 
 async function resetRecommendationsFilters() {
@@ -7803,6 +7849,7 @@ async function resetRecommendationsFilters() {
   if (sortSelect) sortSelect.value = 'relevance';
 
   await applyRecommendationsFilters();
+  closeRecommendationsMobileDrawersIfAny();
 }
 
 //Функция расчёта совпадения
@@ -8152,166 +8199,6 @@ function closeChangePasswordModal() {
   const modal = document.getElementById('changePasswordModalOverlay');
   if (modal) {
     modal.remove();
-  }
-}
-
-function changeAvatar() {
-  if (!currentUser) {
-    showCustomNotification('Требуется авторизация', 'warning');
-    //window.location.href = 'auth.html';
-    return;
-  }
-
-  closeChangeAvatarModal();
-
-  const modalHtml = `
-    <div class="modal-overlay" id="changeAvatarModalOverlay" style="
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background-color: rgba(0, 0, 0, 0.5);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      z-index: 1000;
-    ">
-      <div class="modal-content" id="changeAvatarModalContent" style="
-        background-color: white;
-        padding: 2rem;
-        border-radius: 8px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-        max-width: 500px;
-        width: 90%;
-        max-height: 90vh;
-        overflow-y: auto;
-      ">
-        <h3>Сменить аватар</h3>
-        <form id="changeAvatarForm">
-          <div class="form-group">
-            <label for="avatarUpload">Загрузить новое изображение:</label>
-            <input type="file" id="avatarUpload" name="avatar" accept="image/*" required>
-          </div>
-          <div class="form-actions">
-            <button type="button" class="btn btn-outline" onclick="closeChangeAvatarModal()">Отмена</button>
-            <button type="submit" class="btn btn-primary">Сохранить</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  `;
-
-  document.body.insertAdjacentHTML('beforeend', modalHtml);
-
-  const overlay = document.getElementById('changeAvatarModalOverlay');
-  if (overlay) {
-    overlay.onclick = function(event) {
-      if (event.target === overlay) {
-        closeChangeAvatarModal();
-      }
-    };
-  }
-
-  document.getElementById('changeAvatarForm').addEventListener('submit', async function (e) {
-    e.preventDefault();
-
-    const fileInput = document.getElementById('avatarUpload');
-    const file = fileInput.files[0];
-
-    if (!file) {
-      showCustomNotification('Пожалуйста, выберите файл изображения.', 'info');
-      return;
-    }
-
-    //Проверка типа файла (опционально, но рекомендуется)
-    if (!file.type.match('image.*')) {
-      showCustomNotification('Пожалуйста, выберите файл изображения (JPEG, PNG, GIF).', 'info');
-      return;
-    }
-
-    //Проверка размера файла (опционально, например, не более 5MB)
-    const maxSize = 5 * 1024 * 1024; //5 MB в байтах
-    if (file.size > maxSize) {
-      showCustomNotification('Размер файла не должен превышать 5 МБ.', 'info');
-      return;
-    }
-
-    const formData = new FormData();
-    formData.append('avatar', file);
-
-    const token = localStorage.getItem('techAggregatorToken');
-    if (!token) {
-      showCustomNotification('Токен отсутствует', 'error');
-      return;
-    }
-
-    try {
-      const response = await fetch('http://localhost:3000/api/profile/avatar', {
-        method: 'PUT', //Или PATCH
-        headers: {
-          //Не указываем Content-Type, так как используется FormData
-          'Authorization': `Bearer ${token}`
-        },
-        body: formData
-      });
-
-      if (!response.ok) {
-        if (response.status === 401) {
-          localStorage.removeItem('techAggregatorToken');
-          currentUser = null;
-          updateAuthButtons();
-          showCustomNotification('Сессия истекла. Пожалуйста, войдите снова.', 'warning');
-          //window.location.href = 'auth.html';
-          return;
-        }
-        const errorData = await response.json();
-        throw new Error(errorData.error || `HTTP ${response.status}`);
-      }
-
-      const result = await response.json();
-      console.log('Аватар обновлён:', result);
-
-      //Обновляем URL аватара у currentUser (если сервер возвращает новый URL)
-      if (result.updatedUser && result.updatedUser.avatarUrl) {
-          currentUser.avatarUrl = result.updatedUser.avatarUrl;
-      }
-
-      closeChangeAvatarModal();
-      showCustomNotification('Аватар успешно обновлён', 'success');
-
-      //Обновить отображение аватара на странице 
-      updateAvatarDisplay(result.updatedUser.avatarUrl);
-
-    } catch (error) {
-      console.error('Ошибка смены аватара:', error);
-      showCustomNotification(`Ошибка смены аватара: ${error.message}`, 'error');
-    }
-  });
-}
-
-function closeChangeAvatarModal() {
-  const modal = document.getElementById('changeAvatarModalOverlay');
-  if (modal) {
-    modal.remove();
-  }
-}
-
-function updateAvatarDisplay(newAvatarUrl) {
-  
-  const avatarElements = document.querySelectorAll('.user-avatar-img'); //Пример класса
-  if (avatarElements.length > 0) {
-    avatarElements.forEach(img => {
-      img.src = newAvatarUrl || 'https://via.placeholder.com/50x50?text=?'; //Заглушка, если нет URL
-    });
-  }
-
-  //Если аватар отображается как фоновое изображение div'а
-  const avatarBgElements = document.querySelectorAll('.user-avatar-bg'); //Пример класса
-  if (avatarBgElements.length > 0) {
-    avatarBgElements.forEach(div => {
-      div.style.backgroundImage = `url("${newAvatarUrl || 'https://via.placeholder.com/50x50?text=?'}")`;
-    });
   }
 }
 

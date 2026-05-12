@@ -19,6 +19,9 @@
             margin-bottom: 2rem;
             padding-bottom: 1.5rem;
             border-bottom: 2px solid #e5e7eb;
+            flex-wrap: wrap;
+            gap: 1rem;
+            min-width: 0;
         }
         .admin-welcome {
             color: #6b7280;
@@ -31,6 +34,7 @@
             border-radius: 12px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.08);
             overflow: hidden;
+            max-width: 100%;
             margin-bottom: 2rem;
         }
         .admin-tabs-header {
@@ -72,6 +76,9 @@
             padding: 2rem;
             display: none;
             animation: fadeIn 0.3s ease;
+            min-width: 0;
+            max-width: 100%;
+            box-sizing: border-box;
         }
         .admin-tab-content.active {
             display: block;
@@ -82,21 +89,46 @@
             border-radius: 8px;
             margin-bottom: 1rem;
             border: 1px solid #e5e7eb;
+            min-width: 0;
+            max-width: 100%;
+            box-sizing: border-box;
+            overflow-wrap: anywhere;
+            word-break: break-word;
+        }
+        .moderation-item > div:not(.moderation-header):not(.moderation-actions) {
+            min-width: 0;
+            max-width: 100%;
         }
         .moderation-header {
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
             margin-bottom: 1rem;
+            flex-wrap: wrap;
+            gap: 0.5rem 1rem;
+        }
+        .moderation-info {
+            flex: 1 1 200px;
+            min-width: 0;
         }
         .moderation-info h4 {
             margin: 0 0 0.25rem 0;
             font-size: 1.1rem;
+            overflow-wrap: anywhere;
+            word-break: break-word;
         }
         .moderation-info p {
             margin: 0;
             color: #6b7280;
             font-size: 0.9rem;
+            overflow-wrap: anywhere;
+            word-break: break-word;
+        }
+        .admin-moderation-link {
+            word-break: break-all;
+            overflow-wrap: anywhere;
+            max-width: 100%;
+            display: inline-block;
         }
         .status-badge {
             padding: 0.4rem 0.8rem;
@@ -118,6 +150,7 @@
         }
         .moderation-actions {
             display: flex;
+            flex-wrap: wrap;
             gap: 0.5rem;
             margin-top: 1rem;
         }
@@ -143,6 +176,8 @@
         }
         textarea.admin-notes {
             width: 100%;
+            max-width: 100%;
+            box-sizing: border-box;
             padding: 0.5rem;
             border: 1px solid #ddd;
             border-radius: 4px;
@@ -152,17 +187,28 @@
         }
         .crud-container {
             margin-top: 1.5rem;
+            min-width: 0;
+            max-width: 100%;
         }
         .crud-header {
             display: flex;
+            flex-wrap: wrap;
             gap: 1rem;
             margin-bottom: 1.5rem;
             align-items: end;
+            min-width: 0;
+        }
+        .crud-header .crud-table-selector {
+            flex: 1 1 200px;
+            min-width: 0;
+            max-width: 100%;
         }
         .crud-controls {
             display: flex;
+            flex-wrap: wrap;
             gap: 0.5rem;
             margin-bottom: 1rem;
+            min-width: 0;
         }
         .crud-table-selector {
             padding: 0.5rem;
@@ -170,15 +216,65 @@
             border-radius: 4px;
             font-size: 0.9rem;
         }
-        .crud-table {
+        .admin-table-search-controls {
+            margin-bottom: 1rem;
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 8px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            align-items: flex-end;
+            min-width: 0;
+            max-width: 100%;
+            box-sizing: border-box;
+        }
+        .admin-table-search-field {
+            flex: 1 1 160px;
+            min-width: 0;
+        }
+        .admin-table-search-field select,
+        .admin-table-search-field input {
+            max-width: 100%;
+            box-sizing: border-box;
+        }
+        .admin-table-search-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            align-items: center;
+        }
+        .admin-crud-table-scroll {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            max-width: 100%;
             width: 100%;
-            border-collapse: collapse;
             margin-top: 1rem;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            box-sizing: border-box;
+        }
+        .crud-table {
+            width: max-content;
+            min-width: 100%;
+            border-collapse: collapse;
+            margin: 0;
+            table-layout: auto;
         }
         .crud-table th, .crud-table td {
             padding: 0.75rem;
             border: 1px solid #e5e7eb;
             text-align: left;
+            min-width: 0;
+            vertical-align: top;
+            overflow-wrap: anywhere;
+            word-break: break-word;
+        }
+        .crud-table th:first-child,
+        .crud-table td.crud-actions-cell {
+            width: 1%;
+            white-space: nowrap;
+            max-width: none;
         }
         .crud-table th {
             background: #f8f9fa;
@@ -186,7 +282,17 @@
         }
         .crud-actions-cell {
             display: flex;
+            flex-wrap: wrap;
             gap: 0.25rem;
+        }
+        .crud-table .field-display {
+            display: block;
+            max-width: 100%;
+        }
+        .crud-table .field-input {
+            max-width: 100%;
+            box-sizing: border-box;
+            min-width: 0;
         }
         .btn-crud {
             padding: 0.25rem 0.5rem;
@@ -449,6 +555,44 @@
         }
         #adminPriceHistorySearchSuggestions {
             max-height: 320px;
+        }
+
+        .moderation-list {
+            min-width: 0;
+            max-width: 100%;
+        }
+
+        @media (max-width: 768px) {
+            .admin-page {
+                padding: 1rem 0;
+            }
+            .admin-tab-content {
+                padding: 1rem !important;
+            }
+            .admin-form-grid {
+                grid-template-columns: minmax(0, 1fr);
+            }
+            #manualPricesContainer > .btn-outline {
+                display: block;
+                width: 100%;
+                max-width: 100%;
+                margin-bottom: 0.5rem;
+                box-sizing: border-box;
+            }
+            #parser ul code,
+            #parser li code {
+                word-break: break-all;
+                overflow-wrap: anywhere;
+                white-space: pre-wrap;
+            }
+            .form-actions {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .crud-header .btn {
+                width: 100%;
+                max-width: 280px;
+            }
         }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -1047,7 +1191,7 @@
                                     <span class="status-badge status-${item.status}">${item.status}</span>
                                 </div>
                                 <div>
-                                    <strong>Ссылка:</strong> ${item.url ? `<a href="${item.url}" target="_blank">${item.url}</a>` : 'Не указана'}<br>
+                                    <strong>Ссылка:</strong> ${item.url ? `<a href="${item.url}" target="_blank" rel="noopener noreferrer" class="admin-moderation-link">${item.url}</a>` : 'Не указана'}<br>
                                     <strong>Комментарий:</strong> ${item.comment || '<em>Нет</em>'}
                                 </div>
                                 <div class="moderation-actions">

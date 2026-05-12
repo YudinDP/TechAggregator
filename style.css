@@ -577,6 +577,28 @@ body {
     display: flex;
     justify-content: space-between;
     margin-bottom: 0.5rem;
+    align-items: flex-start;
+    gap: 1rem;
+}
+
+.review-author {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    min-width: 0;
+}
+
+.review-author-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+    border: 1px solid #e5e7eb;
+}
+
+.review-author-text {
+    min-width: 0;
 }
 
 /* ================== МОДАЛЬНЫЕ ОКНА ================== */
@@ -1180,6 +1202,8 @@ body {
     box-shadow: 0 4px 12px rgba(0,0,0,0.08);
     overflow: hidden;
     margin-bottom: 2rem;
+    max-width: 100%;
+    box-sizing: border-box;
 }
 
 .admin-tabs-header {
@@ -1225,6 +1249,8 @@ body {
 .admin-tab-content {
     padding: 2rem;
     display: none;
+    min-width: 0;
+    box-sizing: border-box;
 }
 
 .admin-tab-content.active {
@@ -3380,6 +3406,31 @@ body {
     }
 }
 
+/* Главная: первые три блока «Почему выбирают нас?» компактнее на мобильных */
+@media (max-width: 768px) {
+    .features-section {
+        padding: 2.75rem 0;
+    }
+    .features-grid {
+        gap: 1.25rem;
+    }
+    .features-grid .feature-card.enhanced:nth-child(-n+3) {
+        padding: 1rem 0.85rem;
+    }
+    .features-grid .feature-card.enhanced:nth-child(-n+3) .feature-icon {
+        font-size: 2rem;
+        margin-bottom: 0.5rem;
+    }
+    .features-grid .feature-card.enhanced:nth-child(-n+3) h4 {
+        font-size: 1.05rem;
+        margin-bottom: 0.4rem;
+    }
+    .features-grid .feature-card.enhanced:nth-child(-n+3) p {
+        font-size: 0.88rem;
+        line-height: 1.45;
+    }
+}
+
 /* Анимации */
 @keyframes fadeIn {
     from { opacity: 0; }
@@ -4172,6 +4223,92 @@ body {
     padding-right: 12px;
   }
 
+  /* Главная: чуть больше воздуха у ленты быстрых категорий */
+  .main .container.home-category-band {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  /* Рекомендации: вкладки не прилипают к краям экрана */
+  .recommendations-page .recommendations-tabs {
+    padding-left: 10px;
+    padding-right: 10px;
+    box-sizing: border-box;
+  }
+
+  /* Каталог / рекомендации: заголовки и текст вкладок с отступом от краёв */
+  .catalog-layout .products-section > .section-header {
+    padding-left: 6px;
+    padding-right: 6px;
+    box-sizing: border-box;
+  }
+
+  .catalog-layout .products-section > .products-info {
+    padding-left: 6px;
+    padding-right: 6px;
+    box-sizing: border-box;
+  }
+
+  /* Рекомендации: как в каталоге — сетка колонок с тем же gap и без «выпирания» карточек */
+  .catalog-layout.recommendations-layout {
+    gap: 0.85rem;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .recommendations-page .catalog-layout.recommendations-layout .products-section {
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  .recommendations-page .catalog-layout.recommendations-layout .products-section .products-grid {
+    max-width: 100%;
+    width: 100%;
+    box-sizing: border-box;
+    min-width: 0;
+  }
+
+  /* Админка: метрики дашборда с комфортным отступом от краёв */
+  .main .container.admin-page {
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+
+  /* Карточка товара: блоки цен не вылезают за экран (flex-ряд из script.js) */
+  .price-comparison {
+    padding: 1rem;
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow-x: hidden;
+  }
+
+  #priceList.price-list .price-item {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.65rem;
+    min-width: 0;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  #priceList .price-item > div,
+  #priceList .price-item .store-info {
+    min-width: 0;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  #priceList .price-item .buy-button {
+    display: inline-flex;
+    width: 100%;
+    max-width: 100%;
+    justify-content: center;
+    box-sizing: border-box;
+    white-space: normal;
+    text-align: center;
+  }
+
   .main {
     overflow-x: hidden;
   }
@@ -4393,6 +4530,9 @@ body {
     display: flex;
     gap: 0.5rem;
     margin-bottom: 0.75rem;
+    padding-left: 8px;
+    padding-right: 8px;
+    box-sizing: border-box;
   }
 
   .catalog-drawer-backdrop {
@@ -5294,3 +5434,4 @@ body {
     height: 135px;
   }
 }
+

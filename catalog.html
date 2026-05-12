@@ -336,6 +336,8 @@ document.addEventListener('DOMContentLoaded', function () {
         filt?.classList.remove('is-open');
         sortP?.classList.remove('is-open');
     }
+    window.__closeCatalogMobileDrawers = closeCatalogDrawers;
+
     document.getElementById('btnOpenCatalogFilters')?.addEventListener('click', () => {
         closeCatalogDrawers();
         if (bd) bd.hidden = false;
@@ -347,6 +349,21 @@ document.addEventListener('DOMContentLoaded', function () {
         sortP?.classList.add('is-open');
     });
     bd?.addEventListener('click', closeCatalogDrawers);
+
+    const filtSidebar = document.getElementById('catalogFiltersSidebar');
+    const filterActions = filtSidebar?.querySelector('.filter-actions');
+    filterActions?.querySelector('.btn-secondary')?.addEventListener('click', () => {
+      setTimeout(closeCatalogDrawers, 0);
+    });
+    filterActions?.querySelector('.btn-primary')?.addEventListener('click', () => {
+      setTimeout(closeCatalogDrawers, 0);
+    });
+    filtSidebar?.querySelector('button[onclick*="resetAllFilters"]')?.addEventListener('click', () => {
+      setTimeout(closeCatalogDrawers, 0);
+    });
+    document.querySelector('#catalogSortPanel .btn-primary')?.addEventListener('click', () => {
+      setTimeout(closeCatalogDrawers, 0);
+    });
 });
 // Функция выхода из режима "Похожие товары"
 window.exitSimilarMode = function() {

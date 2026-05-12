@@ -510,7 +510,7 @@
         </div>
         <div class="filter-actions">
             <button id="recommendationsResetFilters" class="btn btn-secondary">Сбросить все</button>
-            <button id="recommendationsApplyFilters" class="btn btn-primary" onclick="applyRecommendationsFilters()">Применить</button>
+            <button id="recommendationsApplyFilters" class="btn btn-primary" onclick="applyRecommendationsFilters({ closeMobileDrawers: true })">Применить</button>
         </div>
     </aside>
     <section class="products-section">
@@ -531,7 +531,7 @@
                         <option value="price_desc">По цене (убыв.)</option>
                         <option value="name">По названию</option>
                     </select>
-                    <button class="btn btn-primary" style="padding:10px" onclick="applyRecommendationsFilters()">Применить</button>
+                    <button class="btn btn-primary" style="padding:10px" onclick="applyRecommendationsFilters({ closeMobileDrawers: true })">Применить</button>
                 </div>
             </div>
         </div>
@@ -543,7 +543,7 @@
 <span>↻</span> Обновить
 </button>
 </div>
-<p style="color: #6b7280; margin-bottom: 1.5rem;">
+<p style="color: #6b7280; margin-bottom: 1.5rem; padding-left: 5px;">
 Товары, которые чаще всего просматривают и покупают наши пользователи
 </p>
 <div class="products-grid" id="popularProducts">
@@ -634,6 +634,8 @@ document.addEventListener('DOMContentLoaded', function () {
     filt?.classList.remove('is-open');
     sortP?.classList.remove('is-open');
   }
+  window.__closeRecommendationsMobileDrawers = closeRecDrawers;
+
   document.getElementById('btnRecOpenFilters')?.addEventListener('click', () => {
     closeRecDrawers();
     if (bd) bd.hidden = false;
@@ -645,12 +647,6 @@ document.addEventListener('DOMContentLoaded', function () {
     sortP?.classList.add('is-open');
   });
   bd?.addEventListener('click', closeRecDrawers);
-  document.getElementById('recommendationsResetFilters')?.addEventListener('click', () => {
-    setTimeout(closeRecDrawers, 150);
-  });
-  document.getElementById('recommendationsApplyFilters')?.addEventListener('click', () => {
-    setTimeout(closeRecDrawers, 150);
-  });
 });
 </script>
 
