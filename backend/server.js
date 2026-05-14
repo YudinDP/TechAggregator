@@ -15,6 +15,7 @@ const puppeteer = require('puppeteer-extra'); //Используем puppeteer-e
 const StealthPlugin = require('puppeteer-extra-plugin-stealth');
 const OpenAI = require('openai');
 const Groq = require('groq-sdk');
+const API_SYSTEMS_KEY = process.env.API_SYSTEMS_API_KEY;
 
 function readEnvValue(...keys) {
   for (const key of keys) {
@@ -24,79 +25,6 @@ function readEnvValue(...keys) {
     if (normalized) return normalized;
   }
   return null;
-}
-
-function parseApiSystemsKeysFromEnv() {
-    const combined = readEnvValue('API_SYSTEMS_API_KEYS', 'API_SYSTEMS_API_KEY');
-    if (!combined) return [];
-    return combined
-        .split(/[\s,|;\n]+/)
-        .map((k) => k.trim().replace(/^['"]|['"]$/g, ''))
-        .filter(Boolean)
-        .filter((k, i, a) => a.indexOf(k) === i);
-}
-
-const API_SYSTEMS_KEYS = parseApiSystemsKeysFromEnv();
-
-/** Индекс последнего успешно сработавшего ключа (при ротации начинаем со следующего после исчерпания). */
-let apiSystemsPreferredKeyIndex = 0;
-
-function shouldRotateApiSystemsKey(error, responseData) {
-    const http = error?.response?.status;
-    if (http === 401 || http === 402 || http === 403 || http === 429) return true;
-
-    const data =
-        responseData !== undefined
-            ? responseData
-            : error?.response?.data ?? error?.apiSystemsPayload;
-    if (!data || typeof data !== 'object') return false;
-
-    const st = String(data.status ?? '').toUpperCase();
-    const msg = String(data.error || data.message || data.detail || data.description || '').toUpperCase();
-    const blob = `${st} ${msg}`;
-
-    if (st && st !== 'OK') {
-        if (/^(LIMIT|QUOTA|NO_QUOTA|PAYMENT|BALANCE|AUTH|UNAUTHORIZED|FORBIDDEN)$/.test(st)) return true;
-        if (/LIMIT|QUOTA|EXCEED|BALANCE|PAYMENT|402|429|REQUEST|SUBSCRIPTION|ЛИМИТ|КВОТ|ЗАКОНЧ|ИСЧЕРП|ОПЛАТ|КЛЮЧ/i.test(blob)) return true;
-    }
-    return false;
-}
-
-/**
- * Выполняет async-операцию с перебором ключей API Systems при исчерпании лимита / отказе авторизации.
- * @param {(apiKey: string) => Promise<T>} exec
- * @returns {Promise<T>}
- */
-async function withApiSystemsKeyRetry(exec) {
-    const keys = API_SYSTEMS_KEYS;
-    if (!keys.length) {
-        throw new Error('API_KEY для API Systems не найден в переменных окружения.');
-    }
-    const n = keys.length;
-    const start = apiSystemsPreferredKeyIndex % n;
-    let lastError = null;
-
-    for (let attempt = 0; attempt < n; attempt++) {
-        const idx = (start + attempt) % n;
-        const apiKey = keys[idx];
-        try {
-            const out = await exec(apiKey);
-            apiSystemsPreferredKeyIndex = idx;
-            return out;
-        } catch (e) {
-            lastError = e;
-            const payload = e?.response?.data ?? e?.apiSystemsPayload;
-            const rotate = n > 1 && shouldRotateApiSystemsKey(e, payload);
-            if (rotate && attempt < n - 1) {
-                console.warn(
-                    `[API-SYSTEMS] Ключ ${idx + 1}/${n} отклонён (${e.message}). Пробуем следующий ключ.`
-                );
-                continue;
-            }
-            throw e;
-        }
-    }
-    throw lastError || new Error('Все ключи API Systems исчерпаны или недоступны.');
 }
 
 const PRICESAPI_KEY = readEnvValue('PRICESAPI_KEY', 'PRICES_API_KEY', 'PRICE_API_KEY');
@@ -4784,33 +4712,29 @@ async function fetchPriceFromApiSystemsByUrl(urlString) {
 }
 
 async function fetchWildberriesOfferPriceFromApiSystems(modelId, requestedUrl = null) {
+    if (!API_SYSTEMS_KEY) {
+        throw new Error('API_KEY для API Systems не найден в переменных окружения.');
+    }
+
     const offersUrl = `http://wb.apisystem.name/models/${modelId}/offers`;
-    const payload = await withApiSystemsKeyRetry(async (apiKey) => {
-        const response = await axios.get(offersUrl, {
-            params: {
-                api_key: apiKey,
-                format: 'json',
-                count: 10,
-                page: 1
-            },
-            timeout: 10000
-        });
-
-        if (response.status !== 200) {
-            const err = new Error(`API Systems WB offers вернул статус ${response.status}`);
-            err.response = response;
-            throw err;
-        }
-
-        const body = response.data || {};
-        if (body.status !== 'OK') {
-            const err = new Error(`API Systems WB offers вернул ошибку: ${body.status || 'UNKNOWN'}`);
-            err.apiSystemsPayload = body;
-            err.response = response;
-            throw err;
-        }
-        return body;
+    const response = await axios.get(offersUrl, {
+        params: {
+            api_key: API_SYSTEMS_KEY,
+            format: 'json',
+            count: 10,
+            page: 1
+        },
+        timeout: 10000
     });
+
+    if (response.status !== 200) {
+        throw new Error(`API Systems WB offers вернул статус ${response.status}`);
+    }
+
+    const payload = response.data || {};
+    if (payload.status !== 'OK') {
+        throw new Error(`API Systems WB offers вернул ошибку: ${payload.status || 'UNKNOWN'}`);
+    }
 
     const offers = Array.isArray(payload.offers) ? payload.offers : [];
     let price = coerceApiSystemsPrice(payload.price_min) || coerceApiSystemsPrice(payload.price_avg);
@@ -6261,7 +6185,11 @@ async function parseProductWithGroq(productName, sourceUrl = null) {
 
 async function fetchProductSpecsFromApiSystems(modelId, source) {
     console.log(`[API-SYSTEMS] Запрашиваем характеристики для ID: ${modelId}, источник: ${source}`);
-
+    
+    if (!API_SYSTEMS_KEY) {
+        throw new Error('API_KEY для API Systems не найден в переменных окружения.');
+    }
+    
     let baseUrl;
     if (source === 'yandex_market') {
         baseUrl = `http://market.apisystem.name/models/${modelId}/specification`;
@@ -6270,37 +6198,29 @@ async function fetchProductSpecsFromApiSystems(modelId, source) {
     } else {
         throw new Error(`Неизвестный источник: ${source}`);
     }
-
+    
     try {
         //Задержка между запросами согласно ограничению API
         await new Promise(resolve => setTimeout(resolve, 1000));
-
-        const data = await withApiSystemsKeyRetry(async (apiKey) => {
-            const response = await axios.get(baseUrl, {
-                params: {
-                    api_key: apiKey,
-                    format: 'json'
-                },
-                timeout: 10000
-            });
-
-            if (response.status !== 200) {
-                const err = new Error(`API Systems вернул статус ${response.status}`);
-                err.response = response;
-                throw err;
-            }
-
-            const body = response.data;
-            if (body.status !== 'OK') {
-                const err = new Error(`API Systems вернул ошибку: ${body.status}`);
-                err.apiSystemsPayload = body;
-                err.response = response;
-                throw err;
-            }
-            return body;
+        
+        const response = await axios.get(baseUrl, {
+            params: {
+                api_key: API_SYSTEMS_KEY,
+                format: 'json'
+            },
+            timeout: 10000
         });
-
+        
+        if (response.status !== 200) {
+            throw new Error(`API Systems вернул статус ${response.status}`);
+        }
+        
+        const data = response.data;
         console.log(`[API-SYSTEMS] Получен ответ для ID ${modelId}:`, data);
+        
+        if (data.status !== 'OK') {
+            throw new Error(`API Systems вернул ошибку: ${data.status}`);
+        }
         
         //🔑 ГЛАВНОЕ ИСПРАВЛЕНИЕ: данные могут быть в fields ИЛИ на верхнем уровне
         const fields = data.fields || data;
