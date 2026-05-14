@@ -2035,8 +2035,8 @@ function describeForecast(forecast, scopeLabel) {
   }
   const algorithmLabel =
     forecast.model === 'quadratic+exp'
-      ? 'взвешенная квадратичная регрессия + экспоненциальное сглаживание'
-      : 'взвешенная линейная регрессия + экспоненциальное сглаживание';
+      ? 'прогнозирования'
+      : 'прогнозирования';
   if (forecast.direction === 'up') {
     return `По алгоритму (${algorithmLabel}) ${scopeLabel} цена может вырасти до ${formatPrice(forecast.predictedPrice)} ₽ в ближайшую неделю.`;
   }
@@ -2048,8 +2048,8 @@ function describeForecast(forecast, scopeLabel) {
 
 function describeForecastShort(forecast) {
   if (!forecast || !Number.isFinite(forecast.predictedPrice)) return 'недостаточно данных.';
-  if (forecast.direction === 'up') return `возможен рост до ${formatPrice(forecast.predictedPrice)} ₽.`;
-  if (forecast.direction === 'down') return `возможно снижение до ${formatPrice(forecast.predictedPrice)} ₽.`;
+  if (forecast.direction === 'up') return `возможен рост примерно до ${formatPrice(forecast.predictedPrice)} ₽.`;
+  if (forecast.direction === 'down') return `возможно снижение примерно до ${formatPrice(forecast.predictedPrice)} ₽.`;
   return `ожидается около ${formatPrice(forecast.predictedPrice)} ₽.`;
 }
 
