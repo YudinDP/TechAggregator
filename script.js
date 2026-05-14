@@ -6799,6 +6799,7 @@ document.addEventListener('DOMContentLoaded', () => {
       defaultHistoryDate.value = formatLocalDateYMD();
     }
     ensureAdminPriceUrlAutofillWired();
+    initAdminImportTab();
 });
 
 
@@ -7269,6 +7270,258 @@ document.getElementById('manualAddForm')?.addEventListener('submit', async funct
   }
 });
 
+//--- Админ: импорт каталога ---
+function renderImportResult(data) {
+  const panel = document.getElementById('importResultPanel');
+  const sumEl = document.getElementById('importResultSummary');
+  const cEl = document.getElementById('importCreatedList');
+  const uEl = document.getElementById('importUpdatedList');
+  const eEl = document.getElementById('importErrorsList');
+  if (!panel || !sumEl) return;
+  const s = data.summary || {};
+  sumEl.textContent = `Всего строк: ${s.total ?? '—'} · создано: ${s.created ?? 0} · обновлено: ${s.updated ?? 0} · ошибок: ${s.errors ?? 0}`;
+  const li = (arr, emptyMsg) => {
+    if (!arr || !arr.length) return `<p style="color:#94a3b8;margin:0;">${emptyMsg}</p>`;
+    return `<ul style="margin:0;padding-left:1.1rem;">${arr
+      .map((r) => `<li>#${escapeHtml(String(r.id))} — ${escapeHtml(r.name || '')} <span style="color:#64748b;">(${escapeHtml(
+        r.category || ''
+      )})</span></li>`)
+      .join('')}</ul>`;
+  };
+  cEl.innerHTML = li(data.created, 'Нет');
+  uEl.innerHTML = li(data.updated, 'Нет');
+  if (!data.errors || !data.errors.length) {
+    eEl.innerHTML = '<p style="color:#64748b;margin:0;">Нет</p>';
+  } else {
+    eEl.innerHTML = `<ul style="margin:0;padding-left:1.1rem;">${data.errors
+      .map((r) => `<li>Строка ${escapeHtml(String(r.rowIndex))}: ${escapeHtml(r.message || '')}</li>`)
+      .join('')}</ul>`;
+  }
+  panel.style.display = 'block';
+  panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+async function loadImportFeeds() {
+  const wrap = document.getElementById('importFeedsTableWrap');
+  if (!wrap) return;
+  const token = localStorage.getItem('techAggregatorToken');
+  wrap.innerHTML = '<p style="color:#64748b;">Загрузка списка…</p>';
+  try {
+    const res = await fetch('http://localhost:3000/api/admin/import/feeds', {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      wrap.innerHTML = `<p style="color:#b91c1c;">${escapeHtml(err.error || 'Ошибка ' + res.status)}</p>`;
+      return;
+    }
+    const feeds = await res.json();
+    if (!feeds.length) {
+      wrap.innerHTML = '<p style="color:#64748b;">Пока нет сохранённых ссылок.</p>';
+      return;
+    }
+    const fmt = (d) => (d ? escapeHtml(new Date(d).toLocaleString()) : '—');
+    wrap.innerHTML = `
+      <table class="price-history-table" style="width:100%;font-size:0.85rem;">
+        <thead><tr>
+          <th>ID</th><th>Магазин</th><th>Продавец</th><th>URL</th><th>Создан</th><th>Последний импорт</th><th>Статус</th><th></th>
+        </tr></thead>
+        <tbody>
+          ${feeds
+            .map(
+              (f) => `
+            <tr>
+              <td>${f.id}</td>
+              <td>${escapeHtml(f.storeName || '')}</td>
+              <td>${escapeHtml(f.sellerName || '—')}</td>
+              <td style="max-width:240px;word-break:break-all;"><a href="${escapeHtml(f.url)}" target="_blank" rel="noopener">ссылка</a></td>
+              <td>${fmt(f.createdAt)}</td>
+              <td>${fmt(f.lastImportAt)}</td>
+              <td>${escapeHtml(f.lastStatus || '—')}</td>
+              <td style="white-space:nowrap;">
+                <button type="button" class="btn btn-outline" data-import-run="${f.id}">Обновить</button>
+                <button type="button" class="btn btn-outline" data-import-edit="${f.id}">URL</button>
+                <button type="button" class="btn btn-secondary" data-import-del="${f.id}">Удалить</button>
+              </td>
+            </tr>`
+            )
+            .join('')}
+        </tbody>
+      </table>`;
+    wrap.querySelectorAll('[data-import-run]').forEach((btn) => {
+      btn.addEventListener('click', () => runImportFeed(Number(btn.getAttribute('data-import-run'))));
+    });
+    wrap.querySelectorAll('[data-import-edit]').forEach((btn) => {
+      btn.addEventListener('click', () => editImportFeedUrl(Number(btn.getAttribute('data-import-edit')), feeds));
+    });
+    wrap.querySelectorAll('[data-import-del]').forEach((btn) => {
+      btn.addEventListener('click', () => deleteImportFeed(Number(btn.getAttribute('data-import-del'))));
+    });
+  } catch (e) {
+    wrap.innerHTML = `<p style="color:#b91c1c;">${escapeHtml(e.message)}</p>`;
+  }
+}
+
+async function runImportFeed(id) {
+  const token = localStorage.getItem('techAggregatorToken');
+  try {
+    const res = await fetch(`http://localhost:3000/api/admin/import/feeds/${id}/run`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || res.statusText);
+    showCustomNotification('Импорт по ссылке выполнен.', 'success');
+    loadImportFeeds();
+  } catch (e) {
+    showCustomNotification(e.message, 'error');
+  }
+}
+
+function editImportFeedUrl(id, feeds) {
+  const f = feeds.find((x) => x.id === id);
+  if (!f) return;
+  const nu = prompt('Новый URL файла', f.url);
+  if (nu == null || !String(nu).trim()) return;
+  patchImportFeed(id, { url: String(nu).trim() });
+}
+
+async function patchImportFeed(id, body) {
+  const token = localStorage.getItem('techAggregatorToken');
+  try {
+    const res = await fetch(`http://localhost:3000/api/admin/import/feeds/${id}`, {
+      method: 'PATCH',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || res.statusText);
+    showCustomNotification('Запись обновлена.', 'success');
+    loadImportFeeds();
+  } catch (e) {
+    showCustomNotification(e.message, 'error');
+  }
+}
+
+async function deleteImportFeed(id) {
+  if (!confirm('Удалить эту ссылку на импорт?')) return;
+  const token = localStorage.getItem('techAggregatorToken');
+  try {
+    const res = await fetch(`http://localhost:3000/api/admin/import/feeds/${id}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || res.statusText);
+    showCustomNotification('Удалено.', 'success');
+    loadImportFeeds();
+  } catch (e) {
+    showCustomNotification(e.message, 'error');
+  }
+}
+
+function initAdminImportTab() {
+  const upForm = document.getElementById('importUploadForm');
+  if (!upForm || upForm.dataset.bound === '1') return;
+  upForm.dataset.bound = '1';
+  upForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const token = localStorage.getItem('techAggregatorToken');
+    const fd = new FormData();
+    fd.append('storeName', document.getElementById('importStoreName').value);
+    const seller = document.getElementById('importSellerName').value.trim();
+    if (seller) fd.append('sellerName', seller);
+    const fileInput = document.getElementById('importFile');
+    if (!fileInput.files || !fileInput.files[0]) {
+      showCustomNotification('Выберите файл.', 'info');
+      return;
+    }
+    fd.append('file', fileInput.files[0]);
+    try {
+      const res = await fetch('http://localhost:3000/api/admin/import/upload', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: fd
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || res.statusText);
+      renderImportResult(data);
+      showCustomNotification('Импорт файла завершён.', 'success');
+      fileInput.value = '';
+    } catch (err) {
+      showCustomNotification(err.message, 'error');
+    }
+  });
+
+  document.getElementById('importJsonBtn')?.addEventListener('click', async () => {
+    const token = localStorage.getItem('techAggregatorToken');
+    const raw = document.getElementById('importJsonTextarea').value.trim();
+    if (!raw) {
+      showCustomNotification('Вставьте JSON.', 'info');
+      return;
+    }
+    let parsed;
+    try {
+      parsed = JSON.parse(raw);
+    } catch (err) {
+      showCustomNotification('Некорректный JSON: ' + err.message, 'error');
+      return;
+    }
+    const items = Array.isArray(parsed) ? parsed : Array.isArray(parsed.items) ? parsed.items : null;
+    if (!items) {
+      showCustomNotification('Нужен массив или объект с полем items.', 'info');
+      return;
+    }
+    try {
+      const res = await fetch('http://localhost:3000/api/admin/import/json', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          storeName: document.getElementById('importJsonStore').value,
+          sellerName: document.getElementById('importJsonSeller').value.trim() || undefined,
+          items
+        })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || res.statusText);
+      renderImportResult(data);
+      showCustomNotification('Импорт JSON завершён.', 'success');
+    } catch (err) {
+      showCustomNotification(err.message, 'error');
+    }
+  });
+
+  document.getElementById('importFeedAddForm')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const token = localStorage.getItem('techAggregatorToken');
+    const body = {
+      url: document.getElementById('importFeedUrl').value.trim(),
+      storeName: document.getElementById('importFeedStore').value,
+      sellerName: document.getElementById('importFeedSeller').value.trim() || null
+    };
+    try {
+      const res = await fetch('http://localhost:3000/api/admin/import/feeds', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(body)
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || res.statusText);
+      showCustomNotification('Ссылка добавлена.', 'success');
+      document.getElementById('importFeedAddForm').reset();
+      loadImportFeeds();
+    } catch (err) {
+      showCustomNotification(err.message, 'error');
+    }
+  });
+}
+
 //Сброс формы парсинга
 function resetParseForm() {
   document.getElementById('parseProductForm').reset();
@@ -7297,6 +7550,8 @@ function openAdminTab(tabName) {
         loadUsersTable();
     } else if (tabName === 'priceHistory') {
         fetchAdminPriceSyncStatus();
+    } else if (tabName === 'import') {
+        loadImportFeeds();
     }
     //Для 'parser' и 'manualAdd' ничего загружать не нужно, только открыть форму
 }

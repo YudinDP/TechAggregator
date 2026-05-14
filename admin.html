@@ -562,6 +562,14 @@
             max-width: 100%;
         }
 
+        .import-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            align-items: start;
+            margin-top: 1rem;
+        }
+
         @media (max-width: 768px) {
             .admin-page {
                 padding: 1rem 0;
@@ -592,6 +600,9 @@
             .crud-header .btn {
                 width: 100%;
                 max-width: 280px;
+            }
+            .import-grid {
+                grid-template-columns: 1fr !important;
             }
         }
     </style>
@@ -681,6 +692,7 @@
                 <button class="admin-tab-btn" onclick="openAdminTab('parser')">Добавление товара</button>
                 <button class="admin-tab-btn" onclick="openAdminTab('manualAdd')">Добавление вручную</button>
                 <button class="admin-tab-btn" onclick="openAdminTab('priceHistory')">История цен</button>
+                <button class="admin-tab-btn" onclick="openAdminTab('import')">Импорт</button>
                 <button class="admin-tab-btn" onclick="openAdminTab('analytics')">Аналитика</button>
                 
             </div>
@@ -1004,6 +1016,130 @@
     </div>
   </div>
 </div>
+            <div id="import" class="admin-tab-content">
+                <h3>Импорт каталога</h3>
+                <p style="color:#6b7280;max-width:920px;line-height:1.5;">
+                    Загрузите прайс в формате <strong>JSON</strong> или <strong>Excel (.xlsx)</strong>. Для каждой позиции нужны название, категория (slug или русское имя), цена, ссылка на карточку в магазине.
+                    Повтор по полю <strong>артикул/sku</strong> (сохраняется как характеристика <code>import_sku</code>) или по паре название+категория: существующие товары обновляются (цена, ссылка, описание, картинка, характеристики, рейтинг на карточке и сигналы магазина — рейтинг/остаток/число отзывов, если колонки есть в файле).
+                </p>
+                <details style="margin:1rem 0;padding:0.75rem 1rem;border:1px solid #e5e7eb;border-radius:10px;background:#f9fafb;max-width:920px;">
+                    <summary style="cursor:pointer;font-weight:600;">Колонки Excel / поля JSON</summary>
+                    <ul style="margin:0.75rem 0 0;padding-left:1.2rem;font-size:0.88rem;color:#475569;line-height:1.5;">
+                        <li><strong>sku / артикул</strong> — внешний код для сопоставления при следующих импортах</li>
+                        <li><strong>name / наименование</strong>, <strong>category / категория</strong>, <strong>price / цена</strong>, <strong>url / ссылка</strong> (на покупку)</li>
+                        <li>Опционально: <strong>image_url / картинка</strong>, <strong>description / описание</strong>, <strong>stock / остаток</strong>, <strong>rating / рейтинг</strong> (0–5), <strong>reviews / отзывов</strong></li>
+                        <li><strong>store_name / магазин</strong>, <strong>seller / продавец</strong> — в строке; если не указаны, подставляются из формы ниже</li>
+                        <li><strong>specs_json</strong> — JSON-объект характеристик одной строкой; либо поле <code>specs</code> в JSON-элементе; прочие колонки Excel трактуются как доп. характеристики</li>
+                    </ul>
+                </details>
+
+                <div class="import-grid">
+                    <div style="border:1px solid #e5e7eb;border-radius:12px;padding:1rem;background:#fff;">
+                        <h4 style="margin-top:0;">Файл с компьютера</h4>
+                        <form id="importUploadForm" enctype="multipart/form-data">
+                            <div class="form-group">
+                                <label for="importStoreName">Магазин (если не задан в файле) *</label>
+                                <select id="importStoreName" required class="search-input" style="max-width:100%;">
+                                    <option value="">Выберите</option>
+                                    <option value="DNS">DNS</option>
+                                    <option value="OZON">OZON</option>
+                                    <option value="Wildberries">Wildberries</option>
+                                    <option value="Citilink">Ситилинк</option>
+                                    <option value="MVideo">М.Видео</option>
+                                    <option value="Yandex Market">Яндекс Маркет</option>
+                                    <option value="Eldorado">Эльдорадо</option>
+                                    <option value="Other">Другой</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="importSellerName">Продавец по умолчанию (опционально)</label>
+                                <input type="text" id="importSellerName" class="search-input" placeholder="Как в карточке магазина" style="max-width:100%;">
+                            </div>
+                            <div class="form-group">
+                                <label for="importFile">Файл (.json, .xlsx, .csv) *</label>
+                                <input type="file" id="importFile" accept=".json,.xlsx,.xls,.csv,application/json" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Импортировать</button>
+                        </form>
+                    </div>
+                    <div style="border:1px solid #e5e7eb;border-radius:12px;padding:1rem;background:#fff;">
+                        <h4 style="margin-top:0;">JSON из буфера</h4>
+                        <div class="form-group">
+                            <label for="importJsonStore">Магазин *</label>
+                            <select id="importJsonStore" required class="search-input" style="max-width:100%;">
+                                <option value="">Выберите</option>
+                                <option value="DNS">DNS</option>
+                                <option value="OZON">OZON</option>
+                                <option value="Wildberries">Wildberries</option>
+                                <option value="Citilink">Ситилинк</option>
+                                <option value="MVideo">М.Видео</option>
+                                <option value="Yandex Market">Яндекс Маркет</option>
+                                <option value="Eldorado">Эльдорадо</option>
+                                <option value="Other">Другой</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="importJsonSeller">Продавец (опционально)</label>
+                            <input type="text" id="importJsonSeller" class="search-input" style="max-width:100%;">
+                        </div>
+                        <div class="form-group">
+                            <label for="importJsonTextarea">Массив JSON или объект с полем items *</label>
+                            <textarea id="importJsonTextarea" rows="10" style="width:100%;font-family:ui-monospace,monospace;font-size:0.8rem;" placeholder='[ { "sku": "...", "name": "...", "category": "smartphones", ... } ]'></textarea>
+                        </div>
+                        <button type="button" class="btn btn-primary" id="importJsonBtn">Импортировать JSON</button>
+                    </div>
+                </div>
+
+                <div id="importResultPanel" style="display:none;margin-top:1.5rem;padding:1rem;border:1px solid #cbd5e1;border-radius:12px;background:#f8fafc;">
+                    <h4 style="margin-top:0;">Результат импорта</h4>
+                    <div id="importResultSummary" style="margin-bottom:0.75rem;font-weight:600;"></div>
+                    <div style="display:flex;flex-wrap:wrap;gap:1rem;">
+                        <div style="flex:1;min-width:260px;">
+                            <h5>Добавлено</h5>
+                            <div id="importCreatedList" style="max-height:220px;overflow:auto;font-size:0.85rem;"></div>
+                        </div>
+                        <div style="flex:1;min-width:260px;">
+                            <h5>Обновлено</h5>
+                            <div id="importUpdatedList" style="max-height:220px;overflow:auto;font-size:0.85rem;"></div>
+                        </div>
+                        <div style="flex:1;min-width:260px;">
+                            <h5>Ошибки по строкам</h5>
+                            <div id="importErrorsList" style="max-height:220px;overflow:auto;font-size:0.85rem;color:#b91c1c;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="margin-top:2rem;padding-top:1.5rem;border-top:1px solid #e5e7eb;">
+                    <h4>Импорт по ссылке на файл</h4>
+                    <p style="color:#6b7280;font-size:0.9rem;">Сервер каждые 15 минут проверяет фиды. При изменении файла (другой SHA-256 или ответ не 304) каталог перезагружается.</p>
+                    <form id="importFeedAddForm" style="display:flex;flex-wrap:wrap;gap:0.75rem;align-items:end;margin-bottom:1rem;">
+                        <div class="form-group" style="margin:0;flex:2;min-width:220px;">
+                            <label for="importFeedUrl">URL файла *</label>
+                            <input type="url" id="importFeedUrl" class="search-input" style="width:100%;" placeholder="https://partner.store/export/catalog.json" required>
+                        </div>
+                        <div class="form-group" style="margin:0;flex:1;min-width:140px;">
+                            <label for="importFeedStore">Магазин *</label>
+                            <select id="importFeedStore" required class="search-input" style="width:100%;">
+                                <option value="">—</option>
+                                <option value="DNS">DNS</option>
+                                <option value="OZON">OZON</option>
+                                <option value="Wildberries">Wildberries</option>
+                                <option value="Citilink">Ситилинк</option>
+                                <option value="MVideo">М.Видео</option>
+                                <option value="Yandex Market">Яндекс Маркет</option>
+                                <option value="Eldorado">Эльдорадо</option>
+                                <option value="Other">Другой</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="margin:0;flex:1;min-width:120px;">
+                            <label for="importFeedSeller">Продавец</label>
+                            <input type="text" id="importFeedSeller" class="search-input" style="width:100%;">
+                        </div>
+                        <button type="submit" class="btn btn-primary">Добавить ссылку</button>
+                    </form>
+                    <div id="importFeedsTableWrap" style="overflow-x:auto;"></div>
+                </div>
+            </div>
             <!-- Вкладка Аналитика -->
             <div id="analytics" class="admin-tab-content">
                 <h3>Аналитика системы</h3>

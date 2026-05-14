@@ -15,7 +15,6 @@ const puppeteer = require('puppeteer-extra'); //Используем puppeteer-e
 const StealthPlugin = require('puppeteer-extra-plugin-stealth');
 const OpenAI = require('openai');
 const Groq = require('groq-sdk');
-const API_SYSTEMS_KEY = process.env.API_SYSTEMS_API_KEY;
 
 function readEnvValue(...keys) {
   for (const key of keys) {
@@ -25,6 +24,79 @@ function readEnvValue(...keys) {
     if (normalized) return normalized;
   }
   return null;
+}
+
+function parseApiSystemsKeysFromEnv() {
+    const combined = readEnvValue('API_SYSTEMS_API_KEYS', 'API_SYSTEMS_API_KEY');
+    if (!combined) return [];
+    return combined
+        .split(/[\s,|;\n]+/)
+        .map((k) => k.trim().replace(/^['"]|['"]$/g, ''))
+        .filter(Boolean)
+        .filter((k, i, a) => a.indexOf(k) === i);
+}
+
+const API_SYSTEMS_KEYS = parseApiSystemsKeysFromEnv();
+
+/** Индекс последнего успешно сработавшего ключа (при ротации начинаем со следующего после исчерпания). */
+let apiSystemsPreferredKeyIndex = 0;
+
+function shouldRotateApiSystemsKey(error, responseData) {
+    const http = error?.response?.status;
+    if (http === 401 || http === 402 || http === 403 || http === 429) return true;
+
+    const data =
+        responseData !== undefined
+            ? responseData
+            : error?.response?.data ?? error?.apiSystemsPayload;
+    if (!data || typeof data !== 'object') return false;
+
+    const st = String(data.status ?? '').toUpperCase();
+    const msg = String(data.error || data.message || data.detail || data.description || '').toUpperCase();
+    const blob = `${st} ${msg}`;
+
+    if (st && st !== 'OK') {
+        if (/^(LIMIT|QUOTA|NO_QUOTA|PAYMENT|BALANCE|AUTH|UNAUTHORIZED|FORBIDDEN)$/.test(st)) return true;
+        if (/LIMIT|QUOTA|EXCEED|BALANCE|PAYMENT|402|429|REQUEST|SUBSCRIPTION|ЛИМИТ|КВОТ|ЗАКОНЧ|ИСЧЕРП|ОПЛАТ|КЛЮЧ/i.test(blob)) return true;
+    }
+    return false;
+}
+
+/**
+ * Выполняет async-операцию с перебором ключей API Systems при исчерпании лимита / отказе авторизации.
+ * @param {(apiKey: string) => Promise<T>} exec
+ * @returns {Promise<T>}
+ */
+async function withApiSystemsKeyRetry(exec) {
+    const keys = API_SYSTEMS_KEYS;
+    if (!keys.length) {
+        throw new Error('API_KEY для API Systems не найден в переменных окружения.');
+    }
+    const n = keys.length;
+    const start = apiSystemsPreferredKeyIndex % n;
+    let lastError = null;
+
+    for (let attempt = 0; attempt < n; attempt++) {
+        const idx = (start + attempt) % n;
+        const apiKey = keys[idx];
+        try {
+            const out = await exec(apiKey);
+            apiSystemsPreferredKeyIndex = idx;
+            return out;
+        } catch (e) {
+            lastError = e;
+            const payload = e?.response?.data ?? e?.apiSystemsPayload;
+            const rotate = n > 1 && shouldRotateApiSystemsKey(e, payload);
+            if (rotate && attempt < n - 1) {
+                console.warn(
+                    `[API-SYSTEMS] Ключ ${idx + 1}/${n} отклонён (${e.message}). Пробуем следующий ключ.`
+                );
+                continue;
+            }
+            throw e;
+        }
+    }
+    throw lastError || new Error('Все ключи API Systems исчерпаны или недоступны.');
 }
 
 const PRICESAPI_KEY = readEnvValue('PRICESAPI_KEY', 'PRICES_API_KEY', 'PRICE_API_KEY');
@@ -62,6 +134,24 @@ const JWT_SECRET = process.env.JWT_SECRET;
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
 //const prisma = new PrismaClient();
+
+const multer = require('multer');
+const crypto = require('crypto');
+const { parseImportBuffer, runProductImport } = require('./services/productImport');
+
+const importUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 35 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    const name = String(file.originalname || '');
+    const mime = String(file.mimetype || '');
+    const extOk = /\.(json|xlsx|xls|csv)$/i.test(name);
+    const mimeOk =
+      /json|spreadsheet|excel|csv|officedocument/i.test(mime) || mime === 'application/octet-stream';
+    if (extOk || mimeOk) cb(null, true);
+    else cb(new Error('Допустимы файлы .json, .xlsx, .xls, .csv'));
+  }
+});
 
 async function ensureSellerColumns() {
   try {
@@ -751,6 +841,14 @@ app.listen(PORT, () => {
       console.error('[PRICE SYNC] startup check:', e);
     }
   }, 15000);
+
+  try {
+    cron.schedule('*/15 * * * *', () => {
+      runScheduledImportFeeds().catch((e) => console.warn('[import-feed] cron:', e.message || e));
+    });
+  } catch (e) {
+    console.warn('[import-feed] cron not scheduled:', e.message || e);
+  }
 });
 
 //=== ПРОФИЛЬ И ЛИЧНЫЕ ДАННЫЕ ===
@@ -2955,6 +3053,280 @@ app.post('/api/admin/manual-add-product', authenticateToken, requireAdminRole, a
     }
 });
 
+//--- Импорт каталога (Excel / JSON) ---
+async function executeProductImportFromParsed({ rows, storeName, sellerName }) {
+  await ensureSellerColumns();
+  return runProductImport(prisma, {
+    rows,
+    defaultStoreName: storeName,
+    defaultSellerName: sellerName || null,
+    upsertStoreSignalsItem
+  });
+}
+
+async function processImportFeed(feed) {
+  const url = String(feed.url || '').trim();
+  if (!url) return;
+  let res;
+  try {
+    res = await axios.get(url, {
+      responseType: 'arraybuffer',
+      timeout: 180000,
+      maxContentLength: 50 * 1024 * 1024,
+      maxBodyLength: 50 * 1024 * 1024,
+      validateStatus: () => true,
+      headers: {
+        ...(feed.lastHttpEtag ? { 'If-None-Match': feed.lastHttpEtag } : {}),
+        ...(feed.lastHttpModified ? { 'If-Modified-Since': feed.lastHttpModified } : {})
+      }
+    });
+  } catch (e) {
+    await prisma.importFeed.update({
+      where: { id: feed.id },
+      data: {
+        lastFetchedAt: new Date(),
+        lastStatus: 'error',
+        lastMessage: String(e.message || e).slice(0, 2000)
+      }
+    });
+    return;
+  }
+
+  const etag = res.headers['etag'] || res.headers['ETag'] || null;
+  const ims = res.headers['last-modified'] || res.headers['Last-Modified'] || null;
+
+  if (res.status === 304) {
+    await prisma.importFeed.update({
+      where: { id: feed.id },
+      data: {
+        lastFetchedAt: new Date(),
+        lastStatus: 'unchanged',
+        lastMessage: '304 Not Modified'
+      }
+    });
+    return;
+  }
+
+  if (res.status < 200 || res.status >= 300) {
+    await prisma.importFeed.update({
+      where: { id: feed.id },
+      data: {
+        lastFetchedAt: new Date(),
+        lastStatus: 'error',
+        lastMessage: `HTTP ${res.status}`
+      }
+    });
+    return;
+  }
+
+  const buf = Buffer.from(res.data);
+  const hash = crypto.createHash('sha256').update(buf).digest('hex');
+  if (feed.lastContentHash && hash === feed.lastContentHash) {
+    await prisma.importFeed.update({
+      where: { id: feed.id },
+      data: {
+        lastFetchedAt: new Date(),
+        lastHttpEtag: etag || feed.lastHttpEtag,
+        lastHttpModified: ims || feed.lastHttpModified,
+        lastStatus: 'unchanged',
+        lastMessage: 'Содержимое не изменилось (SHA-256).'
+      }
+    });
+    return;
+  }
+
+  let pathname = 'remote.json';
+  try {
+    pathname = new URL(url).pathname || pathname;
+  } catch {
+    /* ignore */
+  }
+  const { rows } = parseImportBuffer(buf, pathname);
+  const result = await executeProductImportFromParsed({
+    rows,
+    storeName: feed.storeName,
+    sellerName: feed.sellerName
+  });
+
+  await prisma.importFeed.update({
+    where: { id: feed.id },
+    data: {
+      lastFetchedAt: new Date(),
+      lastImportAt: new Date(),
+      lastHttpEtag: etag || null,
+      lastHttpModified: ims || null,
+      lastContentHash: hash,
+      lastStatus: 'ok',
+      lastMessage: JSON.stringify(result.summary).slice(0, 2000)
+    }
+  });
+}
+
+async function runScheduledImportFeeds() {
+  try {
+    const feeds = await prisma.importFeed.findMany({ where: { enabled: true } });
+    for (const f of feeds) {
+      try {
+        await processImportFeed(f);
+      } catch (e) {
+        console.warn('[import-feed]', f.id, e.message || e);
+      }
+    }
+  } catch (e) {
+    if (isMissingTableError(e, 'ImportFeed')) {
+      console.warn('[import-feed] Таблица ImportFeed отсутствует — примените миграцию Prisma.');
+      return;
+    }
+    console.warn('[import-feed]', e.message || e);
+  }
+}
+
+app.post(
+  '/api/admin/import/upload',
+  authenticateToken,
+  requireAdminRole,
+  importUpload.single('file'),
+  async (req, res) => {
+    try {
+      await ensureSellerColumns();
+      if (!req.file || !req.file.buffer) {
+        return res.status(400).json({ error: 'Файл не получен (поле file).' });
+      }
+      const storeName = String(req.body.storeName || '').trim();
+      if (!storeName) {
+        return res.status(400).json({ error: 'Укажите storeName (магазин) в форме.' });
+      }
+      const sellerName = String(req.body.sellerName || '').trim() || null;
+      const original = req.file.originalname || 'upload.json';
+      const { format, rows } = parseImportBuffer(req.file.buffer, original);
+      const result = await executeProductImportFromParsed({ rows, storeName, sellerName });
+      res.json({ format, ...result });
+    } catch (error) {
+      console.error('[import/upload]', error);
+      res.status(500).json({ error: error.message || 'Ошибка импорта' });
+    }
+  }
+);
+
+app.post('/api/admin/import/json', authenticateToken, requireAdminRole, async (req, res) => {
+  try {
+    await ensureSellerColumns();
+    const storeName = String(req.body.storeName || '').trim();
+    if (!storeName) {
+      return res.status(400).json({ error: 'storeName обязателен.' });
+    }
+    const sellerName = req.body.sellerName ? String(req.body.sellerName).trim() : null;
+    const rows = Array.isArray(req.body.items)
+      ? req.body.items
+      : Array.isArray(req.body.rows)
+        ? req.body.rows
+        : Array.isArray(req.body)
+          ? req.body
+          : null;
+    if (!rows) {
+      return res.status(400).json({ error: 'Ожидается массив в теле или поля items/rows.' });
+    }
+    const result = await executeProductImportFromParsed({ rows, storeName, sellerName });
+    res.json({ format: 'json', ...result });
+  } catch (error) {
+    console.error('[import/json]', error);
+    res.status(500).json({ error: error.message || 'Ошибка импорта' });
+  }
+});
+
+app.get('/api/admin/import/feeds', authenticateToken, requireAdminRole, async (req, res) => {
+  try {
+    const feeds = await prisma.importFeed.findMany({ orderBy: { id: 'asc' } });
+    res.json(feeds);
+  } catch (error) {
+    if (isMissingTableError(error, 'ImportFeed')) {
+      return res.status(503).json({ error: 'Таблица ImportFeed не создана. Выполните: npx prisma migrate deploy' });
+    }
+    console.error('[import/feeds GET]', error);
+    res.status(500).json({ error: 'Не удалось загрузить список фидов.' });
+  }
+});
+
+app.post('/api/admin/import/feeds', authenticateToken, requireAdminRole, async (req, res) => {
+  try {
+    const url = String(req.body.url || '').trim();
+    const storeName = String(req.body.storeName || '').trim();
+    const sellerName = req.body.sellerName ? String(req.body.sellerName).trim() : null;
+    if (!url) return res.status(400).json({ error: 'url обязателен.' });
+    if (!storeName) return res.status(400).json({ error: 'storeName обязателен.' });
+    let parsedUrl;
+    try {
+      parsedUrl = new URL(url);
+    } catch {
+      return res.status(400).json({ error: 'Некорректный URL.' });
+    }
+    if (!/^https?:$/i.test(parsedUrl.protocol)) {
+      return res.status(400).json({ error: 'Разрешены только http(s) URL.' });
+    }
+    const feed = await prisma.importFeed.create({
+      data: {
+        url,
+        storeName,
+        sellerName,
+        enabled: req.body.enabled !== false
+      }
+    });
+    res.status(201).json(feed);
+  } catch (error) {
+    if (isMissingTableError(error, 'ImportFeed')) {
+      return res.status(503).json({ error: 'Таблица ImportFeed не создана. Выполните миграцию Prisma.' });
+    }
+    console.error('[import/feeds POST]', error);
+    res.status(500).json({ error: error.message || 'Ошибка создания фида.' });
+  }
+});
+
+app.patch('/api/admin/import/feeds/:id', authenticateToken, requireAdminRole, async (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  if (!Number.isFinite(id)) return res.status(400).json({ error: 'Некорректный id.' });
+  try {
+    const data = {};
+    if (req.body.url !== undefined) data.url = String(req.body.url || '').trim();
+    if (req.body.storeName !== undefined) data.storeName = String(req.body.storeName || '').trim();
+    if (req.body.sellerName !== undefined) data.sellerName = req.body.sellerName ? String(req.body.sellerName).trim() : null;
+    if (req.body.enabled !== undefined) data.enabled = Boolean(req.body.enabled);
+    const feed = await prisma.importFeed.update({ where: { id }, data });
+    res.json(feed);
+  } catch (error) {
+    if (error.code === 'P2025') return res.status(404).json({ error: 'Запись не найдена.' });
+    console.error('[import/feeds PATCH]', error);
+    res.status(500).json({ error: error.message || 'Ошибка обновления.' });
+  }
+});
+
+app.delete('/api/admin/import/feeds/:id', authenticateToken, requireAdminRole, async (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  if (!Number.isFinite(id)) return res.status(400).json({ error: 'Некорректный id.' });
+  try {
+    await prisma.importFeed.delete({ where: { id } });
+    res.json({ ok: true });
+  } catch (error) {
+    if (error.code === 'P2025') return res.status(404).json({ error: 'Запись не найдена.' });
+    console.error('[import/feeds DELETE]', error);
+    res.status(500).json({ error: error.message || 'Ошибка удаления.' });
+  }
+});
+
+app.post('/api/admin/import/feeds/:id/run', authenticateToken, requireAdminRole, async (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  if (!Number.isFinite(id)) return res.status(400).json({ error: 'Некорректный id.' });
+  try {
+    const feed = await prisma.importFeed.findUnique({ where: { id } });
+    if (!feed) return res.status(404).json({ error: 'Фид не найден.' });
+    await processImportFeed(feed);
+    const updated = await prisma.importFeed.findUnique({ where: { id } });
+    res.json({ ok: true, feed: updated });
+  } catch (error) {
+    console.error('[import/feeds run]', error);
+    res.status(500).json({ error: error.message || 'Ошибка запуска импорта.' });
+  }
+});
+
 
 //История цен
 
@@ -3649,8 +4021,6 @@ app.post('/api/change-password', authenticateToken, async (req, res) => {
     res.status(500).json({ error: 'Failed to change password' });
   }
 });
-const multer = require('multer');
-
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     //Путь к папке для сохранения файлов (относительно корня сервера)
@@ -4414,29 +4784,33 @@ async function fetchPriceFromApiSystemsByUrl(urlString) {
 }
 
 async function fetchWildberriesOfferPriceFromApiSystems(modelId, requestedUrl = null) {
-    if (!API_SYSTEMS_KEY) {
-        throw new Error('API_KEY для API Systems не найден в переменных окружения.');
-    }
-
     const offersUrl = `http://wb.apisystem.name/models/${modelId}/offers`;
-    const response = await axios.get(offersUrl, {
-        params: {
-            api_key: API_SYSTEMS_KEY,
-            format: 'json',
-            count: 10,
-            page: 1
-        },
-        timeout: 10000
+    const payload = await withApiSystemsKeyRetry(async (apiKey) => {
+        const response = await axios.get(offersUrl, {
+            params: {
+                api_key: apiKey,
+                format: 'json',
+                count: 10,
+                page: 1
+            },
+            timeout: 10000
+        });
+
+        if (response.status !== 200) {
+            const err = new Error(`API Systems WB offers вернул статус ${response.status}`);
+            err.response = response;
+            throw err;
+        }
+
+        const body = response.data || {};
+        if (body.status !== 'OK') {
+            const err = new Error(`API Systems WB offers вернул ошибку: ${body.status || 'UNKNOWN'}`);
+            err.apiSystemsPayload = body;
+            err.response = response;
+            throw err;
+        }
+        return body;
     });
-
-    if (response.status !== 200) {
-        throw new Error(`API Systems WB offers вернул статус ${response.status}`);
-    }
-
-    const payload = response.data || {};
-    if (payload.status !== 'OK') {
-        throw new Error(`API Systems WB offers вернул ошибку: ${payload.status || 'UNKNOWN'}`);
-    }
 
     const offers = Array.isArray(payload.offers) ? payload.offers : [];
     let price = coerceApiSystemsPrice(payload.price_min) || coerceApiSystemsPrice(payload.price_avg);
@@ -5887,11 +6261,7 @@ async function parseProductWithGroq(productName, sourceUrl = null) {
 
 async function fetchProductSpecsFromApiSystems(modelId, source) {
     console.log(`[API-SYSTEMS] Запрашиваем характеристики для ID: ${modelId}, источник: ${source}`);
-    
-    if (!API_SYSTEMS_KEY) {
-        throw new Error('API_KEY для API Systems не найден в переменных окружения.');
-    }
-    
+
     let baseUrl;
     if (source === 'yandex_market') {
         baseUrl = `http://market.apisystem.name/models/${modelId}/specification`;
@@ -5900,29 +6270,37 @@ async function fetchProductSpecsFromApiSystems(modelId, source) {
     } else {
         throw new Error(`Неизвестный источник: ${source}`);
     }
-    
+
     try {
         //Задержка между запросами согласно ограничению API
         await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        const response = await axios.get(baseUrl, {
-            params: {
-                api_key: API_SYSTEMS_KEY,
-                format: 'json'
-            },
-            timeout: 10000
+
+        const data = await withApiSystemsKeyRetry(async (apiKey) => {
+            const response = await axios.get(baseUrl, {
+                params: {
+                    api_key: apiKey,
+                    format: 'json'
+                },
+                timeout: 10000
+            });
+
+            if (response.status !== 200) {
+                const err = new Error(`API Systems вернул статус ${response.status}`);
+                err.response = response;
+                throw err;
+            }
+
+            const body = response.data;
+            if (body.status !== 'OK') {
+                const err = new Error(`API Systems вернул ошибку: ${body.status}`);
+                err.apiSystemsPayload = body;
+                err.response = response;
+                throw err;
+            }
+            return body;
         });
-        
-        if (response.status !== 200) {
-            throw new Error(`API Systems вернул статус ${response.status}`);
-        }
-        
-        const data = response.data;
+
         console.log(`[API-SYSTEMS] Получен ответ для ID ${modelId}:`, data);
-        
-        if (data.status !== 'OK') {
-            throw new Error(`API Systems вернул ошибку: ${data.status}`);
-        }
         
         //🔑 ГЛАВНОЕ ИСПРАВЛЕНИЕ: данные могут быть в fields ИЛИ на верхнем уровне
         const fields = data.fields || data;

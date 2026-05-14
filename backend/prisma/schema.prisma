@@ -160,3 +160,21 @@ model SearchLog {
   @@index([query])
   @@index([createdAt])
 }
+
+/// Периодический импорт каталога по URL (файл JSON/Excel на стороне магазина).
+model ImportFeed {
+  id               Int       @id @default(autoincrement())
+  url              String
+  storeName        String
+  sellerName       String?
+  enabled          Boolean   @default(true)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  lastFetchedAt    DateTime?
+  lastImportAt     DateTime?
+  lastHttpEtag     String?
+  lastHttpModified String?
+  lastContentHash  String?
+  lastStatus       String?
+  lastMessage      String?
+}

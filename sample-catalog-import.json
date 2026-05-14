@@ -1,0 +1,1158 @@
+{
+  "version": 1,
+  "generated": "2026-05-13T14:58:26.181Z",
+  "items": [
+    {
+      "sku": "DEMO-IMP-0001",
+      "name": "Демо импорт — устройство 1 (laptops)",
+      "category": "laptops",
+      "price": 10137,
+      "url": "https://example.com/catalog/DEMO-IMP-0001",
+      "image_url": "https://picsum.photos/seed/DEMO-IMP-0001/400/400",
+      "description": "Тестовая позиция массового импорта #1. Используйте артикул DEMO-IMP-0001 для повторного сопоставления.",
+      "stock": 3,
+      "rating": 3.3,
+      "reviews": 16,
+      "specs": {
+        "demo_series": "Series 2",
+        "demo_warranty_months": "13"
+      }
+    },
+    {
+      "sku": "DEMO-IMP-0002",
+      "name": "Демо импорт — устройство 2 (headphones)",
+      "category": "headphones",
+      "price": 10274,
+      "url": "https://example.com/catalog/DEMO-IMP-0002",
+      "image_url": "https://picsum.photos/seed/DEMO-IMP-0002/400/400",
+      "description": "Тестовая позиция массового импорта #2. Используйте артикул DEMO-IMP-0002 для повторного сопоставления.",
+      "stock": 6,
+      "rating": 3.4,
+      "reviews": 27,
+      "specs": {
+        "demo_series": "Series 3",
+        "demo_warranty_months": "14"
+      }
+    },
+    {
+      "sku": "DEMO-IMP-0003",
+      "name": "Демо импорт — устройство 3 (tablets)",
+      "category": "tablets",
+      "price": 10411,
+      "url": "https://example.com/catalog/DEMO-IMP-0003",
+      "image_url": "https://picsum.photos/seed/DEMO-IMP-0003/400/400",
+      "description": "Тестовая позиция массового импорта #3. Используйте артикул DEMO-IMP-0003 для повторного сопоставления.",
+      "stock": 9,
+      "rating": 3.5,
+      "reviews": 38,
+      "specs": {
+        "demo_series": "Series 4",
+        "demo_warranty_months": "15"
+      }
+    },
+    {
+      "sku": "DEMO-IMP-0004",
+      "name": "Демо импорт — устройство 4 (tv)",
+      "category": "tv",
+      "price": 10548,
+      "url": "https://example.com/catalog/DEMO-IMP-0004",
+      "image_url": "https://picsum.photos/seed/DEMO-IMP-0004/400/400",
+      "description": "Тестовая позиция массового импорта #4. Используйте артикул DEMO-IMP-0004 для повторного сопоставления.",
+      "stock": 12,
+      "rating": 3.6,
+      "reviews": 49,
+      "specs": {
+        "demo_series": "Series 5",
+        "demo_warranty_months": "16"
+      }
+    },
+    {
+      "sku": "DEMO-IMP-0005",
+      "name": "Демо импорт — устройство 5 (smartwatches)",
+      "category": "smartwatches",
+      "price": 10685,
+      "url": "https://example.com/catalog/DEMO-IMP-0005",
+      "image_url": "https://picsum.photos/seed/DEMO-IMP-0005/400/400",
+      "description": "Тестовая позиция массового импорта #5. Используйте артикул DEMO-IMP-0005 для повторного сопоставления.",
+      "stock": 15,
+      "rating": 3.7,
+      "reviews": 60,
+      "specs": {
+        "demo_series": "Series 6",
+        "demo_warranty_months": "17"
+      }
+    },
+    {
+      "sku": "DEMO-IMP-0006",
+      "name": "Демо импорт — устройство 6 (cameras)",
+      "category": "cameras",
+      "price": 10822,
+      "url": "https://example.com/catalog/DEMO-IMP-0006",
+      "image_url": "https://picsum.photos/seed/DEMO-IMP-0006/400/400",
+      "description": "Тестовая позиция массового импорта #6. Используйте артикул DEMO-IMP-0006 для повторного сопоставления.",
+      "stock": 18,
+      "rating": 3.8,
+      "reviews": 71,
+      "specs": {
+        "demo_series": "Series 7",
+        "demo_warranty_months": "18"
+      }
+    },
+    {
+      "sku": "DEMO-IMP-0007",
+      "name": "Демо импорт — устройство 7 (gaming)",
+      "category": "gaming",
+      "price": 10959,
+      "url": "https://example.com/catalog/DEMO-IMP-0007",
+      "image_url": "https://picsum.photos/seed/DEMO-IMP-0007/400/400",
+      "description": "Тестовая позиция массового импорта #7. Используйте артикул DEMO-IMP-0007 для повторного сопоставления.",
+      "stock": 21,
+      "rating": 3.9,
+      "reviews": 82,
+      "specs": {
+        "demo_series": "Series 8",
+        "demo_warranty_months": "19"
+      }
+    },
+    {
+      "sku": "DEMO-IMP-0008",
+      "name": "Демо импорт — устройство 8 (monitors)",
+      "category": "monitors",
+      "price": 11096,
+      "url": "https://example.com/catalog/DEMO-IMP-0008",
+      "image_url": "https://picsum.photos/seed/DEMO-IMP-0008/400/400",
+      "description": "Тестовая позиция массового импорта #8. Используйте артикул DEMO-IMP-0008 для повторного сопоставления.",
+      "stock": 24,
+      "rating": 4,
+      "reviews": 93,
+      "specs": {
+        "demo_series": "Series 9",
+        "demo_warranty_months": "20"
+      }
+    },
+    {
+      "sku": "DEMO-IMP-0009",
+      "name": "Демо импорт — устройство 9 (keyboards)",
+      "category": "keyboards",
+      "price": 11233,
+      "url": "https://example.com/catalog/DEMO-IMP-0009",
+      "image_url": "https://picsum.photos/seed/DEMO-IMP-0009/400/400",
+      "description": "Тестовая позиция массового импорта #9. Используйте артикул DEMO-IMP-0009 для повторного сопоставления.",
+      "stock": 27,
+      "rating": 4.1,
+      "reviews": 104,
+      "specs": {
+        "demo_series": "Series 1",
+        "demo_warranty_months": "21"
+      }
+    },
+    {
+      "sku": "DEMO-IMP-0010",
+      "name": "Демо импорт — устройство 10 (mouses)",
+      "category": "mouses",
+      "price": 11370,
+      "url": "https://example.com/catalog/DEMO-IMP-0010",
+      "image_url": "https://picsum.photos/seed/DEMO-IMP-0010/400/400",
+      "description": "Тестовая позиция массового импорта #10. Используйте артикул DEMO-IMP-0010 для повторного сопоставления.",
+      "stock": 30,
+      "rating": 4.2,
+      "reviews": 115,
+      "specs": {
+        "demo_series": "Series 2",
+        "demo_warranty_months": "22"
+      }
+    },
+    {
+      "sku": "DEMO-IMP-0011",
+      "name": "Демо импорт — устройство 11 (pc_components)",
+      "category": "pc_components",
+      "price": 11507,
+      "url": "https://example.com/catalog/DEMO-IMP-0011",
+      "image_url": "https://picsum.photos/seed/DEMO-IMP-0011/400/400",
+      "description": "Тестовая позиция массового импорта #11. Используйте артикул DEMO-IMP-0011 для повторного сопоставления.",
+      "stock": 33,
+      "rating": 4.3,
+      "reviews": 126,
+      "specs": {
+        "demo_series": "Series 3",
+        "demo_warranty_months": "23"
+      }
+    },
+    {
+      "sku": "DEMO-IMP-0012",
+      "name": "Демо импорт — устройство 12 (graphics_cards)",
+      "category": "graphics_cards",
+      "price": 11644,
+      "url": "https://example.com/catalog/DEMO-IMP-0012",
+      "image_url": "https://picsum.photos/seed/DEMO-IMP-0012/400/400",
+      "description": "Тестовая позиция массового импорта #12. Используйте артикул DEMO-IMP-0012 для повторного сопоставления.",
+      "stock": 36,
+      "rating": 4.4,
+      "reviews": 137,
+      "specs": {
+        "demo_series": "Series 4",
+        "demo_warranty_months": "24"
+      }
+    },
+    {
+      "sku": "DEMO-IMP-0013",
+      "name": "Демо импорт — устройство 13 (cpus)",
+      "category": "cpus",
+      "price": 11781,
+      "url": "https://example.com/catalog/DEMO-IMP-0013",
+      "image_url": "https://picsum.photos/seed/DEMO-IMP-0013/400/400",
+      "description": "Тестовая позиция массового импорта #13. Используйте артикул DEMO-IMP-0013 для повторного сопоставления.",
+      "stock": 39,
+      "rating": 4.5,
+      "reviews": 148,
+      "specs": {
+        "demo_series": "Series 5",
+        "demo_warranty_months": "25"
+      }
+    },
+    {
+      "sku": "DEMO-IMP-0014",
+      "name": "Демо импорт — устройство 14 (ram)",
+      "category": "ram",
+      "price": 11918,
+      "url": "https://example.com/catalog/DEMO-IMP-0014",
+      "image_url": "https://picsum.photos/seed/DEMO-IMP-0014/400/400",
+      "description": "Тестовая позиция массового импорта #14. Используйте артикул DEMO-IMP-0014 для повторного сопоставления.",
+      "stock": 42,
+      "rating": 4.6,
+      "reviews": 159,
+      "specs": {
+        "demo_series": "Series 6",
+        "demo_warranty_months": "26"
+      }
+    },
+    {
+      "sku": "DEMO-IMP-0015",
+      "name": "Демо импорт — устройство 15 (external_drives)",
+      "category": "external_drives",
+      "price": 12055,
+      "url": "https://example.com/catalog/DEMO-IMP-0015",
+      "image_url": "https://picsum.photos/seed/DEMO-IMP-0015/400/400",
+      "description": "Тестовая позиция массового импорта #15. Используйте артикул DEMO-IMP-0015 для повторного сопоставления.",
+      "stock": 45,
+      "rating": 4.7,
+      "reviews": 170,
+      "specs": {
+        "demo_series": "Series 7",
+        "demo_warranty_months": "27"
+      }
+    },
+    {
+      "sku": "DEMO-IMP-0016",
+      "name": "Демо импорт — устройство 16 (fitness_trackers)",
+      "category": "fitness_trackers",
+      "price": 12192,
+      "url": "https://example.com/catalog/DEMO-IMP-0016",
+      "image_url": "https://picsum.photos/seed/DEMO-IMP-0016/400/400",
+      "description": "Тестовая позиция массового импорта #16. Используйте артикул DEMO-IMP-0016 для повторного сопоставления.",
+      "stock": 48,
+      "rating": 4.8,
+      "reviews": 181,
+      "specs": {
+        "demo_series": "Series 8",
+        "demo_warranty_months": "28"
+      }
+    },
+    {
+      "sku": "DEMO-IMP-0017",
+      "name": "Демо импорт — устройство 17 (ebooks)",
+      "category": "ebooks",
+      "price": 12329,
+      "url": "https://example.com/catalog/DEMO-IMP-0017",
+      "image_url": "https://picsum.photos/seed/DEMO-IMP-0017/400/400",
+      "description": "Тестовая позиция массового импорта #17. Используйте артикул DEMO-IMP-0017 для повторного сопоставления.",
+      "stock": 51,
+      "rating": 3.2,
+      "reviews": 192,
+      "specs": {
+        "demo_series": "Series 9",
+        "demo_warranty_months": "29"
+      }
+    },
+    {
+      "sku": "DEMO-IMP-0018",
+      "name": "Демо импорт — устройство 18 (drones)",
+      "category": "drones",
+      "price": 12466,
+      "url": "https://example.com/catalog/DEMO-IMP-0018",
+      "image_url": "https://picsum.photos/seed/DEMO-IMP-0018/400/400",
+      "description": "Тестовая позиция массового импорта #18. Используйте артикул DEMO-IMP-0018 для повторного сопоставления.",
+      "stock": 54,
+      "rating": 3.3,
+      "reviews": 203,
+      "specs": {
+        "demo_series": "Series 1",
+        "demo_warranty_months": "30"
+      }
+    },
+    {
+      "sku": "DEMO-IMP-0019",
+      "name": "Демо импорт — устройство 19 (power_banks)",
+      "category": "power_banks",
+      "price": 12603,
+      "url": "https://example.com/catalog/DEMO-IMP-0019",
+      "image_url": "https://picsum.photos/seed/DEMO-IMP-0019/400/400",
+      "description": "Тестовая позиция массового импорта #19. Используйте артикул DEMO-IMP-0019 для повторного сопоставления.",
+      "stock": 57,
+      "rating": 3.4,
+      "reviews": 214,
+      "specs": {
+        "demo_series": "Series 2",
+        "demo_warranty_months": "31"
+      }
+    },
+    {
+      "sku": "DEMO-IMP-0020",
+      "name": "Демо импорт — устройство 20 (accessories)",
+      "category": "accessories",
+      "price": 12740,
+      "url": "https://example.com/catalog/DEMO-IMP-0020",
+      "image_url": "https://picsum.photos/seed/DEMO-IMP-0020/400/400",
+      "description": "Тестовая позиция массового импорта #20. Используйте артикул DEMO-IMP-0020 для повторного сопоставления.",
+      "stock": 60,
+      "rating": 3.5,
+      "reviews": 225,
+      "specs": {
+        "demo_series": "Series 3",
+        "demo_warranty_months": "32"
+      }
+    },
+    {
+      "sku": "DEMO-IMP-0021",
+      "name": "Демо импорт — устройство 21 (drivers)",
+      "category": "drivers",
+      "price": 12877,
+      "url": "https://example.com/catalog/DEMO-IMP-0021",
+      "image_url": "https://picsum.photos/seed/DEMO-IMP-0021/400/400",
+      "description": "Тестовая позиция массового импорта #21. Используйте артикул DEMO-IMP-0021 для повторного сопоставления.",
+      "stock": 63,
+      "rating": 3.6,
+      "reviews": 236,
+      "specs": {
+        "demo_series": "Series 4",
+        "demo_warranty_months": "33"
+      }
+    },
+    {
+      "sku": "DEMO-IMP-0022",
+      "name": "Демо импорт — устройство 22 (cases)",
+      "category": "cases",
+      "price": 13014,
+      "url": "https://example.com/catalog/DEMO-IMP-0022",
+      "image_url": "https://picsum.photos/seed/DEMO-IMP-0022/400/400",
+      "description": "Тестовая позиция массового импорта #22. Используйте артикул DEMO-IMP-0022 для повторного сопоставления.",
+      "stock": 66,
+      "rating": 3.7,
+      "reviews": 247,
+      "specs": {
+        "demo_series": "Series 5",
+        "demo_warranty_months": "34"
+      }
+    },
+    {
+      "sku": "DEMO-IMP-0023",
+      "name": "Демо импорт — устройство 23 (networking)",
+      "category": "networking",
+      "price": 13151,
+      "url": "https://example.com/catalog/DEMO-IMP-0023",
+      "image_url": "https://picsum.photos/seed/DEMO-IMP-0023/400/400",
+      "description": "Тестовая позиция массового импорта #23. Используйте артикул DEMO-IMP-0023 для повторного сопоставления.",
+      "stock": 69,
+      "rating": 3.8,
+      "reviews": 258,
+      "specs": {
+        "demo_series": "Series 6",
+        "demo_warranty_months": "35"
+      }
+    },
+    {
+      "sku": "DEMO-IMP-0024",
+      "name": "Демо импорт — устройство 24 (wearables)",
+      "category": "wearables",
+      "price": 13288,
+      "url": "https://example.com/catalog/DEMO-IMP-0024",
+      "image_url": "https://picsum.photos/seed/DEMO-IMP-0024/400/400",
+      "description": "Тестовая позиция массового импорта #24. Используйте артикул DEMO-IMP-0024 для повторного сопоставления.",
+      "stock": 72,
+      "rating": 3.9,
+      "reviews": 269,
+      "specs": {
+        "demo_series": "Series 7",
+        "demo_warranty_months": "12"
+      }
+    },
+    {
+      "sku": "DEMO-IMP-0025",
+      "name": "Демо импорт — устройство 25 (other)",
+      "category": "other",
+      "price": 13425,
+      "url": "https://example.com/catalog/DEMO-IMP-0025",
+      "image_url": "https://picsum.photos/seed/DEMO-IMP-0025/400/400",
+      "description": "Тестовая позиция массового импорта #25. Используйте артикул DEMO-IMP-0025 для повторного сопоставления.",
+      "stock": 75,
+      "rating": 4,
+      "reviews": 280,
+      "specs": {
+        "demo_series": "Series 8",
+        "demo_warranty_months": "13"
+      }
+    },
+    {
+      "sku": "DEMO-IMP-0026",
+      "name": "Демо импорт — устройство 26 (smartphones)",
+      "category": "smartphones",
+      "price": 13562,
+      "url": "https://example.com/catalog/DEMO-IMP-0026",
+      "image_url": "https://picsum.photos/seed/DEMO-IMP-0026/400/400",
+      "description": "Тестовая позиция массового импорта #26. Используйте артикул DEMO-IMP-0026 для повторного сопоставления.",
+      "stock": 78,
+      "rating": 4.1,
+      "reviews": 291,
+      "specs": {
+        "demo_series": "Series 9",
+        "demo_warranty_months": "14"
+      }
+    },
+    {
+      "sku": "DEMO-IMP-0027",
+      "name": "Демо импорт — устройство 27 (laptops)",
+      "category": "laptops",
+      "price": 13699,
+      "url": "https://example.com/catalog/DEMO-IMP-0027",
+      "image_url": "https://picsum.photos/seed/DEMO-IMP-0027/400/400",
+      "description": "Тестовая позиция массового импорта #27. Используйте артикул DEMO-IMP-0027 для повторного сопоставления.",
+      "stock": 81,
+      "rating": 4.2,
+      "reviews": 302,
+      "specs": {
+        "demo_series": "Series 1",
+        "demo_warranty_months": "15"
+      }
+    },
+    {
+      "sku": "DEMO-IMP-0028",
+      "name": "Демо импорт — устройство 28 (headphones)",
+      "category": "headphones",
+      "price": 13836,
+      "url": "https://example.com/catalog/DEMO-IMP-0028",
+      "image_url": "https://picsum.photos/seed/DEMO-IMP-0028/400/400",
+      "description": "Тестовая позиция массового импорта #28. Используйте артикул DEMO-IMP-0028 для повторного сопоставления.",
+      "stock": 84,
+      "rating": 4.3,
+      "reviews": 313,
+      "specs": {
+        "demo_series": "Series 2",
+        "demo_warranty_months": "16"
+      }
+    },
+    {
+      "sku": "DEMO-IMP-0029",
+      "name": "Демо импорт — устройство 29 (tablets)",
+      "category": "tablets",
+      "price": 13973,
+      "url": "https://example.com/catalog/DEMO-IMP-0029",
+      "image_url": "https://picsum.photos/seed/DEMO-IMP-0029/400/400",
+      "description": "Тестовая позиция массового импорта #29. Используйте артикул DEMO-IMP-0029 для повторного сопоставления.",
+      "stock": 87,
+      "rating": 4.4,
+      "reviews": 324,
+      "specs": {
+        "demo_series": "Series 3",
+        "demo_warranty_months": "17"
+      }
+    },
+    {
+      "sku": "DEMO-IMP-0030",
+      "name": "Демо импорт — устройство 30 (tv)",
+      "category": "tv",
+      "price": 14110,
+      "url": "https://example.com/catalog/DEMO-IMP-0030",
+      "image_url": "https://picsum.photos/seed/DEMO-IMP-0030/400/400",
+      "description": "Тестовая позиция массового импорта #30. Используйте артикул DEMO-IMP-0030 для повторного сопоставления.",
+      "stock": 90,
+      "rating": 4.5,
+      "reviews": 335,
+      "specs": {
+        "demo_series": "Series 4",
+        "demo_warranty_months": "18"
+      }
+    },
+    {
+      "sku": "DEMO-IMP-0031",
+      "name": "Демо импорт — устройство 31 (smartwatches)",
+      "category": "smartwatches",
+      "price": 14247,
+      "url": "https://example.com/catalog/DEMO-IMP-0031",
+      "image_url": "https://picsum.photos/seed/DEMO-IMP-0031/400/400",
+      "description": "Тестовая позиция массового импорта #31. Используйте артикул DEMO-IMP-0031 для повторного сопоставления.",
+      "stock": 93,
+      "rating": 4.6,
+      "reviews": 346,
+      "specs": {
+        "demo_series": "Series 5",
+        "demo_warranty_months": "19"
+      }
+    },
+    {
+      "sku": "DEMO-IMP-0032",
+      "name": "Демо импорт — устройство 32 (cameras)",
+      "category": "cameras",
+      "price": 14384,
+      "url": "https://example.com/catalog/DEMO-IMP-0032",
+      "image_url": "https://picsum.photos/seed/DEMO-IMP-0032/400/400",
+      "description": "Тестовая позиция массового импорта #32. Используйте артикул DEMO-IMP-0032 для повторного сопоставления.",
+      "stock": 96,
+      "rating": 4.7,
+      "reviews": 357,
+      "specs": {
+        "demo_series": "Series 6",
+        "demo_warranty_months": "20"
+      }
+    },
+    {
+      "sku": "DEMO-IMP-0033",
+      "name": "Демо импорт — устройство 33 (gaming)",
+      "category": "gaming",
+      "price": 14521,
+      "url": "https://example.com/catalog/DEMO-IMP-0033",
+      "image_url": "https://picsum.photos/seed/DEMO-IMP-0033/400/400",
+      "description": "Тестовая позиция массового импорта #33. Используйте артикул DEMO-IMP-0033 для повторного сопоставления.",
+      "stock": 99,
+      "rating": 4.8,
+      "reviews": 368,
+      "specs": {
+        "demo_series": "Series 7",
+        "demo_warranty_months": "21"
+      }
+    },
+    {
+      "sku": "DEMO-IMP-0034",
+      "name": "Демо импорт — устройство 34 (monitors)",
+      "category": "monitors",
+      "price": 14658,
+      "url": "https://example.com/catalog/DEMO-IMP-0034",
+      "image_url": "https://picsum.photos/seed/DEMO-IMP-0034/400/400",
+      "description": "Тестовая позиция массового импорта #34. Используйте артикул DEMO-IMP-0034 для повторного сопоставления.",
+      "stock": 102,
+      "rating": 3.2,
+      "reviews": 379,
+      "specs": {
+        "demo_series": "Series 8",
+        "demo_warranty_months": "22"
+      }
+    },
+    {
+      "sku": "DEMO-IMP-0035",
+      "name": "Демо импорт — устройство 35 (keyboards)",
+      "category": "keyboards",
+      "price": 14795,
+      "url": "https://example.com/catalog/DEMO-IMP-0035",
+      "image_url": "https://picsum.photos/seed/DEMO-IMP-0035/400/400",
+      "description": "Тестовая позиция массового импорта #35. Используйте артикул DEMO-IMP-0035 для повторного сопоставления.",
+      "stock": 105,
+      "rating": 3.3,
+      "reviews": 390,
+      "specs": {
+        "demo_series": "Series 9",
+        "demo_warranty_months": "23"
+      }
+    },
+    {
+      "sku": "DEMO-IMP-0036",
+      "name": "Демо импорт — устройство 36 (mouses)",
+      "category": "mouses",
+      "price": 14932,
+      "url": "https://example.com/catalog/DEMO-IMP-0036",
+      "image_url": "https://picsum.photos/seed/DEMO-IMP-0036/400/400",
+      "description": "Тестовая позиция массового импорта #36. Используйте артикул DEMO-IMP-0036 для повторного сопоставления.",
+      "stock": 108,
+      "rating": 3.4,
+      "reviews": 401,
+      "specs": {
+        "demo_series": "Series 1",
+        "demo_warranty_months": "24"
+      }
+    },
+    {
+      "sku": "DEMO-IMP-0037",
+      "name": "Демо импорт — устройство 37 (pc_components)",
+      "category": "pc_components",
+      "price": 15069,
+      "url": "https://example.com/catalog/DEMO-IMP-0037",
+      "image_url": "https://picsum.photos/seed/DEMO-IMP-0037/400/400",
+      "description": "Тестовая позиция массового импорта #37. Используйте артикул DEMO-IMP-0037 для повторного сопоставления.",
+      "stock": 111,
+      "rating": 3.5,
+      "reviews": 412,
+      "specs": {
+        "demo_series": "Series 2",
+        "demo_warranty_months": "25"
+      }
+    },
+    {
+      "sku": "DEMO-IMP-0038",
+      "name": "Демо импорт — устройство 38 (graphics_cards)",
+      "category": "graphics_cards",
+      "price": 15206,
+      "url": "https://example.com/catalog/DEMO-IMP-0038",
+      "image_url": "https://picsum.photos/seed/DEMO-IMP-0038/400/400",
+      "description": "Тестовая позиция массового импорта #38. Используйте артикул DEMO-IMP-0038 для повторного сопоставления.",
+      "stock": 114,
+      "rating": 3.6,
+      "reviews": 423,
+      "specs": {
+        "demo_series": "Series 3",
+        "demo_warranty_months": "26"
+      }
+    },
+    {
+      "sku": "DEMO-IMP-0039",
+      "name": "Демо импорт — устройство 39 (cpus)",
+      "category": "cpus",
+      "price": 15343,
+      "url": "https://example.com/catalog/DEMO-IMP-0039",
+      "image_url": "https://picsum.photos/seed/DEMO-IMP-0039/400/400",
+      "description": "Тестовая позиция массового импорта #39. Используйте артикул DEMO-IMP-0039 для повторного сопоставления.",
+      "stock": 117,
+      "rating": 3.7,
+      "reviews": 434,
+      "specs": {
+        "demo_series": "Series 4",
+        "demo_warranty_months": "27"
+      }
+    },
+    {
+      "sku": "DEMO-IMP-0040",
+      "name": "Демо импорт — устройство 40 (ram)",
+      "category": "ram",
+      "price": 15480,
+      "url": "https://example.com/catalog/DEMO-IMP-0040",
+      "image_url": "https://picsum.photos/seed/DEMO-IMP-0040/400/400",
+      "description": "Тестовая позиция массового импорта #40. Используйте артикул DEMO-IMP-0040 для повторного сопоставления.",
+      "stock": 120,
+      "rating": 3.8,
+      "reviews": 445,
+      "specs": {
+        "demo_series": "Series 5",
+        "demo_warranty_months": "28"
+      }
+    },
+    {
+      "sku": "DEMO-IMP-0041",
+      "name": "Демо импорт — устройство 41 (external_drives)",
+      "category": "external_drives",
+      "price": 15617,
+      "url": "https://example.com/catalog/DEMO-IMP-0041",
+      "image_url": "https://picsum.photos/seed/DEMO-IMP-0041/400/400",
+      "description": "Тестовая позиция массового импорта #41. Используйте артикул DEMO-IMP-0041 для повторного сопоставления.",
+      "stock": 123,
+      "rating": 3.9,
+      "reviews": 456,
+      "specs": {
+        "demo_series": "Series 6",
+        "demo_warranty_months": "29"
+      }
+    },
+    {
+      "sku": "DEMO-IMP-0042",
+      "name": "Демо импорт — устройство 42 (fitness_trackers)",
+      "category": "fitness_trackers",
+      "price": 15754,
+      "url": "https://example.com/catalog/DEMO-IMP-0042",
+      "image_url": "https://picsum.photos/seed/DEMO-IMP-0042/400/400",
+      "description": "Тестовая позиция массового импорта #42. Используйте артикул DEMO-IMP-0042 для повторного сопоставления.",
+      "stock": 126,
+      "rating": 4,
+      "reviews": 467,
+      "specs": {
+        "demo_series": "Series 7",
+        "demo_warranty_months": "30"
+      }
+    },
+    {
+      "sku": "DEMO-IMP-0043",
+      "name": "Демо импорт — устройство 43 (ebooks)",
+      "category": "ebooks",
+      "price": 15891,
+      "url": "https://example.com/catalog/DEMO-IMP-0043",
+      "image_url": "https://picsum.photos/seed/DEMO-IMP-0043/400/400",
+      "description": "Тестовая позиция массового импорта #43. Используйте артикул DEMO-IMP-0043 для повторного сопоставления.",
+      "stock": 129,
+      "rating": 4.1,
+      "reviews": 478,
+      "specs": {
+        "demo_series": "Series 8",
+        "demo_warranty_months": "31"
+      }
+    },
+    {
+      "sku": "DEMO-IMP-0044",
+      "name": "Демо импорт — устройство 44 (drones)",
+      "category": "drones",
+      "price": 16028,
+      "url": "https://example.com/catalog/DEMO-IMP-0044",
+      "image_url": "https://picsum.photos/seed/DEMO-IMP-0044/400/400",
+      "description": "Тестовая позиция массового импорта #44. Используйте артикул DEMO-IMP-0044 для повторного сопоставления.",
+      "stock": 132,
+      "rating": 4.2,
+      "reviews": 489,
+      "specs": {
+        "demo_series": "Series 9",
+        "demo_warranty_months": "32"
+      }
+    },
+    {
+      "sku": "DEMO-IMP-0045",
+      "name": "Демо импорт — устройство 45 (power_banks)",
+      "category": "power_banks",
+      "price": 16165,
+      "url": "https://example.com/catalog/DEMO-IMP-0045",
+      "image_url": "https://picsum.photos/seed/DEMO-IMP-0045/400/400",
+      "description": "Тестовая позиция массового импорта #45. Используйте артикул DEMO-IMP-0045 для повторного сопоставления.",
+      "stock": 135,
+      "rating": 4.3,
+      "reviews": 500,
+      "specs": {
+        "demo_series": "Series 1",
+        "demo_warranty_months": "33"
+      }
+    },
+    {
+      "sku": "DEMO-IMP-0046",
+      "name": "Демо импорт — устройство 46 (accessories)",
+      "category": "accessories",
+      "price": 16302,
+      "url": "https://example.com/catalog/DEMO-IMP-0046",
+      "image_url": "https://picsum.photos/seed/DEMO-IMP-0046/400/400",
+      "description": "Тестовая позиция массового импорта #46. Используйте артикул DEMO-IMP-0046 для повторного сопоставления.",
+      "stock": 138,
+      "rating": 4.4,
+      "reviews": 11,
+      "specs": {
+        "demo_series": "Series 2",
+        "demo_warranty_months": "34"
+      }
+    },
+    {
+      "sku": "DEMO-IMP-0047",
+      "name": "Демо импорт — устройство 47 (drivers)",
+      "category": "drivers",
+      "price": 16439,
+      "url": "https://example.com/catalog/DEMO-IMP-0047",
+      "image_url": "https://picsum.photos/seed/DEMO-IMP-0047/400/400",
+      "description": "Тестовая позиция массового импорта #47. Используйте артикул DEMO-IMP-0047 для повторного сопоставления.",
+      "stock": 141,
+      "rating": 4.5,
+      "reviews": 22,
+      "specs": {
+        "demo_series": "Series 3",
+        "demo_warranty_months": "35"
+      }
+    },
+    {
+      "sku": "DEMO-IMP-0048",
+      "name": "Демо импорт — устройство 48 (cases)",
+      "category": "cases",
+      "price": 16576,
+      "url": "https://example.com/catalog/DEMO-IMP-0048",
+      "image_url": "https://picsum.photos/seed/DEMO-IMP-0048/400/400",
+      "description": "Тестовая позиция массового импорта #48. Используйте артикул DEMO-IMP-0048 для повторного сопоставления.",
+      "stock": 144,
+      "rating": 4.6,
+      "reviews": 33,
+      "specs": {
+        "demo_series": "Series 4",
+        "demo_warranty_months": "12"
+      }
+    },
+    {
+      "sku": "DEMO-IMP-0049",
+      "name": "Демо импорт — устройство 49 (networking)",
+      "category": "networking",
+      "price": 16713,
+      "url": "https://example.com/catalog/DEMO-IMP-0049",
+      "image_url": "https://picsum.photos/seed/DEMO-IMP-0049/400/400",
+      "description": "Тестовая позиция массового импорта #49. Используйте артикул DEMO-IMP-0049 для повторного сопоставления.",
+      "stock": 147,
+      "rating": 4.7,
+      "reviews": 44,
+      "specs": {
+        "demo_series": "Series 5",
+        "demo_warranty_months": "13"
+      }
+    },
+    {
+      "sku": "DEMO-IMP-0050",
+      "name": "Демо импорт — устройство 50 (wearables)",
+      "category": "wearables",
+      "price": 16850,
+      "url": "https://example.com/catalog/DEMO-IMP-0050",
+      "image_url": "https://picsum.photos/seed/DEMO-IMP-0050/400/400",
+      "description": "Тестовая позиция массового импорта #50. Используйте артикул DEMO-IMP-0050 для повторного сопоставления.",
+      "stock": 150,
+      "rating": 4.8,
+      "reviews": 55,
+      "specs": {
+        "demo_series": "Series 6",
+        "demo_warranty_months": "14"
+      }
+    },
+    {
+      "sku": "DEMO-IMP-0051",
+      "name": "Демо импорт — устройство 51 (other)",
+      "category": "other",
+      "price": 16987,
+      "url": "https://example.com/catalog/DEMO-IMP-0051",
+      "image_url": "https://picsum.photos/seed/DEMO-IMP-0051/400/400",
+      "description": "Тестовая позиция массового импорта #51. Используйте артикул DEMO-IMP-0051 для повторного сопоставления.",
+      "stock": 153,
+      "rating": 3.2,
+      "reviews": 66,
+      "specs": {
+        "demo_series": "Series 7",
+        "demo_warranty_months": "15"
+      }
+    },
+    {
+      "sku": "DEMO-IMP-0052",
+      "name": "Демо импорт — устройство 52 (smartphones)",
+      "category": "smartphones",
+      "price": 17124,
+      "url": "https://example.com/catalog/DEMO-IMP-0052",
+      "image_url": "https://picsum.photos/seed/DEMO-IMP-0052/400/400",
+      "description": "Тестовая позиция массового импорта #52. Используйте артикул DEMO-IMP-0052 для повторного сопоставления.",
+      "stock": 156,
+      "rating": 3.3,
+      "reviews": 77,
+      "specs": {
+        "demo_series": "Series 8",
+        "demo_warranty_months": "16"
+      }
+    },
+    {
+      "sku": "DEMO-IMP-0053",
+      "name": "Демо импорт — устройство 53 (laptops)",
+      "category": "laptops",
+      "price": 17261,
+      "url": "https://example.com/catalog/DEMO-IMP-0053",
+      "image_url": "https://picsum.photos/seed/DEMO-IMP-0053/400/400",
+      "description": "Тестовая позиция массового импорта #53. Используйте артикул DEMO-IMP-0053 для повторного сопоставления.",
+      "stock": 159,
+      "rating": 3.4,
+      "reviews": 88,
+      "specs": {
+        "demo_series": "Series 9",
+        "demo_warranty_months": "17"
+      }
+    },
+    {
+      "sku": "DEMO-IMP-0054",
+      "name": "Демо импорт — устройство 54 (headphones)",
+      "category": "headphones",
+      "price": 17398,
+      "url": "https://example.com/catalog/DEMO-IMP-0054",
+      "image_url": "https://picsum.photos/seed/DEMO-IMP-0054/400/400",
+      "description": "Тестовая позиция массового импорта #54. Используйте артикул DEMO-IMP-0054 для повторного сопоставления.",
+      "stock": 162,
+      "rating": 3.5,
+      "reviews": 99,
+      "specs": {
+        "demo_series": "Series 1",
+        "demo_warranty_months": "18"
+      }
+    },
+    {
+      "sku": "DEMO-IMP-0055",
+      "name": "Демо импорт — устройство 55 (tablets)",
+      "category": "tablets",
+      "price": 17535,
+      "url": "https://example.com/catalog/DEMO-IMP-0055",
+      "image_url": "https://picsum.photos/seed/DEMO-IMP-0055/400/400",
+      "description": "Тестовая позиция массового импорта #55. Используйте артикул DEMO-IMP-0055 для повторного сопоставления.",
+      "stock": 165,
+      "rating": 3.6,
+      "reviews": 110,
+      "specs": {
+        "demo_series": "Series 2",
+        "demo_warranty_months": "19"
+      }
+    },
+    {
+      "sku": "DEMO-IMP-0056",
+      "name": "Демо импорт — устройство 56 (tv)",
+      "category": "tv",
+      "price": 17672,
+      "url": "https://example.com/catalog/DEMO-IMP-0056",
+      "image_url": "https://picsum.photos/seed/DEMO-IMP-0056/400/400",
+      "description": "Тестовая позиция массового импорта #56. Используйте артикул DEMO-IMP-0056 для повторного сопоставления.",
+      "stock": 168,
+      "rating": 3.7,
+      "reviews": 121,
+      "specs": {
+        "demo_series": "Series 3",
+        "demo_warranty_months": "20"
+      }
+    },
+    {
+      "sku": "DEMO-IMP-0057",
+      "name": "Демо импорт — устройство 57 (smartwatches)",
+      "category": "smartwatches",
+      "price": 17809,
+      "url": "https://example.com/catalog/DEMO-IMP-0057",
+      "image_url": "https://picsum.photos/seed/DEMO-IMP-0057/400/400",
+      "description": "Тестовая позиция массового импорта #57. Используйте артикул DEMO-IMP-0057 для повторного сопоставления.",
+      "stock": 171,
+      "rating": 3.8,
+      "reviews": 132,
+      "specs": {
+        "demo_series": "Series 4",
+        "demo_warranty_months": "21"
+      }
+    },
+    {
+      "sku": "DEMO-IMP-0058",
+      "name": "Демо импорт — устройство 58 (cameras)",
+      "category": "cameras",
+      "price": 17946,
+      "url": "https://example.com/catalog/DEMO-IMP-0058",
+      "image_url": "https://picsum.photos/seed/DEMO-IMP-0058/400/400",
+      "description": "Тестовая позиция массового импорта #58. Используйте артикул DEMO-IMP-0058 для повторного сопоставления.",
+      "stock": 174,
+      "rating": 3.9,
+      "reviews": 143,
+      "specs": {
+        "demo_series": "Series 5",
+        "demo_warranty_months": "22"
+      }
+    },
+    {
+      "sku": "DEMO-IMP-0059",
+      "name": "Демо импорт — устройство 59 (gaming)",
+      "category": "gaming",
+      "price": 18083,
+      "url": "https://example.com/catalog/DEMO-IMP-0059",
+      "image_url": "https://picsum.photos/seed/DEMO-IMP-0059/400/400",
+      "description": "Тестовая позиция массового импорта #59. Используйте артикул DEMO-IMP-0059 для повторного сопоставления.",
+      "stock": 177,
+      "rating": 4,
+      "reviews": 154,
+      "specs": {
+        "demo_series": "Series 6",
+        "demo_warranty_months": "23"
+      }
+    },
+    {
+      "sku": "DEMO-IMP-0060",
+      "name": "Демо импорт — устройство 60 (monitors)",
+      "category": "monitors",
+      "price": 18220,
+      "url": "https://example.com/catalog/DEMO-IMP-0060",
+      "image_url": "https://picsum.photos/seed/DEMO-IMP-0060/400/400",
+      "description": "Тестовая позиция массового импорта #60. Используйте артикул DEMO-IMP-0060 для повторного сопоставления.",
+      "stock": 180,
+      "rating": 4.1,
+      "reviews": 165,
+      "specs": {
+        "demo_series": "Series 7",
+        "demo_warranty_months": "24"
+      }
+    },
+    {
+      "sku": "DEMO-IMP-0061",
+      "name": "Демо импорт — устройство 61 (keyboards)",
+      "category": "keyboards",
+      "price": 18357,
+      "url": "https://example.com/catalog/DEMO-IMP-0061",
+      "image_url": "https://picsum.photos/seed/DEMO-IMP-0061/400/400",
+      "description": "Тестовая позиция массового импорта #61. Используйте артикул DEMO-IMP-0061 для повторного сопоставления.",
+      "stock": 183,
+      "rating": 4.2,
+      "reviews": 176,
+      "specs": {
+        "demo_series": "Series 8",
+        "demo_warranty_months": "25"
+      }
+    },
+    {
+      "sku": "DEMO-IMP-0062",
+      "name": "Демо импорт — устройство 62 (mouses)",
+      "category": "mouses",
+      "price": 18494,
+      "url": "https://example.com/catalog/DEMO-IMP-0062",
+      "image_url": "https://picsum.photos/seed/DEMO-IMP-0062/400/400",
+      "description": "Тестовая позиция массового импорта #62. Используйте артикул DEMO-IMP-0062 для повторного сопоставления.",
+      "stock": 186,
+      "rating": 4.3,
+      "reviews": 187,
+      "specs": {
+        "demo_series": "Series 9",
+        "demo_warranty_months": "26"
+      }
+    },
+    {
+      "sku": "DEMO-IMP-0063",
+      "name": "Демо импорт — устройство 63 (pc_components)",
+      "category": "pc_components",
+      "price": 18631,
+      "url": "https://example.com/catalog/DEMO-IMP-0063",
+      "image_url": "https://picsum.photos/seed/DEMO-IMP-0063/400/400",
+      "description": "Тестовая позиция массового импорта #63. Используйте артикул DEMO-IMP-0063 для повторного сопоставления.",
+      "stock": 189,
+      "rating": 4.4,
+      "reviews": 198,
+      "specs": {
+        "demo_series": "Series 1",
+        "demo_warranty_months": "27"
+      }
+    },
+    {
+      "sku": "DEMO-IMP-0064",
+      "name": "Демо импорт — устройство 64 (graphics_cards)",
+      "category": "graphics_cards",
+      "price": 18768,
+      "url": "https://example.com/catalog/DEMO-IMP-0064",
+      "image_url": "https://picsum.photos/seed/DEMO-IMP-0064/400/400",
+      "description": "Тестовая позиция массового импорта #64. Используйте артикул DEMO-IMP-0064 для повторного сопоставления.",
+      "stock": 192,
+      "rating": 4.5,
+      "reviews": 209,
+      "specs": {
+        "demo_series": "Series 2",
+        "demo_warranty_months": "28"
+      }
+    },
+    {
+      "sku": "DEMO-IMP-0065",
+      "name": "Демо импорт — устройство 65 (cpus)",
+      "category": "cpus",
+      "price": 18905,
+      "url": "https://example.com/catalog/DEMO-IMP-0065",
+      "image_url": "https://picsum.photos/seed/DEMO-IMP-0065/400/400",
+      "description": "Тестовая позиция массового импорта #65. Используйте артикул DEMO-IMP-0065 для повторного сопоставления.",
+      "stock": 195,
+      "rating": 4.6,
+      "reviews": 220,
+      "specs": {
+        "demo_series": "Series 3",
+        "demo_warranty_months": "29"
+      }
+    },
+    {
+      "sku": "DEMO-IMP-0066",
+      "name": "Демо импорт — устройство 66 (ram)",
+      "category": "ram",
+      "price": 19042,
+      "url": "https://example.com/catalog/DEMO-IMP-0066",
+      "image_url": "https://picsum.photos/seed/DEMO-IMP-0066/400/400",
+      "description": "Тестовая позиция массового импорта #66. Используйте артикул DEMO-IMP-0066 для повторного сопоставления.",
+      "stock": 198,
+      "rating": 4.7,
+      "reviews": 231,
+      "specs": {
+        "demo_series": "Series 4",
+        "demo_warranty_months": "30"
+      }
+    },
+    {
+      "sku": "DEMO-IMP-0067",
+      "name": "Демо импорт — устройство 67 (external_drives)",
+      "category": "external_drives",
+      "price": 19179,
+      "url": "https://example.com/catalog/DEMO-IMP-0067",
+      "image_url": "https://picsum.photos/seed/DEMO-IMP-0067/400/400",
+      "description": "Тестовая позиция массового импорта #67. Используйте артикул DEMO-IMP-0067 для повторного сопоставления.",
+      "stock": 1,
+      "rating": 4.8,
+      "reviews": 242,
+      "specs": {
+        "demo_series": "Series 5",
+        "demo_warranty_months": "31"
+      }
+    },
+    {
+      "sku": "DEMO-IMP-0068",
+      "name": "Демо импорт — устройство 68 (fitness_trackers)",
+      "category": "fitness_trackers",
+      "price": 19316,
+      "url": "https://example.com/catalog/DEMO-IMP-0068",
+      "image_url": "https://picsum.photos/seed/DEMO-IMP-0068/400/400",
+      "description": "Тестовая позиция массового импорта #68. Используйте артикул DEMO-IMP-0068 для повторного сопоставления.",
+      "stock": 4,
+      "rating": 3.2,
+      "reviews": 253,
+      "specs": {
+        "demo_series": "Series 6",
+        "demo_warranty_months": "32"
+      }
+    },
+    {
+      "sku": "DEMO-IMP-0069",
+      "name": "Демо импорт — устройство 69 (ebooks)",
+      "category": "ebooks",
+      "price": 19453,
+      "url": "https://example.com/catalog/DEMO-IMP-0069",
+      "image_url": "https://picsum.photos/seed/DEMO-IMP-0069/400/400",
+      "description": "Тестовая позиция массового импорта #69. Используйте артикул DEMO-IMP-0069 для повторного сопоставления.",
+      "stock": 7,
+      "rating": 3.3,
+      "reviews": 264,
+      "specs": {
+        "demo_series": "Series 7",
+        "demo_warranty_months": "33"
+      }
+    },
+    {
+      "sku": "DEMO-IMP-0070",
+      "name": "Демо импорт — устройство 70 (drones)",
+      "category": "drones",
+      "price": 19590,
+      "url": "https://example.com/catalog/DEMO-IMP-0070",
+      "image_url": "https://picsum.photos/seed/DEMO-IMP-0070/400/400",
+      "description": "Тестовая позиция массового импорта #70. Используйте артикул DEMO-IMP-0070 для повторного сопоставления.",
+      "stock": 10,
+      "rating": 3.4,
+      "reviews": 275,
+      "specs": {
+        "demo_series": "Series 8",
+        "demo_warranty_months": "34"
+      }
+    },
+    {
+      "sku": "DEMO-IMP-0071",
+      "name": "Демо импорт — устройство 71 (power_banks)",
+      "category": "power_banks",
+      "price": 19727,
+      "url": "https://example.com/catalog/DEMO-IMP-0071",
+      "image_url": "https://picsum.photos/seed/DEMO-IMP-0071/400/400",
+      "description": "Тестовая позиция массового импорта #71. Используйте артикул DEMO-IMP-0071 для повторного сопоставления.",
+      "stock": 13,
+      "rating": 3.5,
+      "reviews": 286,
+      "specs": {
+        "demo_series": "Series 9",
+        "demo_warranty_months": "35"
+      }
+    },
+    {
+      "sku": "DEMO-IMP-0072",
+      "name": "Демо импорт — устройство 72 (accessories)",
+      "category": "accessories",
+      "price": 19864,
+      "url": "https://example.com/catalog/DEMO-IMP-0072",
+      "image_url": "https://picsum.photos/seed/DEMO-IMP-0072/400/400",
+      "description": "Тестовая позиция массового импорта #72. Используйте артикул DEMO-IMP-0072 для повторного сопоставления.",
+      "stock": 16,
+      "rating": 3.6,
+      "reviews": 297,
+      "specs": {
+        "demo_series": "Series 1",
+        "demo_warranty_months": "12"
+      }
+    }
+  ]
+}
