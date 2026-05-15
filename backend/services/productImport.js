@@ -207,6 +207,124 @@ function extractRow(rowObject, rowIndex) {
   };
 }
 
+const PREVIEW_MAX_ROWS = 500;
+
+/** Строка для UI предпросмотра (редактируемая) */
+function extractedToPreview(ex) {
+  return {
+    rowIndex: ex.rowIndex,
+    valid: ex.errors.length === 0,
+    fieldErrors: [...ex.errors],
+    sku: ex.importSku || '',
+    name: ex.name,
+    category: ex.category,
+    price: ex.price != null && Number.isFinite(ex.price) ? ex.price : '',
+    url: ex.buyUrl,
+    imageUrl: ex.imageUrl || '',
+    description: ex.description || '',
+    stock: ex.stock != null ? ex.stock : '',
+    rating: ex.storeRating != null ? ex.storeRating : '',
+    reviews: ex.reviewsCount != null ? ex.reviewsCount : '',
+    storeName: ex.storeFromRow || '',
+    sellerName: ex.sellerFromRow || '',
+    specsJson: JSON.stringify(ex.specs && Object.keys(ex.specs).length ? ex.specs : {}, null, 2)
+  };
+}
+
+/**
+ * Разбор файла в строки предпросмотра без записи в БД.
+ * @returns {{ fileErrors: string[], rows: object[], summary: object, truncated?: number }}
+ */
+function buildImportPreview(rawRows) {
+  const fileErrors = [];
+  if (!Array.isArray(rawRows)) {
+    fileErrors.push('Ожидался массив строк (таблица из Excel или массив JSON).');
+    return { fileErrors, rows: [], summary: { total: 0, validCount: 0, invalidCount: 0 } };
+  }
+  let slice = rawRows;
+  let truncated = 0;
+  if (rawRows.length > PREVIEW_MAX_ROWS) {
+    slice = rawRows.slice(0, PREVIEW_MAX_ROWS);
+    truncated = rawRows.length - PREVIEW_MAX_ROWS;
+    fileErrors.push(
+      `В предпросмотре показаны первые ${PREVIEW_MAX_ROWS} из ${rawRows.length} строк. После правки нажмите «Импортировать в каталог» — в базу попадут только отображённые строки; остальное импортируйте отдельной порцией.`
+    );
+  }
+  const rows = [];
+  let validCount = 0;
+  for (let i = 0; i < slice.length; i++) {
+    const rowObj = slice[i];
+    if (!rowObj || typeof rowObj !== 'object') {
+      rows.push({
+        rowIndex: i + 1,
+        valid: false,
+        fieldErrors: ['Пустая или некорректная строка'],
+        sku: '',
+        name: '',
+        category: '',
+        price: '',
+        url: '',
+        imageUrl: '',
+        description: '',
+        stock: '',
+        rating: '',
+        reviews: '',
+        storeName: '',
+        sellerName: '',
+        specsJson: '{}'
+      });
+      continue;
+    }
+    const ex = extractRow(rowObj, i + 1);
+    if (!ex.errors.length) validCount++;
+    rows.push(extractedToPreview(ex));
+  }
+  return {
+    fileErrors,
+    truncated: truncated || undefined,
+    rows,
+    summary: {
+      total: rawRows.length,
+      previewed: rows.length,
+      validCount,
+      invalidCount: rows.length - validCount
+    }
+  };
+}
+
+/**
+ * Обратное преобразование из строки предпросмотра в объект для extractRow.
+ */
+function previewRowToRawImportRow(row) {
+  let specs = {};
+  const sj = row.specsJson != null ? String(row.specsJson).trim() : '';
+  if (sj) {
+    try {
+      const o = JSON.parse(sj);
+      if (typeof o === 'object' && o !== null && !Array.isArray(o)) specs = o;
+      else throw new Error('specs должен быть JSON-объектом');
+    } catch (e) {
+      const msg = e instanceof SyntaxError ? 'Некорректный JSON в характеристиках' : e.message;
+      throw new Error(`Строка ${row.rowIndex}: ${msg}`);
+    }
+  }
+  const raw = {
+    sku: row.sku != null ? String(row.sku).trim() : '',
+    name: row.name != null ? String(row.name).trim() : '',
+    category: row.category != null ? String(row.category).trim() : '',
+    price: row.price,
+    url: row.url != null ? String(row.url).trim() : '',
+    image_url: row.imageUrl != null ? String(row.imageUrl).trim() : '',
+    description: row.description != null ? String(row.description).trim() : '',
+    stock: row.stock === '' || row.stock == null ? undefined : row.stock,
+    rating: row.rating === '' || row.rating == null ? undefined : row.rating,
+    reviews_count: row.reviews === '' || row.reviews == null ? undefined : row.reviews,
+    store_name: row.storeName != null ? String(row.storeName).trim() : '',
+    seller_name: row.sellerName != null ? String(row.sellerName).trim() : ''
+  };
+  return { ...raw, specs };
+}
+
 function parseJsonBuffer(buf) {
   const text = buf.toString('utf8').replace(/^\uFEFF/, '');
   const data = JSON.parse(text);
@@ -249,14 +367,18 @@ function parseImportBuffer(buffer, originalName = '') {
 }
 
 async function findProductByMatch(tx, importSku, name, category) {
-  if (importSku) {
+  const skuTrim = importSku != null ? String(importSku).trim() : '';
+  if (skuTrim) {
     const spec = await tx.productSpec.findFirst({
-      where: { specKey: IMPORT_SKU_KEY, specValue: importSku }
+      where: { specKey: IMPORT_SKU_KEY, specValue: skuTrim }
     });
     if (spec) {
       const p = await tx.product.findUnique({ where: { id: spec.productId } });
       if (p) return p;
     }
+    // Внешний артикул задан, но такого товара ещё нет — не сливаем с другой позицией
+    // с тем же названием и категорией (в прайсах часто несколько SKU на одну модель).
+    return null;
   }
   const nameTrim = name.trim();
   const cat = category.trim();
@@ -348,12 +470,14 @@ async function upsertPriceForStore(tx, { productId, storeName, sellerName, price
  * @param {string|null} opts.defaultSellerName
  * @param {function} opts.upsertStoreSignalsItem
  * @param {number} [opts.previewCap]
+ * @param {number} [opts.rowIndexBase] смещение номера строки (пакетный commit с фронта)
  */
 async function runProductImport(prisma, opts) {
   const defaultStoreName = String(opts.defaultStoreName || '').trim() || 'Unknown';
   const defaultSellerName = opts.defaultSellerName ? String(opts.defaultSellerName).trim() : null;
   const upsertStoreSignalsItem = opts.upsertStoreSignalsItem;
   const previewCap = Math.min(Math.max(Number(opts.previewCap) || 250, 50), 2000);
+  const rowIndexBase = Math.max(0, Math.floor(Number(opts.rowIndexBase) || 0));
 
   const summary = { total: 0, created: 0, updated: 0, errors: 0, skipped: 0 };
   const createdList = [];
@@ -367,11 +491,11 @@ async function runProductImport(prisma, opts) {
     const rowObj = rawRows[i];
     if (!rowObj || typeof rowObj !== 'object') {
       summary.errors++;
-      errorsList.push({ rowIndex: i + 1, message: 'Пустая или некорректная строка' });
+      errorsList.push({ rowIndex: rowIndexBase + i + 1, message: 'Пустая или некорректная строка' });
       continue;
     }
 
-    const ex = extractRow(rowObj, i + 1);
+    const ex = extractRow(rowObj, rowIndexBase + i + 1);
     if (ex.errors.length) {
       summary.errors++;
       errorsList.push({ rowIndex: ex.rowIndex, message: ex.errors.join('; ') });
@@ -480,5 +604,8 @@ module.exports = {
   parseImportBuffer,
   runProductImport,
   extractRow,
-  IMPORT_SKU_KEY
+  buildImportPreview,
+  previewRowToRawImportRow,
+  IMPORT_SKU_KEY,
+  PREVIEW_MAX_ROWS
 };

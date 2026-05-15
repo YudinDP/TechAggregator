@@ -605,6 +605,203 @@
                 grid-template-columns: 1fr !important;
             }
         }
+
+        /* Вкладка «Импорт»: предпросмотр и выбор файла */
+        .import-file-field-label {
+            display: block;
+            margin-bottom: 0.45rem;
+            font-weight: 600;
+            color: #374151;
+            font-size: 0.95rem;
+        }
+        .import-file-row {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 0.75rem 1rem;
+            padding: 0.85rem 1rem;
+            background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+            border: 1px solid #cbd5e1;
+            border-radius: 12px;
+        }
+        .import-file-native {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+        .import-file-browse-btn {
+            padding: 0.65rem 1.25rem !important;
+            font-size: 0.95rem !important;
+            font-weight: 600 !important;
+            border-radius: 10px !important;
+            box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+            flex-shrink: 0;
+        }
+        .import-file-browse-btn:hover {
+            box-shadow: 0 2px 6px rgba(15, 23, 42, 0.12);
+        }
+        .import-file-chosen {
+            flex: 1;
+            min-width: 0;
+            font-size: 0.95rem;
+            color: #475569;
+            word-break: break-word;
+        }
+        .import-file-chosen.is-empty {
+            color: #94a3b8;
+            font-style: italic;
+        }
+
+        .import-preview-panel {
+            margin-top: 1.5rem;
+            padding: 1.25rem 1.35rem 1.35rem;
+            border: 1px solid #cbd5e1;
+            border-radius: 14px;
+            background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+            box-shadow: 0 4px 24px rgba(15, 23, 42, 0.06);
+        }
+        .import-preview-table-wrap {
+            max-height: min(78vh, 720px);
+            overflow: auto;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            background: #fff;
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+            width: 100%;
+            max-width: none;
+        }
+        #import .import-preview-table {
+            width: 2860px;
+            min-width: 2860px;
+            border-collapse: separate;
+            border-spacing: 0;
+            font-size: 0.875rem;
+            line-height: 1.32;
+            table-layout: fixed;
+        }
+        #import .import-preview-col--num { width: 2.25rem; }
+        #import .import-preview-col--ok { width: 1.75rem; }
+        #import .import-preview-col--err { width: 11rem; min-width: 11rem; }
+        #import .import-preview-col--sku { width: 6.5rem; min-width: 6.5rem; }
+        #import .import-preview-col--name { width: 280px; min-width: 280px; }
+        #import .import-preview-col--cat { width: 8.5rem; min-width: 8.5rem; }
+        #import .import-preview-col--price { width: 5rem; min-width: 5rem; }
+        #import .import-preview-col--url { width: 320px; min-width: 320px; }
+        #import .import-preview-col--img { width: 260px; min-width: 260px; }
+        #import .import-preview-col--desc { width: 420px; min-width: 420px; }
+        #import .import-preview-col--stock { width: 3.5rem; min-width: 3.5rem; }
+        #import .import-preview-col--rating { width: 3.5rem; min-width: 3.5rem; }
+        #import .import-preview-col--reviews { width: 3.5rem; min-width: 3.5rem; }
+        #import .import-preview-col--store { width: 130px; min-width: 130px; }
+        #import .import-preview-col--seller { width: 130px; min-width: 130px; }
+        #import .import-preview-col--specs { width: 520px; min-width: 520px; }
+        #import .import-preview-table thead th {
+            position: sticky;
+            top: 0;
+            z-index: 2;
+            background: linear-gradient(180deg, #1e293b 0%, #334155 100%);
+            color: #f1f5f9;
+            font-weight: 600;
+            padding: 0.45rem 0.35rem;
+            text-align: left;
+            font-size: 0.68rem;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+            border-bottom: 2px solid #0f172a;
+            white-space: nowrap;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+        }
+        #import .import-preview-table tbody td {
+            padding: 0.3rem 0.3rem;
+            vertical-align: top;
+            border-bottom: 1px solid #e2e8f0;
+            background: #fff;
+        }
+        #import .import-preview-table tbody tr:nth-child(even) td {
+            background: #f9fafb;
+        }
+        #import .import-preview-table tbody tr.import-preview-row--invalid td {
+            background: #fff1f2;
+        }
+        #import .import-preview-table tbody tr.import-preview-row--invalid:nth-child(even) td {
+            background: #ffe4e6;
+        }
+        #import .import-preview-table .import-preview-cell--errors {
+            max-width: none;
+            font-size: 0.78rem;
+            color: #b91c1c;
+            line-height: 1.28;
+            word-break: normal;
+            overflow-wrap: break-word;
+        }
+        #import .import-preview-table .import-prev-inp,
+        #import .import-preview-table .import-prev-ta {
+            font-size: 0.875rem !important;
+            line-height: 1.3 !important;
+            padding: 0.22rem 0.38rem !important;
+            border-radius: 6px !important;
+            border: 1px solid #cbd5e1 !important;
+            width: 100%;
+            max-width: 100%;
+            min-width: 0;
+            box-sizing: border-box;
+            background: #fff;
+        }
+        #import .import-preview-table .import-prev-inp:focus,
+        #import .import-preview-table .import-prev-ta:focus {
+            border-color: #3b82f6 !important;
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.22);
+        }
+        #import .import-preview-table .import-prev-ta {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-size: 0.8125rem !important;
+            resize: vertical;
+            word-break: normal;
+            overflow-wrap: break-word;
+            field-sizing: content;
+            min-height: 2.5rem;
+        }
+        #import .import-preview-table .import-prev-ta--specsJson {
+            overflow-wrap: anywhere;
+            word-break: break-all;
+        }
+        #import .import-preview-table .import-prev-ta--name,
+        #import .import-preview-table .import-prev-ta--imageUrl,
+        #import .import-preview-table .import-prev-ta--storeName,
+        #import .import-preview-table .import-prev-ta--sellerName {
+            font-family: inherit;
+            min-height: 2.65rem;
+        }
+        #import .import-preview-table .import-prev-ta--url {
+            min-height: 3.6rem;
+        }
+        #import .import-preview-table .import-prev-ta--description {
+            min-height: 6.5rem;
+        }
+        #import .import-preview-table .import-prev-ta--specsJson {
+            min-height: 12rem;
+        }
+        #import .import-preview-summary {
+            margin-bottom: 0.85rem;
+            font-size: 0.95rem;
+            color: #334155;
+            padding: 0.65rem 0.85rem;
+            background: #f1f5f9;
+            border-radius: 10px;
+            border: 1px solid #e2e8f0;
+        }
+        #import .import-preview-file-errors {
+            margin-bottom: 0.75rem;
+            color: #b91c1c;
+            font-size: 0.9rem;
+        }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
@@ -1018,10 +1215,6 @@
 </div>
             <div id="import" class="admin-tab-content">
                 <h3>Импорт каталога</h3>
-                <p style="color:#6b7280;max-width:920px;line-height:1.5;">
-                    Загрузите прайс в формате <strong>JSON</strong> или <strong>Excel (.xlsx)</strong>. Для каждой позиции нужны название, категория (slug или русское имя), цена, ссылка на карточку в магазине.
-                    Повтор по полю <strong>артикул/sku</strong> (сохраняется как характеристика <code>import_sku</code>) или по паре название+категория: существующие товары обновляются (цена, ссылка, описание, картинка, характеристики, рейтинг на карточке и сигналы магазина — рейтинг/остаток/число отзывов, если колонки есть в файле).
-                </p>
                 <details style="margin:1rem 0;padding:0.75rem 1rem;border:1px solid #e5e7eb;border-radius:10px;background:#f9fafb;max-width:920px;">
                     <summary style="cursor:pointer;font-weight:600;">Колонки Excel / поля JSON</summary>
                     <ul style="margin:0.75rem 0 0;padding-left:1.2rem;font-size:0.88rem;color:#475569;line-height:1.5;">
@@ -1036,7 +1229,7 @@
                 <div class="import-grid">
                     <div style="border:1px solid #e5e7eb;border-radius:12px;padding:1rem;background:#fff;">
                         <h4 style="margin-top:0;">Файл с компьютера</h4>
-                        <form id="importUploadForm" enctype="multipart/form-data">
+                        <form id="importUploadForm" enctype="multipart/form-data" onsubmit="return false;">
                             <div class="form-group">
                                 <label for="importStoreName">Магазин (если не задан в файле) *</label>
                                 <select id="importStoreName" required class="search-input" style="max-width:100%;">
@@ -1056,10 +1249,14 @@
                                 <input type="text" id="importSellerName" class="search-input" placeholder="Как в карточке магазина" style="max-width:100%;">
                             </div>
                             <div class="form-group">
-                                <label for="importFile">Файл (.json, .xlsx, .csv) *</label>
-                                <input type="file" id="importFile" accept=".json,.xlsx,.xls,.csv,application/json" required>
+                                <span class="import-file-field-label">Файл (.json, .xlsx, .csv) *</span>
+                                <div class="import-file-row">
+                                    <input type="file" id="importFile" class="import-file-native" accept=".json,.xlsx,.xls,.csv,application/json" aria-label="Выбор файла каталога">
+                                    <button type="button" class="btn btn-secondary import-file-browse-btn" id="importFileBrowseBtn">Выбрать файл</button>
+                                    <span class="import-file-chosen is-empty" id="importFileChosen">Файл не выбран</span>
+                                </div>
                             </div>
-                            <button type="submit" class="btn btn-primary">Импортировать</button>
+                            <button type="button" class="btn btn-primary" id="importFilePreviewBtn">Предпросмотр</button>
                         </form>
                     </div>
                     <div style="border:1px solid #e5e7eb;border-radius:12px;padding:1rem;background:#fff;">
@@ -1086,8 +1283,20 @@
                             <label for="importJsonTextarea">Массив JSON или объект с полем items *</label>
                             <textarea id="importJsonTextarea" rows="10" style="width:100%;font-family:ui-monospace,monospace;font-size:0.8rem;" placeholder='[ { "sku": "...", "name": "...", "category": "smartphones", ... } ]'></textarea>
                         </div>
-                        <button type="button" class="btn btn-primary" id="importJsonBtn">Импортировать JSON</button>
+                        <button type="button" class="btn btn-primary" id="importJsonPreviewBtn">Предпросмотр</button>
                     </div>
+                </div>
+
+                <div id="importPreviewPanel" class="import-preview-panel" style="display:none;">
+                    <h4 style="margin-top:0;">Предпросмотр (проверьте и при необходимости отредактируйте)</h4>
+                    <div id="importPreviewFileErrors" class="import-preview-file-errors"></div>
+                    <div id="importPreviewSummary" class="import-preview-summary"></div>
+                    <div id="importPreviewTableHost" class="import-preview-table-wrap"></div>
+                    <div style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-top:1rem;">
+                        <button type="button" class="btn btn-primary" id="importCommitBtn">Импортировать в каталог</button>
+                        <button type="button" class="btn btn-secondary" id="importResetPreviewBtn">Сбросить предпросмотр</button>
+                    </div>
+                    <p style="margin:0.75rem 0 0;font-size:0.82rem;color:#64748b;">Магазин и продавец по умолчанию берутся из левой колонки (файл) или правой (JSON). Если предпросмотр был из файла, при «Импортировать» на сервер снова отправляется этот файл — в каталог попадают все строки файла (правки в ячейках таблицы для файлового режима не применяются; чтобы импортировать правки — используйте JSON). Строки с ошибками подсвечены; ошибочные строки отчитаются в отчёте.</p>
                 </div>
 
                 <div id="importResultPanel" style="display:none;margin-top:1.5rem;padding:1rem;border:1px solid #cbd5e1;border-radius:12px;background:#f8fafc;">
@@ -1111,7 +1320,7 @@
 
                 <div style="margin-top:2rem;padding-top:1.5rem;border-top:1px solid #e5e7eb;">
                     <h4>Импорт по ссылке на файл</h4>
-                    <p style="color:#6b7280;font-size:0.9rem;">Сервер каждые 15 минут проверяет фиды. При изменении файла (другой SHA-256 или ответ не 304) каталог перезагружается.</p>
+                    <p style="color:#6b7280;font-size:0.9rem;">Сервер <strong>раз в час</strong> проверяет фиды. При изменении файла (другой SHA-256 или ответ не 304) каталог перезагружается.</p>
                     <form id="importFeedAddForm" style="display:flex;flex-wrap:wrap;gap:0.75rem;align-items:end;margin-bottom:1rem;">
                         <div class="form-group" style="margin:0;flex:2;min-width:220px;">
                             <label for="importFeedUrl">URL файла *</label>
@@ -1184,7 +1393,7 @@
         </div>
     </footer>
     <script src="config.js"></script>
-    <script src="script.js"></script>
+    <script src="script.js?v=import2"></script>
     <script>
 
         let currentTableData = [];

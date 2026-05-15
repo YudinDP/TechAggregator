@@ -65,7 +65,7 @@ const prisma = new PrismaClient({ adapter });
 
 const multer = require('multer');
 const crypto = require('crypto');
-const { parseImportBuffer, runProductImport } = require('./services/productImport');
+const { parseImportBuffer, runProductImport, buildImportPreview, previewRowToRawImportRow } = require('./services/productImport');
 
 const importUpload = multer({
   storage: multer.memoryStorage(),
@@ -632,7 +632,9 @@ app.use(cors({
   ],
   credentials: true  // Разрешает отправку cookies/токенов
 }));
-app.use(express.json());
+const JSON_BODY_LIMIT = readEnvValue('JSON_BODY_LIMIT', 'BODY_PARSER_LIMIT') || '32mb';
+app.use(express.json({ limit: JSON_BODY_LIMIT }));
+app.use(express.urlencoded({ extended: true, limit: JSON_BODY_LIMIT }));
 app.use((req, res, next) => {
   const startTime = process.hrtime.bigint();
   res.on('finish', () => {
@@ -771,7 +773,7 @@ app.listen(PORT, () => {
   }, 15000);
 
   try {
-    cron.schedule('*/15 * * * *', () => {
+    cron.schedule('0 * * * *', () => {
       runScheduledImportFeeds().catch((e) => console.warn('[import-feed] cron:', e.message || e));
     });
   } catch (e) {
@@ -2982,13 +2984,14 @@ app.post('/api/admin/manual-add-product', authenticateToken, requireAdminRole, a
 });
 
 //--- Импорт каталога (Excel / JSON) ---
-async function executeProductImportFromParsed({ rows, storeName, sellerName }) {
+async function executeProductImportFromParsed({ rows, storeName, sellerName, rowIndexBase = 0 }) {
   await ensureSellerColumns();
   return runProductImport(prisma, {
     rows,
     defaultStoreName: storeName,
     defaultSellerName: sellerName || null,
-    upsertStoreSignalsItem
+    upsertStoreSignalsItem,
+    rowIndexBase
   });
 }
 
@@ -3108,6 +3111,138 @@ async function runScheduledImportFeeds() {
     console.warn('[import-feed]', e.message || e);
   }
 }
+
+app.post(
+  '/api/admin/import/preview-file',
+  authenticateToken,
+  requireAdminRole,
+  importUpload.single('file'),
+  async (req, res) => {
+    try {
+      if (!req.file || !req.file.buffer) {
+        return res.status(400).json({ error: 'Файл не получен (поле file).' });
+      }
+      const original = req.file.originalname || 'upload.json';
+      let parsed;
+      try {
+        parsed = parseImportBuffer(req.file.buffer, original);
+      } catch (e) {
+        return res.json({
+          format: null,
+          fileErrors: [e.message || String(e)],
+          rows: [],
+          summary: { total: 0, previewed: 0, validCount: 0, invalidCount: 0 }
+        });
+      }
+      const preview = buildImportPreview(parsed.rows);
+      res.json({ format: parsed.format, ...preview });
+    } catch (error) {
+      console.error('[import/preview-file]', error);
+      res.status(500).json({ error: error.message || 'Ошибка разбора файла' });
+    }
+  }
+);
+
+app.post('/api/admin/import/preview-json', authenticateToken, requireAdminRole, async (req, res) => {
+  try {
+    let rawRows = null;
+    const rawText = req.body.rawText != null ? String(req.body.rawText).trim() : '';
+    if (rawText) {
+      try {
+        const data = JSON.parse(rawText);
+        rawRows = Array.isArray(data) ? data : Array.isArray(data.items) ? data.items : Array.isArray(data.products) ? data.products : null;
+      } catch (e) {
+        return res.json({
+          format: 'json',
+          fileErrors: [`Некорректный JSON: ${e.message}`],
+          rows: [],
+          summary: { total: 0, previewed: 0, validCount: 0, invalidCount: 0 }
+        });
+      }
+    } else if (Array.isArray(req.body.items)) {
+      rawRows = req.body.items;
+    } else if (Array.isArray(req.body.rows)) {
+      rawRows = req.body.rows;
+    }
+    if (!rawRows) {
+      return res.status(400).json({ error: 'Передайте rawText (строка JSON) или массив items/rows.' });
+    }
+    const preview = buildImportPreview(rawRows);
+    res.json({ format: 'json', ...preview });
+  } catch (error) {
+    console.error('[import/preview-json]', error);
+    res.status(500).json({ error: error.message || 'Ошибка разбора JSON' });
+  }
+});
+
+app.post('/api/admin/import/commit', authenticateToken, requireAdminRole, async (req, res) => {
+  try {
+    await ensureSellerColumns();
+    const storeName = String(req.body.storeName || '').trim();
+    if (!storeName) {
+      return res.status(400).json({ error: 'storeName обязателен.' });
+    }
+    const sellerName = req.body.sellerName ? String(req.body.sellerName).trim() : null;
+    const rows = req.body.rows;
+    if (!Array.isArray(rows) || !rows.length) {
+      return res.status(400).json({ error: 'Передайте непустой массив rows (данные из предпросмотра).' });
+    }
+    const rowIndexBase = Math.max(0, Math.floor(Number(req.body.rowIndexBase) || 0));
+    const rawRows = [];
+    for (const r of rows) {
+      try {
+        rawRows.push(previewRowToRawImportRow(r));
+      } catch (e) {
+        return res.status(400).json({ error: e.message || String(e) });
+      }
+    }
+    console.log(
+      '[import/commit] batch rows:',
+      rawRows.length,
+      'rowIndexBase:',
+      rowIndexBase,
+      'content-length:',
+      req.headers['content-length'] || '—'
+    );
+    const result = await executeProductImportFromParsed({ rows: rawRows, storeName, sellerName, rowIndexBase });
+    res.json({ format: 'commit', ...result });
+  } catch (error) {
+    console.error('[import/commit]', error);
+    res.status(500).json({ error: error.message || 'Ошибка импорта' });
+  }
+});
+
+/**
+ * Импорт по тому же файлу, что в предпросмотре: разбор на сервере (multipart), без большого JSON `rows`.
+ * Редактирование ячеек в таблице предпросмотра на этот путь не влияет — в БД идут данные из файла.
+ */
+app.post(
+  '/api/admin/import/commit-file',
+  authenticateToken,
+  requireAdminRole,
+  importUpload.single('file'),
+  async (req, res) => {
+    try {
+      await ensureSellerColumns();
+      if (!req.file || !req.file.buffer) {
+        return res.status(400).json({ error: 'Файл не получен (поле file).' });
+      }
+      const storeName = String(req.body.storeName || '').trim();
+      if (!storeName) {
+        return res.status(400).json({ error: 'storeName обязателен.' });
+      }
+      const sellerName = req.body.sellerName ? String(req.body.sellerName).trim() : null;
+      const original = req.file.originalname || 'upload.json';
+      const { format, rows } = parseImportBuffer(req.file.buffer, original);
+      console.log('[import/commit-file] parsed rows:', rows.length, 'format:', format);
+      const result = await executeProductImportFromParsed({ rows, storeName, sellerName, rowIndexBase: 0 });
+      res.json({ format: 'commit-file', ...result });
+    } catch (error) {
+      console.error('[import/commit-file]', error);
+      res.status(500).json({ error: error.message || 'Ошибка импорта' });
+    }
+  }
+);
 
 app.post(
   '/api/admin/import/upload',

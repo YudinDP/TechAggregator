@@ -226,7 +226,205 @@ window.specKeyTranslations = {
   'remote_control_battery_life': 'Время работы пульта',
   'transmission_latency_ms': 'Задержка передачи сигнала',
   'wind_resistance_level': 'Уровень сопротивления ветру',
-  'indoor_outdoor_use': 'Использование в помещении/на улице'
+  'indoor_outdoor_use': 'Использование в помещении/на улице',
+  'flight_time_minutes': 'Время полёта (мин)',
+  'max_range_km': 'Макс. дальность (км)',
+  'camera_resolution': 'Разрешение камеры',
+  'gimbal_type': 'Тип подвеса',
+  'max_speed_kmh': 'Макс. скорость (км/ч)',
+  'wind_resistance': 'Устойчивость к ветру',
+  'gps_support': 'Поддержка GPS',
+
+  //Общие / импорт
+  'brand': 'Бренд',
+  'model': 'Модель',
+  'model_line': 'Модель (линейка)',
+  'type': 'Тип',
+  'compatibility': 'Совместимость',
+  'note': 'Примечание',
+
+  //Смартфоны, планшеты
+  'cpu_speed': 'Частота процессора',
+  'wireless_charging': 'Беспроводная зарядка',
+  'rear_camera_mp': 'Разрешение задней камеры',
+
+  //Ноутбуки
+  'ram_slots': 'Слоты ОЗУ',
+  'storage_slots': 'Слоты накопителей',
+
+  //Телевизоры и мониторы
+  'refresh_rate': 'Частота обновления',
+  'wifi_support': 'Поддержка Wi-Fi',
+  'bluetooth_support': 'Поддержка Bluetooth',
+  'energy_class': 'Класс энергопотребления',
+  'ports_usb': 'Порты USB',
+  'panel_type': 'Тип матрицы',
+  'response_time_ms': 'Время отклика (мс)',
+  'brightness_nits': 'Яркость (нит)',
+  'contrast_ratio': 'Контрастность',
+  'adjustable_stand': 'Регулируемая подставка',
+  'vesa_mount': 'Крепление VESA',
+  'adaptive_sync': 'Адаптивная синхронизация',
+  'curvature': 'Кривизна экрана',
+
+  //Наушники
+  'microphone': 'Микрофон',
+  'connector_type': 'Тип разъёма',
+  'battery_life': 'Время работы',
+  'frequency_response': 'Частотный диапазон',
+
+  //Смарт-часы, планшеты (дисплей)
+  'display_size_in': 'Размер дисплея (дюйм)',
+  'display_type': 'Тип дисплея',
+  'strap_material': 'Материал ремешка',
+
+  //Электронные книги
+  'battery_life_days': 'Время работы (дни)',
+  'waterproof': 'Защита от воды',
+
+  //Комплектующие ПК
+  'component_type': 'Тип компонента',
+  'chipset': 'Чипсет',
+  'socket': 'Сокет',
+  'pcie_version': 'Версия PCIe',
+  'power_connector': 'Разъём питания',
+  'tdp_w': 'Тепловыделение (Вт)',
+  'warranty_years': 'Гарантия (лет)',
+
+  //Аксессуары
+  'accessory_type': 'Тип аксессуара',
+  'material': 'Материал',
+  'color': 'Цвет',
+
+  //Игровые консоли
+  'console_type': 'Тип консоли',
+  'resolution_output': 'Выходное разрешение',
+  'backwards_compatibility': 'Обратная совместимость',
+  'controller_included': 'Геймпад в комплекте',
+  'online_service': 'Онлайн-сервис',
+  'storage_capacity_gb': 'Объём хранилища',
+  'max_resolution': 'Макс. разрешение',
+  'max_fps': 'Макс. частота кадров (FPS)',
+
+  //Сеть
+  'wifi_standard': 'Стандарт Wi-Fi',
+  'max_speed_mbps': 'Макс. скорость (Мбит/с)',
+  'ethernet_ports': 'Порты Ethernet',
+  'antenna_count': 'Количество антенн',
+  'coverage_area_sqm': 'Площадь покрытия (м²)',
+  'vpn_support': 'Поддержка VPN',
+  'parental_controls': 'Родительский контроль',
+
+  //Клавиатуры
+  'keyboard_type': 'Тип клавиатуры',
+  'switch_type': 'Тип переключателей',
+  'layout': 'Раскладка',
+  'backlight': 'Подсветка',
+  'anti_ghosting': 'Антипризракинг',
+  'key_rollover': 'Одновременных нажатий (rollover)',
+
+  //Мыши
+  'sensor_type': 'Тип сенсора',
+  'sensor': 'Сенсор',
+  'dpi_max': 'Макс. DPI',
+  'buttons_count': 'Количество кнопок',
+  'polling_rate_hz': 'Частота опроса (Гц)',
+  'rgb_backlight': 'RGB-подсветка',
+
+  //Корпуса
+  'case_type': 'Тип корпуса',
+  'supported_form_factors': 'Поддерживаемые форм-факторы',
+  'materials': 'Материалы',
+  'fan_support': 'Установка вентиляторов',
+  'radiator_support': 'Поддержка СЖО / радиаторов',
+  'gpu_max_length_mm': 'Макс. длина видеокарты (мм)',
+  'cpu_cooler_max_height_mm': 'Макс. высота кулера CPU (мм)',
+
+  //Фитнес-браслеты / носимые
+  'sensors': 'Датчики',
+  'strap_size': 'Размер ремешка',
+
+  //Блоки питания
+  'power_w': 'Мощность (Вт)',
+  'efficiency_rating': 'Класс КПД (80 Plus)',
+  'modular_type': 'Модульность',
+  'fan_size_mm': 'Размер вентилятора (мм)',
+  'protection_systems': 'Системы защиты',
+  'connectors': 'Разъёмы',
+  'form_factor': 'Форм-фактор',
+
+  //Микрофоны
+  'microphone_type': 'Тип микрофона',
+  'polar_pattern': 'Диаграмма направленности',
+  'sample_rate_khz': 'Частота дискретизации (кГц)',
+  'bit_depth': 'Разрядность (бит)',
+
+  //Веб-камеры
+  'resolution': 'Разрешение',
+  'fps': 'Частота кадров (FPS)',
+  'focus_type': 'Тип фокусировки',
+  'field_of_view': 'Поле зрения',
+
+  //Пауэрбанки
+  'max_output_w': 'Макс. выходная мощность (Вт)',
+  'fast_charging': 'Быстрая зарядка',
+
+  //Портативная акустика
+  'bluetooth_version': 'Версия Bluetooth',
+  'voice_assistant': 'Голосовой помощник',
+
+  //Процессоры
+  'process_tech_nm': 'Техпроцесс (нм)',
+  'integrated_graphics': 'Встроенная графика',
+  'cache_l3_mb': 'Кэш L3 (МБ)',
+  'cores': 'Количество ядер',
+  'tdp_watt': 'Тепловыделение (Вт)',
+
+  //Материнские платы
+  'max_ram': 'Макс. объём ОЗУ',
+  'm2_slots': 'Слоты M.2',
+  'ports_sata': 'Порты SATA',
+
+  //ОЗУ
+  'capacity_gb': 'Объём (ГБ)',
+  'memory_speed_mhz': 'Частота памяти (МГц)',
+  'latency_cl': 'Тайминги (CL)',
+  'module_count': 'Количество модулей',
+  'voltage_v': 'Напряжение (В)',
+  'rgb_support': 'Поддержка RGB',
+  'ram_speed': 'Скорость памяти',
+  'ram_latency': 'Тайминги памяти',
+
+  //Видеокарты
+  'vram_size': 'Объём видеопамяти',
+  'memory_bus_width_bit': 'Шина памяти (бит)',
+  'boost_clock_mhz': 'Частота в турбо (МГц)',
+  'output_ports': 'Видеовыходы',
+  'ray_tracing_support': 'Трассировка лучей',
+  'tdp': 'TDP (тепловыделение)',
+  'cooling_type': 'Тип охлаждения',
+
+  //Накопители
+  'read_speed_mbs': 'Скорость чтения (МБ/с)',
+  'write_speed_mbs': 'Скорость записи (МБ/с)',
+  'interface': 'Интерфейс',
+  'drive_type': 'Тип диска',
+  'transfer_speed': 'Скорость передачи данных',
+  'durability': 'Защита / прочность',
+
+  //Аудиосистемы
+  'speaker_count': 'Количество динамиков',
+
+  //Умный дом
+  'device_type': 'Тип устройства',
+  'protocol': 'Протокол',
+  'power_source': 'Источник питания',
+  'range_m': 'Дальность действия (м)',
+  'app_support': 'Поддержка приложения',
+  'voice_control': 'Голосовое управление',
+
+  //Камеры
+  'weather_sealing': 'Защита от влаги и пыли'
   //Добавляйте новые ключи по мере необходимости
 };
 
@@ -7271,6 +7469,305 @@ document.getElementById('manualAddForm')?.addEventListener('submit', async funct
 });
 
 //--- Админ: импорт каталога ---
+window.importPreviewSession = { rows: [], source: null, format: null, commitFile: null };
+
+function resetImportPreviewUI() {
+  const previewPanel = document.getElementById('importPreviewPanel');
+  const host = document.getElementById('importPreviewTableHost');
+  const fe = document.getElementById('importPreviewFileErrors');
+  const sum = document.getElementById('importPreviewSummary');
+  const resPanel = document.getElementById('importResultPanel');
+  if (previewPanel) previewPanel.style.display = 'none';
+  if (host) host.innerHTML = '';
+  if (fe) fe.innerHTML = '';
+  if (sum) sum.textContent = '';
+  if (resPanel) resPanel.style.display = 'none';
+  window.importPreviewSession = { rows: [], source: null, format: null, commitFile: null };
+}
+
+function renderImportPreviewTable() {
+  const host = document.getElementById('importPreviewTableHost');
+  if (!host) return;
+  const rows = window.importPreviewSession.rows || [];
+  const inp = (type, i, field, val) =>
+    `<input type="${type}" class="import-prev-inp import-prev-inp--${field}" data-ipv="${i}" data-ipf="${field}" value="${escapeHtml(
+      val == null || val === '' ? '' : String(val)
+    )}" />`;
+  const ta = (i, field, val, rowsN) =>
+    `<textarea class="import-prev-ta import-prev-ta--${field}" data-ipv="${i}" data-ipf="${field}" rows="${rowsN}">${escapeHtml(
+      val == null ? '' : String(val)
+    )}</textarea>`;
+  const thead = `<colgroup>
+    <col class="import-preview-col import-preview-col--num">
+    <col class="import-preview-col import-preview-col--ok">
+    <col class="import-preview-col import-preview-col--err">
+    <col class="import-preview-col import-preview-col--sku">
+    <col class="import-preview-col import-preview-col--name">
+    <col class="import-preview-col import-preview-col--cat">
+    <col class="import-preview-col import-preview-col--price">
+    <col class="import-preview-col import-preview-col--url">
+    <col class="import-preview-col import-preview-col--img">
+    <col class="import-preview-col import-preview-col--desc">
+    <col class="import-preview-col import-preview-col--stock">
+    <col class="import-preview-col import-preview-col--rating">
+    <col class="import-preview-col import-preview-col--reviews">
+    <col class="import-preview-col import-preview-col--store">
+    <col class="import-preview-col import-preview-col--seller">
+    <col class="import-preview-col import-preview-col--specs">
+  </colgroup><thead><tr>
+    <th>#</th><th></th><th>Проблемы</th>
+    <th>SKU</th><th>Название</th><th>Категория</th><th>Цена</th><th>URL</th><th>Картинка</th><th>Описание</th>
+    <th>Ост.</th><th>Рейт.</th><th>Отз.</th><th>Магазин</th><th>Продавец</th><th>JSON specs</th>
+  </tr></thead>`;
+  const tbody = rows
+    .map((r, i) => {
+      const err = (r.fieldErrors || []).join('; ') || '—';
+      const ok = r.valid ? '✓' : '✗';
+      const rowClass = r.valid ? 'import-preview-row' : 'import-preview-row import-preview-row--invalid';
+      return `<tr class="${rowClass}">
+        <td>${r.rowIndex}</td><td>${ok}</td>
+        <td class="import-preview-cell--errors">${escapeHtml(err)}</td>
+        <td>${inp('text', i, 'sku', r.sku)}</td>
+        <td>${ta(i, 'name', r.name, 2)}</td>
+        <td>${inp('text', i, 'category', r.category)}</td>
+        <td>${inp('number', i, 'price', r.price)}</td>
+        <td>${ta(i, 'url', r.url, 3)}</td>
+        <td>${ta(i, 'imageUrl', r.imageUrl, 2)}</td>
+        <td>${ta(i, 'description', r.description, 5)}</td>
+        <td>${inp('number', i, 'stock', r.stock)}</td>
+        <td>${inp('text', i, 'rating', r.rating)}</td>
+        <td>${inp('number', i, 'reviews', r.reviews)}</td>
+        <td>${ta(i, 'storeName', r.storeName, 2)}</td>
+        <td>${ta(i, 'sellerName', r.sellerName, 2)}</td>
+        <td>${ta(i, 'specsJson', r.specsJson, 10)}</td>
+      </tr>`;
+    })
+    .join('');
+  host.innerHTML = `<table class="import-preview-table">${thead}<tbody>${tbody}</tbody></table>`;
+}
+
+function wireImportPreviewDelegation() {
+  const panel = document.getElementById('importPreviewPanel');
+  if (!panel || panel.dataset.ipvBound === '1') return;
+  panel.dataset.ipvBound = '1';
+  panel.addEventListener('input', (e) => {
+    const t = e.target;
+    if (!t.classList.contains('import-prev-inp') && !t.classList.contains('import-prev-ta')) return;
+    const i = parseInt(t.getAttribute('data-ipv'), 10);
+    const f = t.getAttribute('data-ipf');
+    const ses = window.importPreviewSession;
+    if (!ses || !ses.rows[i] || !f) return;
+    ses.rows[i][f] = t.value;
+  });
+}
+
+function showImportPreviewFromResponse(data, source) {
+  const fe = document.getElementById('importPreviewFileErrors');
+  const sum = document.getElementById('importPreviewSummary');
+  if (fe) {
+    const errs = Array.isArray(data.fileErrors) ? data.fileErrors : [];
+    fe.innerHTML = errs.length
+      ? `<ul style="margin:0;padding-left:1.1rem;">${errs.map((x) => `<li>${escapeHtml(x)}</li>`).join('')}</ul>`
+      : '';
+  }
+  const s = data.summary || {};
+  if (sum) {
+    sum.textContent = `Формат: ${data.format || '—'} · всего строк в источнике: ${s.total ?? 0} · в таблице: ${
+      s.previewed ?? (data.rows || []).length
+    } · без ошибок: ${s.validCount ?? 0} · с ошибками: ${s.invalidCount ?? 0}`;
+  }
+  window.__lastImportPreview = { fileErrors: data.fileErrors, summary: data.summary };
+  window.importPreviewSession = {
+    rows: Array.isArray(data.rows) ? data.rows.map((r) => ({ ...r })) : [],
+    source: source,
+    format: data.format || null,
+    commitFile:
+      source === 'file' && document.getElementById('importFile')?.files?.[0]
+        ? document.getElementById('importFile').files[0]
+        : null
+  };
+  renderImportPreviewTable();
+  const previewPanel = document.getElementById('importPreviewPanel');
+  if (previewPanel) {
+    previewPanel.style.display = 'block';
+    previewPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+}
+
+async function postImportPreviewFile() {
+  const token = localStorage.getItem('techAggregatorToken');
+  if (!document.getElementById('importStoreName').value) {
+    showCustomNotification('Выберите магазин (слева).', 'info');
+    return;
+  }
+  const fileInput = document.getElementById('importFile');
+  if (!fileInput.files || !fileInput.files[0]) {
+    showCustomNotification('Выберите файл.', 'info');
+    return;
+  }
+  const fd = new FormData();
+  fd.append('file', fileInput.files[0]);
+  const res = await fetch('http://localhost:3000/api/admin/import/preview-file', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+    body: fd
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || res.statusText);
+  showImportPreviewFromResponse(data, 'file');
+}
+
+async function postImportPreviewJson() {
+  const token = localStorage.getItem('techAggregatorToken');
+  if (!document.getElementById('importJsonStore').value) {
+    showCustomNotification('Выберите магазин (справа).', 'info');
+    return;
+  }
+  const raw = document.getElementById('importJsonTextarea').value.trim();
+  if (!raw) {
+    showCustomNotification('Вставьте JSON.', 'info');
+    return;
+  }
+  const res = await fetch('http://localhost:3000/api/admin/import/preview-json', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ rawText: raw })
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || res.statusText);
+  showImportPreviewFromResponse(data, 'json');
+}
+
+const IMPORT_COMMIT_BATCH_SIZE = 18;
+const IMPORT_COMMIT_RESULT_LIST_CAP = 200;
+
+async function postImportCommit() {
+  const btn = document.getElementById('importCommitBtn');
+  const token = localStorage.getItem('techAggregatorToken');
+  const ses = window.importPreviewSession;
+  if (!ses || !ses.rows.length) {
+    showCustomNotification('Сначала выполните предпросмотр.', 'info');
+    return;
+  }
+  const source = ses.source;
+  const storeName =
+    source === 'json'
+      ? document.getElementById('importJsonStore').value
+      : document.getElementById('importStoreName').value;
+  const sellerName =
+    source === 'json'
+      ? document.getElementById('importJsonSeller').value.trim() || undefined
+      : document.getElementById('importSellerName').value.trim() || undefined;
+  if (!storeName) {
+    showCustomNotification('Выберите магазин в колонке файла или JSON.', 'info');
+    return;
+  }
+
+  const useFileCommit =
+    ses.source === 'file' && ses.commitFile instanceof File && typeof ses.commitFile.arrayBuffer === 'function';
+
+  if (btn) {
+    btn.disabled = true;
+    btn.dataset.prevLabel = btn.textContent;
+    btn.textContent = 'Импорт…';
+  }
+  try {
+    if (useFileCommit) {
+      const fd = new FormData();
+      fd.append('file', ses.commitFile, ses.commitFile.name || 'catalog.xlsx');
+      fd.append('storeName', storeName);
+      if (sellerName) fd.append('sellerName', sellerName);
+      const res = await fetch('http://localhost:3000/api/admin/import/commit-file', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: fd
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || res.statusText);
+      renderImportResult(data);
+      showCustomNotification(
+        `Импорт по исходному файлу: ${data.summary?.total ?? ses.rows.length} строк (правки в таблице не применялись).`,
+        'success'
+      );
+      resetImportPreviewUI();
+      return;
+    }
+
+    const allRows = ses.rows;
+    const batchSize = IMPORT_COMMIT_BATCH_SIZE;
+    const aggregated = {
+      format: 'commit',
+      summary: {
+        total: allRows.length,
+        created: 0,
+        updated: 0,
+        errors: 0,
+        skipped: 0
+      },
+      created: [],
+      updated: [],
+      errors: []
+    };
+
+    const batches = Math.ceil(allRows.length / batchSize);
+    console.log('[import] JSON commit batches:', batches, 'rows:', allRows.length, 'batchSize:', batchSize);
+
+    for (let offset = 0; offset < allRows.length; offset += batchSize) {
+      const chunk = allRows.slice(offset, offset + batchSize);
+      console.log('[import] batch', offset / batchSize + 1, '/', batches, 'chunk', chunk.length);
+      const res = await fetch('http://localhost:3000/api/admin/import/commit', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          storeName,
+          sellerName: sellerName || null,
+          rowIndexBase: offset,
+          rows: chunk
+        })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || res.statusText);
+      const s = data.summary || {};
+      aggregated.summary.created += Number(s.created) || 0;
+      aggregated.summary.updated += Number(s.updated) || 0;
+      aggregated.summary.errors += Number(s.errors) || 0;
+      aggregated.summary.skipped += Number(s.skipped) || 0;
+      for (const x of data.created || []) {
+        if (aggregated.created.length < IMPORT_COMMIT_RESULT_LIST_CAP) aggregated.created.push(x);
+      }
+      for (const x of data.updated || []) {
+        if (aggregated.updated.length < IMPORT_COMMIT_RESULT_LIST_CAP) aggregated.updated.push(x);
+      }
+      for (const x of data.errors || []) {
+        if (aggregated.errors.length < IMPORT_COMMIT_RESULT_LIST_CAP) aggregated.errors.push(x);
+      }
+    }
+
+    renderImportResult(aggregated);
+    showCustomNotification(
+      batches > 1
+        ? `Импорт выполнен: ${allRows.length} строк, ${batches} запрос(ов) к серверу.`
+        : 'Импорт в каталог выполнен.',
+      'success'
+    );
+    resetImportPreviewUI();
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      if (btn.dataset.prevLabel) {
+        btn.textContent = btn.dataset.prevLabel;
+        delete btn.dataset.prevLabel;
+      }
+    }
+  }
+}
+
 function renderImportResult(data) {
   const panel = document.getElementById('importResultPanel');
   const sumEl = document.getElementById('importResultSummary');
@@ -7424,74 +7921,52 @@ function initAdminImportTab() {
   const upForm = document.getElementById('importUploadForm');
   if (!upForm || upForm.dataset.bound === '1') return;
   upForm.dataset.bound = '1';
-  upForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const token = localStorage.getItem('techAggregatorToken');
-    const fd = new FormData();
-    fd.append('storeName', document.getElementById('importStoreName').value);
-    const seller = document.getElementById('importSellerName').value.trim();
-    if (seller) fd.append('sellerName', seller);
-    const fileInput = document.getElementById('importFile');
-    if (!fileInput.files || !fileInput.files[0]) {
-      showCustomNotification('Выберите файл.', 'info');
-      return;
-    }
-    fd.append('file', fileInput.files[0]);
+  wireImportPreviewDelegation();
+
+  const importFile = document.getElementById('importFile');
+  const importFileChosen = document.getElementById('importFileChosen');
+  const syncImportFileLabel = () => {
+    const name = importFile?.files?.[0]?.name;
+    if (!importFileChosen) return;
+    importFileChosen.textContent = name || 'Файл не выбран';
+    importFileChosen.classList.toggle('is-empty', !name);
+  };
+  document.getElementById('importFileBrowseBtn')?.addEventListener('click', () => importFile?.click());
+  importFile?.addEventListener('change', syncImportFileLabel);
+
+  document.getElementById('importFilePreviewBtn')?.addEventListener('click', async () => {
     try {
-      const res = await fetch('http://localhost:3000/api/admin/import/upload', {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
-        body: fd
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || res.statusText);
-      renderImportResult(data);
-      showCustomNotification('Импорт файла завершён.', 'success');
-      fileInput.value = '';
+      await postImportPreviewFile();
+      const fe = window.__lastImportPreview?.fileErrors;
+      const has = Array.isArray(fe) && fe.length;
+      showCustomNotification(has ? 'Предпросмотр: проверьте сообщения над таблицей.' : 'Предпросмотр готов.', has ? 'warning' : 'success');
     } catch (err) {
       showCustomNotification(err.message, 'error');
     }
   });
 
-  document.getElementById('importJsonBtn')?.addEventListener('click', async () => {
-    const token = localStorage.getItem('techAggregatorToken');
-    const raw = document.getElementById('importJsonTextarea').value.trim();
-    if (!raw) {
-      showCustomNotification('Вставьте JSON.', 'info');
-      return;
-    }
-    let parsed;
+  document.getElementById('importJsonPreviewBtn')?.addEventListener('click', async () => {
     try {
-      parsed = JSON.parse(raw);
-    } catch (err) {
-      showCustomNotification('Некорректный JSON: ' + err.message, 'error');
-      return;
-    }
-    const items = Array.isArray(parsed) ? parsed : Array.isArray(parsed.items) ? parsed.items : null;
-    if (!items) {
-      showCustomNotification('Нужен массив или объект с полем items.', 'info');
-      return;
-    }
-    try {
-      const res = await fetch('http://localhost:3000/api/admin/import/json', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          storeName: document.getElementById('importJsonStore').value,
-          sellerName: document.getElementById('importJsonSeller').value.trim() || undefined,
-          items
-        })
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || res.statusText);
-      renderImportResult(data);
-      showCustomNotification('Импорт JSON завершён.', 'success');
+      await postImportPreviewJson();
+      const fe = window.__lastImportPreview?.fileErrors;
+      const has = Array.isArray(fe) && fe.length;
+      showCustomNotification(has ? 'Предпросмотр: проверьте сообщения над таблицей.' : 'Предпросмотр готов.', has ? 'warning' : 'success');
     } catch (err) {
       showCustomNotification(err.message, 'error');
     }
+  });
+
+  document.getElementById('importCommitBtn')?.addEventListener('click', async () => {
+    try {
+      await postImportCommit();
+    } catch (err) {
+      showCustomNotification(err.message, 'error');
+    }
+  });
+
+  document.getElementById('importResetPreviewBtn')?.addEventListener('click', () => {
+    resetImportPreviewUI();
+    showCustomNotification('Предпросмотр сброшен.', 'info');
   });
 
   document.getElementById('importFeedAddForm')?.addEventListener('submit', async (e) => {
