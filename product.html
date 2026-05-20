@@ -418,6 +418,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     const product = products.find(p => p.id === currentProductId);
     
     if (product) {
+      window.currentProductData = product;
       displayProduct(product);
     } else {
       showError('Товар не найден');
@@ -431,10 +432,108 @@ document.addEventListener('DOMContentLoaded', async function () {
   updateComparisonCounter();
 });
 
+function openSimilarOptionsModal() {
+  const product = window.currentProductData;
+  if (!product) {
+    window.location.href = `catalog.html?similarTo=${currentProductId}`;
+    return;
+  }
+
+  const specEntries = Object.entries(product.specs || {})
+    .filter(([key]) => String(key || '').toLowerCase() !== 'import_sku')
+    .filter(([, value]) => value !== undefined && value !== null && String(value).trim() !== '')
+    .slice(0, 12);
+
+  const specsHtml = specEntries.length > 0
+    ? specEntries.map(([key]) => `
+        <label style="display:flex; align-items:center; gap:8px; padding:6px 0;">
+          <input type="checkbox" class="similar-spec-checkbox" value="${key}">
+          <span>${window.specKeyTranslations?.[key] || key}</span>
+        </label>
+      `).join('')
+    : '<p style="margin:0; color:#6b7280; font-size:0.9rem;">У товара нет заполненных характеристик для сравнения.</p>';
+
+  const modal = document.createElement('div');
+  modal.id = 'similarSearchModal';
+  modal.style.cssText = 'position:fixed; inset:0; background:rgba(15,23,42,0.55); display:flex; align-items:center; justify-content:center; z-index:9999; padding:16px;';
+  modal.innerHTML = `
+    <div style="width:min(680px, 96vw); max-height:90vh; overflow:auto; background:#fff; border-radius:14px; box-shadow:0 20px 40px rgba(0,0,0,0.2);">
+      <div style="padding:18px 20px; border-bottom:1px solid #e5e7eb; display:flex; justify-content:space-between; align-items:center;">
+        <h3 style="margin:0; font-size:1.1rem;">По каким критериям искать похожее?</h3>
+        <button type="button" id="closeSimilarSearchModalBtn" style="border:none; background:transparent; font-size:22px; cursor:pointer; line-height:1;">&times;</button>
+      </div>
+      <div style="padding:18px 20px;">
+        <div style="margin-bottom:14px;">
+          <div style="font-weight:600; margin-bottom:8px;">Бренд</div>
+          <label style="display:flex; align-items:center; gap:8px; padding:4px 0;">
+            <input type="checkbox" id="similarBrandSame">
+            <span>Тот же бренд</span>
+          </label>
+          <label style="display:flex; align-items:center; gap:8px; padding:4px 0;">
+            <input type="checkbox" id="similarBrandOther">
+            <span>Другой бренд</span>
+          </label>
+        </div>
+
+        <div style="margin-bottom:14px;">
+          <label style="display:flex; align-items:center; gap:8px; font-weight:600;">
+            <input type="checkbox" id="similarUsePriceRange">
+            <span>Похожий диапазон цены (±50%)</span>
+          </label>
+        </div>
+
+        <div style="margin-bottom:6px; font-weight:600;">Характеристики</div>
+        <div style="max-height:280px; overflow:auto; border:1px solid #e5e7eb; border-radius:10px; padding:10px 12px; background:#fafafa;">
+          ${specsHtml}
+        </div>
+      </div>
+      <div style="padding:14px 20px; border-top:1px solid #e5e7eb; display:flex; justify-content:flex-end; gap:10px;">
+        <button type="button" class="btn btn-secondary" id="cancelSimilarSearchBtn">Отмена</button>
+        <button type="button" class="btn btn-primary" id="applySimilarSearchBtn">Найти</button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+
+  const closeModal = () => modal.remove();
+  modal.addEventListener('click', (event) => {
+    if (event.target === modal) closeModal();
+  });
+  modal.querySelector('#closeSimilarSearchModalBtn')?.addEventListener('click', closeModal);
+  modal.querySelector('#cancelSimilarSearchBtn')?.addEventListener('click', closeModal);
+
+  modal.querySelector('#applySimilarSearchBtn')?.addEventListener('click', () => {
+    const sameBrand = Boolean(modal.querySelector('#similarBrandSame')?.checked);
+    const otherBrand = Boolean(modal.querySelector('#similarBrandOther')?.checked);
+    const usePriceRange = Boolean(modal.querySelector('#similarUsePriceRange')?.checked);
+    const selectedSpecs = [...modal.querySelectorAll('.similar-spec-checkbox:checked')].map(cb => cb.value);
+
+    const url = new URL('catalog.html', window.location.href);
+    url.searchParams.set('similarTo', String(currentProductId));
+
+    if (sameBrand && !otherBrand) {
+      url.searchParams.set('similarBrand', 'same');
+    } else if (otherBrand && !sameBrand) {
+      url.searchParams.set('similarBrand', 'other');
+    }
+
+    if (usePriceRange) {
+      url.searchParams.set('similarPrice', '1');
+    }
+
+    if (selectedSpecs.length > 0) {
+      url.searchParams.set('similarSpecs', selectedSpecs.join(','));
+    }
+
+    window.location.href = url.toString();
+  });
+}
+
 // Функция перехода в режим "Похожие товары"
 window.findSimilar = function(productId) {
-    // Перенаправляем на каталог с параметром ID товара, который ищем
-    window.location.href = `catalog.html?similarTo=${productId}`;
+    currentProductId = productId;
+    openSimilarOptionsModal();
 };
 </script>
 </body>

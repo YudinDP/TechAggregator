@@ -623,14 +623,14 @@ function normalizeProductSpecs(rawSpecs, category) {
 
 app.use(cors({
   origin: [
-    'http://localhost:5500',      // Live Server (основной)
-    'http://127.0.0.1:5500',      // Live Server (альтернатива)
-    'http://localhost:3000',      // Если фронт тоже на 3000
-    'http://192.168.1.100:5500',  // Локальная сеть (замените на ваш IP)
-    'https://tech-nozone.ru',     // Продакшн (на всякий случай)
+    'http://localhost:5500',      //Live Server (основной)
+    'http://127.0.0.1:5500',      //Live Server (альтернатива)
+    'http://localhost:3000',      //Если фронт тоже на 3000
+    'http://192.168.1.100:5500',  //Локальная сеть 
+    'https://tech-nozone.ru',     //Продакшн (на всякий случай)
     'http://tech-nozone.ru'
   ],
-  credentials: true  // Разрешает отправку cookies/токенов
+  credentials: true  //Разрешает отправку cookies/токенов
 }));
 const JSON_BODY_LIMIT = readEnvValue('JSON_BODY_LIMIT', 'BODY_PARSER_LIMIT') || '32mb';
 app.use(express.json({ limit: JSON_BODY_LIMIT }));
@@ -2983,7 +2983,7 @@ app.post('/api/admin/manual-add-product', authenticateToken, requireAdminRole, a
     }
 });
 
-//--- Импорт каталога (Excel / JSON) ---
+
 async function executeProductImportFromParsed({ rows, storeName, sellerName, rowIndexBase = 0 }) {
   await ensureSellerColumns();
   return runProductImport(prisma, {
@@ -3091,6 +3091,32 @@ async function processImportFeed(feed) {
       lastMessage: JSON.stringify(result.summary).slice(0, 2000)
     }
   });
+}
+
+async function loadImportFeedRows(feed) {
+  const url = String(feed.url || '').trim();
+  if (!url) {
+    throw new Error('У фида не задан URL.');
+  }
+  const res = await axios.get(url, {
+    responseType: 'arraybuffer',
+    timeout: 180000,
+    maxContentLength: 50 * 1024 * 1024,
+    maxBodyLength: 50 * 1024 * 1024,
+    validateStatus: () => true
+  });
+  if (res.status < 200 || res.status >= 300) {
+    throw new Error(`HTTP ${res.status} при загрузке файла.`);
+  }
+  let pathname = 'remote.json';
+  try {
+    pathname = new URL(url).pathname || pathname;
+  } catch {
+    /* ignore */
+  }
+  const buf = Buffer.from(res.data);
+  const parsed = parseImportBuffer(buf, pathname);
+  return { format: parsed.format, rows: parsed.rows };
 }
 
 async function runScheduledImportFeeds() {
@@ -3387,6 +3413,72 @@ app.post('/api/admin/import/feeds/:id/run', authenticateToken, requireAdminRole,
   } catch (error) {
     console.error('[import/feeds run]', error);
     res.status(500).json({ error: error.message || 'Ошибка запуска импорта.' });
+  }
+});
+
+app.post('/api/admin/import/feeds/:id/preview', authenticateToken, requireAdminRole, async (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  if (!Number.isFinite(id)) return res.status(400).json({ error: 'Некорректный id.' });
+  try {
+    const feed = await prisma.importFeed.findUnique({ where: { id } });
+    if (!feed) return res.status(404).json({ error: 'Фид не найден.' });
+    const { format, rows } = await loadImportFeedRows(feed);
+    const preview = buildImportPreview(rows);
+    res.json({
+      format,
+      ...preview,
+      feed: {
+        id: feed.id,
+        url: feed.url,
+        storeName: feed.storeName,
+        sellerName: feed.sellerName
+      }
+    });
+  } catch (error) {
+    console.error('[import/feeds preview]', error);
+    res.status(500).json({ error: error.message || 'Ошибка предпросмотра фида.' });
+  }
+});
+
+app.post('/api/admin/import/feeds/:id/commit', authenticateToken, requireAdminRole, async (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  if (!Number.isFinite(id)) return res.status(400).json({ error: 'Некорректный id.' });
+  try {
+    await ensureSellerColumns();
+    const feed = await prisma.importFeed.findUnique({ where: { id } });
+    if (!feed) return res.status(404).json({ error: 'Фид не найден.' });
+    const rows = req.body.rows;
+    if (!Array.isArray(rows) || !rows.length) {
+      return res.status(400).json({ error: 'Передайте непустой массив rows (данные из предпросмотра).' });
+    }
+    const rowIndexBase = Math.max(0, Math.floor(Number(req.body.rowIndexBase) || 0));
+    const rawRows = [];
+    for (const r of rows) {
+      try {
+        rawRows.push(previewRowToRawImportRow(r));
+      } catch (e) {
+        return res.status(400).json({ error: e.message || String(e) });
+      }
+    }
+    const result = await executeProductImportFromParsed({
+      rows: rawRows,
+      storeName: feed.storeName,
+      sellerName: feed.sellerName,
+      rowIndexBase
+    });
+    await prisma.importFeed.update({
+      where: { id: feed.id },
+      data: {
+        lastImportAt: new Date(),
+        lastFetchedAt: new Date(),
+        lastStatus: result.summary?.errors ? 'ok_with_errors' : 'ok',
+        lastMessage: JSON.stringify(result.summary || {}).slice(0, 2000)
+      }
+    });
+    res.json({ format: 'commit-feed', ...result });
+  } catch (error) {
+    console.error('[import/feeds commit]', error);
+    res.status(500).json({ error: error.message || 'Ошибка импорта фида.' });
   }
 });
 
@@ -4999,7 +5091,7 @@ function normalizeCurrencyCode(raw) {
     if (!codeRaw) return 'RUB';
 
     const code = codeRaw.toUpperCase();
-    // символы / варианты названий валют
+
     if (code.includes('₽') || code === 'RUR' || code === 'RUB' || code.includes('RUB')) return 'RUB';
     if (code.includes('USD') || code.includes('US$')) return 'USD';
     if (code.includes('EUR')) return 'EUR';
@@ -5025,8 +5117,7 @@ function convertToRub(amount, currency = 'RUB') {
     };
     const rate = rates[code];
     if (!Number.isFinite(rate) || rate <= 0) {
-        // Если API внезапно прислал неизвестный код валюты, но цена выглядит валидной,
-        // не даём “пропасть” офферу — считаем, что это RUB.
+        //не даём “пропасть” офферу — считаем, что это RUB.
         console.warn(`[FX] Неизвестная валюта '${currency}' (норм: ${code}). Считаю как RUB.`);
         return Math.round(value);
     }
@@ -5210,7 +5301,7 @@ async function searchProductsInPricesApi(query, country = PRICESAPI_DEFAULT_COUN
             return [];
         }
 
-        // COUNTRY_NOT_SUPPORTED: выбираем рабочую страну из supported (или fallback на US/DE)
+        
         if (status === 400 && code === 'COUNTRY_NOT_SUPPORTED') {
             const preferences = ['us', 'de', 'gb', 'pl', 'fr'];
             const supportedLower = (supported || []).map((c) => String(c).toLowerCase());
@@ -5398,7 +5489,7 @@ async function collectApiOffersForProduct({ productName, sourceUrl = null, count
                 }
             }
         } catch {
-            // ignore invalid URL, continue with name-based APIs
+            
         }
     }
 
@@ -5477,7 +5568,7 @@ async function collectApiOffersForProduct({ productName, sourceUrl = null, count
     return Array.from(dedup.values());
 }
 
-//--- Автообновление цен по ссылкам магазинов (DNS / Ozon / Яндекс.Маркет / Wildberries) ---
+
 async function fetchParsedPriceForStoreUrl(url, proxy = null, context = {}) {
   if (!url || typeof url !== 'string') {
     throw new Error('Пустая ссылка');
@@ -5518,7 +5609,7 @@ async function fetchParsedPriceForStoreUrl(url, proxy = null, context = {}) {
       console.warn('[PRICE SYNC] API Systems (Я.М):', e.message);
     }
 
-    // Старое рабочее поведение: если API Systems не вернул цену — пробуем цену со страницы.
+  
     if (price == null) {
       try {
         const htmlPrice = await extractPriceFromYandexMarket(trimmed);
@@ -5603,8 +5694,6 @@ async function collectPriceSyncResults(options = {}) {
   let processed = 0;
 
   outer: for (const product of products) {
-    // Обновляем только уже сохранённые у товара источники цен (по ссылкам в БД).
-    // Новые магазины/продавцы добавляет только админ вручную — не подмешиваем API-офферы из поиска.
 
     for (const priceRow of product.prices) {
       if (processed >= maxStores) break outer;
@@ -6086,14 +6175,14 @@ app.post('/api/admin/parse-product', authenticateToken, requireAdminRole, async 
                         const wbOfferPrice = await fetchPriceFromApiSystemsByUrl(url);
                         marketPrice = wbOfferPrice.price;
                     } catch (wbErr) {
-                        console.warn('⚠️ Не удалось получить цену WB через offers:', wbErr.message);
+                        console.warn(' Не удалось получить цену WB через offers:', wbErr.message);
                     }
                 }
                 parsedData.priceSource = marketPrice != null ? 'Wildberries (API Systems offers)' : null;
             }
             parsedData.price = marketPrice;
             if (marketPrice) {
-                console.log(` 💰 Цена: ${marketPrice} ₽ (${parsedData.priceSource || 'источник не указан'})`);
+                console.log(`  Цена: ${marketPrice} ₽ (${parsedData.priceSource || 'источник не указан'})`);
             }
         } else if (isEbay) {
             parsedData = await fetchEbayProductByUrlOrQuery({
@@ -6121,7 +6210,7 @@ app.post('/api/admin/parse-product', authenticateToken, requireAdminRole, async 
                     parsedData.specs = aiSpecs.specs;
                 }
             } catch (specErr) {
-                console.warn('⚠️ Не удалось дополнить характеристики через GROQ:', specErr.message);
+                console.warn(' Не удалось дополнить характеристики через GROQ:', specErr.message);
             }
         }
 
@@ -6144,7 +6233,6 @@ app.post('/api/admin/parse-product', authenticateToken, requireAdminRole, async 
             parsedData.priceSource = parsedData.prices[0].source || 'API';
         }
 
-        //НОРМАЛИЗАЦИЯ ХАРАКТЕРИСТИК (без дублей!)
         const SYNONYM_MAP = {
             screen_size: ['диагональ экрана', 'диагональ', 'размер экрана', 'экран', 'дисплей'],
             screen_resolution: ['разрешение экрана', 'разрешение дисплея'],

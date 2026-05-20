@@ -2,7 +2,7 @@
 let currentProductId = null; 
 let currentUser = null;
 let comparisonList = [];
-/** На узком экране показываем пару товаров, начиная с этого индекса */
+
 let comparisonMobileStart = 0;
 let comparisonHideIdentical = false;
 let comparisonSpecsCollapsed = false;
@@ -43,6 +43,16 @@ let priceHistoryChartInstance = null;
 let lastAdminPriceSyncPreview = null;
 let lastAdminPriceSyncPreviewSingle = null;
 let similarModeTargetId = null;
+let similarModeCriteria = {
+  brandMode: 'any',
+  usePriceRange: false,
+  specKeys: []
+};
+const TECHNICAL_SPEC_KEYS = new Set(['import_sku']);
+
+function isUserVisibleSpecKey(specKey) {
+  return !TECHNICAL_SPEC_KEYS.has(String(specKey || '').toLowerCase());
+}
 //Карта перевода ключей
 window.specKeyTranslations = {
   //Смартфоны
@@ -696,7 +706,6 @@ function calculateValueScore(product, price, marketPrice = null) {
     let marketComponent = 0.5;
     if (marketPrice && marketPrice > 0 && price > 0) {
         const ratio = marketPrice / price;
-        // Баланс: цена около рынка ≈ средняя выгода, без экстремальных скачков.
         marketComponent = clamp((ratio - 0.85) / (1.25 - 0.85), 0, 1);
     }
 
@@ -884,11 +893,23 @@ function initializeCatalog() {
     const urlParams = new URLSearchParams(window.location.search);
     const initialCategory = urlParams.get('category');
     const similarTo = urlParams.get('similarTo'); //Читаем параметр режима "Похожее"
+    const similarBrand = (urlParams.get('similarBrand') || 'any').toLowerCase();
+    const similarPrice = urlParams.get('similarPrice') === '1';
+    const similarSpecs = (urlParams.get('similarSpecs') || '')
+      .split(',')
+      .map(v => v.trim())
+      .filter(Boolean);
 
     //Если есть режим "Похожее", сохраняем ID целевого товара
     if (similarTo) {
         similarModeTargetId = parseInt(similarTo, 10);
     }
+
+    similarModeCriteria = {
+      brandMode: ['any', 'same', 'other'].includes(similarBrand) ? similarBrand : 'any',
+      usePriceRange: similarPrice,
+      specKeys: similarSpecs
+    };
 
     //Загружаем список категорий
     loadCategories();
@@ -955,7 +976,9 @@ function updateFilters() {
     const uniqueSpecKeys = new Set();
     productsInCategory.forEach(product => {
       if (product.specs) {
-        Object.keys(product.specs).forEach(key => uniqueSpecKeys.add(key));
+        Object.keys(product.specs).forEach(key => {
+          if (isUserVisibleSpecKey(key)) uniqueSpecKeys.add(key);
+        });
       }
     });
 
@@ -1094,24 +1117,60 @@ function filterProducts() {
         
         if (target) {
             console.log(`🔍 Поиск похожего для: ${target.name} (Цена: ${target.minPrice})`);
-            
-            //Расширяем диапазон до ±50% (было ±30%), чтобы находилось больше товаров
             const targetPrice = target.minPrice || 0;
             const minRange = targetPrice * 0.5; 
             const maxRange = targetPrice * 1.5; 
+            const hasCustomCriteria = Boolean(
+              similarModeCriteria.usePriceRange ||
+              similarModeCriteria.brandMode !== 'any' ||
+              (similarModeCriteria.specKeys && similarModeCriteria.specKeys.length > 0)
+            );
+
+            const targetBrand = normalizeFilterValue(target.brand || target.name?.split(' ')[0] || '');
+            const effectiveSpecKeys = (similarModeCriteria.specKeys || []).filter(specKey => {
+              if (!isUserVisibleSpecKey(specKey)) return false;
+              const targetSpecValue = target.specs?.[specKey];
+              return targetSpecValue !== undefined && targetSpecValue !== null && String(targetSpecValue).trim() !== '';
+            });
 
             filtered = filtered.filter(p => {
                 //Исключаем сам исходный товар
                 if (p.id === target.id) return false;
                 
-                //Обязательно та же категория
+                //Базовое ограничение для "похожего" — категория исходного товара
                 if (p.category !== target.category) return false;
 
-                //Проверка цены (если цена у товара есть)
-                if (p.minPrice !== null) {
-                    if (p.minPrice < minRange || p.minPrice > maxRange) return false;
+                //Если пользователь ничего не выбрал — используем старый алгоритм
+                if (!hasCustomCriteria) {
+                  if (p.minPrice !== null) {
+                      if (p.minPrice < minRange || p.minPrice > maxRange) return false;
+                  }
+                  return true;
                 }
-                
+
+                //Фильтр по бренду
+                if (similarModeCriteria.brandMode === 'same') {
+                  const candidateBrand = normalizeFilterValue(p.brand || p.name?.split(' ')[0] || '');
+                  if (!targetBrand || candidateBrand !== targetBrand) return false;
+                } else if (similarModeCriteria.brandMode === 'other') {
+                  const candidateBrand = normalizeFilterValue(p.brand || p.name?.split(' ')[0] || '');
+                  if (targetBrand && candidateBrand === targetBrand) return false;
+                }
+
+                //Фильтр по цене (если выбрали соответствующий критерий)
+                if (similarModeCriteria.usePriceRange && p.minPrice !== null) {
+                  if (p.minPrice < minRange || p.minPrice > maxRange) return false;
+                }
+
+                //Фильтр по выбранным характеристикам
+                for (const specKey of effectiveSpecKeys) {
+                  const targetSpecValue = normalizeFilterValue(target.specs?.[specKey] ?? '');
+                  const candidateSpecValue = normalizeFilterValue(p.specs?.[specKey] ?? '');
+                  if (!targetSpecValue || candidateSpecValue !== targetSpecValue) {
+                    return false;
+                  }
+                }
+
                 return true;
             });
             console.log(`✅ Найдено похожих товаров: ${filtered.length}`);
@@ -1462,7 +1521,7 @@ async function displayProduct(product) {
   const specsList = document.getElementById('productSpecs');
   if (specsList) {
 
-    specsList.innerHTML = Object.entries(product.specs || {}).map(([key, value]) => {
+    specsList.innerHTML = Object.entries(product.specs || {}).filter(([key]) => isUserVisibleSpecKey(key)).map(([key, value]) => {
       //Получаем русское название из словаря
       const russianName = specKeyTranslations[key] || key;
       return `
@@ -1852,7 +1911,7 @@ function evaluatePriceSituation(price, avgMarketPrice, trend) {
   };
 }
 
-/** Рекомендация по карточке продавца: опирается на прогноз цены, без короткого «тренда» по медианам. */
+
 function evaluateStoreFromForecast(price, avgMarketPrice, forecast) {
   const isBelowMarket = price <= avgMarketPrice * 0.98;
   const isAboveMarket = price >= avgMarketPrice * 1.02;
@@ -1917,7 +1976,7 @@ function findHistoryStoreKey(priceHistoryData, storeName) {
   return Object.keys(priceHistoryData).find((key) => key.trim().toLowerCase() === normalizedTarget) || null;
 }
 
-/** Цвет линии на графике и карточки аналитики — один порядок ключей, что у Chart.js (Object.keys). */
+
 function buildPriceHistorySeriesColorMap(priceHistoryData) {
   const map = new Map();
   if (!priceHistoryData || typeof priceHistoryData !== 'object') return map;
@@ -2021,8 +2080,8 @@ function forecastPrice(seriesPoints, fallbackPrice) {
 
   const weightedLinear = weightedLinearRegression(xValues, yValues);
   const weightedQuadratic = weightedQuadraticRegression(xValues, yValues);
-  const predLinear = weightedLinear.predict(xTarget);
-  const predQuadratic = weightedQuadratic.predict(xTarget);
+  const predLinear = extrapolatePrice(weightedLinear, xTarget, xLast);
+  const predQuadratic = extrapolatePrice(weightedQuadratic, xTarget, xLast);
   const useQuadratic =
     Number.isFinite(weightedQuadratic.r2) &&
     weightedQuadratic.r2 > weightedLinear.r2 + 0.025 &&
@@ -2055,6 +2114,15 @@ function forecastPrice(seriesPoints, fallbackPrice) {
   if (deltaPct > 1.5) return { direction: 'up', predictedPrice, deltaPct, model: useQuadratic ? 'quadratic+exp' : 'linear+exp' };
   if (deltaPct < -1.5) return { direction: 'down', predictedPrice, deltaPct, model: useQuadratic ? 'quadratic+exp' : 'linear+exp' };
   return { direction: 'flat', predictedPrice, deltaPct, model: useQuadratic ? 'quadratic+exp' : 'linear+exp' };
+}
+
+function extrapolatePrice(model, xTarget, xLast) {
+  if (!model || typeof model.predict !== 'function') return NaN;
+  if (!Number.isFinite(xTarget)) return NaN;
+  if (!Number.isFinite(xLast)) return NaN;
+  // Экстраполяция: прогнозируем значение за пределами наблюдаемого интервала x > xLast.
+  if (xTarget <= xLast) return model.predict(xTarget);
+  return model.predict(xTarget);
 }
 
 function weightedLinearRegression(xValues, yValues) {
@@ -2431,7 +2499,7 @@ function buildStoreDisplayName(storeName, sellerName = null) {
   return cleanSeller ? `${cleanStore} (${cleanSeller})` : cleanStore;
 }
 
-/** Дата YYYY-MM-DD в локальном календаре (для input type="date"). */
+
 function formatLocalDateYMD(d = new Date()) {
   const z = (n) => String(n).padStart(2, '0');
   return `${d.getFullYear()}-${z(d.getMonth() + 1)}-${z(d.getDate())}`;
@@ -2471,7 +2539,7 @@ function hslToHex(h, s, l) {
   return `#${[r, g, b].map((v) => v.toString(16).padStart(2, '0')).join('')}`;
 }
 
-/** Устойчивый «разный» цвет линии для каждого продавца/легенды графика. */
+
 function getDistinctSeriesColorForLabel(label, index = 0) {
   const str = `${String(label || '')}|${index}`;
   let hash = 2166136261;
@@ -4765,7 +4833,9 @@ function renderComparisonTable(container) {
   const allSpecs = new Set();
   products.forEach((product) => {
     if (product && product.specs) {
-      Object.keys(product.specs).forEach((key) => allSpecs.add(key));
+      Object.keys(product.specs).forEach((key) => {
+        if (isUserVisibleSpecKey(key)) allSpecs.add(key);
+      });
     }
   });
   let specsArray = Array.from(allSpecs);
@@ -5166,7 +5236,7 @@ function renderHomeCarousel() {
 async function initHomeCarousel() {
   if (homeCarouselState.inited) return;
   const track = document.getElementById('PopularProductsCarousel');
-  if (!track) return; // не index.html
+  if (!track) return; 
   homeCarouselState.inited = true;
 
   try {
@@ -5211,7 +5281,7 @@ window.addToComparison = addToComparison;
 window.updateComparisonCounter = updateComparisonCounter;
 window.showCustomNotification = showCustomNotification;
 
-// Единый аватар для всех пользователей — замените файл `sources/default-user-avatar.png` при необходимости.
+
 window.DEFAULT_USER_AVATAR_URL = window.DEFAULT_USER_AVATAR_URL || 'sources/default-user-avatar.png';
 function getDefaultUserAvatarUrl() {
   return window.DEFAULT_USER_AVATAR_URL || 'sources/default-user-avatar.png';
@@ -7469,7 +7539,7 @@ document.getElementById('manualAddForm')?.addEventListener('submit', async funct
 });
 
 //--- Админ: импорт каталога ---
-window.importPreviewSession = { rows: [], source: null, format: null, commitFile: null };
+window.importPreviewSession = { rows: [], source: null, format: null, commitFile: null, feedId: null, feedMeta: null };
 
 function resetImportPreviewUI() {
   const previewPanel = document.getElementById('importPreviewPanel');
@@ -7482,7 +7552,7 @@ function resetImportPreviewUI() {
   if (fe) fe.innerHTML = '';
   if (sum) sum.textContent = '';
   if (resPanel) resPanel.style.display = 'none';
-  window.importPreviewSession = { rows: [], source: null, format: null, commitFile: null };
+  window.importPreviewSession = { rows: [], source: null, format: null, commitFile: null, feedId: null, feedMeta: null };
 }
 
 function renderImportPreviewTable() {
@@ -7561,7 +7631,7 @@ function wireImportPreviewDelegation() {
   });
 }
 
-function showImportPreviewFromResponse(data, source) {
+function showImportPreviewFromResponse(data, source, options = {}) {
   const fe = document.getElementById('importPreviewFileErrors');
   const sum = document.getElementById('importPreviewSummary');
   if (fe) {
@@ -7584,7 +7654,9 @@ function showImportPreviewFromResponse(data, source) {
     commitFile:
       source === 'file' && document.getElementById('importFile')?.files?.[0]
         ? document.getElementById('importFile').files[0]
-        : null
+        : null,
+    feedId: source === 'feed' && Number.isFinite(Number(options.feedId)) ? Number(options.feedId) : null,
+    feedMeta: source === 'feed' && options.feedMeta ? { ...options.feedMeta } : null
   };
   renderImportPreviewTable();
   const previewPanel = document.getElementById('importPreviewPanel');
@@ -7656,13 +7728,17 @@ async function postImportCommit() {
   const storeName =
     source === 'json'
       ? document.getElementById('importJsonStore').value
-      : document.getElementById('importStoreName').value;
+      : source === 'feed'
+        ? String(ses.feedMeta?.storeName || '')
+        : document.getElementById('importStoreName').value;
   const sellerName =
     source === 'json'
       ? document.getElementById('importJsonSeller').value.trim() || undefined
-      : document.getElementById('importSellerName').value.trim() || undefined;
+      : source === 'feed'
+        ? (ses.feedMeta?.sellerName ? String(ses.feedMeta.sellerName).trim() : undefined)
+        : document.getElementById('importSellerName').value.trim() || undefined;
   if (!storeName) {
-    showCustomNotification('Выберите магазин в колонке файла или JSON.', 'info');
+    showCustomNotification('Выберите магазин в колонке файла/JSON или заполните магазин у ссылки-фида.', 'info');
     return;
   }
 
@@ -7718,18 +7794,28 @@ async function postImportCommit() {
     for (let offset = 0; offset < allRows.length; offset += batchSize) {
       const chunk = allRows.slice(offset, offset + batchSize);
       console.log('[import] batch', offset / batchSize + 1, '/', batches, 'chunk', chunk.length);
-      const res = await fetch('http://localhost:3000/api/admin/import/commit', {
+      const feedCommit = source === 'feed' && Number.isFinite(Number(ses.feedId));
+      const endpoint = feedCommit
+        ? `http://localhost:3000/api/admin/import/feeds/${Number(ses.feedId)}/commit`
+        : 'http://localhost:3000/api/admin/import/commit';
+      const body = feedCommit
+        ? JSON.stringify({
+            rows: chunk,
+            rowIndexBase: offset
+          })
+        : JSON.stringify({
+            storeName,
+            sellerName: sellerName || null,
+            rowIndexBase: offset,
+            rows: chunk
+          });
+      const res = await fetch(endpoint, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({
-          storeName,
-          sellerName: sellerName || null,
-          rowIndexBase: offset,
-          rows: chunk
-        })
+        body
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || res.statusText);
@@ -7756,6 +7842,7 @@ async function postImportCommit() {
         : 'Импорт в каталог выполнен.',
       'success'
     );
+    if (source === 'feed') loadImportFeeds();
     resetImportPreviewUI();
   } finally {
     if (btn) {
@@ -7862,14 +7949,17 @@ async function loadImportFeeds() {
 async function runImportFeed(id) {
   const token = localStorage.getItem('techAggregatorToken');
   try {
-    const res = await fetch(`http://localhost:3000/api/admin/import/feeds/${id}/run`, {
+    const res = await fetch(`http://localhost:3000/api/admin/import/feeds/${id}/preview`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}` }
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(data.error || res.statusText);
-    showCustomNotification('Импорт по ссылке выполнен.', 'success');
-    loadImportFeeds();
+    showImportPreviewFromResponse(data, 'feed', {
+      feedId: id,
+      feedMeta: data.feed || null
+    });
+    showCustomNotification('Предпросмотр по ссылке готов. Проверьте таблицу и нажмите «Импортировать в каталог».', 'success');
   } catch (e) {
     showCustomNotification(e.message, 'error');
   }
@@ -9766,7 +9856,7 @@ function escapeAdminSuggestHtml(text) {
     .replace(/"/g, '&quot;');
 }
 
-/** Выше — точное совпадение и вхождение без «прилипания» буквы к числу (realme gt 7 vs realme gt 7t). */
+
 function adminPriceHistorySearchRelevanceScore(productName, query) {
   const n = String(productName || '').toLowerCase().trim();
   const q = String(query || '').toLowerCase().trim();

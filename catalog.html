@@ -370,6 +370,9 @@ window.exitSimilarMode = function() {
     similarModeTargetId = null;
     const url = new URL(window.location);
     url.searchParams.delete('similarTo');
+    url.searchParams.delete('similarBrand');
+    url.searchParams.delete('similarPrice');
+    url.searchParams.delete('similarSpecs');
     window.history.pushState({}, '', url);
     updateSimilarModeBanner();
     filterProducts(); // Перерисовываем каталог
