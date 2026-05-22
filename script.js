@@ -1520,17 +1520,27 @@ async function displayProduct(product) {
 
   const specsList = document.getElementById('productSpecs');
   if (specsList) {
-
-    specsList.innerHTML = Object.entries(product.specs || {}).filter(([key]) => isUserVisibleSpecKey(key)).map(([key, value]) => {
-      //Получаем русское название из словаря
-      const russianName = specKeyTranslations[key] || key;
-      return `
+    if (window.LearnHints && typeof LearnHints.renderProductSpecs === 'function') {
+      try {
+        await LearnHints.renderProductSpecs(specsList, product, window.specKeyTranslations);
+      } catch (e) {
+        console.error('[LearnHints] Ошибка отрисовки характеристик:', e);
+        LearnHints.renderProductSpecsFallback?.(specsList, product, window.specKeyTranslations);
+      }
+    } else {
+      specsList.innerHTML = Object.entries(product.specs || {})
+        .filter(([key]) => isUserVisibleSpecKey(key))
+        .map(([key, value]) => {
+          const russianName = specKeyTranslations[key] || key;
+          return `
         <div class="spec-item">
-          <span>${russianName}:</span> 
-          <span>${value}</span>
+          <span class="spec-item-name">${russianName}:</span>
+          <span class="spec-item-value">${value}</span>
         </div>
       `;
-    }).join('');
+        })
+        .join('');
+    }
   }
 
   //Цены с графиками
@@ -6058,10 +6068,14 @@ async function loadProductsFromAPI() {
       category: p.category,
       image: p.imageUrl || 'https://via.placeholder.com/300?text=Нет+изображения',
       rating: p.rating,
-      specs: p.specs.reduce((acc, spec) => {
-        acc[spec.specKey] = spec.specValue;
-        return acc;
-      }, {}),
+      specs: Array.isArray(p.specs)
+        ? p.specs.reduce((acc, spec) => {
+            acc[spec.specKey] = spec.specValue;
+            return acc;
+          }, {})
+        : p.specs && typeof p.specs === 'object'
+          ? p.specs
+          : {},
       prices: p.prices.map(price => ({
         store: price.storeName, 
         sellerName: price.sellerName || null,

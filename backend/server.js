@@ -103,6 +103,8 @@ const PRICE_SYNC_AUTO_MAX = parseInt(process.env.PRICE_SYNC_AUTO_MAX_STORES || '
 const THREE_DAYS_MS = 3 * 24 * 60 * 60 * 1000;
 const STORE_SIGNALS_FILE = path.join(__dirname, 'data', 'store-signals.json');
 const USER_ALERTS_FILE = path.join(__dirname, 'data', 'user-alerts.json');
+const LEARN_ROOT = path.join(__dirname, '..', 'learn');
+const LEARN_SPEC_HINTS_DIR = path.join(LEARN_ROOT, 'spec-hints');
 
 function readPriceSyncState() {
   try {
@@ -131,6 +133,64 @@ function writeJsonFileSafe(filePath, value) {
   const dir = path.dirname(filePath);
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(filePath, JSON.stringify(value, null, 2), 'utf8');
+}
+
+function loadLearnSpecHintsFile(filename) {
+  const fp = path.join(LEARN_SPEC_HINTS_DIR, filename);
+  if (!fs.existsSync(fp)) return {};
+  try {
+    const data = JSON.parse(fs.readFileSync(fp, 'utf8'));
+    return data && typeof data === 'object' && !Array.isArray(data) ? data : {};
+  } catch (e) {
+    console.warn('[learn] Ошибка чтения', filename, e.message);
+    return {};
+  }
+}
+
+const LEARN_CATEGORY_ALIASES = {
+  smartphones: 'smartphones',
+  смартфоны: 'smartphones',
+  смартфон: 'smartphones',
+  laptops: 'laptops',
+  ноутбуки: 'laptops',
+  ноутбук: 'laptops',
+  headphones: 'headphones',
+  наушники: 'headphones',
+  tv: 'tv',
+  телевизоры: 'tv',
+  tablets: 'tablets',
+  планшеты: 'tablets',
+  monitors: 'monitors',
+  мониторы: 'monitors'
+};
+
+function normalizeLearnCategory(category) {
+  const raw = String(category || '').trim();
+  if (!raw) return '';
+  if (/^[a-z0-9_]+$/i.test(raw)) return raw.toLowerCase();
+  const slug = LEARN_CATEGORY_ALIASES[raw.toLowerCase()];
+  if (slug) return slug;
+  return raw.replace(/[^a-z0-9_-]/gi, '').toLowerCase();
+}
+
+function mergeLearnSpecHints(category) {
+  const common = loadLearnSpecHintsFile('common.json');
+  const safe = normalizeLearnCategory(category);
+  const specific = safe ? loadLearnSpecHintsFile(`${safe}.json`) : {};
+  return { ...common, ...specific };
+}
+
+function mergeLearnLabelMap(category) {
+  const data = loadLearnSpecHintsFile('label-map.json');
+  const safe = normalizeLearnCategory(category);
+  const global = data.global && typeof data.global === 'object' ? data.global : {};
+  const perCat = safe && data[safe] && typeof data[safe] === 'object' ? data[safe] : {};
+  const merged = { ...global, ...perCat };
+  const out = {};
+  for (const [label, specKey] of Object.entries(merged)) {
+    out[String(label).toLowerCase().trim()] = specKey;
+  }
+  return out;
 }
 
 function readStoreSignals() {
@@ -621,20 +681,32 @@ function normalizeProductSpecs(rawSpecs, category) {
     return normalizedSpecs;
 }
 
-app.use(cors({
-  origin: [
-    'http://localhost:5500',      //Live Server (основной)
-    'http://127.0.0.1:5500',      //Live Server (альтернатива)
-    'http://localhost:3000',      //Если фронт тоже на 3000
-    'http://192.168.1.100:5500',  //Локальная сеть 
-    'https://tech-nozone.ru',     //Продакшн (на всякий случай)
-    'http://tech-nozone.ru'
-  ],
-  credentials: true  //Разрешает отправку cookies/токенов
-}));
+const CORS_STATIC_ORIGINS = new Set([
+  'http://localhost:5500',
+  'http://127.0.0.1:5500',
+  'http://localhost:3000',
+  'http://192.168.1.100:5500',
+  'https://tech-nozone.ru',
+  'http://tech-nozone.ru'
+]);
+
+app.use(
+  cors({
+    origin(origin, callback) {
+      if (!origin) return callback(null, true);
+      if (CORS_STATIC_ORIGINS.has(origin)) return callback(null, true);
+      if (/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(origin)) return callback(null, true);
+      return callback(null, false);
+    },
+    credentials: true
+  })
+);
 const JSON_BODY_LIMIT = readEnvValue('JSON_BODY_LIMIT', 'BODY_PARSER_LIMIT') || '32mb';
 app.use(express.json({ limit: JSON_BODY_LIMIT }));
 app.use(express.urlencoded({ extended: true, limit: JSON_BODY_LIMIT }));
+if (fs.existsSync(LEARN_ROOT)) {
+  app.use('/learn', express.static(LEARN_ROOT, { index: false, dotfiles: 'deny' }));
+}
 app.use((req, res, next) => {
   const startTime = process.hrtime.bigint();
   res.on('finish', () => {
@@ -749,6 +821,34 @@ app.get('/api/products', async (req, res) => {
 //=== HEALTH CHECK ===
 app.get('/api/test', (req, res) => {
   res.json({ message: ' Backend + Prisma + PostgreSQL работают!' });
+});
+
+//=== ОБУЧЕНИЕ: подсказки к характеристикам (контент из learn/, не из БД) ===
+app.get('/api/learn/spec-hints/:category', (req, res) => {
+  try {
+    const category = normalizeLearnCategory(req.params.category);
+    const hints = mergeLearnSpecHints(category);
+    const labelMap = mergeLearnLabelMap(category);
+    res.json({ category, version: 1, hints, labelMap });
+  } catch (e) {
+    console.error('[learn] spec-hints:', e);
+    res.status(500).json({ error: 'Не удалось загрузить подсказки' });
+  }
+});
+
+app.get('/api/learn/spec-hints', (req, res) => {
+  try {
+    if (!fs.existsSync(LEARN_SPEC_HINTS_DIR)) {
+      return res.json({ categories: [] });
+    }
+    const categories = fs
+      .readdirSync(LEARN_SPEC_HINTS_DIR)
+      .filter((f) => f.endsWith('.json') && f !== 'common.json')
+      .map((f) => f.replace(/\.json$/i, ''));
+    res.json({ categories: categories.sort() });
+  } catch (e) {
+    res.status(500).json({ error: 'Не удалось получить список категорий' });
+  }
 });
 
 //Запуск сервера

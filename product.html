@@ -106,9 +106,15 @@
       word-break: break-word;
       hyphens: auto;
     }
-    .spec-item span:first-of-type {
+    .spec-item-name {
       font-weight: 600;
       color: #374151;
+    }
+    .spec-item-label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      min-width: 0;
     }
     .action-buttons {
       margin-top: 24px;
@@ -399,6 +405,7 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
 <script src="config.js"></script>
+<script src="learn/learn-hints.js?v=hint3"></script>
 <script src="script.js?v=import2"></script>
 
 <script>
