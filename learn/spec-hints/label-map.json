@@ -34,8 +34,18 @@
     "nfc": "nfc_support",
     "связь": "connectivity",
     "бренд": "brand",
-    "модель": "model_line"
+    "модель": "model_line",
+    "видеокарта": "gpu_model",
+    "графика": "gpu_model",
+    "видеопамять": "vram_size",
+    "socket": "socket",
+    "сокет": "socket",
+    "частота": "cpu_boost_freq",
+    "tdp": "tdp_w",
+    "мощность": "power_w",
+    "гарантия": "warranty_years"
   },
+  "smartphones": {},
   "laptops": {
     "видеокарта": "gpu_model",
     "графика": "gpu_model",
@@ -51,8 +61,6 @@
     "шумоподавление": "anc_type",
     "anc": "anc_type",
     "активное шумоподавление": "anc_type",
-    "время работы": "battery_life_hours",
-    "автономность": "battery_life_hours",
     "драйвер": "driver_size_mm",
     "размер драйвера": "driver_size_mm",
     "тип драйвера": "driver_type",
@@ -66,12 +74,77 @@
     "диагональ": "diagonal_in",
     "hdr": "hdr_support",
     "smart tv": "smart_platform",
-    "платформа": "smart_platform"
+    "платформа": "smart_platform",
+    "звук": "sound_power_w"
   },
   "monitors": {
     "матрица": "panel_type",
     "тип матрицы": "panel_type",
     "яркость": "brightness_nits",
-    "время отклика": "response_time_ms"
+    "время отклика": "response_time_ms",
+    "синхронизация": "adaptive_sync"
+  },
+  "cpus": {
+    "ядра": "cpu_cores",
+    "потоки": "cpu_threads",
+    "кэш": "cache_l3_mb",
+    "встроенная графика": "integrated_graphics"
+  },
+  "graphics_cards": {
+    "видеопамять": "vram_size",
+    "шина": "memory_bus_width_bit",
+    "ray tracing": "ray_tracing_support",
+    "трассировка": "ray_tracing_support"
+  },
+  "motherboards": {
+    "чипсет": "chipset",
+    "форм-фактор": "form_factor",
+    "слоты озу": "ram_slots",
+    "m.2": "m2_slots"
+  },
+  "ram": {
+    "объём": "capacity_gb",
+    "частота памяти": "memory_speed_mhz",
+    "тайминги": "latency_cl"
+  },
+  "storage": {
+    "ssd": "storage_type",
+    "nvme": "interface",
+    "скорость чтения": "read_speed_mbs",
+    "скорость записи": "write_speed_mbs"
+  },
+  "drivers": {
+    "ssd": "storage_type",
+    "nvme": "interface",
+    "скорость чтения": "read_speed_mbs",
+    "скорость записи": "write_speed_mbs"
+  },
+  "smartwatches": {
+    "водозащита": "water_resistance_rating",
+    "пульс": "health_monitoring",
+    "gps": "gps_type"
+  },
+  "drones": {
+    "время полёта": "flight_time_minutes",
+    "дальность": "max_range_km",
+    "подвес": "gimbal_type"
+  },
+  "gaming": {
+    "консоль": "console_type",
+    "память консоли": "storage_capacity"
+  },
+  "networking": {
+    "wi-fi": "wifi_standard",
+    "wifi": "wifi_standard",
+    "lan": "ethernet_ports"
+  },
+  "power_units": {
+    "блок питания": "power_w",
+    "мощность бп": "power_w",
+    "80 plus": "efficiency_rating"
+  },
+  "power_banks": {
+    "павербанк": "battery_capacity_mah",
+    "pd": "max_output_w"
   }
 }

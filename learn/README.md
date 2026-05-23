@@ -45,6 +45,10 @@ learn/
 - При слиянии: `common.json` + `{category}.json` (категория перекрывает общие ключи).
 - `label-map.json` — сопоставление русских подписей в БД (`Экран`, `Память`) со стандартными `specKey` (`screen_size`, `storage_capacity`).
 
+## Файлы категорий (`spec-hints/{category}.json`)
+
+Покрыты все slug из каталога: `smartphones`, `laptops`, `headphones`, `tv`, `monitors`, `tablets`, `cameras`, `smartwatches`, `ebooks`, `drones`, `cpus`, `graphics_cards`, `motherboards`, `ram`, `storage`, `drivers`, `external_drives`, `gaming`, `networking`, `keyboards`, `mouses`, `cases`, `power_units`, `microphones`, `webcams`, `power_banks`, `portable_speakers`, `fitness_trackers`, `wearables`, `smart_home`, `accessories`, `pc_components`, `audio`, `other`, плюс общий `common.json`.
+
 ## API
 
 - `GET /api/learn/spec-hints/:category` — объединённые подсказки для категории.
