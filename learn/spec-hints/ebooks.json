@@ -1,0 +1,57 @@
+{
+  "screen_size": {
+    "title": "Диагональ экрана",
+    "importance": "high",
+    "what": "Размер E Ink дисплея.",
+    "why": "Комфорт чтения и вес устройства.",
+    "howToRead": "6″ — карман; 7–8″ — баланс; 10″+ — PDF и учебники.",
+    "relatedKeys": ["screen_resolution"]
+  },
+  "screen_technology": {
+    "title": "Технология экрана",
+    "importance": "high",
+    "what": "E Ink Carta, Kaleido (цвет), Mobius и др.",
+    "why": "Контраст, «шлейф» при листании, цветные обложки.",
+    "howToRead": "Carta 1200+ — быстрее обновление; цветный Kaleido — комиксы, но бледнее.",
+    "relatedKeys": ["screen_frontlight"]
+  },
+  "screen_frontlight": {
+    "title": "Подсветка",
+    "importance": "high",
+    "what": "Встроенная фронтальная подсветка.",
+    "why": "Чтение в темноте без внешней лампы.",
+    "howToRead": "«Есть» — проверьте теплоту оттенка (warm light) и равномерность.",
+    "relatedKeys": ["screen_frontlight_color"]
+  },
+  "storage_capacity": {
+    "title": "Память",
+    "importance": "medium",
+    "what": "Встроенный объём и слот microSD.",
+    "why": "Библиотека книг и аудио.",
+    "howToRead": "8–16 ГБ — тысячи книг; аудио и комиксы требуют больше.",
+    "relatedKeys": ["file_formats_supported"]
+  },
+  "battery_life_days": {
+    "title": "Автономность",
+    "importance": "high",
+    "what": "Недели работы от одного заряда.",
+    "why": "Главное преимущество E Ink.",
+    "howToRead": "2–4 недели — типично; подсветка на максимуме сокращает срок.",
+    "relatedKeys": ["screen_frontlight"]
+  },
+  "file_formats_supported": {
+    "title": "Форматы файлов",
+    "importance": "medium",
+    "what": "EPUB, PDF, FB2, MOBI, CBZ…",
+    "why": "Совместимость с вашей библиотекой.",
+    "howToRead": "PDF на маленьком экране неудобен без обрезки; FB2 — важно для русскоязычных книг.",
+    "relatedKeys": ["bookstore_integration"]
+  },
+  "waterproof": {
+    "title": "Влагозащита",
+    "importance": "low",
+    "what": "IPX для чтения в ванне/у бассейна.",
+    "why": "Защита от брызг.",
+    "howToRead": "IPX8 — погружение по заявлению бренда; сольная вода — отдельно."
+  }
+}

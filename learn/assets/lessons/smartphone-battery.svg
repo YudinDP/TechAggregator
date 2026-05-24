@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 160" role="img" aria-label="0B0@5O 8 M:@0=">
+  <rect width="360" height="160" rx="12" fill="#f0f9ff"/>
+  <rect x="120" y="30" width="120" height="100" rx="16" fill="#fff" stroke="#2563eb" stroke-width="3"/>
+  <rect x="128" y="70" width="104" height="52" rx="8" fill="#22c55e" opacity="0.85"/>
+  <text x="180" y="62" text-anchor="middle" font-family="system-ui" font-size="11" fill="#0369a1">-:@0=</text>
+  <text x="180" y="100" text-anchor="middle" font-family="system-ui" font-size="12" font-weight="600" fill="#fff">mAh</text>
+  <text x="180" y="145" text-anchor="middle" font-family="system-ui" font-size="11" fill="#64748b"><:>ABL ` @50;L=K9 45=L 157 >17>@>2</text>
+</svg>

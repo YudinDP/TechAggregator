@@ -1,0 +1,41 @@
+{
+  "battery_capacity_mah": {
+    "title": "Ёмкость",
+    "importance": "high",
+    "what": "Номинал аккумулятора в мА·ч.",
+    "why": "Сколько раз зарядить телефон.",
+    "howToRead": "10000 мА·ч — 1–2 полных заряда смартфона; 20000+ — несколько устройств.",
+    "relatedKeys": ["max_output_w"]
+  },
+  "max_output_w": {
+    "title": "Макс. мощность выхода",
+    "importance": "high",
+    "what": "Ватты по USB-C (PD) и USB-A.",
+    "why": "Быстрая зарядка ноутбука и телефона.",
+    "howToRead": "65 Вт+ — лёгкие ноутбуки; 100+ Вт — мощные ultrabook; проверьте протоколы PD.",
+    "relatedKeys": ["fast_charging", "ports_usb_c"]
+  },
+  "fast_charging": {
+    "title": "Быстрая зарядка",
+    "importance": "medium",
+    "what": "PD, PPS, QC, proprietary.",
+    "why": "Скорость зарядки телефона с вашего бренда.",
+    "howToRead": "Список протоколов должен совпадать с устройством; кабель тоже важен.",
+    "relatedKeys": ["max_output_w"]
+  },
+  "ports_usb_c": {
+    "title": "Порты USB-C",
+    "importance": "medium",
+    "what": "Количество и in/out.",
+    "why": "Зарядка ноутбука и телефона одновременно.",
+    "howToRead": "Pass-through — зарядка power bank и ноутбука одним блоком.",
+    "relatedKeys": ["ports_usb_a"]
+  },
+  "battery_type": {
+    "title": "Тип ячеек",
+    "importance": "low",
+    "what": "Li-ion / Li-Po, качество ячеек.",
+    "why": "Безопасность и деградация.",
+    "howToRead": "Берите сертифицированные модели; не везите в самолёте сверх лимитов Wh."
+  }
+}

@@ -1590,6 +1590,10 @@ async function displayProduct(product) {
 
   loadAndRenderPriceHistory(product.id, product.prices || [], storeSignals || []);
   renderValueCalculator(product, document.getElementById('valueCalculatorContainer'));
+
+  if (window.LearnMode && typeof LearnMode.onProductDisplayed === 'function') {
+    LearnMode.onProductDisplayed(product);
+  }
   
 }
 

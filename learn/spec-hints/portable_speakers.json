@@ -1,0 +1,41 @@
+{
+  "power_w": {
+    "title": "Мощность",
+    "importance": "high",
+    "what": "Выходная мощность в ваттах (RMS).",
+    "why": "Громкость и запас по басу.",
+    "howToRead": "10–20 Вт — комната; 30–40 Вт — вечеринка на природе; цифра без RMS может gemisch.",
+    "relatedKeys": ["battery_life_hours"]
+  },
+  "battery_life_hours": {
+    "title": "Время работы",
+    "importance": "high",
+    "what": "Часы на средней громкости.",
+    "why": "Пикник без розетки.",
+    "howToRead": "На 100% громкости время падает в 2–3 раза.",
+    "relatedKeys": ["power_w"]
+  },
+  "bluetooth_version": {
+    "title": "Bluetooth",
+    "importance": "medium",
+    "what": "Версия и кодеки (SBC, AAC, aptX).",
+    "why": "Качество звука по воздуху и задержка.",
+    "howToRead": "5.3 — энергоэффективность; LDAC/aptX — с совместимым телефоном.",
+    "relatedKeys": ["connectivity"]
+  },
+  "water_resistance": {
+    "title": "Влагозащита",
+    "importance": "medium",
+    "what": "IP67, IPX7 и т.д.",
+    "why": "Бассейн, дождь, пляж.",
+    "howToRead": "IPX7 — кратковременное погружение; не оставляйте в солёной воде.",
+    "relatedKeys": ["power_w"]
+  },
+  "frequency_response_hz": {
+    "title": "Частотный диапазон",
+    "importance": "low",
+    "what": "З заявленные Гц.",
+    "why": "Ориентир по басу и верхам.",
+    "howToRead": "Малый корпус — слабый низ независимо от цифры на коробке."
+  }
+}

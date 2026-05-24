@@ -1,0 +1,41 @@
+{
+  "speaker_count": {
+    "title": "Количество динамиков",
+    "importance": "medium",
+    "what": "2.0, 2.1, 5.1, саундбар + саб.",
+    "why": "Объём звука и бас.",
+    "howToRead": "2.1 — сабвуфер; 5.1 — кино; саундбар — компакт для TV.",
+    "relatedKeys": ["power_w"]
+  },
+  "power_w": {
+    "title": "Мощность (RMS)",
+    "importance": "high",
+    "what": "Суммарная мощность акустики.",
+    "why": "Громкость в комнате.",
+    "howToRead": "20–50 Вт RMS — комната; 100+ — большая гостиная; Peak ≠ RMS.",
+    "relatedKeys": ["frequency_response_hz"]
+  },
+  "frequency_response_hz": {
+    "title": "Частотный диапазон",
+    "importance": "medium",
+    "what": "Нижняя/верхняя граница (Гц).",
+    "why": "Бас и детализация.",
+    "howToRead": "Субwoofer даёт низ; цифры без измерений — ориентир.",
+    "relatedKeys": ["power_w"]
+  },
+  "connectivity": {
+    "title": "Подключение",
+    "importance": "medium",
+    "what": "HDMI ARC/eARC, оптика, Bluetooth, Wi-Fi.",
+    "why": "Совместимость с TV и стримингом.",
+    "howToRead": "eARC — Dolby Atmos с TV; BT — музыка с телефона.",
+    "relatedKeys": ["voice_assistant"]
+  },
+  "voice_assistant": {
+    "title": "Голосовой ассистент",
+    "importance": "low",
+    "what": "Встроенная Алиса, Google, Alexa.",
+    "why": "Управление без пульта.",
+    "howToRead": "Проверьте регион и приватность микрофона."
+  }
+}

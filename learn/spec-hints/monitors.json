@@ -1,0 +1,76 @@
+{
+  "screen_size": {
+    "title": "Диагональ монитора",
+    "importance": "high",
+    "what": "Размер экрана в дюймах.",
+    "why": "Рабочая площадь для окон, игр и монтажа.",
+    "howToRead": "24–27″ — офис и игры 1080p/1440p; 32″+ — 4K и детальная графика; ультраширокие — другая форма, смотрите ширину в см.",
+    "relatedKeys": ["screen_resolution"]
+  },
+  "screen_resolution": {
+    "title": "Разрешение",
+    "importance": "high",
+    "what": "Full HD, QHD (2K), 4K UHD.",
+    "why": "Чёткость текста и детализация; нагрузка на видеокарту в играх.",
+    "howToRead": "27″ QHD — популярный баланс; 32″ 4K — для дизайна; 24″ FHD — достаточно для офиса.",
+    "relatedKeys": ["screen_size", "panel_type"]
+  },
+  "panel_type": {
+    "title": "Тип матрицы",
+    "importance": "high",
+    "what": "IPS, VA, OLED, TN.",
+    "why": "Цвета, контраст, углы обзора и «шлейф» в динамике.",
+    "howToRead": "IPS — цвет и углы; VA — контраст; OLED — премиум; TN — быстрый, но устаревает.",
+    "ranges": [
+      { "label": "IPS", "text": "Универсально для работы и игр." },
+      { "label": "VA", "text": "Глубже чёрный, иногда медленнее в тёмных сценах." }
+    ]
+  },
+  "refresh_rate": {
+    "title": "Частота обновления",
+    "importance": "high",
+    "what": "Герцовка: 60, 144, 165, 240 Гц.",
+    "why": "Плавность в играх; для офиса 60 Гц обычно хватает.",
+    "howToRead": "144 Гц — стандарт геймерского монитора; 240 Гц — для киберспорта при мощной GPU.",
+    "relatedKeys": ["response_time_ms", "adaptive_sync"]
+  },
+  "response_time_ms": {
+    "title": "Время отклика",
+    "importance": "medium",
+    "what": "Задержка смены кадра матрицей (мс), часто GtG.",
+    "why": "Размытие и «шлейф» при быстром движении.",
+    "howToRead": "1–5 мс — для игр; цифра на коробке — маркетинг, смотрите обзоры с тестами.",
+    "relatedKeys": ["refresh_rate", "panel_type"]
+  },
+  "brightness_nits": {
+    "title": "Яркость (ниты)",
+    "importance": "medium",
+    "what": "Пиковая яркость подсветки в кд/м².",
+    "why": "Комфорт у окна и качество HDR.",
+    "howToRead": "250–350 нит — офис; 400+ — яркая комната; HDR часто нужно 400–600+ пиковых.",
+    "relatedKeys": ["hdr_support"]
+  },
+  "hdr_support": {
+    "title": "HDR",
+    "importance": "medium",
+    "what": "Поддержка HDR10, DisplayHDR и т.д.",
+    "why": "Контраст и яркие сцены в играх и фильмах.",
+    "howToRead": "DisplayHDR 400 — минимальный уровень; 600/1000 — заметнее, но смотрите реальные тесты яркости.",
+    "relatedKeys": ["brightness_nits"]
+  },
+  "adaptive_sync": {
+    "title": "Адаптивная синхронизация",
+    "importance": "medium",
+    "what": "G-Sync / FreeSync — согласование частоты GPU и монитора.",
+    "why": "Убирает разрывы кадра без сильных лагов.",
+    "howToRead": "FreeSync Premium / G-Sync Compatible — уточняйте совместимость с вашей видеокартой.",
+    "relatedKeys": ["refresh_rate"]
+  },
+  "vesa_mount": {
+    "title": "Крепление VESA",
+    "importance": "low",
+    "what": "Стандарт отверстий для кронштейна (75×75, 100×100 мм).",
+    "why": "Установка на стену или кронштейн.",
+    "howToRead": "Укажите размер VESA и вес монитора для выбора крепления."
+  }
+}

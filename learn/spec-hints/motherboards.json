@@ -1,0 +1,73 @@
+{
+  "socket": {
+    "title": "Сокет",
+    "importance": "high",
+    "what": "Разъём для процессора на плате.",
+    "why": "Определяет совместимость с CPU.",
+    "howToRead": "Сокет CPU и платы должны совпадать (AM5, LGA1700 и т.д.).",
+    "relatedKeys": ["chipset", "cpu_model"]
+  },
+  "chipset": {
+    "title": "Чипсет",
+    "importance": "high",
+    "what": "Набор логики (B650, Z790, H610…).",
+    "why": "Разгон, количество линий PCIe, USB, SATA, Wi-Fi.",
+    "howToRead": "Z/X — разгон Intel; B — баланс; H — бюджет. У AMD B650/X670 — разные возможности PCIe.",
+    "relatedKeys": ["socket", "pcie_version"]
+  },
+  "form_factor": {
+    "title": "Форм-фактор",
+    "importance": "high",
+    "what": "Размер платы: ATX, mATX, Mini-ITX.",
+    "why": "Совместимость с корпусом и количество слотов.",
+    "howToRead": "ATX — максимум слотов; mATX — компактнее; ITX — малый корпус, меньше расширений.",
+    "relatedKeys": ["ram_slots"]
+  },
+  "ram_type": {
+    "title": "Тип памяти",
+    "importance": "high",
+    "what": "DDR4 или DDR5.",
+    "why": "Несовместимы между собой; завязано на платформу.",
+    "howToRead": "Новые платформы — DDR5; старые AM4/LGA1200 — часто DDR4.",
+    "relatedKeys": ["ram_slots", "max_ram"]
+  },
+  "ram_slots": {
+    "title": "Слоты ОЗУ",
+    "importance": "medium",
+    "what": "Количество DIMM-слотов.",
+    "why": "Апгрейд и максимальный объём.",
+    "howToRead": "4 слота — удобный апгрейд; 2 слота — ITX/бюджет, сразу закладывайте нужный объём.",
+    "relatedKeys": ["max_ram"]
+  },
+  "max_ram": {
+    "title": "Макс. объём ОЗУ",
+    "importance": "medium",
+    "what": "Поддерживаемый максимум памяти.",
+    "why": "Запас на будущее для профессиональных задач.",
+    "howToRead": "128 ГБ+ — рабочие станции; 64 ГБ — хватит большинству энтузиастов.",
+    "relatedKeys": ["ram_type"]
+  },
+  "m2_slots": {
+    "title": "Слоты M.2",
+    "importance": "medium",
+    "what": "Разъёмы для NVMe SSD на плате.",
+    "why": "Системный и дополнительные накопители.",
+    "howToRead": "Уточняйте, какие слоты делят линии с SATA или PCIe x16.",
+    "relatedKeys": ["pcie_version"]
+  },
+  "pcie_version": {
+    "title": "Версия PCIe",
+    "importance": "medium",
+    "what": "PCIe 4.0 / 5.0 для видеокарты и SSD.",
+    "why": "Пропускная способность топовых GPU и NVMe.",
+    "howToRead": "PCIe 4.0 x16 достаточно для большинства GPU; 5.0 — запас на будущее.",
+    "relatedKeys": ["chipset"]
+  },
+  "wifi_support": {
+    "title": "Wi-Fi на плате",
+    "importance": "low",
+    "what": "Встроенный модуль Wi-Fi (часто Wi-Fi 6/6E).",
+    "why": "Без провода к роутеру; антенны на задней панели.",
+    "howToRead": "«Нет» — нужен PCIe/USB адаптер или Ethernet."
+  }
+}

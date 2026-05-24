@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 180" role="img" aria-label="!F5=0@88 =>CB1C:0">
+  <rect width="360" height="180" rx="12" fill="#f8fafc"/>
+  <g transform="translate(30,40)">
+    <rect width="90" height="100" rx="8" fill="#dbeafe"/>
+    <text x="45" y="35" text-anchor="middle" font-family="system-ui" font-size="11" font-weight="700" fill="#1d4ed8">D8A</text>
+    <text x="45" y="55" text-anchor="middle" font-family="system-ui" font-size="9" fill="#475569">CPU U</text>
+    <text x="45" y="70" text-anchor="middle" font-family="system-ui" font-size="9" fill="#475569">16 </text>
+    <text x="45" y="85" text-anchor="middle" font-family="system-ui" font-size="9" fill="#475569">B8E89</text>
+  </g>
+  <g transform="translate(135,40)">
+    <rect width="90" height="100" rx="8" fill="#fef3c7"/>
+    <text x="45" y="35" text-anchor="middle" font-family="system-ui" font-size="11" font-weight="700" fill="#92400e">3@K</text>
+    <text x="45" y="55" text-anchor="middle" font-family="system-ui" font-size="9" fill="#475569">GPU</text>
+    <text x="45" y="70" text-anchor="middle" font-family="system-ui" font-size="9" fill="#475569">>E;064.</text>
+    <text x="45" y="85" text-anchor="middle" font-family="system-ui" font-size="9" fill="#475569">144 F</text>
+  </g>
+  <g transform="translate(240,40)">
+    <rect width="90" height="100" rx="8" fill="#ede9fe"/>
+    <text x="45" y="35" text-anchor="middle" font-family="system-ui" font-size="11" font-weight="700" fill="#5b21b6">"2>@G5AB2></text>
+    <text x="45" y="55" text-anchor="middle" font-family="system-ui" font-size="9" fill="#475569">32 </text>
+    <text x="45" y="70" text-anchor="middle" font-family="system-ui" font-size="9" fill="#475569">SSD</text>
+    <text x="45" y="85" text-anchor="middle" font-family="system-ui" font-size="9" fill="#475569">F25B</text>
+  </g>
+</svg>

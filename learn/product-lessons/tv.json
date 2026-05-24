@@ -1,0 +1,36 @@
+{
+  "title": "Как выбрать телевизор",
+  "subtitle": "Диагональ, матрица, HDR и Smart TV",
+  "slides": [
+    {
+      "title": "Размер и дистанция",
+      "lead": "Диагональ + расстояние диван–экран.",
+      "paragraphs": ["55–65″ — типичная гостиная; 4K позволяет сидеть ближе без «пикселей»."],
+      "importance": [
+        { "label": "Диагональ", "specKeys": ["diagonal_in"], "level": "high", "weight": 90 },
+        { "label": "4K / 8K", "specKeys": ["screen_resolution"], "level": "high", "weight": 80 }
+      ],
+      "highlightSpecs": ["diagonal_in", "screen_resolution"]
+    },
+    {
+      "title": "OLED vs QLED vs LED",
+      "lead": "Контраст vs яркость в комнате.",
+      "paragraphs": ["OLED — кино в темноте; QLED/Mini LED — яркая комната и спорт."],
+      "importance": [
+        { "label": "Технология", "specKeys": ["screen_technology"], "level": "high", "weight": 92 },
+        { "label": "HDR", "specKeys": ["hdr_support"], "level": "medium", "weight": 70 }
+      ],
+      "highlightSpecs": ["screen_technology", "hdr_support"]
+    },
+    {
+      "title": "Smart и звук",
+      "lead": "Приложения и саундбар.",
+      "paragraphs": ["Проверьте стриминги в вашем регионе. Встроенный звук редко заменяет саундбар."],
+      "importance": [
+        { "label": "Smart-платформа", "specKeys": ["smart_platform"], "level": "medium", "weight": 58 },
+        { "label": "Звук", "specKeys": ["sound_power_w"], "level": "low", "weight": 35 }
+      ],
+      "highlightSpecs": ["smart_platform", "refresh_rate"]
+    }
+  ]
+}

@@ -1,0 +1,37 @@
+{
+  "title": "Как выбрать монитор",
+  "subtitle": "Игры, работа и цвет",
+  "slides": [
+    {
+      "title": "Назначение",
+      "lead": "Офис, дизайн или киберспорт — разные мониторы.",
+      "paragraphs": ["Игры: Гц и отклик. Дизайн: цвет и разрешение. Офис: IPS 27″ QHD часто идеален."],
+      "importance": [
+        { "label": "Герцовка", "specKeys": ["refresh_rate"], "level": "high", "weight": 90 },
+        { "label": "Матрица", "specKeys": ["panel_type"], "level": "high", "weight": 85 },
+        { "label": "Разрешение", "specKeys": ["screen_resolution"], "level": "high", "weight": 82 }
+      ],
+      "highlightSpecs": ["refresh_rate", "panel_type", "screen_resolution"]
+    },
+    {
+      "title": "Время отклика и синхронизация",
+      "lead": "G-Sync / FreeSync убирают разрывы кадра.",
+      "paragraphs": ["1–5 мс — для игр; проверяйте реальные тесты, не только коробку."],
+      "importance": [
+        { "label": "Adaptive Sync", "specKeys": ["adaptive_sync"], "level": "medium", "weight": 72 },
+        { "label": "Отклик", "specKeys": ["response_time_ms"], "level": "medium", "weight": 68 }
+      ],
+      "highlightSpecs": ["response_time_ms", "adaptive_sync"]
+    },
+    {
+      "title": "Яркость и HDR",
+      "lead": "400+ нит — комфорт у окна.",
+      "paragraphs": ["DisplayHDR 400 — минимум; для HDR-контента смотрите local dimming в обзорах."],
+      "importance": [
+        { "label": "Яркость", "specKeys": ["brightness_nits"], "level": "medium", "weight": 65 },
+        { "label": "HDR", "specKeys": ["hdr_support"], "level": "medium", "weight": 55 }
+      ],
+      "highlightSpecs": ["brightness_nits", "hdr_support"]
+    }
+  ]
+}

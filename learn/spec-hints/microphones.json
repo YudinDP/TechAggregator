@@ -1,0 +1,49 @@
+{
+  "microphone_type": {
+    "title": "Тип микрофона",
+    "importance": "high",
+    "what": "Конденсаторный, динамический, петличный, USB/XLR.",
+    "why": "Сценарий: стрим, подкаст, студия.",
+    "howToRead": "Динамика — шумная комната; конденсатор — детальнее, чувствительнее к фону; USB — проще; XLR — с интерфейсом.",
+    "relatedKeys": ["polar_pattern"]
+  },
+  "polar_pattern": {
+    "title": "Диаграмма направленности",
+    "importance": "high",
+    "what": "Cardioid, omnidirectional, figure-8.",
+    "why": "Какие звуки сзади/сбоку попадают в запись.",
+    "howToRead": "Cardioid — один голос; omnidirectional — круговой захват; figure-8 — интервью лицом к лицу.",
+    "relatedKeys": ["microphone_type"]
+  },
+  "frequency_response_hz": {
+    "title": "Частотный диапазон",
+    "importance": "medium",
+    "what": "Нижняя и верхняя граница (Гц).",
+    "why": "Тембр голоса и низы.",
+    "howToRead": "20–20 000 Гц — стандарт; реальная кривая важнее цифр.",
+    "relatedKeys": ["sensitivity_db"]
+  },
+  "sample_rate_khz": {
+    "title": "Частота дискретизации",
+    "importance": "medium",
+    "what": "48 кГц, 96 кГц и выше.",
+    "why": "Качество записи и совместимость с видео.",
+    "howToRead": "48 кГц — стандарт видео; 96 кHz — запас для пост-обработки.",
+    "relatedKeys": ["bit_depth"]
+  },
+  "bit_depth": {
+    "title": "Разрядность",
+    "importance": "medium",
+    "what": "16, 24, 32 bit.",
+    "why": "Динамический диапазон записи.",
+    "howToRead": "24 bit — норма для студии; 16 bit — достаточно для стримов.",
+    "relatedKeys": ["sample_rate_khz"]
+  },
+  "connectivity": {
+    "title": "Подключение",
+    "importance": "medium",
+    "what": "USB, XLR, 3.5 мм, беспроводной приёмник.",
+    "why": "Совместимость с ПК и камерой.",
+    "howToRead": "XLR + аудиоинтерфейс — гибкость; USB — plug-and-play."
+  }
+}

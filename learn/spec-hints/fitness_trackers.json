@@ -1,0 +1,42 @@
+{
+  "battery_life_days": {
+    "title": "Автономность",
+    "importance": "high",
+    "what": "Дни работы без подзарядки.",
+    "why": "Не снимать браслет каждую ночь.",
+    "howToRead": "7–14 дней — типично; постоянный пульс и GPS сокращают срок.",
+    "relatedKeys": ["display_type"]
+  },
+  "sensors": {
+    "title": "Датчики",
+    "importance": "high",
+    "what": "Пульс, шаги, SpO2, сон, стресс.",
+    "why": "Точность фитнес-метрик.",
+    "howToRead": "Сравнивайте с медицинскими приборами в обзорах; это не диагностика.",
+    "relatedKeys": ["health_monitoring"]
+  },
+  "water_resistance": {
+    "title": "Влагозащита",
+    "importance": "medium",
+    "what": "IP или ATM для плавания.",
+    "why": "Душ и бассейн.",
+    "howToRead": "5 ATM — плавание; IP68 — брызги и дождь.",
+    "relatedKeys": ["battery_life_days"]
+  },
+  "display_type": {
+    "title": "Дисплей",
+    "importance": "medium",
+    "what": "AMOLED, MIP, монохром.",
+    "why": "Читаемость и расход батареи.",
+    "howToRead": "Без экрана — дольше работает, но меньше уведомлений.",
+    "relatedKeys": ["battery_life_days"]
+  },
+  "connectivity": {
+    "title": "Связь",
+    "importance": "medium",
+    "what": "Bluetooth, иногда GPS.",
+    "why": "Синхронизация с телефоном и трек безоп.",
+    "howToRead": "GPS в браслете — точнее маршрут без телефона.",
+    "relatedKeys": ["compatibility"]
+  }
+}

@@ -1,0 +1,77 @@
+{
+  "title": "Как выбрать ноутбук",
+  "subtitle": "Офис, учёба, творчество или игры — разные приоритеты",
+  "slides": [
+    {
+      "title": "Определите сценарий",
+      "lead": "Один и тот же корпус может быть офисным или игровым внутри.",
+      "paragraphs": [
+        "Офис/учёба: тихий вентилятор, автономность, экран 16:10. Игры/3D: дискретная GPU и охлаждение.",
+        "Монтаж 4K: 32 ГБ ОЗУ, быстрый SSD, цветной экран."
+      ],
+      "importance": [
+        { "label": "GPU (если игры/3D)", "specKeys": ["gpu_model"], "level": "high", "weight": 95 },
+        { "label": "CPU", "specKeys": ["cpu_model"], "level": "high", "weight": 90 },
+        { "label": "ОЗУ", "specKeys": ["ram_size"], "level": "high", "weight": 88 },
+        { "label": "Экран", "specKeys": ["screen_type", "screen_resolution"], "level": "medium", "weight": 72 }
+      ],
+      "highlightSpecs": ["cpu_model", "gpu_model", "ram_size"],
+      "image": "assets/lessons/laptop-scenarios.svg"
+    },
+    {
+      "title": "Процессор и видеокарта",
+      "lead": "CPU для многозадачности; GPU — для игр и рендера.",
+      "paragraphs": [
+        "U-серии Intel/AMD — тонкие и экономичные; H/HX — мощные и горячие.",
+        "RTX 4050–4060 — 1080p игры; 4070+ — QHD. TGP в ваттах в конкретной модели критичен!"
+      ],
+      "importance": [
+        { "label": "Дискретная GPU", "specKeys": ["gpu_model"], "level": "high", "weight": 93 },
+        { "label": "CPU", "specKeys": ["cpu_model"], "level": "high", "weight": 88 }
+      ],
+      "highlightSpecs": ["cpu_model", "gpu_model", "gpu_memory_mb"],
+      "tips": ["Один RTX 4060 может быть 35 Вт и 115 Вт — это разные ноутбуки."]
+    },
+    {
+      "title": "Память и накопитель",
+      "lead": "16 ГБ ОЗУ и SSD — база 2025 года.",
+      "paragraphs": [
+        "8 ГБ — только лёгкие задачи. SSD 512 ГБ — старт; 1 ТБ — комфорт с играми.",
+        "NVMe быстрее SATA; слоты для апгрейда — плюс в обзоре."
+      ],
+      "importance": [
+        { "label": "ОЗУ", "specKeys": ["ram_size"], "level": "high", "weight": 90 },
+        { "label": "SSD", "specKeys": ["storage_capacity", "storage_type"], "level": "high", "weight": 85 }
+      ],
+      "highlightSpecs": ["ram_size", "storage_capacity", "storage_type"]
+    },
+    {
+      "title": "Экран и автономность",
+      "lead": "Смотрите каждый день; батарею — по реальным тестам.",
+      "paragraphs": [
+        "IPS/OLED, 2.5K/4K, 120+ Гц — для творчества и игр. Для офиса 60 Гц FHD часто хватает.",
+        "Заявленные «часы» делите на 1,5–2 с дискретной GPU."
+      ],
+      "importance": [
+        { "label": "Матрица", "specKeys": ["screen_type"], "level": "high", "weight": 75 },
+        { "label": "Автономность", "specKeys": ["battery_life_hours"], "level": "medium", "weight": 60 },
+        { "label": "Вес", "specKeys": ["weight_g"], "level": "medium", "weight": 55 }
+      ],
+      "highlightSpecs": ["screen_type", "screen_refresh_rate", "battery_life_hours", "weight_g"]
+    },
+    {
+      "title": "Порты и то, чего нет в таблице",
+      "lead": "USB-C с Thunderbolt, Wi-Fi 6, клавиатура.",
+      "paragraphs": [
+        "Один порт USB-C с PD может заряжать ноутбук. Качество тачпада и клавиатуры — в шоуруме или обзорах.",
+        "Шум кулеров под нагрузкой — не указывается в спецификации."
+      ],
+      "importance": [
+        { "label": "USB-C / Thunderbolt", "specKeys": ["ports_usb_c"], "level": "medium", "weight": 52 },
+        { "label": "Клавиатура / тачпад", "level": "low", "weight": 40 }
+      ],
+      "highlightSpecs": ["ports_usb_c", "keyboard_backlight"],
+      "tips": ["Сравните 2–3 финалиста в разделе «Сравнение» на сайте."]
+    }
+  ]
+}

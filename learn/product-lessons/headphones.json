@@ -1,0 +1,38 @@
+{
+  "title": "Как выбрать наушники",
+  "subtitle": "TWS, накладные, ANC и автономность",
+  "slides": [
+    {
+      "title": "Формат и сценарий",
+      "lead": "TWS — мобильность; накладные — звук и ANC.",
+      "paragraphs": ["Для метро и офиса — ANC и комфорт. Для дома — открытые или накладные с большим драйвером."],
+      "importance": [
+        { "label": "ANC", "specKeys": ["anc_type"], "level": "high", "weight": 88 },
+        { "label": "Автономность", "specKeys": ["battery_life_hours"], "level": "high", "weight": 82 },
+        { "label": "Размер драйвера", "specKeys": ["driver_size_mm"], "level": "medium", "weight": 55 }
+      ],
+      "highlightSpecs": ["anc_type", "battery_life_hours"],
+      "tips": ["С ANC время работы обычно на 20–40% меньше заявленного."]
+    },
+    {
+      "title": "Звук и кодеки",
+      "lead": "Bluetooth-кодек и качество микрофона для звонков.",
+      "paragraphs": ["LDAC/aptX — с совместимым телефоном. Для стримов важнее микрофон — смотрите тесты звонков."],
+      "importance": [
+        { "label": "Кодек / BT", "specKeys": ["wireless_standard"], "level": "medium", "weight": 65 },
+        { "label": "Микрофон", "specKeys": ["microphone"], "level": "medium", "weight": 60 }
+      ],
+      "highlightSpecs": ["wireless_standard", "microphone", "driver_type"]
+    },
+    {
+      "title": "Провод vs беспровод",
+      "lead": "Импеданс важен для проводных моделей.",
+      "paragraphs": ["16–32 Ом — со смартфоном; 250+ Ом — нужен усилитель. TWS — смотрите задержку для игр."],
+      "importance": [
+        { "label": "Задержка / игры", "level": "medium", "weight": 50 },
+        { "label": "Импеданс", "specKeys": ["impedance_ohms"], "level": "low", "weight": 40 }
+      ],
+      "highlightSpecs": ["impedance_ohms", "connector_type"]
+    }
+  ]
+}

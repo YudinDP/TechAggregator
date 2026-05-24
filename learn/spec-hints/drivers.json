@@ -1,0 +1,50 @@
+{
+  "storage_type": {
+    "title": "Тип накопителя",
+    "importance": "high",
+    "what": "SSD (NVMe/SATA), HDD или гибрид.",
+    "why": "Скорость системы и приложений.",
+    "howToRead": "NVMe M.2 — быстрее всего; SATA SSD — проще и дешевле; HDD — архив.",
+    "relatedKeys": ["interface", "form_factor"]
+  },
+  "capacity_gb": {
+    "title": "Объём",
+    "importance": "high",
+    "what": "Ёмкость в ГБ или ТБ.",
+    "why": "Место под ОС, игры и файлы.",
+    "howToRead": "500 ГБ — минимум для игрового ПК; 1–2 ТБ — комфорт; для библиотеки игр — 2 ТБ+.",
+    "relatedKeys": ["storage_type"]
+  },
+  "interface": {
+    "title": "Интерфейс",
+    "importance": "high",
+    "what": "PCIe NVMe, SATA III, USB для внешних.",
+    "why": "Потолок скорости чтения/записи.",
+    "howToRead": "PCIe 4.0 NVMe — 5000+ МБ/с; SATA — до ~550 МБ/с.",
+    "relatedKeys": ["read_speed_mbs", "write_speed_mbs"]
+  },
+  "read_speed_mbs": {
+    "title": "Скорость чтения",
+    "importance": "medium",
+    "what": "Последовательное чтение в МБ/с.",
+    "why": "Загрузка игр и больших файлов.",
+    "howToRead": "Заявленные 7000 МБ/с — в идеальных тестах; в играх важнее случайное чтение.",
+    "relatedKeys": ["write_speed_mbs"]
+  },
+  "write_speed_mbs": {
+    "title": "Скорость записи",
+    "importance": "medium",
+    "what": "Последовательная запись в МБ/с.",
+    "why": "Копирование, монтаж, установка игр.",
+    "howToRead": "На TLC/QLC при заполнении диска скорость может падать — смотрите SLC-кэш в обзорах.",
+    "relatedKeys": ["read_speed_mbs"]
+  },
+  "form_factor": {
+    "title": "Форм-фактор",
+    "importance": "medium",
+    "what": "M.2 2280, 2.5″ SATA, 3.5″ HDD.",
+    "why": "Физическая совместимость с ПК или ноутбуком.",
+    "howToRead": "M.2 — проверьте ключ (M/B) и длину; HDD 3.5″ — в корпус ПК.",
+    "relatedKeys": ["interface"]
+  }
+}

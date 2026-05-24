@@ -1,0 +1,49 @@
+{
+  "ram_type": {
+    "title": "Тип памяти",
+    "importance": "high",
+    "what": "DDR4 или DDR5.",
+    "why": "Должен совпадать с материнской платой.",
+    "howToRead": "Не смешивайте типы; для DDR5 смотрите поддерживаемые профили EXPO/XMP.",
+    "relatedKeys": ["memory_speed_mhz"]
+  },
+  "capacity_gb": {
+    "title": "Объём комплекта",
+    "importance": "high",
+    "what": "Суммарный объём в ГБ (например 2×16 = 32 ГБ).",
+    "why": "Многозадачность и игры.",
+    "howToRead": "16 ГБ — минимум для игр; 32 ГБ — комфорт; 64 ГБ+ — монтаж и VM.",
+    "relatedKeys": ["module_count"]
+  },
+  "memory_speed_mhz": {
+    "title": "Частота памяти",
+    "importance": "high",
+    "what": "Эффективная частота в МГц (DDR5-6000, DDR4-3200).",
+    "why": "Влияет на FPS в CPU-bound играх и пропускную способность.",
+    "howToRead": "Включите XMP/EXPO в BIOS; у AMD Ryzen — «sweet spot» частоты зависит от поколения.",
+    "relatedKeys": ["latency_cl", "ram_type"]
+  },
+  "latency_cl": {
+    "title": "Тайминги (CL)",
+    "importance": "medium",
+    "what": "CAS Latency — задержка доступа (CL30, CL36…).",
+    "why": "При той же частоте меньший CL — чуть быстрее.",
+    "howToRead": "Сравнивайте CL при одинаковой частоте; разница в играх обычно несколько процентов.",
+    "relatedKeys": ["memory_speed_mhz"]
+  },
+  "module_count": {
+    "title": "Количество модулей",
+    "importance": "medium",
+    "what": "1×, 2× или 4× планки в комплекте.",
+    "why": "Dual-channel быстрее одной планки.",
+    "howToRead": "2 модуля — стандарт; 1×32 ГБ — апгрейд позже, но медленнее dual-channel.",
+    "relatedKeys": ["capacity_gb"]
+  },
+  "voltage_v": {
+    "title": "Напряжение",
+    "importance": "low",
+    "what": "Рабочее напряжение модулей (В).",
+    "why": "Совместимость с платой и стабильность разгона.",
+    "howToRead": "Не превышайте рекомендации производителя CPU/платы."
+  }
+}

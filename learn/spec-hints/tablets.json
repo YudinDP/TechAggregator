@@ -1,0 +1,58 @@
+{
+  "screen_size": {
+    "title": "Диагональ экрана",
+    "importance": "high",
+    "what": "Размер дисплея в дюймах.",
+    "why": "Баланс портативности и площади для рисования/видео.",
+    "howToRead": "8–9″ — компакт; 11″ — универсал; 12–13″ — замена ноутбука с клавиатурой.",
+    "relatedKeys": ["screen_resolution"]
+  },
+  "ram_size": {
+    "title": "Оперативная память",
+    "importance": "high",
+    "what": "ОЗУ для приложений и вкладок.",
+    "why": "Многозадачность и тяжёлые приложения.",
+    "howToRead": "8 ГБ — базово; 12 ГБ — комфорт; 16 ГБ+ — монтаж и профи-приложения.",
+    "relatedKeys": ["storage_capacity"]
+  },
+  "storage_capacity": {
+    "title": "Встроенная память",
+    "importance": "high",
+    "what": "Объём накопителя.",
+    "why": "Файлы и приложения без облака.",
+    "howToRead": "128 ГБ — минимум; 256–512 ГБ — комфорт; microSD — проверьте поддержку.",
+    "relatedKeys": ["storage_expandable"]
+  },
+  "cpu_model": {
+    "title": "Процессор",
+    "importance": "high",
+    "what": "Чип Apple M-серии, Snapdragon, MediaTek и др.",
+    "why": "Производительность в приложениях и играх.",
+    "howToRead": "Сравнивайте поколение чипа; iPad на M-чипах — долгая поддержка.",
+    "relatedKeys": ["os"]
+  },
+  "stylus_support": {
+    "title": "Поддержка стилуса",
+    "importance": "medium",
+    "what": "Работа с активным пером.",
+    "why": "Рисование, заметки, PDF.",
+    "howToRead": "«Есть» — уточните, входит ли перо в комплект и давление/латентность.",
+    "relatedKeys": ["screen_technology"]
+  },
+  "battery_capacity_mah": {
+    "title": "Ёмкость батареи",
+    "importance": "medium",
+    "what": "Аккумулятор в мА·ч.",
+    "why": "Автономность видео и учёбы.",
+    "howToRead": "Сравнивайте внутри размера экрана; большой экран «ест» больше.",
+    "relatedKeys": ["battery_life_hours"]
+  },
+  "os": {
+    "title": "Операционная система",
+    "importance": "high",
+    "what": "iPadOS, Android, Windows.",
+    "why": "Приложения и экосистема.",
+    "howToRead": "iPadOS — творчество и долгие обновления; Android — гибкость; Windows — полноценный десктоп-софт.",
+    "relatedKeys": ["keyboard_support"]
+  }
+}

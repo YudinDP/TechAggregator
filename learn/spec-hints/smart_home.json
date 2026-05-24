@@ -1,0 +1,49 @@
+{
+  "device_type": {
+    "title": "Тип устройства",
+    "importance": "high",
+    "what": "Лампа, розетка, датчик, хаб, камера.",
+    "why": "Сценарий автоматизации.",
+    "howToRead": "Начните с хаба/экосистемы (Яндекс, Apple Home, Matter).",
+    "relatedKeys": ["protocol", "compatibility"]
+  },
+  "protocol": {
+    "title": "Протокол связи",
+    "importance": "high",
+    "what": "Wi-Fi, Zigbee, Thread, Matter, Bluetooth.",
+    "why": "Совместимость и стабильность сети.",
+    "howToRead": "Matter — универсализация; Zigbee/Thread — через хаб; Wi-Fi — проще, но грузит роутер.",
+    "relatedKeys": ["compatibility"]
+  },
+  "compatibility": {
+    "title": "Совместимость",
+    "importance": "high",
+    "what": "Алиса, Google Home, Apple HomeKit.",
+    "why": "Голосовое управление и сценарии.",
+    "howToRead": "Проверьте регион и актуальные интеграции в приложении.",
+    "relatedKeys": ["voice_control"]
+  },
+  "voice_control": {
+    "title": "Голосовое управление",
+    "importance": "medium",
+    "what": "Поддержка ассистентов.",
+    "why": "Удобство без телефона.",
+    "howToRead": "«Работает с Алисой» — уточните локальные навыки.",
+    "relatedKeys": ["compatibility"]
+  },
+  "range_m": {
+    "title": "Дальность (датчики)",
+    "importance": "medium",
+    "what": "Радиус действия беспроводного сигнала.",
+    "why": "Размещение датчиков движения/двери.",
+    "howToRead": "Стены и хаб снижают дальность — закладывайте запас.",
+    "relatedKeys": ["protocol"]
+  },
+  "power_source": {
+    "title": "Питание",
+    "importance": "medium",
+    "what": "220V, батарейки, USB.",
+    "why": "Обслуживание и надёжность.",
+    "howToRead": "Батарейные датчики — менять раз в год; камеры — часто провод или солнечная панель."
+  }
+}

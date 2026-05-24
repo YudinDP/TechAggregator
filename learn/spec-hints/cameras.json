@@ -1,0 +1,57 @@
+{
+  "sensor_size": {
+    "title": "Размер сенсора",
+    "importance": "high",
+    "what": "Физический размер матрицы (1″, APS-C, Full Frame).",
+    "why": "Сильнее всего влияет на качество при слабом свете и «фон».",
+    "howToRead": "Больше сенсор — лучше динамический диапазон; 1/2.3″ — компакт; APS-C/FF — энтузиасты.",
+    "relatedKeys": ["sensor_resolution_mp"]
+  },
+  "sensor_resolution_mp": {
+    "title": "Разрешение сенсора",
+    "importance": "medium",
+    "what": "Мегапиксели матрицы.",
+    "why": "Кадрирование и детализация; не равно качеству.",
+    "howToRead": "20–33 Мп — универсально; 40+ — запас для кропа, тяжелее файлы.",
+    "relatedKeys": ["sensor_size"]
+  },
+  "lens_mount": {
+    "title": "Байонет",
+    "importance": "high",
+    "what": "Система сменных объективов (E, RF, Z, MFT…).",
+    "why": "Доступ к оптике и будущие апгрейды.",
+    "howToRead": "Выбирайте экосистему объективов заранее — переход дорогой.",
+    "relatedKeys": ["sensor_size"]
+  },
+  "video_resolution": {
+    "title": "Видео",
+    "importance": "high",
+    "what": "Максимальное разрешение и частота (4K60, 6K…).",
+    "why": "Контент-мейкинг и кроп.",
+    "howToRead": "4K60 — стандарт; проверьте кодеки, перегрев и время записи без ограничений.",
+    "relatedKeys": ["video_fps", "image_stabilization"]
+  },
+  "iso_range": {
+    "title": "Диапазон ISO",
+    "importance": "medium",
+    "what": "Рабочие значения светочувствительности.",
+    "why": "Съёмка в темноте без штатива.",
+    "howToRead": "Высокий ISO на бумаге ≠ чистая картинка — смотрите тесты шума.",
+    "relatedKeys": ["sensor_size"]
+  },
+  "image_stabilization": {
+    "title": "Стабилизация",
+    "importance": "medium",
+    "what": "IBIS в корпусе или в объективе (OIS).",
+    "why": "Резкость на длинных выдержках и плавное видео.",
+    "howToRead": "5-осевой IBIS — сильный плюс для видео и телеобъективов.",
+    "relatedKeys": ["video_resolution"]
+  },
+  "battery_life_shots": {
+    "title": "Кадров на заряде",
+    "importance": "low",
+    "what": "Заявленное число снимков по CIPA.",
+    "why": "Съёмка без смены батареи.",
+    "howToRead": "Реально меньше при видео и холоде; запасная батарея для поездок."
+  }
+}

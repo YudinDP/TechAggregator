@@ -434,6 +434,7 @@
 
     const row = document.createElement('div');
     row.className = 'spec-item';
+    row.dataset.specKey = key;
     row.innerHTML = `${labelHtml}<span class="spec-item-value">${escapeHtml(value)}</span>`;
 
     if (hint) {
@@ -455,7 +456,7 @@
       .map(([key, value]) => {
         const label = (translations && translations[key]) || key;
         return `
-        <div class="spec-item">
+        <div class="spec-item" data-spec-key="${escapeHtml(key)}">
           <span class="spec-item-name">${escapeHtml(label)}:</span>
           <span class="spec-item-value">${escapeHtml(value)}</span>
         </div>

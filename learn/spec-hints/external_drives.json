@@ -1,0 +1,49 @@
+{
+  "storage_type": {
+    "title": "Тип накопителя",
+    "importance": "high",
+    "what": "Портативный SSD, HDD или флеш-накопитель.",
+    "why": "Скорость переноса файлов и надёжность.",
+    "howToRead": "SSD — быстрее и ударопрочнее; HDD — дешевле за ТБ.",
+    "relatedKeys": ["interface"]
+  },
+  "capacity_gb": {
+    "title": "Объём",
+    "importance": "high",
+    "what": "Ёмкость диска.",
+    "why": "Резервные копии, медиатека, игры с консоли.",
+    "howToRead": "1–2 ТБ — универсально; 4 ТБ+ — архив видео.",
+    "relatedKeys": ["storage_type"]
+  },
+  "interface": {
+    "title": "Интерфейс",
+    "importance": "high",
+    "what": "USB 3.2, USB-C, Thunderbolt.",
+    "why": "Ограничивает реальную скорость.",
+    "howToRead": "USB 3.2 Gen2 (10 Гбит) — до ~1000 МБ/с; Thunderbolt — для тяжёлого монтажа.",
+    "relatedKeys": ["read_speed_mbs"]
+  },
+  "read_speed_mbs": {
+    "title": "Скорость чтения",
+    "importance": "medium",
+    "what": "Последовательное чтение.",
+    "why": "Копирование с диска на ПК.",
+    "howToRead": "Узкое место часто USB-контроллер ноутбука, не только диск.",
+    "relatedKeys": ["write_speed_mbs"]
+  },
+  "write_speed_mbs": {
+    "title": "Скорость записи",
+    "importance": "medium",
+    "what": "Последовательная запись.",
+    "why": "Бэкапы и запись видео.",
+    "howToRead": "Для 4K-монтажа нужны стабильные 300+ МБ/с реальных.",
+    "relatedKeys": ["read_speed_mbs"]
+  },
+  "water_resistance": {
+    "title": "Защита от влаги",
+    "importance": "low",
+    "what": "IP-рейтинг корпуса (если указан).",
+    "why": "Работа под дождём или у бассейна.",
+    "howToRead": "Редко у внешних дисков; чаще у флешек rugged-серии."
+  }
+}

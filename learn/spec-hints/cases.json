@@ -1,0 +1,50 @@
+{
+  "case_type": {
+    "title": "Тип корпуса",
+    "importance": "medium",
+    "what": "Midi-Tower, Full-Tower, compact, open-frame.",
+    "why": "Размер материнки, охлаждение, место на столе.",
+    "howToRead": "Mid — ATX/mATX; Full — E-ATX и много HDD; compact — ITX сборки.",
+    "relatedKeys": ["supported_form_factors"]
+  },
+  "supported_form_factors": {
+    "title": "Форм-факторы плат",
+    "importance": "high",
+    "what": "ATX, mATX, Mini-ITX.",
+    "why": "Совместимость с материнской платой.",
+    "howToRead": "Плата не больше максимального формата корпуса.",
+    "relatedKeys": ["case_type"]
+  },
+  "gpu_max_length_mm": {
+    "title": "Макс. длина видеокарты",
+    "importance": "high",
+    "what": "Зазор под GPU в мм.",
+    "why": "Крупные 3-fan карты не влезут.",
+    "howToRead": "Измерьте длину GPU или смотрите спецификацию с запасом 10–20 мм.",
+    "relatedKeys": ["cpu_cooler_max_height_mm"]
+  },
+  "cpu_cooler_max_height_mm": {
+    "title": "Макс. высота кулера",
+    "importance": "high",
+    "what": "Ограничение по башенному кулеру.",
+    "why": "Крышка корпуса может не закрыться.",
+    "howToRead": "Низкопрофильные корпуса — 55–160 мм; tower-корпуса — 165+ мм.",
+    "relatedKeys": ["radiator_support"]
+  },
+  "fan_support": {
+    "title": "Вентиляторы",
+    "importance": "medium",
+    "what": "Посадочные места 120/140 мм, комплект вентиляторов.",
+    "why": "Поток воздуха и шум.",
+    "howToRead": "3 intake + 1 exhaust — базовая схема; больше слотов — гибче.",
+    "relatedKeys": ["radiator_support"]
+  },
+  "radiator_support": {
+    "title": "СЖО / радиатор",
+    "importance": "medium",
+    "what": "Место для AIO 240/360 мм сверху/спереди.",
+    "why": "Охлаждение топовых CPU.",
+    "howToRead": "360 мм сверху — проверьте конфликт с RAM и VRM.",
+    "relatedKeys": ["cpu_cooler_max_height_mm"]
+  }
+}

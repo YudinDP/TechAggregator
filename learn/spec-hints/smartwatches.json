@@ -1,0 +1,66 @@
+{
+  "display_size_in": {
+    "title": "Размер экрана",
+    "importance": "medium",
+    "what": "Диагональ дисплея в дюймах.",
+    "why": "Читаемость уведомлений и кнопки.",
+    "howToRead": "41–45 мм корпус — разные линейки; смотрите и размер запястья.",
+    "relatedKeys": ["display_type"]
+  },
+  "display_type": {
+    "title": "Тип дисплея",
+    "importance": "medium",
+    "what": "OLED/AMOLED или MIP (память на отражение).",
+    "why": "Яркость на солнце и Always-On Display.",
+    "howToRead": "OLED — яркий AOD; MIP — лучше на улице, скромнее цвета.",
+    "relatedKeys": ["battery_life_hours"]
+  },
+  "battery_life_hours": {
+    "title": "Время работы",
+    "importance": "high",
+    "what": "Автономность в часах (или днях у некоторых моделей).",
+    "why": "Как часто заряжать; GPS и AOD сильно сокращают.",
+    "howToRead": "2–3 дня — смарт-функции; 7–14 — фитнес-ориентир; 1–2 дня у топовых OLED с AOD.",
+    "tips": ["Указывайте режим: «всегда включённый экран» сильно уменьшает время."]
+  },
+  "water_resistance_rating": {
+    "title": "Водозащита",
+    "importance": "high",
+    "what": "WR, IP или ATM (5 ATM, 10 ATM).",
+    "why": "Плавание, душ, дождь.",
+    "howToRead": "5 ATM — плавание в бассейне; IP68 — брызги/погружение по стандарту производителя; дайвинг — отдельные сертификаты.",
+    "relatedKeys": ["gps_type"]
+  },
+  "gps_type": {
+    "title": "GPS",
+    "importance": "medium",
+    "what": "Встроенный GPS/ГЛОНАСС/Galileo.",
+    "why": "Точный трек бега без телефона.",
+    "howToRead": "Двухдиапазонный GPS — лучше в городе; без GPS — трек через телефон.",
+    "relatedKeys": ["sports_modes_count"]
+  },
+  "nfc_support": {
+    "title": "NFC",
+    "importance": "medium",
+    "what": "Бесконтактная оплата и метки.",
+    "why": "Оплата с запястья.",
+    "howToRead": "Нужен банк и сервис в регионе; не все модели поддерживают в РФ.",
+    "relatedKeys": ["lte_support"]
+  },
+  "lte_support": {
+    "title": "LTE / eSIM",
+    "importance": "medium",
+    "what": "Автономная связь без телефона.",
+    "why": "Звонки и уведомления на пробежке.",
+    "howToRead": "Дополнительная плата за eSIM и расход батареи.",
+    "relatedKeys": ["battery_life_hours"]
+  },
+  "health_monitoring": {
+    "title": "Мониторинг здоровья",
+    "importance": "medium",
+    "what": "Пульс, SpO2, ЭКГ, сон, стресс.",
+    "why": "Фитнес и медицинские подсказки (не диагноз!).",
+    "howToRead": "ЭКГ/SpO2 — проверьте сертификацию; точность сна варьируется.",
+    "tips": ["Часы не заменяют медицинские приборы."]
+  }
+}

@@ -52,4 +52,30 @@ learn/
 ## API
 
 - `GET /api/learn/spec-hints/:category` — объединённые подсказки для категории.
+- `GET /api/learn/product-lessons/:category` — слайды мини-лекции для карточки товара (этап 2).
 - Статика: `GET /learn/assets/...` — картинки и прочие файлы.
+
+## Мини-лекции на карточке товара (этап 2)
+
+Папка `learn/product-lessons/`:
+
+- `{category}.json` — слайды лекции для категории (5+ слайдов для топ-категорий).
+- `_default.json` — универсальная лекция, если нет файла категории. Плейсхолдер `{categoryName}`.
+
+Формат слайда:
+
+```json
+{
+  "title": "Заголовок",
+  "lead": "Краткий тезис",
+  "paragraphs": ["Абзац 1", "Абзац 2"],
+  "importance": [
+    { "label": "ОЗУ", "specKeys": ["ram_size"], "level": "high", "weight": 90 }
+  ],
+  "highlightSpecs": ["ram_size", "cpu_model"],
+  "image": "assets/lessons/smartphone-priorities.svg",
+  "tips": ["Совет"]
+}
+```
+
+Ползунок «Режим обучения» на `product.html` сохраняет состояние в `localStorage` (`techNozoneLearnMode`).

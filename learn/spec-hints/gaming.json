@@ -1,0 +1,48 @@
+{
+  "console_type": {
+    "title": "Тип консоли",
+    "importance": "high",
+    "what": "PlayStation, Xbox, Nintendo Switch и поколение.",
+    "why": "Эксклюзивы, подписки, контроллеры.",
+    "howToRead": "PS5 / Xbox Series — 4K, тяжёлые игры; Switch — портатив + ТВ, слабее по мощности.",
+    "relatedKeys": ["storage_capacity"]
+  },
+  "storage_capacity": {
+    "title": "Встроенная память",
+    "importance": "high",
+    "what": "Объём SSD/HDD в консоли.",
+    "why": "Размер современных игр 50–100+ ГБ.",
+    "howToRead": "825 ГБ — быстро заполняется; планируйте NVMe-расширение по совместимости.",
+    "relatedKeys": ["console_type"]
+  },
+  "resolution_output": {
+    "title": "Выходное разрешение",
+    "importance": "medium",
+    "what": "4K, 1440p, 1080p до 120 Гц.",
+    "why": "Совместимость с TV/монитором.",
+    "howToRead": "4K120 — нужен HDMI 2.1; многие игры — апскейл, не нативный 4K.",
+    "relatedKeys": ["refresh_rate"]
+  },
+  "backwards_compatibility": {
+    "title": "Обратная совместимость",
+    "importance": "medium",
+    "what": "Игры прошлых поколений.",
+    "why": "Библиотека старых дисков/покупок.",
+    "howToRead": "Xbox — широкая BC; PS — частично; Switch — только свои картычки.",
+    "relatedKeys": ["console_type"]
+  },
+  "controller_included": {
+    "title": "Геймпад в комплекте",
+    "importance": "low",
+    "what": "Количество и тип контроллера.",
+    "why": "Локальный кооп на одном диване.",
+    "howToRead": "Для двоих часто нужен второй геймпад отдельно."
+  },
+  "online_service": {
+    "title": "Онлайн-подписка",
+    "importance": "medium",
+    "what": "PS Plus, Xbox Game Pass, Nintendo Switch Online.",
+    "why": "Мультиплеер и каталог игр.",
+    "howToRead": "Game Pass — аренда библиотеки; Plus Extra — каталог Sony."
+  }
+}

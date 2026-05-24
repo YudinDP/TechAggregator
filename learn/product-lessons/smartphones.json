@@ -1,0 +1,83 @@
+{
+  "title": "Как выбрать смартфон",
+  "subtitle": "Приоритеты характеристик и типичные ошибки",
+  "slides": [
+    {
+      "title": "Три опоры выбора",
+      "lead": "Смартфон держится на сценарии, автономности и «запасе» производительности.",
+      "paragraphs": [
+        "Соцсети и мессенджеры — хватит среднего чипа и 6–8 ГБ ОЗУ. Игры и съёмка — смотрите на процессор, охлаждение и камеру.",
+        "Планируйте на 2–3 года: слабый чип или мало памяти быстрее устаревают, чем батарея."
+      ],
+      "importance": [
+        { "label": "Процессор (SoC)", "specKeys": ["cpu_model"], "level": "high", "weight": 92 },
+        { "label": "ОЗУ", "specKeys": ["ram_size"], "level": "high", "weight": 88 },
+        { "label": "Память", "specKeys": ["storage_capacity"], "level": "high", "weight": 85 },
+        { "label": "Экран", "specKeys": ["screen_size", "screen_technology"], "level": "medium", "weight": 70 },
+        { "label": "Мегапиксели камеры", "specKeys": ["rear_camera_primary_mp"], "level": "low", "weight": 45 }
+      ],
+      "highlightSpecs": ["cpu_model", "ram_size", "storage_capacity"],
+      "image": "assets/lessons/smartphone-priorities.svg",
+      "tips": ["Подсвеченные строки в характеристиках — самые важные для старта."]
+    },
+    {
+      "title": "Процессор и память",
+      "lead": "SoC + ОЗУ определяют, как долго телефон останется быстрым.",
+      "paragraphs": [
+        "Сравнивайте поколение чипа (Snapdragon 8 Gen 3 vs 7 Gen 3, Apple A17 vs A16), а не только название модели.",
+        "8 ГБ ОЗУ — комфортный минимум; 12 ГБ — запас для игр и тяжёлых оболочек. Память 128 ГБ тесна при 4K-видео."
+      ],
+      "importance": [
+        { "label": "SoC", "specKeys": ["cpu_model"], "level": "high", "weight": 95 },
+        { "label": "ОЗУ", "specKeys": ["ram_size"], "level": "high", "weight": 90 },
+        { "label": "Накопитель", "specKeys": ["storage_capacity"], "level": "high", "weight": 82 }
+      ],
+      "highlightSpecs": ["cpu_model", "ram_size", "storage_capacity"],
+      "tips": ["У iPhone меньше ГБ ОЗУ на бумаге — из-за другой архитектуры это нормально."]
+    },
+    {
+      "title": "Экран и автономность",
+      "lead": "Каждый день смотрите на дисплей; батарею — по сценарию.",
+      "paragraphs": [
+        "OLED приятнее в кино; яркость на солнце важнее Гц. 120 Гц — плавность, но жрёт батарею.",
+        "5000 мА·ч не спасёт слабый чип и 5G на максимуме — смотрите обзоры автономности."
+      ],
+      "importance": [
+        { "label": "Ёмкость батареи", "specKeys": ["battery_capacity_mah"], "level": "high", "weight": 80 },
+        { "label": "Тип экрана", "specKeys": ["screen_technology"], "level": "medium", "weight": 68 },
+        { "label": "Частота Гц", "specKeys": ["screen_refresh_rate"], "level": "medium", "weight": 55 }
+      ],
+      "highlightSpecs": ["battery_capacity_mah", "screen_technology", "screen_refresh_rate"],
+      "image": "assets/lessons/smartphone-battery.svg"
+    },
+    {
+      "title": "Камера: не только Мп",
+      "lead": "Качество фото = сенсор + оптика + обработка.",
+      "paragraphs": [
+        "200 Мп не гарантируют лучше 50 Мп. Смотрите размер сенсора, стабилизацию, ночные кадры в обзорах.",
+        "Для видео важны 4K60, стабилизация и отсутствие перегрева."
+      ],
+      "importance": [
+        { "label": "Сенсор / оптика", "specKeys": ["rear_camera_primary_mp", "rear_camera_sensor_model"], "level": "high", "weight": 75 },
+        { "label": "Мп на коробке", "specKeys": ["rear_camera_primary_mp"], "level": "low", "weight": 40 }
+      ],
+      "highlightSpecs": ["rear_camera_primary_mp", "rear_camera_count"],
+      "tips": ["Сравните образцы съёмки, а не таблицу."]
+    },
+    {
+      "title": "Что можно не переплачивать",
+      "lead": "Низкий приоритет — если не ваш сценарий.",
+      "paragraphs": [
+        "Беспроводная зарядка, NFC, IP68 — удобно, но редко главный повод для смены телефона.",
+        "Экосистема (iOS/Android) важнее спорных «фишек» в спецификации."
+      ],
+      "importance": [
+        { "label": "Связь / NFC", "specKeys": ["connectivity", "nfc_support"], "level": "medium", "weight": 50 },
+        { "label": "Защита IP", "specKeys": ["water_resistance"], "level": "medium", "weight": 48 },
+        { "label": "Беспроводная зарядка", "specKeys": ["wireless_charging"], "level": "low", "weight": 35 }
+      ],
+      "highlightSpecs": ["os", "connectivity"],
+      "tips": ["Вернитесь к подсказкам «?» для любой непонятной строки."]
+    }
+  ]
+}

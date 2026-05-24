@@ -1,0 +1,48 @@
+{
+  "keyboard_type": {
+    "title": "Тип клавиатуры",
+    "importance": "medium",
+    "what": "Механическая, мембранная, ножничная, оптическая.",
+    "why": "Ощущения, шум, ресурс.",
+    "howToRead": "Механика — долговечность и настройка; мембрана — тише и дешевле.",
+    "relatedKeys": ["switch_type"]
+  },
+  "switch_type": {
+    "title": "Переключатели (свитчи)",
+    "importance": "high",
+    "what": "Cherry MX, Gateron, Kailh: linear, tactile, clicky.",
+    "why": "Ход клавиши, звук, тактильный отклик.",
+    "howToRead": "Red/Linear — плавно; Brown/Tactile — бугорок; Blue/Clicky — щелчок, громко.",
+    "tips": ["Hot-swap позволяет менять свитчи без пайки."]
+  },
+  "layout": {
+    "title": "Раскладка",
+    "importance": "high",
+    "what": "Full-size, TKL, 75%, 65%, 60%, язык (RU/EN).",
+    "why": "Эргономика стола и наличие цифрового блока.",
+    "howToRead": "TKL — без numpad; 60% — компакт, слои на Fn.",
+    "relatedKeys": ["keyboard_type"]
+  },
+  "connectivity": {
+    "title": "Подключение",
+    "importance": "medium",
+    "what": "USB, Bluetooth, 2.4 ГГц приёмник.",
+    "why": "Задержка и свобода на столе.",
+    "howToRead": "2.4 ГГц — для игр с низкой задержкой; BT — офис; провод — без батареи.",
+    "relatedKeys": ["polling_rate_hz"]
+  },
+  "backlight": {
+    "title": "Подсветка",
+    "importance": "low",
+    "what": "RGB или одноцветная подсветка.",
+    "why": "Видимость в темноте и эстетика.",
+    "howToRead": "Per-key RGB — дороже; side-light — декоративно."
+  },
+  "key_rollover": {
+    "title": "Anti-ghosting / N-key",
+    "importance": "medium",
+    "what": "Сколько клавиш одновременно регистрируется.",
+    "why": "Игры с зажатием нескольких клавиш.",
+    "howToRead": "N-key rollover по USB — желательно для игр."
+  }
+}

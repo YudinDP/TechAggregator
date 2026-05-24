@@ -1,0 +1,37 @@
+{
+  "title": "Как выбрать видеокарту",
+  "subtitle": "VRAM, мощность и блок питания",
+  "slides": [
+    {
+      "title": "Класс GPU",
+      "lead": "xx60 — массовый сегмент; xx70/xx80 — QHD/4K.",
+      "paragraphs": ["Сравнивайте бенчмарки в вашем разрешении. Не гонитесь за моделью без запаса VRAM."],
+      "importance": [
+        { "label": "Модель GPU", "specKeys": ["gpu_model"], "level": "high", "weight": 95 },
+        { "label": "VRAM", "specKeys": ["vram_size"], "level": "high", "weight": 90 }
+      ],
+      "highlightSpecs": ["gpu_model", "vram_size"],
+      "tips": ["8 ГБ VRAM — минимум для новых AAA в 1080p; 12–16 ГБ — 1440p/4K."]
+    },
+    {
+      "title": "Питание и корпус",
+      "lead": "TGP и разъёмы питания.",
+      "paragraphs": ["650 Вт БП — для RTX 4060; 850+ — для 4070 Ti и выше. Длина карты — в корпус!"],
+      "importance": [
+        { "label": "TDP/TGP", "specKeys": ["tdp_w"], "level": "high", "weight": 85 },
+        { "label": "Разъёмы питания", "specKeys": ["power_connector"], "level": "medium", "weight": 70 }
+      ],
+      "highlightSpecs": ["tdp_w", "power_connector"]
+    },
+    {
+      "title": "Ray Tracing и выходы",
+      "lead": "RT + DLSS/FSR для играбельности.",
+      "paragraphs": ["DisplayPort для монитора; HDMI 2.1 — для TV 4K120."],
+      "importance": [
+        { "label": "RT", "specKeys": ["ray_tracing_support"], "level": "medium", "weight": 55 },
+        { "label": "Выходы", "specKeys": ["output_ports"], "level": "low", "weight": 40 }
+      ],
+      "highlightSpecs": ["ray_tracing_support", "output_ports", "memory_bus_width_bit"]
+    }
+  ]
+}

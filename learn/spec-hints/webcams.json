@@ -1,0 +1,42 @@
+{
+  "resolution": {
+    "title": "Разрешение",
+    "importance": "high",
+    "what": "1080p, 1440p, 4K.",
+    "why": "Чёткость картинки на стриме и в Zoom.",
+    "howToRead": "1080p60 — стандарт; 4K — для записи, не всегда нужно для звонков.",
+    "relatedKeys": ["fps"]
+  },
+  "fps": {
+    "title": "Кадров в секунду",
+    "importance": "medium",
+    "what": "30, 60, 90 Гц видеопотока.",
+    "why": "Плавность движений.",
+    "howToRead": "60 fps приятнее при жестах; USB-пропускная способность ограничивает режим.",
+    "relatedKeys": ["resolution"]
+  },
+  "field_of_view": {
+    "title": "Угол обзора",
+    "importance": "medium",
+    "what": "Диагональный FOV в градусах.",
+    "why": "Сколько комнаты попадает в кадр.",
+    "howToRead": "90° — крупный план; 100–120° — стол и доска; шире — больше искажений по краям.",
+    "relatedKeys": ["focus_type"]
+  },
+  "focus_type": {
+    "title": "Фокусировка",
+    "importance": "medium",
+    "what": "AF, фикс, ручная.",
+    "why": "Резкость при движении.",
+    "howToRead": "Autofocus с face tracking — для стримов; фикс — стабильнее, но без подстройки.",
+    "relatedKeys": ["resolution"]
+  },
+  "microphone": {
+    "title": "Встроенный микрофон",
+    "importance": "medium",
+    "what": "Микрофон в корпусе веб-камеры.",
+    "why": "Базовые звонки без отдельного мика.",
+    "howToRead": "Качество обычно слабее отдельного USB-мика; для стримов — внешний микрофон.",
+    "relatedKeys": ["connectivity"]
+  }
+}

@@ -105,6 +105,7 @@ const STORE_SIGNALS_FILE = path.join(__dirname, 'data', 'store-signals.json');
 const USER_ALERTS_FILE = path.join(__dirname, 'data', 'user-alerts.json');
 const LEARN_ROOT = path.join(__dirname, '..', 'learn');
 const LEARN_SPEC_HINTS_DIR = path.join(LEARN_ROOT, 'spec-hints');
+const LEARN_PRODUCT_LESSONS_DIR = path.join(LEARN_ROOT, 'product-lessons');
 
 function readPriceSyncState() {
   try {
@@ -222,6 +223,88 @@ const LEARN_CATEGORY_ALIASES = {
   other: 'other',
   другое: 'other'
 };
+
+const LEARN_CATEGORY_DISPLAY_NAMES = {
+  smartphones: 'смартфоны',
+  laptops: 'ноутбуки',
+  headphones: 'наушники',
+  tv: 'телевизоры',
+  monitors: 'мониторы',
+  tablets: 'планшеты',
+  cameras: 'камеры',
+  smartwatches: 'смарт-часы',
+  ebooks: 'электронные книги',
+  drones: 'дроны',
+  cpus: 'процессоры',
+  graphics_cards: 'видеокарты',
+  motherboards: 'материнские платы',
+  ram: 'оперативная память',
+  storage: 'накопители',
+  drivers: 'накопители',
+  external_drives: 'внешние накопители',
+  gaming: 'игровые консоли',
+  networking: 'сетевое оборудование',
+  keyboards: 'клавиатуры',
+  mouses: 'мыши',
+  cases: 'корпуса ПК',
+  power_units: 'блоки питания',
+  microphones: 'микрофоны',
+  webcams: 'веб-камеры',
+  power_banks: 'павербанки',
+  portable_speakers: 'портативные колонки',
+  fitness_trackers: 'фитнес-трекеры',
+  wearables: 'носимые устройства',
+  smart_home: 'умный дом',
+  accessories: 'аксессуары',
+  pc_components: 'комплектующие ПК',
+  audio: 'аудиосистемы',
+  other: 'другое'
+};
+
+function loadLearnJsonFile(relativePath) {
+  const fp = path.join(LEARN_ROOT, relativePath);
+  if (!fs.existsSync(fp)) return null;
+  try {
+    const data = JSON.parse(fs.readFileSync(fp, 'utf8'));
+    return data && typeof data === 'object' ? data : null;
+  } catch (e) {
+    console.warn('[learn] Ошибка чтения', relativePath, e.message);
+    return null;
+  }
+}
+
+function applyCategoryPlaceholders(obj, categoryName) {
+  const walk = (v) => {
+    if (typeof v === 'string') return v.replace(/\{categoryName\}/g, categoryName);
+    if (Array.isArray(v)) return v.map(walk);
+    if (v && typeof v === 'object') {
+      const out = {};
+      for (const [k, val] of Object.entries(v)) out[k] = walk(val);
+      return out;
+    }
+    return v;
+  };
+  return walk(obj);
+}
+
+function loadProductLessons(category) {
+  const safe = normalizeLearnCategory(category);
+  const displayName =
+    LEARN_CATEGORY_DISPLAY_NAMES[safe] ||
+    LEARN_CATEGORY_DISPLAY_NAMES[category?.toLowerCase?.()] ||
+    safe ||
+    'устройства';
+  const specific = safe ? loadLearnJsonFile(path.join('product-lessons', `${safe}.json`)) : null;
+  const base = specific && Array.isArray(specific.slides) && specific.slides.length
+    ? specific
+    : loadLearnJsonFile('product-lessons/_default.json');
+  if (!base) return { category: safe, title: `Как выбрать: ${displayName}`, slides: [] };
+  const merged = applyCategoryPlaceholders(JSON.parse(JSON.stringify(base)), displayName);
+  if (!specific && merged.title && merged.title.includes('{categoryName}')) {
+    merged.title = merged.title.replace(/\{categoryName\}/g, displayName);
+  }
+  return { category: safe, ...merged };
+}
 
 function normalizeLearnCategory(category) {
   const raw = String(category || '').trim();
@@ -907,6 +990,16 @@ app.get('/api/learn/spec-hints', (req, res) => {
     res.json({ categories: categories.sort() });
   } catch (e) {
     res.status(500).json({ error: 'Не удалось получить список категорий' });
+  }
+});
+
+app.get('/api/learn/product-lessons/:category', (req, res) => {
+  try {
+    const lessons = loadProductLessons(req.params.category);
+    res.json({ version: 1, ...lessons });
+  } catch (e) {
+    console.error('[learn] product-lessons:', e);
+    res.status(500).json({ error: 'Не удалось загрузить урок' });
   }
 });
 

@@ -1,0 +1,42 @@
+{
+  "component_type": {
+    "title": "Тип компонента",
+    "importance": "high",
+    "what": "CPU, GPU, RAM, SSD, кулер и т.д.",
+    "why": "Понимание роли в сборке ПК.",
+    "howToRead": "Смотрите специализированные подсказки в категориях «Процессоры», «Видеокарты», «ОЗУ».",
+    "relatedKeys": ["socket", "brand"]
+  },
+  "socket": {
+    "title": "Сокет / интерфейс",
+    "importance": "high",
+    "what": "Совместимость с платой или слотом.",
+    "why": "Неверный сокет — компонент не установится.",
+    "howToRead": "CPU ↔ материнка; RAM ↔ DDR4/DDR5; SSD ↔ M.2/SATA.",
+    "relatedKeys": ["chipset"]
+  },
+  "chipset": {
+    "title": "Чипсет",
+    "importance": "medium",
+    "what": "Контроллер на плате или SSD.",
+    "why": "Функции и скорость.",
+    "howToRead": "У материнских плат — разгон и порты; у SSD — sustained write.",
+    "relatedKeys": ["socket"]
+  },
+  "tdp_w": {
+    "title": "TDP / энергопотребление",
+    "importance": "medium",
+    "what": "Тепловыделение компонента.",
+    "why": "Кулер и блок питания.",
+    "howToRead": "Смотрите категорию CPU/GPU для деталей.",
+    "relatedKeys": ["power_connector"]
+  },
+  "pcie_version": {
+    "title": "PCIe",
+    "importance": "medium",
+    "what": "Версия шины расширения.",
+    "why": "Скорость GPU и NVMe.",
+    "howToRead": "Gen4 x16 — стандарт; Gen5 — запас.",
+    "relatedKeys": ["component_type"]
+  }
+}

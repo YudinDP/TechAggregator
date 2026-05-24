@@ -3,8 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="theme.js"></script>
   <title>Карточка товара - tech-nozone</title>
   <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="dark-theme.css">
   <link rel="icon" sizes="180x180" href="sources/logo.png">
   <style>
     /* Стили для корректного отображения */
@@ -317,7 +319,10 @@
             <div id="valueCalculatorContainer"></div>
           </div>
           <div class="product-specs">
-            <h3>Основные характеристики</h3>
+            <div class="product-specs-header">
+              <h3>Основные характеристики</h3>
+              <div id="learnModeToggleHost" class="learn-mode-toggle-host"></div>
+            </div>
             <div id="productSpecs" class="specs-list">
               <!-- Тут характеристики -->
             </div>
@@ -406,6 +411,7 @@
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
 <script src="config.js"></script>
 <script src="learn/learn-hints.js?v=hint3"></script>
+<script src="learn/learn-mode.js?v=1"></script>
 <script src="script.js?v=import2"></script>
 
 <script>

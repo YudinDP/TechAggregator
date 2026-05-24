@@ -1,0 +1,34 @@
+{
+  "battery_life_days": {
+    "title": "Автономность",
+    "importance": "high",
+    "what": "Дни работы носимого устройства.",
+    "why": "Комфорт ежедневного ношения.",
+    "howToRead": "Умные кольца — 4–7 дней; очки — часы; браслеты — до 2 недель.",
+    "relatedKeys": ["sensors"]
+  },
+  "sensors": {
+    "title": "Датчики",
+    "importance": "high",
+    "what": "Пульс, температура, аксelerometer, SpO2.",
+    "why": "Сценарии здоровья и спорта.",
+    "howToRead": "Проверьте, какие метрики реально поддерживаются в приложении.",
+    "relatedKeys": ["health_monitoring"]
+  },
+  "water_resistance": {
+    "title": "Влагозащита",
+    "importance": "medium",
+    "what": "IP/ATM рейтинг.",
+    "why": "Душ, пот, дождь.",
+    "howToRead": "Для плавания — отдельные сертификаты, не все wearables подходят.",
+    "relatedKeys": ["battery_life_days"]
+  },
+  "compatibility": {
+    "title": "Совместимость",
+    "importance": "high",
+    "what": "iOS, Android, версии ОС.",
+    "why": "Приложение и синхронизация.",
+    "howToRead": "Часть устройств только iPhone или только Android.",
+    "relatedKeys": ["connectivity"]
+  }
+}

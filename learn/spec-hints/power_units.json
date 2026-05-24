@@ -1,0 +1,41 @@
+{
+  "power_w": {
+    "title": "Мощность (Вт)",
+    "importance": "high",
+    "what": "Номинальная мощность блока питания.",
+    "why": "Стабильность под нагрузкой GPU+CPU.",
+    "howToRead": "650 Вт — средний класс GPU; 850+ — RTX 4080/4090; запас 20–30%.",
+    "relatedKeys": ["efficiency_rating"]
+  },
+  "efficiency_rating": {
+    "title": "Сертификат 80 Plus",
+    "importance": "medium",
+    "what": "Bronze, Gold, Platinum — КПД и меньше тепла.",
+    "why": "Экономия электричества и шум.",
+    "howToRead": "Gold — хороший баланс; Bronze — бюджет, громче под нагрузкой.",
+    "relatedKeys": ["power_w"]
+  },
+  "modular_type": {
+    "title": "Модульность",
+    "importance": "medium",
+    "what": "Полная, частичная или немодульная разводка кабелей.",
+    "why": "Порядок в корпусе и поток воздуха.",
+    "howToRead": "Full modular — удобнее сборка; non-modular — дешевле.",
+    "relatedKeys": ["connectors"]
+  },
+  "protection_systems": {
+    "title": "Защиты",
+    "importance": "medium",
+    "what": "OVP, OCP, SCP, OTP и др.",
+    "why": "Сохранность комплектующих при сбоях.",
+    "howToRead": "Берите бренды с обзорами, не только «80 Plus» на наклейке.",
+    "tips": ["Дешёвые no-name БП — риск для всей системы."]
+  },
+  "form_factor": {
+    "title": "Форм-фактор",
+    "importance": "low",
+    "what": "ATX, SFX, SFX-L.",
+    "why": "Совместимость с корпусом ITX/SFF.",
+    "howToRead": "SFX — малые корпуса; ATX — стандартные башни."
+  }
+}

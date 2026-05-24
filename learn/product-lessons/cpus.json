@@ -1,0 +1,36 @@
+{
+  "title": "Как выбрать процессор",
+  "subtitle": "Ядра, сокет и сценарий нагрузки",
+  "slides": [
+    {
+      "title": "Сокет и платформа",
+      "lead": "CPU + материнка + ОЗУ покупают связкой.",
+      "paragraphs": ["AM5, LGA1700 — проверьте совместимость и BIOS. Апгрейд через 3 года часто = новая платформа."],
+      "importance": [
+        { "label": "Сокет", "specKeys": ["socket"], "level": "high", "weight": 95 },
+        { "label": "Модель / поколение", "specKeys": ["cpu_model"], "level": "high", "weight": 92 }
+      ],
+      "highlightSpecs": ["socket", "cpu_model", "cpu_cores"]
+    },
+    {
+      "title": "Ядра и потоки",
+      "lead": "Игры — часто 6–8 ядер; рендер — 12+.",
+      "paragraphs": ["Больше ядер — монтаж, VM, компиляция. Для игр важны частота и кэш L3."],
+      "importance": [
+        { "label": "Ядра", "specKeys": ["cpu_cores"], "level": "high", "weight": 88 },
+        { "label": "Кэш L3", "specKeys": ["cache_l3_mb"], "level": "medium", "weight": 70 }
+      ],
+      "highlightSpecs": ["cpu_cores", "cpu_threads", "cache_l3_mb"]
+    },
+    {
+      "title": "TDP и охлаждение",
+      "lead": "125+ Вт — серьёзный кулер.",
+      "paragraphs": ["TDP на коробке — ориентир; реальное потребление смотрите в обзорах."],
+      "importance": [
+        { "label": "TDP", "specKeys": ["tdp_w"], "level": "medium", "weight": 75 },
+        { "label": "Встроенная графика", "specKeys": ["integrated_graphics"], "level": "medium", "weight": 50 }
+      ],
+      "highlightSpecs": ["tdp_w", "cpu_boost_freq", "integrated_graphics"]
+    }
+  ]
+}
