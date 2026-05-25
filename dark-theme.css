@@ -265,6 +265,20 @@
   background: #64748b;
 }
 
+[data-theme="dark"] .btn.btn-admin-panel {
+  background-color: #3f1d2a;
+  color: #fda4af;
+  border-color: #6b3044;
+  box-shadow: none;
+}
+
+[data-theme="dark"] .btn.btn-admin-panel:hover {
+  background-color: #4c2535;
+  border-color: #9f4d6a;
+  color: #fecdd3;
+  opacity: 1;
+}
+
 /* ================== КАРТОЧКИ И СЕТКИ ================== */
 [data-theme="dark"] .feature-card,
 [data-theme="dark"] .product-card,
@@ -735,6 +749,29 @@
   background: var(--dt-bg-muted);
 }
 
+[data-theme="dark"] .crud-bulk-toolbar {
+  background: rgba(239, 68, 68, 0.12);
+  border-color: rgba(239, 68, 68, 0.35);
+}
+
+[data-theme="dark"] .crud-selected-count {
+  color: #fca5a5;
+}
+
+[data-theme="dark"] .admin-crud-table-outer {
+  background: var(--dt-bg-elevated);
+  border-color: var(--dt-border);
+}
+
+[data-theme="dark"] .admin-crud-table-scroll-top {
+  background: var(--dt-bg-muted);
+  border-color: var(--dt-border);
+}
+
+[data-theme="dark"] .crud-empty-row td {
+  color: var(--dt-text-muted);
+}
+
 [data-theme="dark"] .pagination-btn {
   background: var(--dt-bg-muted);
   border-color: var(--dt-border-strong);
@@ -923,6 +960,13 @@
 [data-theme="dark"] .stat-label,
 [data-theme="dark"] .profile-info p {
   color: var(--dt-text-secondary) !important;
+}
+
+[data-theme="dark"] .profile-info h2,
+[data-theme="dark"] .profile-card h3,
+[data-theme="dark"] .favorite-item-name,
+[data-theme="dark"] .comparison-title {
+  color: var(--dt-text) !important;
 }
 
 [data-theme="dark"] .profile-tab-btn {

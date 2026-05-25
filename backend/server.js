@@ -2081,6 +2081,57 @@ app.put('/api/admin/table/:tableName/:id', authenticateToken, requireAdminRole, 
   }
 });
 
+//DELETE /api/admin/table/:tableName/bulk - Массовое удаление записей
+app.delete('/api/admin/table/:tableName/bulk', authenticateToken, requireAdminRole, async (req, res) => {
+  const tableName = req.params.tableName;
+  const allowedTables = ['Product', 'ProductSpec', 'Price', 'Review', 'Request', 'User', 'PriceHistory'];
+  const prismaModelMap = {
+    'Product': 'product',
+    'ProductSpec': 'productSpec',
+    'Price': 'price',
+    'Review': 'review',
+    'Request': 'request',
+    'User': 'user',
+    'PriceHistory': 'priceHistory'
+  };
+
+  if (!allowedTables.includes(tableName)) {
+    return res.status(400).json({ error: 'Таблица не разрешена для редактирования' });
+  }
+
+  const ids = Array.isArray(req.body?.ids)
+    ? req.body.ids.map((id) => parseInt(id, 10)).filter((id) => Number.isInteger(id) && id > 0)
+    : [];
+
+  if (ids.length === 0) {
+    return res.status(400).json({ error: 'Не указаны корректные ID для удаления' });
+  }
+
+  const prismaModelKey = prismaModelMap[tableName];
+  if (!prismaModelKey) {
+    return res.status(400).json({ error: 'Таблица не найдена в Prisma Client' });
+  }
+
+  try {
+    const modelClient = prisma[prismaModelKey];
+    if (!modelClient) {
+      throw new Error(`Model client for ${tableName} (${prismaModelKey}) not found in Prisma.`);
+    }
+
+    const result = await modelClient.deleteMany({
+      where: { id: { in: ids } }
+    });
+
+    res.json({
+      message: `Удалено записей: ${result.count} из таблицы ${tableName}.`,
+      deletedCount: result.count
+    });
+  } catch (error) {
+    console.error(`Error bulk deleting from table ${tableName}:`, error);
+    res.status(500).json({ error: `Не удалось удалить записи из таблицы ${tableName}` });
+  }
+});
+
 //DELETE /api/admin/table/:tableName/:id - Удалить запись из таблицы
 app.delete('/api/admin/table/:tableName/:id', authenticateToken, requireAdminRole, async (req, res) => {
   const tableName = req.params.tableName;

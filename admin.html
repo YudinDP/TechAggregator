@@ -246,15 +246,52 @@
             gap: 0.5rem;
             align-items: center;
         }
-        .admin-crud-table-scroll {
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
+        .admin-crud-table-outer {
+            display: flex;
+            flex-direction: column;
             max-width: 100%;
             width: 100%;
             margin-top: 1rem;
             border: 1px solid #e5e7eb;
             border-radius: 8px;
             box-sizing: border-box;
+            max-height: min(70vh, 640px);
+            min-height: 200px;
+            background: #fff;
+        }
+        .admin-crud-table-scroll-top {
+            position: sticky;
+            top: 0;
+            z-index: 5;
+            overflow-x: auto;
+            overflow-y: hidden;
+            flex: 0 0 auto;
+            height: 14px;
+            background: #f1f5f9;
+            border-bottom: 1px solid #e5e7eb;
+            border-radius: 8px 8px 0 0;
+        }
+        .admin-crud-table-scroll-top-inner {
+            height: 1px;
+        }
+        .admin-crud-table-scroll {
+            overflow: auto;
+            -webkit-overflow-scrolling: touch;
+            flex: 1 1 auto;
+            min-height: 0;
+            max-width: 100%;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .crud-loading-inline {
+            padding: 1rem;
+            margin: 0;
+        }
+        .crud-empty-row td {
+            text-align: center;
+            color: #6b7280;
+            font-style: italic;
+            padding: 2rem 1rem;
         }
         .crud-table {
             width: max-content;
@@ -307,6 +344,41 @@
         .btn-delete-crud { background: #ef4444; color: white; }
         .btn-save-crud { background: #10b981; color: white; }
         .btn-cancel-crud { background: #6b7280; color: white; }
+        .crud-bulk-toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            align-items: center;
+            margin-bottom: 0.75rem;
+            padding: 0.75rem 1rem;
+            background: #fff7ed;
+            border: 1px solid #fed7aa;
+            border-radius: 8px;
+        }
+        .crud-selected-count {
+            font-weight: 600;
+            color: #9a3412;
+            min-width: 7rem;
+        }
+        .btn-delete-bulk {
+            background: #ef4444;
+            color: white;
+            border: none;
+        }
+        .btn-delete-bulk:disabled {
+            background: #fca5a5;
+            cursor: not-allowed;
+        }
+        .crud-checkbox-col {
+            width: 2.5rem;
+            text-align: center;
+            white-space: nowrap;
+        }
+        .crud-checkbox-col input[type="checkbox"] {
+            width: 1rem;
+            height: 1rem;
+            cursor: pointer;
+        }
         .parse-form-container {
             background: white;
             padding: 1.5rem;

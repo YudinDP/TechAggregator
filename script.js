@@ -33,6 +33,7 @@ const recommendationFilters = {
 let demoProducts = []; //Только для совместимости, по факту данные берутся с бд
 let currentAdminTableData = [];
 let currentAdminTableName = '';
+let currentAdminTableColumns = [];
 let currentModerationTab = 'reviews';
 let currentPriceHistoryProduct = null;
 let currentPriceHistoryEntries = [];
@@ -6528,7 +6529,7 @@ async function loadTableData(searchField = '', searchValue = '') {
   }
 
   try {
-    container.innerHTML = '<p class="loading">Загрузка данных...</p>';
+    showCrudTableLoading(container);
     const token = localStorage.getItem('techAggregatorToken');
 
     let endpoint = `http://localhost:3000/api/admin/table/${tableName}`;
@@ -6550,17 +6551,19 @@ async function loadTableData(searchField = '', searchValue = '') {
     const data = await response.json();
     console.log(`Загружены данные из таблицы ${tableName} (с учётом поиска):`, data);
 
-    if (data.length === 0) {
-      container.innerHTML = '<p>Таблица пуста или нет совпадений по поиску</p>';
-      currentAdminTableData = [];
-      currentAdminTableName = '';
-      return;
+    currentAdminTableName = tableName;
+    if (searchField && searchValue) {
+      currentTableSearchField = searchField;
+      currentTableSearchValue = searchValue;
+    } else if (!searchValue) {
+      currentTableSearchValue = '';
+    }
+    currentAdminTableData = [...data];
+    if (data.length > 0) {
+      currentAdminTableColumns = Object.keys(data[0]);
     }
 
-    currentAdminTableData = [...data];
-    currentAdminTableName = tableName;
-
-    renderCrudTable(container, data, tableName, searchField, searchValue); 
+    renderCrudTable(container, data, tableName, currentTableSearchField, currentTableSearchValue); 
 
   } catch (error) {
     console.error(`Ошибка загрузки данных из таблицы ${tableName}:`, error);
@@ -6568,24 +6571,82 @@ async function loadTableData(searchField = '', searchValue = '') {
   }
 }
 
+function showCrudTableLoading(container) {
+  const shell = container.querySelector('.crud-editor-root');
+  const bodyScroll = document.getElementById('crudTableScrollBody');
+  if (shell && bodyScroll) {
+    bodyScroll.innerHTML = '<p class="loading crud-loading-inline">Загрузка данных...</p>';
+    return;
+  }
+  container.innerHTML = '<p class="loading">Загрузка данных...</p>';
+}
+
+function setupCrudHorizontalScroll() {
+  const top = document.getElementById('crudHScrollTop');
+  const body = document.getElementById('crudTableScrollBody');
+  const topInner = document.getElementById('crudHScrollTopInner');
+  const table = body?.querySelector('.crud-table');
+  if (!top || !body || !topInner || !table) return;
+
+  if (body._crudResizeObserver) {
+    body._crudResizeObserver.disconnect();
+  }
+
+  const syncWidth = () => {
+    topInner.style.width = `${table.scrollWidth}px`;
+  };
+
+  syncWidth();
+
+  if (!body._crudScrollSynced) {
+    body._crudScrollSynced = true;
+    body.addEventListener('scroll', () => {
+      if (body._crudScrollLock) return;
+      body._crudScrollLock = true;
+      top.scrollLeft = body.scrollLeft;
+      body._crudScrollLock = false;
+    });
+    top.addEventListener('scroll', () => {
+      if (body._crudScrollLock) return;
+      body._crudScrollLock = true;
+      body.scrollLeft = top.scrollLeft;
+      body._crudScrollLock = false;
+    });
+  }
+
+  if (typeof ResizeObserver !== 'undefined') {
+    const ro = new ResizeObserver(syncWidth);
+    ro.observe(table);
+    body._crudResizeObserver = ro;
+  } else {
+    window.addEventListener('resize', syncWidth);
+  }
+}
+
 //Отрисовка таблицы данных
-function renderCrudTable(container, data, tableName, searchField = '', searchValue = '') { 
-  if (data.length === 0) {
-    container.innerHTML = '<p>Нет данных для отображения.</p>';
+function renderCrudTable(container, data, tableName, searchField = '', searchValue = '') {
+  const fields = data.length > 0
+    ? Object.keys(data[0])
+    : currentAdminTableColumns;
+
+  if (!fields || fields.length === 0) {
+    container.innerHTML = '<p>Нет данных для отображения. Нажмите «Загрузить».</p>';
     return;
   }
 
-  const fields = Object.keys(data[0]); //Получаем ключи первого объекта как поля таблицы
   const primaryKey = 'id';
+  const safeSearchValue = escapeHtml(searchValue);
+  const colSpan = fields.length + 2;
+  const isEmptyResult = data.length === 0;
 
   const searchControlsHTML = `
     <div class="admin-table-search-controls table-search-controls">
       <div class="form-group admin-table-search-field">
         <label for="tableSearchField">Поиск по столбцу:</label>
-        <select id="tableSearchField" class="table-search-field-select" onchange="searchTableDataDebounced()">
+        <select id="tableSearchField" class="table-search-field-select" onchange="onCrudSearchFieldChange()">
           <option value="">(Все столбцы)</option>
           ${fields.map(field => `
-            <option value="${field}" ${field === searchField ? 'selected' : ''}> 
+            <option value="${field}" ${field === searchField ? 'selected' : ''}>
               ${field}
             </option>
           `).join('')}
@@ -6594,8 +6655,8 @@ function renderCrudTable(container, data, tableName, searchField = '', searchVal
       <div class="form-group admin-table-search-field">
         <label for="tableSearchValue">Значение:</label>
         <input type="text" id="tableSearchValue" class="table-search-value-input"
-               placeholder="Введите значение для поиска..." value="${searchValue}"
-               oninput="searchTableDataDebounced()"> 
+               placeholder="Введите значение для поиска..." value="${safeSearchValue}"
+               oninput="searchTableDataDebounced()">
       </div>
       <div class="admin-table-search-buttons">
         <button type="button" class="btn btn-primary btn-small" onclick="searchTableData()">Найти</button>
@@ -6604,37 +6665,206 @@ function renderCrudTable(container, data, tableName, searchField = '', searchVal
     </div>
   `;
 
-  let tableHTML = `
-    ${searchControlsHTML} 
-    <div class="admin-crud-table-scroll">
-    <table class="crud-table">
-      <thead>
-        <tr>
-          <th>Действия</th>
-          ${fields.map(field => `<th>${field}</th>`).join('')}
-        </tr>
-      </thead>
-      <tbody>
-        ${data.map((row, index) => `
+  const bulkToolbarHTML = `
+    <div class="crud-bulk-toolbar">
+      <span id="crudSelectedCount" class="crud-selected-count">Выбрано: 0</span>
+      <button type="button" class="btn btn-outline btn-small" onclick="toggleCrudSelectAllVisible()">Выделить все на странице</button>
+      <button type="button" class="btn btn-outline btn-small" onclick="clearCrudSelection()">Снять выделение</button>
+      <button type="button" id="crudBulkDeleteBtn" class="btn btn-small btn-delete-bulk" onclick="deleteSelectedRows()" disabled>Удалить выбранные</button>
+    </div>
+  `;
+
+  const tbodyHTML = isEmptyResult
+    ? `<tr class="crud-empty-row"><td colspan="${colSpan}">Нет совпадений по поиску. Измените запрос или нажмите «Сброс».</td></tr>`
+    : data.map((row, index) => `
           <tr data-row-index="${index}">
+            <td class="crud-checkbox-col">
+              <input type="checkbox" class="crud-row-checkbox" data-record-id="${row[primaryKey]}" onchange="updateCrudBulkBar()">
+            </td>
             <td class="crud-actions-cell">
               <button class="btn-crud btn-edit-crud" onclick="editRow(${index})">Изм.</button>
               <button class="btn-crud btn-delete-crud" onclick="deleteRow(${row[primaryKey]}, ${index})">Удл.</button>
             </td>
             ${fields.map(field => `
               <td>
-                <span class="field-display" data-field="${field}">${row[field]}</span>
-                <input type="text" class="field-input" data-field="${field}" value="${row[field] || ''}" style="display: none;">
+                <span class="field-display" data-field="${field}">${escapeHtml(row[field])}</span>
+                <input type="text" class="field-input" data-field="${field}" value="${escapeHtml(row[field] ?? '')}" style="display: none;">
               </td>
             `).join('')}
           </tr>
-        `).join('')}
-      </tbody>
-    </table>
+        `).join('');
+
+  const tableHTML = `
+    <div class="crud-editor-root">
+    ${searchControlsHTML}
+    ${isEmptyResult ? '' : bulkToolbarHTML}
+    <div class="admin-crud-table-outer">
+      <div class="admin-crud-table-scroll-top" id="crudHScrollTop" title="Горизонтальная прокрутка">
+        <div class="admin-crud-table-scroll-top-inner" id="crudHScrollTopInner"></div>
+      </div>
+      <div class="admin-crud-table-scroll" id="crudTableScrollBody">
+        <table class="crud-table">
+          <thead>
+            <tr>
+              <th class="crud-checkbox-col">
+                ${isEmptyResult ? '' : '<input type="checkbox" id="crudSelectAll" title="Выделить все на странице" onchange="toggleCrudSelectAll(this)">'}
+              </th>
+              <th>Действия</th>
+              ${fields.map(field => `<th>${field}</th>`).join('')}
+            </tr>
+          </thead>
+          <tbody>
+            ${tbodyHTML}
+          </tbody>
+        </table>
+      </div>
+    </div>
     </div>
   `;
 
   container.innerHTML = tableHTML;
+  if (!isEmptyResult) {
+    updateCrudBulkBar();
+  }
+  setupCrudHorizontalScroll();
+}
+
+function onCrudSearchFieldChange() {
+  const searchFieldSelect = document.getElementById('tableSearchField');
+  if (!searchFieldSelect) return;
+  currentTableSearchField = searchFieldSelect.value;
+
+  const searchValueInput = document.getElementById('tableSearchValue');
+  const value = searchValueInput ? searchValueInput.value.trim() : '';
+  if (currentTableSearchField && value) {
+    searchTableDataDebounced();
+  }
+}
+
+function getCrudSearchParamsFromDom() {
+  const searchFieldSelect = document.getElementById('tableSearchField');
+  const searchValueInput = document.getElementById('tableSearchValue');
+  if (searchFieldSelect && searchValueInput) {
+    return {
+      field: searchFieldSelect.value,
+      value: searchValueInput.value.trim()
+    };
+  }
+  return {
+    field: currentTableSearchField || '',
+    value: currentTableSearchValue || ''
+  };
+}
+
+function reloadCrudTablePreservingSearch() {
+  const { field, value } = getCrudSearchParamsFromDom();
+  if (field && value) {
+    loadTableData(field, value);
+  } else {
+    loadTableData();
+  }
+}
+
+function getSelectedCrudIds() {
+  return Array.from(document.querySelectorAll('.crud-row-checkbox:checked'))
+    .map((cb) => parseInt(cb.getAttribute('data-record-id'), 10))
+    .filter((id) => Number.isInteger(id));
+}
+
+function updateCrudBulkBar() {
+  const selected = getSelectedCrudIds();
+  const countEl = document.getElementById('crudSelectedCount');
+  const deleteBtn = document.getElementById('crudBulkDeleteBtn');
+  const selectAll = document.getElementById('crudSelectAll');
+  const allCheckboxes = document.querySelectorAll('.crud-row-checkbox');
+
+  if (countEl) {
+    countEl.textContent = `Выбрано: ${selected.length}`;
+  }
+  if (deleteBtn) {
+    deleteBtn.disabled = selected.length === 0;
+    deleteBtn.textContent = selected.length > 0
+      ? `Удалить выбранные (${selected.length})`
+      : 'Удалить выбранные';
+  }
+  if (selectAll && allCheckboxes.length > 0) {
+    selectAll.checked = selected.length === allCheckboxes.length;
+    selectAll.indeterminate = selected.length > 0 && selected.length < allCheckboxes.length;
+  }
+}
+
+function toggleCrudSelectAll(masterCheckbox) {
+  document.querySelectorAll('.crud-row-checkbox').forEach((cb) => {
+    cb.checked = masterCheckbox.checked;
+  });
+  updateCrudBulkBar();
+}
+
+function toggleCrudSelectAllVisible() {
+  document.querySelectorAll('.crud-row-checkbox').forEach((cb) => {
+    cb.checked = true;
+  });
+  const selectAll = document.getElementById('crudSelectAll');
+  if (selectAll) selectAll.checked = true;
+  updateCrudBulkBar();
+}
+
+function clearCrudSelection() {
+  document.querySelectorAll('.crud-row-checkbox').forEach((cb) => {
+    cb.checked = false;
+  });
+  const selectAll = document.getElementById('crudSelectAll');
+  if (selectAll) {
+    selectAll.checked = false;
+    selectAll.indeterminate = false;
+  }
+  updateCrudBulkBar();
+}
+
+async function deleteSelectedRows() {
+  const ids = getSelectedCrudIds();
+  if (ids.length === 0) {
+    showCustomNotification('Выберите хотя бы одну строку для удаления', 'info');
+    return;
+  }
+
+  if (!currentAdminTableName) {
+    showCustomNotification('Сначала загрузите таблицу', 'info');
+    return;
+  }
+
+  const confirmed = confirm(
+    `Удалить ${ids.length} записей из таблицы «${currentAdminTableName}»?\n\nЭто действие нельзя отменить.`
+  );
+  if (!confirmed) return;
+
+  const token = localStorage.getItem('techAggregatorToken');
+  const deleteBtn = document.getElementById('crudBulkDeleteBtn');
+  if (deleteBtn) deleteBtn.disabled = true;
+
+  try {
+    const response = await fetch(
+      `http://localhost:3000/api/admin/table/${currentAdminTableName}/bulk`,
+      {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ ids })
+      }
+    );
+
+    if (!response.ok) throw new Error(await response.text());
+
+    const result = await response.json();
+    showCustomNotification(result.message, 'success');
+    reloadCrudTablePreservingSearch();
+  } catch (error) {
+    console.error('Ошибка массового удаления:', error);
+    showCustomNotification(`Ошибка: ${error.message}`, 'error');
+    updateCrudBulkBar();
+  }
 }
 
 function debounce(func, delay) {
@@ -6647,50 +6877,47 @@ function debounce(func, delay) {
 
 
 const searchTableDataDebounced = debounce(function() {
-  //Эта функция будет вызываться через delay после последнего ввода
   const searchFieldSelect = document.getElementById('tableSearchField');
   const searchValueInput = document.getElementById('tableSearchValue');
 
   if (!searchFieldSelect || !searchValueInput) {
-    console.error('Элементы поиска в таблице не найдены.');
     return;
   }
 
   const field = searchFieldSelect.value;
   const value = searchValueInput.value.trim();
+  currentTableSearchField = field;
+  currentTableSearchValue = value;
 
-  //Если оба поля пусты, загружаем все данные
   if (!field && !value) {
-    loadTableData(); 
+    loadTableData();
     return;
   }
 
-  //Если указано поле, но не указано значение - не ищем, очищаем результаты
   if (field && !value) {
-    //Оставим таблицу пустой или покажем сообщение, что нужно ввести значение
-    //Или можно не обновлять, если значение удаляется
-    //Лучше всего - вызвать loadTableData без параметров, если поле выбрано, но значение стирается
-    if (field) {
-         loadTableData(); //Сбрасываем фильтр по полю, если значение убрано
-    }
+    currentTableSearchField = field;
+    currentTableSearchValue = '';
+    loadTableData();
     return;
   }
 
-  //Если указано значение, но не указано поле - ищем по всем полям (пока не реализовано на сервере для этого случая)
-  //или выбираем первое доступное поле
   if (value && !field) {
-showCustomNotification('Пожалуйста, выберите столбец для поиска.', 'info');
+    showCustomNotification('Пожалуйста, выберите столбец для поиска.', 'info');
     return;
   }
 
-  //Вызываем loadTableData с параметрами поиска
-  loadTableData(field, value); 
+  loadTableData(field, value);
 }, 500);
 
 function resetTableSearch() {
-  document.getElementById('tableSearchField').value = '';
-  document.getElementById('tableSearchValue').value = '';
-  loadTableData(); //Перезагружаем без параметров поиска
+  currentTableSearchField = '';
+  currentTableSearchValue = '';
+  currentAdminTableData = [];
+  const searchFieldSelect = document.getElementById('tableSearchField');
+  const searchValueInput = document.getElementById('tableSearchValue');
+  if (searchFieldSelect) searchFieldSelect.value = '';
+  if (searchValueInput) searchValueInput.value = '';
+  loadTableData();
 }
 
 function searchTableData() {
@@ -6750,7 +6977,7 @@ function editRow(rowIndex) {
 
 //Отмена редактирования строки
 function cancelEditRow(rowIndex) {
-    loadTableData(); //Простой способ перезагрузить таблицу.
+    reloadCrudTablePreservingSearch();
 }
 
 //Сохранение строки
@@ -6793,7 +7020,15 @@ async function saveRow(rowIndex) {
         showCustomNotification(`Запись ID ${primaryKeyValue} обновлена.`, 'success');
         currentAdminTableData[rowIndex] = updatedRow;
         const container = document.getElementById('crudTableContainer');
-        if (container) renderCrudTable(container, currentAdminTableData, currentAdminTableName);
+        if (container) {
+          renderCrudTable(
+            container,
+            currentAdminTableData,
+            currentAdminTableName,
+            currentTableSearchField,
+            currentTableSearchValue
+          );
+        }
     } catch (error) {
         console.error(`Ошибка обновления записи ID ${primaryKeyValue}:`, error);
         showCustomNotification(`Ошибка: ${error.message}`, 'error');
@@ -6818,7 +7053,19 @@ async function deleteRow(recordId, rowIndex) {
         showCustomNotification(result.message, 'success');
         currentAdminTableData.splice(rowIndex, 1);
         const container = document.getElementById('crudTableContainer');
-        if (container) renderCrudTable(container, currentAdminTableData, currentAdminTableName);
+        if (container) {
+          if (currentAdminTableData.length === 0) {
+            reloadCrudTablePreservingSearch();
+          } else {
+            renderCrudTable(
+              container,
+              currentAdminTableData,
+              currentAdminTableName,
+              currentTableSearchField,
+              currentTableSearchValue
+            );
+          }
+        }
     } catch (error) {
         console.error(`Ошибка удаления записи ID ${recordId}:`, error);
         showCustomNotification(`Ошибка: ${error.message}`, 'error');

@@ -286,6 +286,22 @@
                 grid-template-columns: 1fr 1fr;
             }
         }
+
+        /* Тёмная тема: переопределение цветов ниже общих правил страницы */
+        [data-theme="dark"] .profile-container .profile-info h2,
+        [data-theme="dark"] .profile-container .profile-card h3 {
+            color: #f1f5f9;
+        }
+
+        [data-theme="dark"] .profile-container .profile-info p,
+        [data-theme="dark"] .profile-container .stat-label {
+            color: #94a3b8;
+        }
+
+        [data-theme="dark"] .profile-container .favorite-item-name,
+        [data-theme="dark"] .profile-container .comparison-title {
+            color: #f1f5f9;
+        }
     </style>
 </head>
 <body>
