@@ -106,6 +106,8 @@ const USER_ALERTS_FILE = path.join(__dirname, 'data', 'user-alerts.json');
 const LEARN_ROOT = path.join(__dirname, '..', 'learn');
 const LEARN_SPEC_HINTS_DIR = path.join(LEARN_ROOT, 'spec-hints');
 const LEARN_PRODUCT_LESSONS_DIR = path.join(LEARN_ROOT, 'product-lessons');
+const LEARN_LESSONS_DIR = path.join(LEARN_ROOT, 'lessons');
+const LESSON_SUGGESTIONS_FILE = path.join(__dirname, 'data', 'lesson-suggestions.json');
 
 function readPriceSyncState() {
   try {
@@ -333,6 +335,55 @@ function mergeLearnLabelMap(category) {
     out[String(label).toLowerCase().trim()] = specKey;
   }
   return out;
+}
+
+//=== ОБУЧЕНИЕ: уроки на отдельной странице (learn/lessons/*.json) ===
+function safeLessonId(id) {
+  return String(id || '').toLowerCase().replace(/[^a-z0-9_-]/g, '').slice(0, 80);
+}
+
+function loadLessonsIndex() {
+  const fp = path.join(LEARN_LESSONS_DIR, 'index.json');
+  if (!fs.existsSync(fp)) return { version: 1, lessons: [] };
+  try {
+    const data = JSON.parse(fs.readFileSync(fp, 'utf8'));
+    const lessons = Array.isArray(data?.lessons) ? data.lessons : [];
+    return { version: data?.version || 1, lessons };
+  } catch (e) {
+    console.warn('[learn] index.json:', e.message);
+    return { version: 1, lessons: [] };
+  }
+}
+
+function loadLessonById(id) {
+  const safe = safeLessonId(id);
+  if (!safe) return null;
+  const fp = path.join(LEARN_LESSONS_DIR, `${safe}.json`);
+  if (!fs.existsSync(fp)) return null;
+  try {
+    const data = JSON.parse(fs.readFileSync(fp, 'utf8'));
+    return data && typeof data === 'object' ? data : null;
+  } catch (e) {
+    console.warn('[learn] lesson', safe, e.message);
+    return null;
+  }
+}
+
+function readLessonSuggestions() {
+  return readJsonFileSafe(LESSON_SUGGESTIONS_FILE, { items: [] });
+}
+
+function writeLessonSuggestions(data) {
+  writeJsonFileSafe(LESSON_SUGGESTIONS_FILE, data || { items: [] });
+}
+
+function nextLessonSuggestionId(items) {
+  let maxId = 0;
+  for (const it of items) {
+    const n = Number(it?.id);
+    if (Number.isFinite(n) && n > maxId) maxId = n;
+  }
+  return maxId + 1;
 }
 
 function readStoreSignals() {
@@ -999,6 +1050,28 @@ app.get('/api/learn/product-lessons/:category', (req, res) => {
     res.json({ version: 1, ...lessons });
   } catch (e) {
     console.error('[learn] product-lessons:', e);
+    res.status(500).json({ error: 'Не удалось загрузить урок' });
+  }
+});
+
+//=== ОБУЧЕНИЕ: страница "Обучение" — список уроков и сами уроки ===
+app.get('/api/learn/lessons', (_req, res) => {
+  try {
+    const data = loadLessonsIndex();
+    res.json(data);
+  } catch (e) {
+    console.error('[learn] lessons index:', e);
+    res.status(500).json({ error: 'Не удалось получить список уроков' });
+  }
+});
+
+app.get('/api/learn/lessons/:id', (req, res) => {
+  try {
+    const lesson = loadLessonById(req.params.id);
+    if (!lesson) return res.status(404).json({ error: 'Урок не найден' });
+    res.json(lesson);
+  } catch (e) {
+    console.error('[learn] lesson:', e);
     res.status(500).json({ error: 'Не удалось загрузить урок' });
   }
 });
@@ -1793,6 +1866,140 @@ app.patch('/api/admin/requests/:id', authenticateToken, requireAdminRole, async 
   } catch (error) {
     console.error('Error updating request status:', error);
     res.status(500).json({ error: 'Не удалось обновить запрос' });
+  }
+});
+
+//=== ОБУЧЕНИЕ: предложение темы урока (требует авторизации) ===
+app.post('/api/learn/topic-suggestions', authenticateToken, async (req, res) => {
+  try {
+    const { topic, category, message } = req.body || {};
+    const topicStr = typeof topic === 'string' ? topic.trim() : '';
+    const messageStr = typeof message === 'string' ? message.trim() : '';
+    const categoryStr = typeof category === 'string' ? category.trim() : '';
+
+    if (!topicStr || topicStr.length < 3) {
+      return res.status(400).json({ error: 'Поле «тема» обязательно (минимум 3 символа).' });
+    }
+    if (topicStr.length > 200) {
+      return res.status(400).json({ error: 'Тема слишком длинная (максимум 200 символов).' });
+    }
+    if (messageStr.length > 2000) {
+      return res.status(400).json({ error: 'Сообщение слишком длинное (максимум 2000 символов).' });
+    }
+    if (categoryStr.length > 80) {
+      return res.status(400).json({ error: 'Поле «категория» слишком длинное.' });
+    }
+
+    let userName = req.user.fullName || null;
+    let userEmail = req.user.email || null;
+    try {
+      const u = await prisma.user.findUnique({
+        where: { id: req.user.id },
+        select: { fullName: true, email: true }
+      });
+      if (u) {
+        userName = u.fullName || userName;
+        userEmail = u.email || userEmail;
+      }
+    } catch (_) {}
+
+    const state = readLessonSuggestions();
+    const items = Array.isArray(state.items) ? state.items : [];
+    const recordsByUser = items.filter(
+      (it) => it && Number(it.userId) === Number(req.user.id) && it.status === 'pending'
+    );
+    if (recordsByUser.length >= 10) {
+      return res.status(429).json({ error: 'У вас слишком много необработанных предложений. Дождитесь модерации.' });
+    }
+
+    const id = nextLessonSuggestionId(items);
+    const now = new Date().toISOString();
+    const record = {
+      id,
+      userId: req.user.id,
+      userName,
+      userEmail,
+      topic: topicStr,
+      category: categoryStr || null,
+      message: messageStr || null,
+      status: 'pending',
+      adminNotes: null,
+      createdAt: now,
+      processedAt: null
+    };
+    items.push(record);
+    writeLessonSuggestions({ items });
+    res.status(201).json(record);
+  } catch (e) {
+    console.error('[learn] topic suggestion create:', e);
+    res.status(500).json({ error: 'Не удалось сохранить предложение' });
+  }
+});
+
+//=== Админка: список предложений тем уроков ===
+app.get('/api/admin/lesson-suggestions', authenticateToken, requireAdminRole, (_req, res) => {
+  try {
+    const state = readLessonSuggestions();
+    const items = Array.isArray(state.items) ? state.items : [];
+    const sorted = [...items].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    res.json(sorted);
+  } catch (e) {
+    console.error('[learn] admin list:', e);
+    res.status(500).json({ error: 'Не удалось загрузить предложения' });
+  }
+});
+
+//=== Админка: обновление статуса предложения темы ===
+app.patch('/api/admin/lesson-suggestions/:id', authenticateToken, requireAdminRole, (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (!Number.isFinite(id)) {
+      return res.status(400).json({ error: 'Неверный id' });
+    }
+    const { status, adminNotes } = req.body || {};
+    if (!status || !['pending', 'approved', 'rejected'].includes(status)) {
+      return res.status(400).json({ error: 'status должен быть pending|approved|rejected' });
+    }
+
+    const state = readLessonSuggestions();
+    const items = Array.isArray(state.items) ? state.items : [];
+    const idx = items.findIndex((it) => Number(it?.id) === id);
+    if (idx === -1) return res.status(404).json({ error: 'Предложение не найдено' });
+
+    items[idx] = {
+      ...items[idx],
+      status,
+      adminNotes:
+        typeof adminNotes === 'string'
+          ? adminNotes.trim() || null
+          : items[idx].adminNotes || null,
+      processedAt: new Date().toISOString()
+    };
+    writeLessonSuggestions({ items });
+    res.json(items[idx]);
+  } catch (e) {
+    console.error('[learn] admin patch:', e);
+    res.status(500).json({ error: 'Не удалось обновить предложение' });
+  }
+});
+
+//=== Админка: удаление предложения темы ===
+app.delete('/api/admin/lesson-suggestions/:id', authenticateToken, requireAdminRole, (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (!Number.isFinite(id)) {
+      return res.status(400).json({ error: 'Неверный id' });
+    }
+    const state = readLessonSuggestions();
+    const items = Array.isArray(state.items) ? state.items : [];
+    const before = items.length;
+    const remaining = items.filter((it) => Number(it?.id) !== id);
+    if (remaining.length === before) return res.status(404).json({ error: 'Предложение не найдено' });
+    writeLessonSuggestions({ items: remaining });
+    res.json({ ok: true });
+  } catch (e) {
+    console.error('[learn] admin delete:', e);
+    res.status(500).json({ error: 'Не удалось удалить предложение' });
   }
 });
 

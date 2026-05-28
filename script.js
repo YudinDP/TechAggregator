@@ -2,6 +2,7 @@
 let currentProductId = null; 
 let currentUser = null;
 let comparisonList = [];
+const COMPARISON_STORAGE_KEY = 'techAggregatorComparisons';
 
 let comparisonMobileStart = 0;
 let comparisonHideIdentical = false;
@@ -2911,22 +2912,7 @@ function updateAuthButtons() {
 //Функция обновления счетчика сравнения
 async function updateComparisonCounter() {
   const token = localStorage.getItem('techAggregatorToken');
-  if (!token) {
-    //Для неавторизованных — счётчик 0
-    document.querySelectorAll('.comparison-counter').forEach(el => {
-      el.textContent = '0';
-      el.style.background = '';
-    });
-    return;
-  }
-
-  try {
-    const res = await fetch('http://localhost:3000/api/comparisons', {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-    const comparisons = res.ok ? await res.json() : [];
-    const count = comparisons.length;
-
+  const applyCounterValue = (count) => {
     document.querySelectorAll('.comparison-counter').forEach(counter => {
       counter.textContent = count;
       if (count > 0) {
@@ -2945,25 +2931,31 @@ async function updateComparisonCounter() {
         counter.style.marginLeft = '';
       }
     });
+  };
+
+  if (!token) {
+    const guestComparisons = JSON.parse(localStorage.getItem(COMPARISON_STORAGE_KEY) || '[]');
+    applyCounterValue(Array.isArray(guestComparisons) ? guestComparisons.length : 0);
+    return;
+  }
+
+  try {
+    const res = await fetch('http://localhost:3000/api/comparisons', {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    const comparisons = res.ok ? await res.json() : [];
+    const count = comparisons.length;
+
+    applyCounterValue(count);
   } catch (err) {
     console.error('Ошибка загрузки счётчика:', err);
-    //В случае ошибки — скрываем счётчик
-    document.querySelectorAll('.comparison-counter').forEach(el => {
-      el.textContent = '0';
-      el.style.background = '';
-    });
+    applyCounterValue(0);
   }
 }
 
 //Добавление в сравнение
 async function addToComparison(productId) {
   const token = localStorage.getItem('techAggregatorToken');
-  
-  if (!token) {
-    showCustomNotification('Войдите в аккаунт', 'info');
-    //window.location.href = 'auth.html';
-    return;
-  }
 
   //Находим товар
   const product = demoProducts.find(p => p.id === productId);
@@ -2973,11 +2965,19 @@ async function addToComparison(productId) {
   }
 
   try {
+    const guestComparisons = JSON.parse(localStorage.getItem(COMPARISON_STORAGE_KEY) || '[]');
+    const currentComparisons = !token
+      ? (Array.isArray(guestComparisons) ? guestComparisons : [])
+      : [];
+
     //Сначала получаем текущие товары в сравнении
-    const res = await fetch('http://localhost:3000/api/comparisons', {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-    const currentComparisons = res.ok ? await res.json() : [];
+    if (token) {
+      const res = await fetch('http://localhost:3000/api/comparisons', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const apiComparisons = res.ok ? await res.json() : [];
+      currentComparisons.splice(0, currentComparisons.length, ...apiComparisons);
+    }
 
     //Проверяем категорию
     if (currentComparisons.length > 0) {
@@ -2997,6 +2997,21 @@ async function addToComparison(productId) {
       return;
     }
 
+    if (!token) {
+      if (currentComparisons.some((item) => Number(item.id) === Number(productId))) {
+        showCustomNotification('Товар уже добавлен в сравнение', 'info');
+        return;
+      }
+      currentComparisons.push(product);
+      localStorage.setItem(COMPARISON_STORAGE_KEY, JSON.stringify(currentComparisons));
+      showCustomNotification(`${product.name} добавлен в сравнение`, 'success');
+      updateComparisonCounter();
+      if (window.location.pathname.includes('comparison.html')) {
+        initializeComparisonPage();
+      }
+      return;
+    }
+
     //Отправляем запрос на добавление
     const addRes = await fetch('http://localhost:3000/api/comparisons', {
       method: 'POST',
@@ -3008,6 +3023,7 @@ async function addToComparison(productId) {
     });
 
     if (addRes.ok) {
+      localStorage.setItem(COMPARISON_STORAGE_KEY, JSON.stringify([...currentComparisons, product]));
       showCustomNotification(`${product.name} добавлен в сравнение`, 'success');
       updateComparisonCounter();
       if (window.location.pathname.includes('comparison.html')) {
@@ -3091,7 +3107,13 @@ function addCurrentProductToComparison() {
 async function removeFromComparison(productId) {
   const token = localStorage.getItem('techAggregatorToken');
   if (!token) {
-    showCustomNotification('Войдите в аккаунт', 'info');
+    const guestComparisons = JSON.parse(localStorage.getItem(COMPARISON_STORAGE_KEY) || '[]');
+    const nextComparisons = (Array.isArray(guestComparisons) ? guestComparisons : [])
+      .filter(item => Number(item.id) !== Number(productId));
+    localStorage.setItem(COMPARISON_STORAGE_KEY, JSON.stringify(nextComparisons));
+    comparisonList = nextComparisons;
+    updateComparisonDisplay();
+    showCustomNotification('Удалено из сравнения', 'info');
     return;
   }
 
@@ -3128,7 +3150,12 @@ async function clearComparison() {
   }
   const token = localStorage.getItem('techAggregatorToken');
   if (!token) {
-    showCustomNotification('Войдите в аккаунт', 'info');
+    comparisonList = [];
+    comparisonMobileStart = 0;
+    localStorage.setItem(COMPARISON_STORAGE_KEY, JSON.stringify([]));
+    updateComparisonDisplay();
+    updateComparisonCounter();
+    showNotification('Сравнение очищено', 'info');
     return;
   }
   try {
@@ -3145,7 +3172,7 @@ async function clearComparison() {
   }
   comparisonList = [];
   comparisonMobileStart = 0;
-  localStorage.removeItem('techAggregatorComparison');
+  localStorage.setItem(COMPARISON_STORAGE_KEY, JSON.stringify([]));
   updateComparisonDisplay();
   updateComparisonCounter();
   showNotification('Сравнение очищено', 'info');
@@ -3406,17 +3433,12 @@ function updateComparisonDisplay() {
       comparisonCategory.style.color = '#6b7280';
     }
     if (comparisonEmptyTitle && comparisonEmptyText && comparisonEmptyAction) {
-      if (!isAuthorized) {
-        comparisonEmptyTitle.textContent = 'Авторизуйтесь чтобы сравнивать товары';
-        comparisonEmptyText.textContent = '';
-        comparisonEmptyAction.href = 'auth.html';
-        comparisonEmptyAction.textContent = 'Перейти к авторизации';
-      } else {
-        comparisonEmptyTitle.textContent = 'Товаров в сравнении нет';
-        comparisonEmptyText.textContent = '';
-        comparisonEmptyAction.href = 'catalog.html';
-        comparisonEmptyAction.textContent = 'Перейти в каталог';
-      }
+      comparisonEmptyTitle.textContent = 'Товаров в сравнении нет';
+      comparisonEmptyText.textContent = isAuthorized
+        ? ''
+        : 'Сравнение доступно без авторизации.';
+      comparisonEmptyAction.href = 'catalog.html';
+      comparisonEmptyAction.textContent = 'Перейти в каталог';
     }
   } else {
     if (emptyState) {
@@ -3553,11 +3575,6 @@ document.addEventListener('click', function(event) {
 async function initializeComparisonPage() {
   console.log('--- Начало инициализации сравнения ---');
   const token = localStorage.getItem('techAggregatorToken');
-  if (!token) {
-    comparisonList = [];
-    updateComparisonDisplay();
-    return;
-  }
 
   try {
     //Убедиться, что demoProducts загружены
@@ -3570,19 +3587,30 @@ async function initializeComparisonPage() {
       console.log('demoProducts уже загружены, длина: ' + window.demoProducts.length);
     }
 
-    //Загрузить сравнения с сервера
-    console.log('Загрузка сравнений из API...');
-    const res = await fetch('http://localhost:3000/api/comparisons', {
-      headers: { Authorization: `Bearer ${token}` }
-    });
+    const apiComparisons = [];
+    if (token) {
+      //Загрузить сравнения с сервера
+      console.log('Загрузка сравнений из API...');
+      const res = await fetch('http://localhost:3000/api/comparisons', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
 
-    if (!res.ok) {
-      throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+      }
+
+      const serverComparisons = await res.json();
+      apiComparisons.push(...serverComparisons);
+      localStorage.setItem(COMPARISON_STORAGE_KEY, JSON.stringify(serverComparisons));
+      console.log('Получено сравнений из API:', apiComparisons.length);
+      console.log('Пример данных из API (первый элемент):', apiComparisons.length > 0 ? apiComparisons[0] : 'Нет данных');
+    } else {
+      const storedComparisons = JSON.parse(localStorage.getItem(COMPARISON_STORAGE_KEY) || '[]');
+      if (Array.isArray(storedComparisons)) {
+        apiComparisons.push(...storedComparisons);
+      }
+      console.log('Получено сравнений из localStorage:', apiComparisons.length);
     }
-
-    const apiComparisons = await res.json();
-    console.log('Получено сравнений из API:', apiComparisons.length);
-    console.log('Пример данных из API (первый элемент):', apiComparisons.length > 0 ? apiComparisons[0] : 'Нет данных');
 
     //Преобразовать apiComparisons в формат, совместимый с demoProducts
     const products = window.demoProducts; 

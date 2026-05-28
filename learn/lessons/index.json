@@ -1,0 +1,148 @@
+{
+  "version": 2,
+  "lessons": [
+    {
+      "id": "smartphones-basics",
+      "title": "Как выбрать смартфон",
+      "category": "smartphones",
+      "categoryName": "Смартфоны",
+      "icon": "📱",
+      "level": "beginner",
+      "estimatedMinutes": 14,
+      "summary": "SoC, ОЗУ, память, экран, батарея и камера — с терминами, таблицами и скрытыми параметрами.",
+      "tags": ["смартфоны", "процессор", "экран", "камера", "батарея"]
+    },
+    {
+      "id": "laptops-basics",
+      "title": "Как выбрать ноутбук",
+      "category": "laptops",
+      "categoryName": "Ноутбуки",
+      "icon": "💻",
+      "level": "beginner",
+      "estimatedMinutes": 14,
+      "summary": "Поколения CPU, суффиксы U/H, SSD, экран и TGP видеокарты — с таблицами и терминами.",
+      "tags": ["ноутбуки", "процессор", "ssd", "видеокарта", "tgp"]
+    },
+    {
+      "id": "tablets-basics",
+      "title": "Как выбрать планшет",
+      "category": "tablets",
+      "categoryName": "Планшеты",
+      "icon": "📲",
+      "level": "beginner",
+      "estimatedMinutes": 10,
+      "summary": "iPad vs Android, стилус, экран и для чего планшет заменит ноутбук.",
+      "tags": ["планшеты", "ipad", "стилус", "android"]
+    },
+    {
+      "id": "smartwatches-basics",
+      "title": "Как выбрать смарт-часы",
+      "category": "smartwatches",
+      "categoryName": "Смарт-часы",
+      "icon": "⌚",
+      "level": "beginner",
+      "estimatedMinutes": 10,
+      "summary": "Экосистема, автономность, датчики здоровья и отличия Apple Watch, Wear OS и Garmin.",
+      "tags": ["часы", "wear os", "garmin", "здоровье"]
+    },
+    {
+      "id": "headphones-basics",
+      "title": "Как выбрать наушники",
+      "category": "headphones",
+      "categoryName": "Наушники",
+      "icon": "🎧",
+      "level": "beginner",
+      "estimatedMinutes": 13,
+      "summary": "Кодеки Bluetooth, ANC, импеданс и микрофон — с терминами и таблицами под сценарий.",
+      "tags": ["наушники", "bluetooth", "anc", "кодеки"]
+    },
+    {
+      "id": "monitors-basics",
+      "title": "Как выбрать монитор",
+      "category": "monitors",
+      "categoryName": "Мониторы",
+      "icon": "🖥️",
+      "level": "beginner",
+      "estimatedMinutes": 14,
+      "summary": "Матрицы, Гц, HDR, ШИМ и цвет — с таблицами и разбором скрытых параметров.",
+      "tags": ["мониторы", "матрица", "герцы", "hdr", "шим"]
+    },
+    {
+      "id": "tv-basics",
+      "title": "Как выбрать телевизор",
+      "category": "tv",
+      "categoryName": "Телевизоры",
+      "icon": "📺",
+      "level": "beginner",
+      "estimatedMinutes": 14,
+      "summary": "OLED vs QLED, HDR, HDMI 2.1 и частота панели — с таблицами и разбором маркетинга.",
+      "tags": ["телевизоры", "oled", "qled", "hdr", "hdmi"]
+    },
+    {
+      "id": "pc-basics",
+      "title": "Как собрать и выбрать ПК",
+      "category": "pc_components",
+      "categoryName": "Сборка ПК",
+      "icon": "🖥️",
+      "level": "beginner",
+      "estimatedMinutes": 15,
+      "summary": "Совместимость, баланс компонентов, блок питания, охлаждение и типичные ошибки сборки.",
+      "tags": ["пк", "сборка", "блок питания", "совместимость"]
+    },
+    {
+      "id": "cpus-basics",
+      "title": "Как выбрать процессор",
+      "category": "cpus",
+      "categoryName": "Процессоры",
+      "icon": "⚙️",
+      "level": "beginner",
+      "estimatedMinutes": 12,
+      "summary": "Ядра, потоки, частота, TDP и сокеты Intel/AMD — как читать спецификацию CPU.",
+      "tags": ["процессор", "cpu", "intel", "amd", "сокет"]
+    },
+    {
+      "id": "graphics-cards-basics",
+      "title": "Как выбрать видеокарту",
+      "category": "graphics_cards",
+      "categoryName": "Видеокарты",
+      "icon": "🎮",
+      "level": "beginner",
+      "estimatedMinutes": 12,
+      "summary": "VRAM, классы GPU, разрешение, питание и длина карты под монитор и БП.",
+      "tags": ["видеокарта", "gpu", "vram", "rtx"]
+    },
+    {
+      "id": "motherboards-basics",
+      "title": "Как выбрать материнскую плату",
+      "category": "motherboards",
+      "categoryName": "Материнские платы",
+      "icon": "🖧",
+      "level": "beginner",
+      "estimatedMinutes": 11,
+      "summary": "Чипсет, сокет, слоты RAM, M.2, VRM и порты при выборе материнской платы.",
+      "tags": ["материнская плата", "чипсет", "m.2", "vrm"]
+    },
+    {
+      "id": "ram-basics",
+      "title": "Как выбрать оперативную память",
+      "category": "ram",
+      "categoryName": "Оперативная память",
+      "icon": "🧠",
+      "level": "beginner",
+      "estimatedMinutes": 10,
+      "summary": "DDR4 vs DDR5, объём, частота, тайминги и двухканальный режим.",
+      "tags": ["озу", "ddr5", "ddr4", "тайминги"]
+    },
+    {
+      "id": "storage-basics",
+      "title": "Как выбрать накопитель",
+      "category": "drivers",
+      "categoryName": "Накопители",
+      "icon": "💽",
+      "level": "beginner",
+      "estimatedMinutes": 11,
+      "summary": "SSD SATA vs NVMe, TBW, DRAM-кэш, PCIe 4.0 и объём под систему и игры.",
+      "tags": ["ssd", "nvme", "накопитель", "pcie"]
+    }
+  ]
+}

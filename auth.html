@@ -19,6 +19,7 @@
       <a href="catalog.html" class="nav-link">Каталог</a>
       <a href="comparison.html" class="nav-link">Сравнение</a>
       <a href="recommendations.html" class="nav-link">Рекомендации</a>
+      <a href="learn.html" class="nav-link">Обучение</a>
     </nav>
 
     <div class="nav-search-container">
@@ -161,6 +162,16 @@
 <script src="script.js?v=import2"></script>
 <script>
 //Проверка авторизации только по JWT-токену
+function getAuthNextUrl() {
+  try {
+    const u = new URLSearchParams(window.location.search).get('next');
+    if (!u) return null;
+    // Защита от открытых редиректов: разрешаем только локальные пути без схемы и без protocol-relative.
+    if (/^https?:/i.test(u) || u.startsWith('//')) return null;
+    return u;
+  } catch (_) { return null; }
+}
+
 document.addEventListener('DOMContentLoaded', function () {
   //Проверяем, есть ли валидный токен
   const token = localStorage.getItem('techAggregatorToken');
@@ -170,7 +181,7 @@ document.addEventListener('DOMContentLoaded', function () {
       //Проверяем срок действия токена
       if (payload.exp && payload.exp * 1000 > Date.now()) {
         //Пользователь авторизован — перенаправляем
-        window.location.href = 'index.html';
+        window.location.href = getAuthNextUrl() || 'index.html';
         return;
       } else {
         //Токен просрочен — удаляем
@@ -248,7 +259,7 @@ document.getElementById('loginForm').addEventListener('submit', async function (
     localStorage.setItem('techAggregatorToken', data.token);
 
     //alert('Вход выполнен успешно!');
-    window.location.href = 'index.html';
+    window.location.href = getAuthNextUrl() || 'index.html';
 
   } catch (err) {
     console.error('Ошибка входа:', err);

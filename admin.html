@@ -891,6 +891,7 @@
                 <a href="catalog.html" class="nav-link">Каталог</a>
                 <a href="comparison.html" class="nav-link">Сравнение<span class="comparison-counter">0</span></a>
                 <a href="recommendations.html" class="nav-link">Рекомендации</a>
+                <a href="learn.html" class="nav-link">Обучение</a>
             </nav>
             <!-- Поиск -->
             <div class="nav-search-container">
@@ -975,6 +976,7 @@
                 <div class="admin-tabs-header" style="background: white; border-bottom: 1px solid #e5e7eb; border-top: 1px solid #e5e7eb;">
                     <button class="admin-tab-btn active" onclick="openModerationSubTab('reviews')">Отзывы</button>
                     <button class="admin-tab-btn" onclick="openModerationSubTab('requests')">Запросы</button>
+                    <button class="admin-tab-btn" onclick="openModerationSubTab('lessonSuggestions')">Темы уроков</button>
                 </div>
                 <div id="moderationContent">
                     <!-- Содержимое (отзывы/запросы) будет подгружаться сюда -->
@@ -1539,6 +1541,9 @@
                 } else if (type === 'requests') {
                     endpoint = '/api/admin/requests';
                     title = 'Запросы на добавление';
+                } else if (type === 'lessonSuggestions') {
+                    endpoint = '/api/admin/lesson-suggestions';
+                    title = 'Темы уроков (предложения)';
                 } else {
                     console.error('Неизвестный тип модерации:', type);
                     return;
@@ -1621,12 +1626,96 @@
                                 <button class="btn-action btn-view" style="margin-top: 0.5rem;" onclick="viewRequestDetails(${item.id})">Посмотреть</button>
                             </div>
                         `;
+                    } else if (type === 'lessonSuggestions') {
+                        const safeText = (s) => String(s == null ? '' : s)
+                            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                        const requesterName = item.userName || 'Аноним';
+                        const userEmail = item.userEmail ? ` (${safeText(item.userEmail)})` : '';
+                        return `
+                            <div class="moderation-item" data-id="${item.id}" data-type="lessonSuggestion">
+                                <div class="moderation-header">
+                                    <div class="moderation-info">
+                                        <h4>${safeText(item.topic)}</h4>
+                                        <p>Категория: ${safeText(item.category) || 'Не указана'}</p>
+                                        <p>Пользователь: ${safeText(requesterName)}${userEmail} (ID: ${item.userId || 'N/A'})</p>
+                                        <p>Дата: ${formattedDate}</p>
+                                    </div>
+                                    <span class="status-badge status-${item.status || 'pending'}">${item.status || 'pending'}</span>
+                                </div>
+                                <div>
+                                    <strong>Описание от пользователя:</strong><br>
+                                    ${item.message ? safeText(item.message).replace(/\n/g, '<br>') : '<em>Не указано</em>'}
+                                </div>
+                                <div class="moderation-actions">
+                                    <button class="btn-action btn-approve" onclick="updateLessonSuggestionStatus(${item.id}, 'approved')">Одобрить</button>
+                                    <button class="btn-action btn-reject" onclick="updateLessonSuggestionStatus(${item.id}, 'rejected')">Отклонить</button>
+                                    <button class="btn-action" style="background: #e2e8f0; color: #1f2937;" onclick="deleteLessonSuggestion(${item.id})">Удалить</button>
+                                </div>
+                                <textarea class="admin-notes" id="notesLessonSuggestion${item.id}" placeholder="Примечания администратора...">${safeText(item.adminNotes || '')}</textarea>
+                            </div>
+                        `;
                     }
                     return '';
                 }).join('');
             } catch (error) {
                 console.error(`Ошибка загрузки ${type}:`, error);
-                container.innerHTML = `<h3>${type === 'reviews' ? 'Отзывы на модерации' : 'Запросы на добавление'}</h3><div class="moderation-list"><p class="error-message">Ошибка: ${error.message}</p></div>`;
+                const errTitle =
+                    type === 'reviews'
+                        ? 'Отзывы на модерации'
+                        : type === 'requests'
+                        ? 'Запросы на добавление'
+                        : 'Темы уроков (предложения)';
+                container.innerHTML = `<h3>${errTitle}</h3><div class="moderation-list"><p class="error-message">Ошибка: ${error.message}</p></div>`;
+            }
+        }
+
+        async function updateLessonSuggestionStatus(suggestionId, newStatus) {
+            const notesInput = document.getElementById(`notesLessonSuggestion${suggestionId}`);
+            const adminNotes = notesInput ? notesInput.value.trim() : '';
+            const token = localStorage.getItem('techAggregatorToken');
+            try {
+                const response = await fetch(`/api/admin/lesson-suggestions/${suggestionId}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ status: newStatus, adminNotes })
+                });
+                if (!response.ok) throw new Error(await response.text());
+                if (typeof showCustomNotification === 'function') {
+                    showCustomNotification(
+                        `Предложение ID ${suggestionId} ${newStatus === 'approved' ? 'одобрено' : 'отклонено'}.`,
+                        'success'
+                    );
+                }
+                loadModerationData(currentModerationTab);
+            } catch (error) {
+                console.error('Ошибка обновления предложения темы:', error);
+                if (typeof showCustomNotification === 'function') {
+                    showCustomNotification(`Ошибка: ${error.message}`, 'error');
+                }
+            }
+        }
+
+        async function deleteLessonSuggestion(suggestionId) {
+            if (!confirm('Удалить это предложение темы безвозвратно?')) return;
+            const token = localStorage.getItem('techAggregatorToken');
+            try {
+                const response = await fetch(`/api/admin/lesson-suggestions/${suggestionId}`, {
+                    method: 'DELETE',
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                if (!response.ok) throw new Error(await response.text());
+                if (typeof showCustomNotification === 'function') {
+                    showCustomNotification('Предложение удалено.', 'success');
+                }
+                loadModerationData(currentModerationTab);
+            } catch (error) {
+                console.error('Ошибка удаления предложения темы:', error);
+                if (typeof showCustomNotification === 'function') {
+                    showCustomNotification(`Ошибка: ${error.message}`, 'error');
+                }
             }
         }
 

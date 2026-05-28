@@ -1,0 +1,987 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="theme.js"></script>
+    <title>Обучение - tech-nozone</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="dark-theme.css">
+    <link rel="icon" sizes="180x180" href="sources/logo.png">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <div class="logo">
+                <h1><a href="index.html" style="color: inherit; text-decoration: none;">tech-nozone</a></h1>
+            </div>
+            <nav class="nav">
+                <a href="index.html" class="nav-link">Главная</a>
+                <a href="catalog.html" class="nav-link">Каталог</a>
+                <a href="comparison.html" class="nav-link">Сравнение<span class="comparison-counter">0</span></a>
+                <a href="recommendations.html" class="nav-link">Рекомендации</a>
+                <a href="learn.html" class="nav-link active">Обучение</a>
+            </nav>
+
+            <div class="nav-search-container">
+                <input type="text" class="nav-search" id="navSearch"
+                       placeholder="Поиск товаров..."
+                       oninput="showNavSearchSuggestions()"
+                       onkeypress="handleNavSearchEnter(event)">
+                <button class="nav-search-btn" onclick="navSearchProducts()">🔍</button>
+                <div id="navSearchSuggestions" class="nav-search-suggestions"></div>
+            </div>
+            <div class="auth-buttons">
+                <a href="auth.html" class="btn btn-outline">Войти</a>
+                <a href="auth.html?tab=register" class="btn btn-primary">Регистрация</a>
+            </div>
+        </div>
+    </header>
+
+    <main class="main">
+        <div class="container learn-page">
+            <!-- Вид: список уроков -->
+            <section id="learnListView">
+                <header class="page-header learn-page-header">
+                    <h2>Обучение</h2>
+                    <p class="learn-page-header__lead">Короткие уроки по категориям техники: лекции слайдами и тест в конце — без уровней и очков.</p>
+                </header>
+
+                <div class="learn-toolbar">
+                    <div class="learn-toolbar__search">
+                        <input type="text" id="learnSearch" placeholder="Поиск по урокам...">
+                    </div>
+                    <div class="learn-toolbar__filters">
+                        <select id="learnCategoryFilter">
+                            <option value="">Все категории</option>
+                        </select>
+                        <select id="learnLevelFilter">
+                            <option value="">Любой уровень</option>
+                            <option value="beginner">Новичкам</option>
+                            <option value="intermediate">Уверенно</option>
+                            <option value="advanced">Углублённо</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div id="learnLessonsGrid" class="learn-lessons-grid">
+                    <div class="learn-lessons-loading">Загрузка уроков...</div>
+                </div>
+
+                <div id="learnLessonsEmpty" class="learn-empty-state" hidden>
+                    <h3>Уроки не найдены</h3>
+                    <p>Попробуйте сбросить фильтры или предложите свою тему ниже.</p>
+                </div>
+
+                <!-- Форма предложения темы -->
+                <section class="learn-suggest" id="learnSuggestSection">
+                    <div class="learn-suggest__head">
+                        <h2>Не хватает темы?</h2>
+                        <p>Предложите урок — мы рассмотрим заявку и, если тема актуальна, добавим её в список.</p>
+                    </div>
+
+                    <div id="learnSuggestNotice" class="learn-suggest__notice" hidden></div>
+
+                    <form id="learnSuggestForm" class="learn-suggest__form" autocomplete="off">
+                        <div class="learn-suggest__row">
+                            <div class="form-group">
+                                <label for="learnSuggestTopic">Тема урока *</label>
+                                <input type="text" id="learnSuggestTopic" maxlength="200" required
+                                       placeholder="Например: как выбрать механическую клавиатуру">
+                            </div>
+                            <div class="form-group">
+                                <label for="learnSuggestCategory">Категория техники</label>
+                                <select id="learnSuggestCategory">
+                                    <option value="">Не указана</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="learnSuggestMessage">Что именно хочется разобрать?</label>
+                            <textarea id="learnSuggestMessage" rows="4" maxlength="2000"
+                                      placeholder="Опишите, какие вопросы вы хотели бы видеть в уроке, что вас смущает в характеристиках и т.д."></textarea>
+                            <div class="learn-suggest__counter"><span id="learnSuggestCount">0</span> / 2000</div>
+                        </div>
+                        <div class="learn-suggest__actions">
+                            <button type="submit" class="btn btn-primary" id="learnSuggestSubmit">Отправить предложение</button>
+                        </div>
+                        <p class="learn-suggest__hint" id="learnSuggestAuthHint" hidden>
+                            Чтобы предложить тему, <a href="auth.html">войдите в аккаунт</a>.
+                        </p>
+                    </form>
+                </section>
+            </section>
+
+            <!-- Вид: чтение урока -->
+            <section id="learnLessonView" hidden>
+                <button type="button" class="learn-back-btn" id="learnBackBtn">← К списку уроков</button>
+
+                <div class="learn-carousel learn-carousel--lecture" id="learnLectureCarousel" hidden>
+                    <div class="learn-carousel__viewport">
+                        <div class="learn-carousel__track" id="learnLectureTrack" role="region" aria-live="polite"></div>
+                    </div>
+                    <footer class="learn-carousel__footer">
+                        <button type="button" class="learn-carousel__nav learn-carousel__nav--prev" id="learnLecturePrev" aria-label="Предыдущий слайд">‹</button>
+                        <div class="learn-carousel__center">
+                            <div class="learn-carousel__dots" id="learnLectureDots" role="tablist"></div>
+                            <span class="learn-carousel__counter" id="learnLectureCounter">1 / 1</span>
+                        </div>
+                        <button type="button" class="learn-carousel__nav learn-carousel__nav--next" id="learnLectureNext" aria-label="Следующий слайд">›</button>
+                    </footer>
+                </div>
+
+                <div class="learn-carousel learn-carousel--quiz" id="learnQuizCarousel" hidden>
+                    <h2 class="learn-quiz-carousel__title" id="learnQuizTitle">Тест</h2>
+                    <div class="learn-carousel__viewport">
+                        <form id="learnQuizForm" class="learn-carousel__track learn-quiz-track"></form>
+                    </div>
+                    <footer class="learn-carousel__footer">
+                        <button type="button" class="learn-carousel__nav learn-carousel__nav--prev" id="learnQuizPrev" aria-label="Предыдущий вопрос">‹</button>
+                        <div class="learn-carousel__center">
+                            <div class="learn-carousel__dots" id="learnQuizDots" role="tablist"></div>
+                            <span class="learn-carousel__counter" id="learnQuizCounter">1 / 5</span>
+                        </div>
+                        <button type="button" class="learn-carousel__nav learn-carousel__nav--next" id="learnQuizNext" aria-label="Следующий вопрос">›</button>
+                    </footer>
+                    <div class="learn-quiz-carousel__finish">
+                        <button type="button" class="btn btn-primary" id="learnQuizFinishBtn" hidden>Завершить тест</button>
+                        <button type="button" class="btn btn-outline" id="learnQuizResetBtn" hidden>Сбросить ответы</button>
+                    </div>
+                    <div class="learn-quiz__score" id="learnQuizScore" hidden></div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2025-2026 tech-nozone. Все права защищены.</p>
+        </div>
+    </footer>
+
+    <script src="config.js"></script>
+    <script src="script.js?v=import2"></script>
+    <script>
+    (function () {
+        const LEVEL_LABEL = {
+            beginner: 'Новичкам',
+            intermediate: 'Уверенно',
+            advanced: 'Углублённо'
+        };
+
+        let lessonsIndex = [];
+        let currentLesson = null;
+        let currentLessonId = null;
+        let quizState = null;
+        let lectureCarousel = { index: 0, total: 0 };
+        let quizCarousel = { index: 0, total: 0 };
+
+        function getApiBase() {
+            if (window.API_BASE) return String(window.API_BASE).replace(/\/$/, '');
+            const { protocol, hostname } = window.location;
+            if (hostname === 'localhost' || hostname === '127.0.0.1') {
+                return `${protocol}//${hostname}:3000`;
+            }
+            return `${protocol}//${hostname}`;
+        }
+
+        function getStaticBase() {
+            return 'learn';
+        }
+
+        function escapeHtml(s) {
+            return String(s ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;');
+        }
+
+        function isAuthenticated() {
+            try {
+                const token = localStorage.getItem('techAggregatorToken');
+                if (!token) return false;
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                return payload && payload.exp * 1000 > Date.now();
+            } catch (_) {
+                return false;
+            }
+        }
+
+        async function fetchLessonsIndex() {
+            try {
+                const res = await fetch(`${getApiBase()}/api/learn/lessons`);
+                if (res.ok) {
+                    const data = await res.json();
+                    if (Array.isArray(data?.lessons)) return data.lessons;
+                }
+            } catch (e) {
+                console.warn('[learn-page] API недоступен, пробую статику:', e.message || e);
+            }
+            try {
+                const res = await fetch(`${getStaticBase()}/lessons/index.json`);
+                if (res.ok) {
+                    const data = await res.json();
+                    if (Array.isArray(data?.lessons)) return data.lessons;
+                }
+            } catch (_) {}
+            return [];
+        }
+
+        async function fetchLessonById(id) {
+            try {
+                const res = await fetch(`${getApiBase()}/api/learn/lessons/${encodeURIComponent(id)}`);
+                if (res.ok) return res.json();
+            } catch (e) {
+                console.warn('[learn-page] API недоступен, пробую статику:', e.message || e);
+            }
+            try {
+                const res = await fetch(`${getStaticBase()}/lessons/${encodeURIComponent(id)}.json`);
+                if (res.ok) return res.json();
+            } catch (_) {}
+            return null;
+        }
+
+        function fillCategoryFilters() {
+            const filterSel = document.getElementById('learnCategoryFilter');
+            const suggestSel = document.getElementById('learnSuggestCategory');
+            const cats = new Map();
+            lessonsIndex.forEach((l) => {
+                if (l.category) cats.set(l.category, l.categoryName || l.category);
+            });
+            const sorted = Array.from(cats.entries()).sort((a, b) => a[1].localeCompare(b[1], 'ru'));
+            sorted.forEach(([slug, name]) => {
+                filterSel.insertAdjacentHTML(
+                    'beforeend',
+                    `<option value="${escapeHtml(slug)}">${escapeHtml(name)}</option>`
+                );
+                suggestSel.insertAdjacentHTML(
+                    'beforeend',
+                    `<option value="${escapeHtml(slug)}">${escapeHtml(name)}</option>`
+                );
+            });
+
+            // Добавим в форму несколько распространённых категорий, которых может не быть в индексе уроков
+            const extra = [
+                ['tablets', 'Планшеты'],
+                ['cameras', 'Фотоаппараты'],
+                ['smartwatches', 'Смарт-часы'],
+                ['keyboards', 'Клавиатуры'],
+                ['mouses', 'Мыши'],
+                ['power_banks', 'Павербанки'],
+                ['portable_speakers', 'Портативные колонки'],
+                ['gaming', 'Игровые консоли'],
+                ['cpus', 'Процессоры'],
+                ['graphics_cards', 'Видеокарты'],
+                ['ram', 'Оперативная память'],
+                ['motherboards', 'Материнские платы'],
+                ['drivers', 'Накопители'],
+                ['other', 'Другое']
+            ];
+            extra.forEach(([slug, name]) => {
+                if (!cats.has(slug)) {
+                    suggestSel.insertAdjacentHTML(
+                        'beforeend',
+                        `<option value="${escapeHtml(slug)}">${escapeHtml(name)}</option>`
+                    );
+                }
+            });
+        }
+
+        function lessonCardHtml(lesson) {
+            const tags = Array.isArray(lesson.tags) ? lesson.tags.slice(0, 4) : [];
+            const tagsHtml = tags
+                .map((t) => `<span class="learn-tag">#${escapeHtml(t)}</span>`)
+                .join('');
+            const levelLabel = LEVEL_LABEL[lesson.level] || 'Урок';
+            const minutes = Number(lesson.estimatedMinutes) > 0 ? `${Number(lesson.estimatedMinutes)} мин` : '';
+            return `
+                <article class="learn-card" data-lesson-id="${escapeHtml(lesson.id)}">
+                    <div class="learn-card__icon" aria-hidden="true">${escapeHtml(lesson.icon || '📘')}</div>
+                    <div class="learn-card__body">
+                        <div class="learn-card__meta">
+                            <span class="learn-card__level learn-card__level--${escapeHtml(lesson.level || 'beginner')}">${escapeHtml(levelLabel)}</span>
+                            ${minutes ? `<span class="learn-card__minutes">⏱ ${escapeHtml(minutes)}</span>` : ''}
+                            ${lesson.categoryName ? `<span class="learn-card__category">${escapeHtml(lesson.categoryName)}</span>` : ''}
+                        </div>
+                        <h3 class="learn-card__title">${escapeHtml(lesson.title)}</h3>
+                        <p class="learn-card__summary">${escapeHtml(lesson.summary || '')}</p>
+                        ${tagsHtml ? `<div class="learn-card__tags">${tagsHtml}</div>` : ''}
+                    </div>
+                    <div class="learn-card__action">
+                        <button type="button" class="btn btn-primary btn-small">Открыть урок</button>
+                    </div>
+                </article>
+            `;
+        }
+
+        function renderLessonsList() {
+            const grid = document.getElementById('learnLessonsGrid');
+            const empty = document.getElementById('learnLessonsEmpty');
+            const search = (document.getElementById('learnSearch').value || '').trim().toLowerCase();
+            const categoryFilter = document.getElementById('learnCategoryFilter').value;
+            const levelFilter = document.getElementById('learnLevelFilter').value;
+
+            const filtered = lessonsIndex.filter((l) => {
+                if (categoryFilter && l.category !== categoryFilter) return false;
+                if (levelFilter && l.level !== levelFilter) return false;
+                if (!search) return true;
+                const hay = [
+                    l.title,
+                    l.summary,
+                    l.categoryName,
+                    Array.isArray(l.tags) ? l.tags.join(' ') : ''
+                ].join(' ').toLowerCase();
+                return hay.includes(search);
+            });
+
+            if (filtered.length === 0) {
+                grid.innerHTML = '';
+                empty.hidden = false;
+                return;
+            }
+            empty.hidden = true;
+            grid.innerHTML = filtered.map(lessonCardHtml).join('');
+        }
+
+        function assetUrl(path) {
+            if (!path) return '';
+            if (path.startsWith('http')) return path;
+            return `${getApiBase()}/learn/${String(path).replace(/^\/+/, '')}`;
+        }
+
+        function buildCalloutHtml(c) {
+            const type = (c.type || 'info').toLowerCase();
+            const icon = { info: 'ℹ️', tip: '💡', warning: '⚠️' }[type] || 'ℹ️';
+            return `<aside class="learn-callout learn-callout--${escapeHtml(type)}"><span class="learn-callout__icon" aria-hidden="true">${icon}</span><div class="learn-callout__text">${escapeHtml(c.text || '')}</div></aside>`;
+        }
+
+        function buildTermsHtml(terms) {
+            if (!Array.isArray(terms) || !terms.length) return '';
+            const cards = terms
+                .map(
+                    (t) => `
+                <div class="learn-term-card">
+                    <h4 class="learn-term-card__name">${escapeHtml(t.term || '')}</h4>
+                    ${t.definition ? `<p class="learn-term-card__def"><strong>Что это:</strong> ${escapeHtml(t.definition)}</p>` : ''}
+                    ${t.role ? `<p class="learn-term-card__role"><strong>Зачем смотреть:</strong> ${escapeHtml(t.role)}</p>` : ''}
+                    ${t.howToRead ? `<p class="learn-term-card__how"><strong>Как читать:</strong> ${escapeHtml(t.howToRead)}</p>` : ''}
+                </div>`
+                )
+                .join('');
+            return `<div class="learn-terms-grid">${cards}</div>`;
+        }
+
+        function buildTableHtml(table) {
+            if (!table || !Array.isArray(table.headers) || !Array.isArray(table.rows)) return '';
+            const head = table.headers.map((h) => `<th>${escapeHtml(h)}</th>`).join('');
+            const body = table.rows
+                .map((row) => `<tr>${row.map((cell) => `<td>${escapeHtml(cell)}</td>`).join('')}</tr>`)
+                .join('');
+            const cap = table.caption ? `<caption>${escapeHtml(table.caption)}</caption>` : '';
+            return `<div class="learn-table-wrap"><table class="learn-table">${cap}<thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div>`;
+        }
+
+        function buildAnalogiesHtml(analogies) {
+            if (!Array.isArray(analogies) || !analogies.length) return '';
+            return analogies
+                .map(
+                    (a) => `
+                <aside class="learn-analogy">
+                    <span class="learn-analogy__label">${escapeHtml(a.title || 'Аналогия')}</span>
+                    <p class="learn-analogy__text">${escapeHtml(a.text || '')}</p>
+                </aside>`
+                )
+                .join('');
+        }
+
+        function buildBulletsHtml(bullets) {
+            if (!Array.isArray(bullets) || !bullets.length) return '';
+            const items = bullets
+                .map(
+                    (b) =>
+                        `<li><strong>${escapeHtml(b.label || '')}:</strong> ${escapeHtml(b.text || '')}</li>`
+                )
+                .join('');
+            return `<ul class="learn-bullet-list">${items}</ul>`;
+        }
+
+        function buildCompareHtml(items) {
+            if (!Array.isArray(items) || !items.length) return '';
+            const rows = items
+                .map(
+                    (it) => `
+                <div class="learn-compare-row learn-compare-row--${escapeHtml(it.level || 'medium')}">
+                    <span class="learn-compare-row__label">${escapeHtml(it.label || '')}</span>
+                    <div class="learn-compare-row__bar"><div class="learn-compare-row__fill" style="width:${Math.min(100, Math.max(10, Number(it.weight) || 50))}%"></div></div>
+                    <span class="learn-compare-row__hint">${escapeHtml(it.hint || '')}</span>
+                </div>`
+                )
+                .join('');
+            return `<div class="learn-compare-chart">${rows}</div>`;
+        }
+
+        function buildQuizLaunchSlideHtml(index, total, questionCount) {
+            const n = Number(questionCount) || 5;
+            const word = n === 1 ? 'вопрос' : n >= 2 && n <= 4 ? 'вопроса' : 'вопросов';
+            return `
+                <article class="learn-slide learn-slide--quiz-launch learn-lesson-slide" data-slide-index="${index}" role="tabpanel">
+                    <div class="learn-slide__counter">Слайд ${index + 1} из ${total}</div>
+                    <h2 class="learn-slide__title">Проверь себя</h2>
+                    <p class="learn-slide__lead">Вы дошли до конца лекции. Короткий тест поможет закрепить главное — без оценок и рейтингов.</p>
+                    <p class="learn-slide__p">В тесте <strong>${n} ${word}</strong> по материалу слайдов. Отвечайте в своём темпе: можно листать вопросы стрелками, как лекцию. В конце увидите результат и пояснения к каждому пункту.</p>
+                    <p class="learn-slide__p">Если сомневаетесь — вернитесь назад стрелкой «влево» и перечитайте нужный слайд.</p>
+                    <div class="learn-slide__quiz-actions">
+                        <button type="button" class="btn btn-primary btn-lg learn-slide__quiz-btn">Начать тест</button>
+                    </div>
+                </article>
+            `;
+        }
+
+        function buildSectionSlideHtml(section, index, total) {
+            const paragraphs = (section.paragraphs || [])
+                .map((p) => `<p class="learn-slide__p">${escapeHtml(p)}</p>`)
+                .join('');
+            const callouts = Array.isArray(section.callouts)
+                ? section.callouts.map(buildCalloutHtml).join('')
+                : '';
+            let image = '';
+            if (section.image) {
+                image = `<figure class="learn-slide__media"><img src="${escapeHtml(assetUrl(section.image))}" alt="" loading="lazy"></figure>`;
+            }
+            const lead = section.lead
+                ? `<p class="learn-slide__lead">${escapeHtml(section.lead)}</p>`
+                : '';
+            return `
+                <article class="learn-slide learn-lesson-slide" data-slide-index="${index}" role="tabpanel">
+                    <div class="learn-slide__counter">Слайд ${index + 1} из ${total}</div>
+                    <h2 class="learn-slide__title">${escapeHtml(section.title || '')}</h2>
+                    ${lead}
+                    ${image}
+                    ${buildTermsHtml(section.terms)}
+                    ${buildTableHtml(section.table)}
+                    ${buildCompareHtml(section.compare)}
+                    ${buildBulletsHtml(section.bullets)}
+                    <div class="learn-slide__body">${paragraphs}</div>
+                    ${buildAnalogiesHtml(section.analogies)}
+                    ${callouts}
+                </article>
+            `;
+        }
+
+        function setCarouselSlide(carouselEl, trackEl, index, total) {
+            const slides = trackEl.querySelectorAll('.learn-slide, .learn-quiz-slide');
+            slides.forEach((s, i) => {
+                const active = i === index;
+                s.classList.toggle('learn-slide--active', active);
+                s.setAttribute('aria-hidden', active ? 'false' : 'true');
+            });
+            const dotsEl = carouselEl.querySelector('.learn-carousel__dots');
+            if (dotsEl) {
+                dotsEl.querySelectorAll('.learn-carousel__dot').forEach((d, i) => {
+                    d.classList.toggle('learn-carousel__dot--active', i === index);
+                    d.setAttribute('aria-selected', i === index ? 'true' : 'false');
+                });
+            }
+            const counterEl = carouselEl.querySelector('.learn-carousel__counter');
+            if (counterEl) counterEl.textContent = `${index + 1} / ${total}`;
+            const prevBtn = carouselEl.querySelector('.learn-carousel__nav--prev');
+            const nextBtn = carouselEl.querySelector('.learn-carousel__nav--next');
+            if (prevBtn) prevBtn.disabled = index <= 0;
+            if (nextBtn) nextBtn.disabled = index >= total - 1;
+        }
+
+        function initLectureCarousel(sections, hasQuiz, questionCount) {
+            const carousel = document.getElementById('learnLectureCarousel');
+            const track = document.getElementById('learnLectureTrack');
+            const dots = document.getElementById('learnLectureDots');
+            const total = sections.length + (hasQuiz ? 1 : 0);
+            let slidesHtml = sections.map((s, i) => buildSectionSlideHtml(s, i, total)).join('');
+            if (hasQuiz) {
+                slidesHtml += buildQuizLaunchSlideHtml(sections.length, total, questionCount);
+            }
+            lectureCarousel = { index: 0, total };
+
+            track.innerHTML = slidesHtml;
+            dots.innerHTML = Array.from({ length: total })
+                .map(
+                    (_, i) =>
+                        `<button type="button" class="learn-carousel__dot${i === 0 ? ' learn-carousel__dot--active' : ''}" data-index="${i}" role="tab" aria-label="Слайд ${i + 1}" aria-selected="${i === 0 ? 'true' : 'false'}"></button>`
+                )
+                .join('');
+
+            carousel.hidden = false;
+            setCarouselSlide(carousel, track, 0, total);
+        }
+
+        function goLectureSlide(delta) {
+            const carousel = document.getElementById('learnLectureCarousel');
+            const track = document.getElementById('learnLectureTrack');
+            const next = Math.min(lectureCarousel.total - 1, Math.max(0, lectureCarousel.index + delta));
+            lectureCarousel.index = next;
+            setCarouselSlide(carousel, track, next, lectureCarousel.total);
+        }
+
+        function renderLesson(lesson) {
+            const lectureCarouselEl = document.getElementById('learnLectureCarousel');
+            const quizCarouselEl = document.getElementById('learnQuizCarousel');
+
+            const sections = Array.isArray(lesson.sections) ? lesson.sections : [];
+            const hasQuiz = Array.isArray(lesson.quiz) && lesson.quiz.length > 0;
+            if (sections.length || hasQuiz) {
+                initLectureCarousel(sections, hasQuiz, hasQuiz ? lesson.quiz.length : 0);
+            } else {
+                lectureCarouselEl.hidden = true;
+                document.getElementById('learnLectureTrack').innerHTML =
+                    '<p class="learn-error learn-slide__p">В этом уроке пока нет слайдов.</p>';
+            }
+
+            quizCarouselEl.hidden = true;
+            document.getElementById('learnQuizForm').innerHTML = '';
+            document.getElementById('learnQuizScore').hidden = true;
+        }
+
+        function openLessonView(lessonId) {
+            document.getElementById('learnListView').hidden = true;
+            const view = document.getElementById('learnLessonView');
+            view.hidden = false;
+            window.scrollTo({ top: 0, behavior: 'instant' in window ? 'instant' : 'auto' });
+            currentLessonId = lessonId;
+            const url = new URL(window.location);
+            url.searchParams.set('lesson', lessonId);
+            window.history.replaceState({}, '', url);
+
+            const lectureCarouselEl = document.getElementById('learnLectureCarousel');
+            const quizCarouselEl = document.getElementById('learnQuizCarousel');
+            const track = document.getElementById('learnLectureTrack');
+            track.innerHTML = '<p class="learn-loading">Загрузка урока...</p>';
+            lectureCarouselEl.hidden = false;
+            quizCarouselEl.hidden = true;
+            document.getElementById('learnQuizForm').innerHTML = '';
+
+            fetchLessonById(lessonId).then((lesson) => {
+                if (currentLessonId !== lessonId) return;
+                if (!lesson) {
+                    track.innerHTML = '<p class="learn-error">Не удалось загрузить урок.</p>';
+                    return;
+                }
+                currentLesson = lesson;
+                document.title = `${lesson.title} - Обучение - tech-nozone`;
+                renderLesson(lesson);
+            });
+        }
+
+        function closeLessonView() {
+            document.getElementById('learnLessonView').hidden = true;
+            document.getElementById('learnListView').hidden = false;
+            currentLesson = null;
+            currentLessonId = null;
+            quizState = null;
+            document.title = 'Обучение - tech-nozone';
+            const url = new URL(window.location);
+            url.searchParams.delete('lesson');
+            window.history.replaceState({}, '', url);
+        }
+
+        function buildQuizSlideHtml(q, qIndex, total) {
+            const opts = Array.isArray(q.options) ? q.options : [];
+            const baseName = `q_${qIndex}`;
+            let body = '';
+            if (q.type === 'single') {
+                body = opts
+                    .map(
+                        (opt, i) => `
+                            <label class="learn-quiz-option">
+                                <input type="radio" name="${baseName}" value="${i}">
+                                <span>${escapeHtml(opt)}</span>
+                            </label>
+                        `
+                    )
+                    .join('');
+            } else if (q.type === 'multiple') {
+                body = opts
+                    .map(
+                        (opt, i) => `
+                            <label class="learn-quiz-option">
+                                <input type="checkbox" name="${baseName}" value="${i}">
+                                <span>${escapeHtml(opt)}</span>
+                            </label>
+                        `
+                    )
+                    .join('');
+            } else if (q.type === 'input') {
+                body = `<input type="text" name="${baseName}" class="learn-quiz-input" placeholder="Введите ответ" autocomplete="off">`;
+            }
+            const typeLabel = { single: 'Один ответ', multiple: 'Несколько ответов', input: 'Ввод текста' }[q.type] || '';
+            return `
+                <article class="learn-slide learn-quiz-slide" data-q-index="${qIndex}" data-slide-index="${qIndex}" role="tabpanel">
+                    <div class="learn-slide__counter">Вопрос ${qIndex + 1} из ${total}</div>
+                    <div class="learn-quiz-q__head">
+                        <span class="learn-quiz-q__type">${escapeHtml(typeLabel)}</span>
+                    </div>
+                    <h3 class="learn-quiz-q__text">${escapeHtml(q.question || '')}</h3>
+                    <div class="learn-quiz-q__body">${body}</div>
+                    <div class="learn-quiz-q__feedback" hidden></div>
+                </article>
+            `;
+        }
+
+        function goQuizSlide(delta) {
+            const carousel = document.getElementById('learnQuizCarousel');
+            const form = document.getElementById('learnQuizForm');
+            const next = Math.min(quizCarousel.total - 1, Math.max(0, quizCarousel.index + delta));
+            quizCarousel.index = next;
+            setCarouselSlide(carousel, form, next, quizCarousel.total);
+            updateQuizFinishVisibility();
+        }
+
+        function updateQuizFinishVisibility() {
+            const finishBtn = document.getElementById('learnQuizFinishBtn');
+            const resetBtn = document.getElementById('learnQuizResetBtn');
+            const onLast = quizCarousel.index >= quizCarousel.total - 1;
+            finishBtn.hidden = !onLast || (quizState && quizState.submitted);
+            resetBtn.hidden = quizState && quizState.submitted;
+        }
+
+        function normalizeInput(s) {
+            return String(s || '').toLowerCase().trim().replace(/\s+/g, ' ');
+        }
+
+        function checkQuestion(form, q, qIndex) {
+            const baseName = `q_${qIndex}`;
+            if (q.type === 'single') {
+                const checked = form.querySelector(`input[name="${baseName}"]:checked`);
+                if (!checked) return { ok: false, answered: false };
+                return { ok: parseInt(checked.value, 10) === Number(q.correctIndex), answered: true };
+            }
+            if (q.type === 'multiple') {
+                const checked = Array.from(form.querySelectorAll(`input[name="${baseName}"]:checked`)).map((el) =>
+                    parseInt(el.value, 10)
+                );
+                const correct = Array.isArray(q.correctIndices) ? [...q.correctIndices].sort() : [];
+                const got = [...checked].sort();
+                const ok = correct.length === got.length && correct.every((v, i) => v === got[i]);
+                return { ok, answered: got.length > 0 };
+            }
+            if (q.type === 'input') {
+                const input = form.querySelector(`input[name="${baseName}"]`);
+                const value = normalizeInput(input ? input.value : '');
+                if (!value) return { ok: false, answered: false };
+                const correct = (Array.isArray(q.correctAnswers) ? q.correctAnswers : [])
+                    .map(normalizeInput)
+                    .filter(Boolean);
+                return { ok: correct.includes(value), answered: true };
+            }
+            return { ok: false, answered: false };
+        }
+
+        function startQuiz() {
+            if (!currentLesson || !Array.isArray(currentLesson.quiz) || currentLesson.quiz.length === 0) return;
+            const carousel = document.getElementById('learnQuizCarousel');
+            const lectureCarouselEl = document.getElementById('learnLectureCarousel');
+            const form = document.getElementById('learnQuizForm');
+            const dots = document.getElementById('learnQuizDots');
+            const quiz = currentLesson.quiz;
+            const total = quiz.length;
+
+            lectureCarouselEl.hidden = true;
+            carousel.hidden = false;
+            document.getElementById('learnQuizTitle').textContent = `Тест: ${currentLesson.title}`;
+            document.getElementById('learnQuizScore').hidden = true;
+
+            form.innerHTML = quiz.map((q, i) => buildQuizSlideHtml(q, i, total)).join('');
+            dots.innerHTML = quiz
+                .map(
+                    (_, i) =>
+                        `<button type="button" class="learn-carousel__dot${i === 0 ? ' learn-carousel__dot--active' : ''}" data-index="${i}" role="tab" aria-label="Вопрос ${i + 1}" aria-selected="${i === 0 ? 'true' : 'false'}"></button>`
+                )
+                .join('');
+
+            quizCarousel = { index: 0, total };
+            quizState = { submitted: false };
+            setCarouselSlide(carousel, form, 0, total);
+            updateQuizFinishVisibility();
+            carousel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        function resetQuiz() {
+            const form = document.getElementById('learnQuizForm');
+            const quizCarouselEl = document.getElementById('learnQuizCarousel');
+            const lectureCarouselEl = document.getElementById('learnLectureCarousel');
+            form.reset();
+            form.querySelectorAll('.learn-quiz-slide').forEach((el) => {
+                el.classList.remove('learn-quiz-q--ok', 'learn-quiz-q--fail', 'learn-quiz-q--empty');
+                const fb = el.querySelector('.learn-quiz-q__feedback');
+                if (fb) {
+                    fb.hidden = true;
+                    fb.innerHTML = '';
+                }
+            });
+            document.getElementById('learnQuizScore').hidden = true;
+            quizState = { submitted: false };
+            quizCarousel.index = 0;
+            quizCarouselEl.hidden = true;
+            lectureCarouselEl.hidden = false;
+            if (lectureCarousel.total > 0) {
+                lectureCarousel.index = lectureCarousel.total - 1;
+                setCarouselSlide(
+                    lectureCarouselEl,
+                    document.getElementById('learnLectureTrack'),
+                    lectureCarousel.index,
+                    lectureCarousel.total
+                );
+            }
+            updateQuizFinishVisibility();
+        }
+
+        function evaluateQuiz() {
+            if (!currentLesson) return;
+            const form = document.getElementById('learnQuizForm');
+            const quiz = currentLesson.quiz;
+            let correctCount = 0;
+            let unanswered = 0;
+            quiz.forEach((q, idx) => {
+                const result = checkQuestion(form, q, idx);
+                const qEl = form.querySelector(`.learn-quiz-slide[data-q-index="${idx}"]`);
+                const fb = qEl ? qEl.querySelector('.learn-quiz-q__feedback') : null;
+                if (!qEl || !fb) return;
+
+                qEl.classList.remove('learn-quiz-q--ok', 'learn-quiz-q--fail', 'learn-quiz-q--empty');
+
+                if (!result.answered) {
+                    unanswered++;
+                    qEl.classList.add('learn-quiz-q--empty');
+                    fb.hidden = false;
+                    fb.innerHTML = '<strong>Нет ответа.</strong> Вернитесь к этому вопросу и выберите вариант.';
+                    return;
+                }
+
+                if (result.ok) {
+                    correctCount++;
+                    qEl.classList.add('learn-quiz-q--ok');
+                    fb.hidden = false;
+                    fb.innerHTML = `<strong>Верно!</strong>${q.explanation ? ' ' + escapeHtml(q.explanation) : ''}`;
+                } else {
+                    qEl.classList.add('learn-quiz-q--fail');
+                    fb.hidden = false;
+                    let correctText = '';
+                    if (q.type === 'single' && Array.isArray(q.options)) {
+                        correctText = `Правильный ответ: «${escapeHtml(q.options[Number(q.correctIndex)] || '')}».`;
+                    } else if (q.type === 'multiple' && Array.isArray(q.options)) {
+                        const arr = Array.isArray(q.correctIndices) ? q.correctIndices : [];
+                        const list = arr.map((i) => `«${escapeHtml(q.options[i] || '')}»`).join(', ');
+                        correctText = `Правильные ответы: ${list}.`;
+                    } else if (q.type === 'input' && Array.isArray(q.correctAnswers) && q.correctAnswers.length) {
+                        correctText = `Принимаемые ответы: ${q.correctAnswers
+                            .map((a) => `«${escapeHtml(a)}»`)
+                            .join(', ')}.`;
+                    }
+                    fb.innerHTML = `<strong>Неверно.</strong> ${correctText}${q.explanation ? ' ' + escapeHtml(q.explanation) : ''}`;
+                }
+            });
+
+            const score = document.getElementById('learnQuizScore');
+            const total = quiz.length;
+            const pct = total ? Math.round((correctCount / total) * 100) : 0;
+            let mark = 'Старайтесь';
+            let cls = 'learn-quiz__score--low';
+            if (pct >= 80) {
+                mark = 'Отлично!';
+                cls = 'learn-quiz__score--good';
+            } else if (pct >= 50) {
+                mark = 'Неплохо';
+                cls = 'learn-quiz__score--mid';
+            }
+            score.className = `learn-quiz__score ${cls}`;
+            score.hidden = false;
+            score.innerHTML = `<strong>${escapeHtml(mark)}</strong> Правильно: ${correctCount} из ${total} (${pct}%)${
+                unanswered ? `. Без ответа: ${unanswered} — пролистайте вопросы со стрелками.` : ''
+            }. Листайте слайды, чтобы прочитать пояснения.`;
+            quizState = { submitted: true };
+            updateQuizFinishVisibility();
+            score.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        function setSuggestNotice(text, type) {
+            const el = document.getElementById('learnSuggestNotice');
+            el.className = `learn-suggest__notice learn-suggest__notice--${type || 'info'}`;
+            el.textContent = text;
+            el.hidden = false;
+        }
+
+        function updateAuthHint() {
+            const hint = document.getElementById('learnSuggestAuthHint');
+            const submit = document.getElementById('learnSuggestSubmit');
+            if (isAuthenticated()) {
+                hint.hidden = true;
+                submit.disabled = false;
+                submit.textContent = 'Отправить предложение';
+            } else {
+                hint.hidden = false;
+                submit.disabled = false;
+                submit.textContent = 'Войти и предложить';
+            }
+        }
+
+        async function submitTopicSuggestion(e) {
+            e.preventDefault();
+            const topic = document.getElementById('learnSuggestTopic').value.trim();
+            const category = document.getElementById('learnSuggestCategory').value;
+            const message = document.getElementById('learnSuggestMessage').value.trim();
+
+            if (!topic || topic.length < 3) {
+                setSuggestNotice('Введите тему урока (минимум 3 символа).', 'error');
+                return;
+            }
+
+            if (!isAuthenticated()) {
+                try {
+                    sessionStorage.setItem(
+                        'pendingLearnSuggestion',
+                        JSON.stringify({ topic, category, message })
+                    );
+                } catch (_) {}
+                window.location.href = `auth.html?next=${encodeURIComponent('learn.html')}`;
+                return;
+            }
+
+            const submitBtn = document.getElementById('learnSuggestSubmit');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Отправляем...';
+
+            try {
+                const token = localStorage.getItem('techAggregatorToken');
+                const res = await fetch(`${getApiBase()}/api/learn/topic-suggestions`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ topic, category, message })
+                });
+                if (!res.ok) {
+                    const err = await res.json().catch(() => ({}));
+                    throw new Error(err.error || 'Не удалось отправить предложение');
+                }
+                document.getElementById('learnSuggestForm').reset();
+                document.getElementById('learnSuggestCount').textContent = '0';
+                setSuggestNotice(
+                    'Спасибо! Ваше предложение отправлено на модерацию. Мы рассмотрим его в ближайшее время.',
+                    'success'
+                );
+            } catch (err) {
+                setSuggestNotice(err.message || 'Ошибка отправки', 'error');
+            } finally {
+                submitBtn.disabled = false;
+                updateAuthHint();
+            }
+        }
+
+        function restorePendingSuggestion() {
+            try {
+                const raw = sessionStorage.getItem('pendingLearnSuggestion');
+                if (!raw) return;
+                const data = JSON.parse(raw);
+                sessionStorage.removeItem('pendingLearnSuggestion');
+                if (data?.topic) document.getElementById('learnSuggestTopic').value = data.topic;
+                if (data?.category) document.getElementById('learnSuggestCategory').value = data.category;
+                if (data?.message) {
+                    document.getElementById('learnSuggestMessage').value = data.message;
+                    document.getElementById('learnSuggestCount').textContent = String(data.message.length);
+                }
+            } catch (_) {}
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (typeof loadUserData === 'function') loadUserData();
+            if (typeof updateComparisonCounter === 'function') updateComparisonCounter();
+
+            updateAuthHint();
+            restorePendingSuggestion();
+
+            document.getElementById('learnSuggestMessage').addEventListener('input', (e) => {
+                document.getElementById('learnSuggestCount').textContent = String(e.target.value.length);
+            });
+            document.getElementById('learnSuggestForm').addEventListener('submit', submitTopicSuggestion);
+
+            document.getElementById('learnSearch').addEventListener('input', renderLessonsList);
+            document.getElementById('learnCategoryFilter').addEventListener('change', renderLessonsList);
+            document.getElementById('learnLevelFilter').addEventListener('change', renderLessonsList);
+
+            document.getElementById('learnLessonsGrid').addEventListener('click', (e) => {
+                const card = e.target.closest('.learn-card');
+                if (!card) return;
+                const id = card.dataset.lessonId;
+                if (id) openLessonView(id);
+            });
+
+            document.getElementById('learnBackBtn').addEventListener('click', closeLessonView);
+
+            document.getElementById('learnLectureTrack').addEventListener('click', (e) => {
+                if (e.target.closest('.learn-slide__quiz-btn')) startQuiz();
+            });
+
+            document.getElementById('learnLecturePrev').addEventListener('click', () => goLectureSlide(-1));
+            document.getElementById('learnLectureNext').addEventListener('click', () => goLectureSlide(1));
+            document.getElementById('learnLectureDots').addEventListener('click', (e) => {
+                const dot = e.target.closest('[data-index]');
+                if (!dot) return;
+                const idx = parseInt(dot.dataset.index, 10) || 0;
+                lectureCarousel.index = idx;
+                setCarouselSlide(
+                    document.getElementById('learnLectureCarousel'),
+                    document.getElementById('learnLectureTrack'),
+                    idx,
+                    lectureCarousel.total
+                );
+            });
+
+            document.getElementById('learnQuizPrev').addEventListener('click', () => goQuizSlide(-1));
+            document.getElementById('learnQuizNext').addEventListener('click', () => goQuizSlide(1));
+            document.getElementById('learnQuizDots').addEventListener('click', (e) => {
+                const dot = e.target.closest('[data-index]');
+                if (!dot) return;
+                quizCarousel.index = parseInt(dot.dataset.index, 10) || 0;
+                setCarouselSlide(
+                    document.getElementById('learnQuizCarousel'),
+                    document.getElementById('learnQuizForm'),
+                    quizCarousel.index,
+                    quizCarousel.total
+                );
+                updateQuizFinishVisibility();
+            });
+            document.getElementById('learnQuizFinishBtn').addEventListener('click', evaluateQuiz);
+            document.getElementById('learnQuizResetBtn').addEventListener('click', resetQuiz);
+
+            document.addEventListener('keydown', (e) => {
+                const lessonView = document.getElementById('learnLessonView');
+                if (lessonView.hidden) return;
+                const quizVisible = !document.getElementById('learnQuizCarousel').hidden;
+                const lectureVisible = !document.getElementById('learnLectureCarousel').hidden;
+                if (e.key === 'ArrowLeft') {
+                    if (quizVisible) goQuizSlide(-1);
+                    else if (lectureVisible) goLectureSlide(-1);
+                }
+                if (e.key === 'ArrowRight') {
+                    if (quizVisible) goQuizSlide(1);
+                    else if (lectureVisible) goLectureSlide(1);
+                }
+            });
+
+            lessonsIndex = await fetchLessonsIndex();
+            fillCategoryFilters();
+            renderLessonsList();
+
+            const params = new URLSearchParams(window.location.search);
+            const lessonParam = params.get('lesson');
+            if (lessonParam && lessonsIndex.some((l) => l.id === lessonParam)) {
+                openLessonView(lessonParam);
+            } else if (lessonParam) {
+                // ID не найден в индексе — пробуем загрузить напрямую
+                openLessonView(lessonParam);
+            }
+        });
+    })();
+    </script>
+</body>
+</html>
