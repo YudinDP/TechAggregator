@@ -1,657 +1,643 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="site-nav.js"></script>
     <script src="theme.js"></script>
     <title>Рекомендации - tech-nozone</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="dark-theme.css">
-    <link rel="icon" sizes="180x180" href="sources/logo.png">
+    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="dark-theme.css" />
+    <link rel="icon" sizes="180x180" href="sources/logo.png" />
     <style>
-        .recommendations-page {
-            padding: 2rem 0;
-        }
-        
-        .page-header {
-            margin-bottom: 3rem;
-            text-align: center;
-        }
-        
-        .page-header h1 {
-            font-size: 2.5rem;
-            margin-bottom: 1rem;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-        
-        .page-header p {
-            color: #6b7280;
-            max-width: 600px;
-            margin: 0 auto;
-            line-height: 1.6;
-        }
-        
+      .recommendations-page {
+        padding: 2rem 0;
+      }
+
+      .page-header {
+        margin-bottom: 3rem;
+        text-align: center;
+      }
+
+      .page-header h1 {
+        font-size: 2.5rem;
+        margin-bottom: 1rem;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+
+      .page-header p {
+        color: #6b7280;
+        max-width: 600px;
+        margin: 0 auto;
+        line-height: 1.6;
+      }
+
+      .recommendations-tabs {
+        display: flex;
+        gap: 0.5rem;
+        margin-bottom: 2rem;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+
+      .recommendations-layout {
+        margin-top: 0;
+      }
+
+      .tab-btn {
+        padding: 1rem 2rem;
+        background: white;
+        border: 2px solid #e5e7eb;
+        border-radius: 8px;
+        font-size: 1rem;
+        font-weight: 500;
+        color: #4b5563;
+        cursor: pointer;
+        transition: all 0.3s;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .tab-btn:hover {
+        border-color: #2563eb;
+        color: #2563eb;
+      }
+
+      .tab-btn.active {
+        background: #2563eb;
+        border-color: #2563eb;
+        color: white;
+      }
+
+      .tab-btn.active::before {
+        content: '✓';
+        font-weight: bold;
+      }
+
+      .tab-content {
+        animation: fadeIn 0.5s ease;
+      }
+
+      .tab-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid #e5e7eb;
+      }
+
+      .refresh-btn {
+        background: none;
+        border: none;
+        color: #2563eb;
+        cursor: pointer;
+        font-size: 0.9rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .refresh-btn:hover {
+        text-decoration: underline;
+      }
+
+      .ai-recommendation-box {
+        background: white;
+        border-radius: 15px;
+        padding: 2rem;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        margin-bottom: 2rem;
+      }
+
+      .ai-header {
+        text-align: center;
+        margin-bottom: 2rem;
+      }
+
+      .ai-header h3 {
+        font-size: 1.5rem;
+        margin-bottom: 0.5rem;
+      }
+
+      .ai-header p {
+        color: #6b7280;
+      }
+
+      .ai-form-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+      }
+
+      .form-group-enhanced {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+
+      .form-group-enhanced label {
+        font-weight: 600;
+        color: #374151;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .form-group-enhanced label::before {
+        content: '•';
+        color: #2563eb;
+        font-weight: bold;
+      }
+
+      .form-group-enhanced input,
+      .form-group-enhanced select {
+        padding: 0.75rem 1rem;
+        border: 2px solid #e5e7eb;
+        border-radius: 8px;
+        font-size: 1rem;
+        transition: all 0.3s;
+      }
+
+      .form-group-enhanced input:focus,
+      .form-group-enhanced select:focus {
+        outline: none;
+        border-color: #2563eb;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+      }
+
+      .range-slider {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+      }
+
+      .range-slider input[type='range'] {
+        flex: 1;
+        height: 6px;
+        border-radius: 3px;
+        background: #e5e7eb;
+        outline: none;
+      }
+
+      .range-value {
+        min-width: 60px;
+        text-align: right;
+        font-weight: 600;
+        color: #2563eb;
+      }
+
+      .checkbox-group-enhanced {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+        gap: 0.75rem;
+        padding: 1rem;
+        background: #f8f9fa;
+        border-radius: 8px;
+        border: 1px solid #e5e7eb;
+      }
+
+      .checkbox-group-enhanced label {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background 0.3s;
+      }
+
+      .checkbox-group-enhanced label:hover {
+        background: rgba(37, 99, 235, 0.1);
+      }
+
+      .checkbox-group-enhanced input[type='checkbox'] {
+        width: 18px;
+        height: 18px;
+        cursor: pointer;
+      }
+
+      .ai-submit-btn {
+        display: block;
+        width: 100%;
+        padding: 1rem;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition:
+          transform 0.3s,
+          box-shadow 0.3s;
+        margin-top: 1.5rem;
+      }
+
+      .ai-submit-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+      }
+
+      .ai-results-container {
+        margin-top: 3rem;
+        padding-top: 2rem;
+        border-top: 2px solid #e5e7eb;
+      }
+
+      .recommendation-summary {
+        background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+        padding: 1.5rem;
+        border-radius: 10px;
+        margin-bottom: 2rem;
+      }
+
+      .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+      }
+
+      .summary-item {
+        text-align: center;
+        padding: 1rem;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      }
+
+      .summary-label {
+        font-size: 0.9rem;
+        color: #6b7280;
+        margin-bottom: 0.5rem;
+      }
+
+      .summary-value {
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: #1f2937;
+      }
+
+      .recommendation-badge {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: #10b981;
+        color: white;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        z-index: 1;
+      }
+
+      .match-percentage {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        background: #dbeafe;
+        color: #1d4ed8;
+        border-radius: 20px;
+        font-size: 0.9rem;
+        font-weight: 500;
+        margin-top: 0.5rem;
+      }
+
+      .product-card-enhanced {
+        position: relative;
+        transition:
+          transform 0.3s,
+          box-shadow 0.3s;
+      }
+
+      .product-card-enhanced:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
+      }
+
+      .recommendation-actions {
+        display: flex;
+        justify-content: center;
+        margin-top: 2rem;
+      }
+
+      .trend-indicator {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        font-size: 0.9rem;
+        margin-left: 0.5rem;
+      }
+
+      .trend-up {
+        color: #10b981;
+      }
+
+      .trend-down {
+        color: #ef4444;
+      }
+
+      .popularity-meter {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-top: 0.5rem;
+      }
+
+      .meter-bar {
+        flex: 1;
+        height: 6px;
+        background: #e5e7eb;
+        border-radius: 3px;
+        overflow: hidden;
+      }
+
+      .meter-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #10b981, #34d399);
+        border-radius: 3px;
+      }
+
+      @media (max-width: 768px) {
         .recommendations-tabs {
-            display: flex;
-            gap: 0.5rem;
-            margin-bottom: 2rem;
-            flex-wrap: wrap;
-            justify-content: center;
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 0.45rem;
+          margin-bottom: 1rem;
+        }
+        .tab-btn {
+          padding: 0.55rem 0.65rem;
+          font-size: 0.82rem;
+          justify-content: center;
+          width: auto;
+        }
+
+        .ai-form-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .checkbox-group-enhanced {
+          grid-template-columns: 1fr;
+        }
+
+        .page-header h1 {
+          font-size: 2rem;
         }
 
         .recommendations-layout {
-            margin-top: 0;
+          margin-top: 0.75rem;
         }
-        
-        .filters-sidebar {
-            max-height: calc(100vh - 180px);
-            overflow-y: auto;
-            top: 120px;
-        }
-        
-        .filters-sidebar::-webkit-scrollbar {
-            width: 6px;
-        }
-        
-        .filters-sidebar::-webkit-scrollbar-track {
-            background: #f5f5f5;
-            border-radius: 3px;
-        }
-        
-        .filters-sidebar::-webkit-scrollbar-thumb {
-            background: #c1c1c1;
-            border-radius: 3px;
-        }
-        
-        .filters-sidebar h3 {
-            margin-top: 0;
-            margin-bottom: 1.5rem;
-            padding-bottom: 0.75rem;
-            border-bottom: 2px solid #3b82f6;
-            color: #1f2937;
-        }
-        
-        .filter-actions {
-            display: flex;
-            gap: 0.75rem;
-            margin-top: 2rem;
-            padding-top: 1rem;
-            border-top: 1px solid #e5e7eb;
-        }
-        
-        .filter-actions .btn {
-            flex: 1;
-            padding: 0.6rem;
-        }
-        
-        .tab-btn {
-            padding: 1rem 2rem;
-            background: white;
-            border: 2px solid #e5e7eb;
-            border-radius: 8px;
-            font-size: 1rem;
-            font-weight: 500;
-            color: #4b5563;
-            cursor: pointer;
-            transition: all 0.3s;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        
-        .tab-btn:hover {
-            border-color: #2563eb;
-            color: #2563eb;
-        }
-        
-        .tab-btn.active {
-            background: #2563eb;
-            border-color: #2563eb;
-            color: white;
-        }
-        
-        .tab-btn.active::before {
-            content: "✓";
-            font-weight: bold;
-        }
-        
-        .tab-content {
-            animation: fadeIn 0.5s ease;
-        }
-
-        .tab-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 2rem;
-            padding-bottom: 1rem;
-            border-bottom: 2px solid #e5e7eb;
-        }
-        
-        .refresh-btn {
-            background: none;
-            border: none;
-            color: #2563eb;
-            cursor: pointer;
-            font-size: 0.9rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        
-        .refresh-btn:hover {
-            text-decoration: underline;
-        }
-        
-        .ai-recommendation-box {
-            background: white;
-            border-radius: 15px;
-            padding: 2rem;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-            margin-bottom: 2rem;
-        }
-        
-        .ai-header {
-            text-align: center;
-            margin-bottom: 2rem;
-        }
-        
-        .ai-header h3 {
-            font-size: 1.5rem;
-            margin-bottom: 0.5rem;
-        }
-        
-        .ai-header p {
-            color: #6b7280;
-        }
-        
-        .ai-form-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 1.5rem;
-            margin-bottom: 2rem;
-        }
-        
-        .form-group-enhanced {
-            display: flex;
-            flex-direction: column;
-            gap: 0.75rem;
-        }
-        
-        .form-group-enhanced label {
-            font-weight: 600;
-            color: #374151;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        
-        .form-group-enhanced label::before {
-            content: "•";
-            color: #2563eb;
-            font-weight: bold;
-        }
-        
-        .form-group-enhanced input,
-        .form-group-enhanced select {
-            padding: 0.75rem 1rem;
-            border: 2px solid #e5e7eb;
-            border-radius: 8px;
-            font-size: 1rem;
-            transition: all 0.3s;
-        }
-        
-        .form-group-enhanced input:focus,
-        .form-group-enhanced select:focus {
-            outline: none;
-            border-color: #2563eb;
-            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
-        }
-        
-        .range-slider {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-        
-        .range-slider input[type="range"] {
-            flex: 1;
-            height: 6px;
-            border-radius: 3px;
-            background: #e5e7eb;
-            outline: none;
-        }
-        
-        .range-value {
-            min-width: 60px;
-            text-align: right;
-            font-weight: 600;
-            color: #2563eb;
-        }
-        
-        .checkbox-group-enhanced {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-            gap: 0.75rem;
-            padding: 1rem;
-            background: #f8f9fa;
-            border-radius: 8px;
-            border: 1px solid #e5e7eb;
-        }
-        
-        .checkbox-group-enhanced label {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.5rem;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: background 0.3s;
-        }
-        
-        .checkbox-group-enhanced label:hover {
-            background: rgba(37, 99, 235, 0.1);
-        }
-        
-        .checkbox-group-enhanced input[type="checkbox"] {
-            width: 18px;
-            height: 18px;
-            cursor: pointer;
-        }
-        
-        .ai-submit-btn {
-            display: block;
-            width: 100%;
-            padding: 1rem;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 1.1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: transform 0.3s, box-shadow 0.3s;
-            margin-top: 1.5rem;
-        }
-        
-        .ai-submit-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
-        }
-        
-        .ai-results-container {
-            margin-top: 3rem;
-            padding-top: 2rem;
-            border-top: 2px solid #e5e7eb;
-        }
-        
-        .recommendation-summary {
-            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
-            padding: 1.5rem;
-            border-radius: 10px;
-            margin-bottom: 2rem;
-        }
-        
-        .summary-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1rem;
-        }
-        
-        .summary-item {
-            text-align: center;
-            padding: 1rem;
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
-        
-        .summary-label {
-            font-size: 0.9rem;
-            color: #6b7280;
-            margin-bottom: 0.5rem;
-        }
-        
-        .summary-value {
-            font-size: 1.2rem;
-            font-weight: 600;
-            color: #1f2937;
-        }
-        
-        .recommendation-badge {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background: #10b981;
-            color: white;
-            padding: 0.25rem 0.75rem;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: 600;
-            z-index: 1;
-        }
-        
-        .match-percentage {
-            display: inline-block;
-            padding: 0.25rem 0.75rem;
-            background: #dbeafe;
-            color: #1d4ed8;
-            border-radius: 20px;
-            font-size: 0.9rem;
-            font-weight: 500;
-            margin-top: 0.5rem;
-        }
-        
-        .product-card-enhanced {
-            position: relative;
-            transition: transform 0.3s, box-shadow 0.3s;
-        }
-        
-        .product-card-enhanced:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 15px 30px rgba(0,0,0,0.15);
-        }
-        
-        .recommendation-actions {
-            display: flex;
-            justify-content: center;
-            margin-top: 2rem;
-        }
-        
-        .trend-indicator {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.25rem;
-            font-size: 0.9rem;
-            margin-left: 0.5rem;
-        }
-        
-        .trend-up {
-            color: #10b981;
-        }
-        
-        .trend-down {
-            color: #ef4444;
-        }
-        
-        .popularity-meter {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            margin-top: 0.5rem;
-        }
-        
-        .meter-bar {
-            flex: 1;
-            height: 6px;
-            background: #e5e7eb;
-            border-radius: 3px;
-            overflow: hidden;
-        }
-        
-        .meter-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #10b981, #34d399);
-            border-radius: 3px;
-        }
-        
-        @media (max-width: 768px) {
-            .recommendations-tabs {
-                display: grid;
-                grid-template-columns: repeat(2, minmax(0, 1fr));
-                gap: 0.45rem;
-                margin-bottom: 1rem;
-            }
-            .tab-btn {
-                padding: 0.55rem 0.65rem;
-                font-size: 0.82rem;
-                justify-content: center;
-                width: auto;
-            }
-            
-            .ai-form-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .checkbox-group-enhanced {
-                grid-template-columns: 1fr;
-            }
-            
-            .page-header h1 {
-                font-size: 2rem;
-            }
-
-            .recommendations-layout {
-                margin-top: 0.75rem;
-            }
-        }
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <header class="header">
-    <div class="container">
-        <div class="logo">
-            <h1><a href="index.html" style="color: inherit; text-decoration: none;">tech-nozone</a></h1>
-        </div>
-        <nav class="nav">
-            <a href="index.html" class="nav-link">Главная</a>
-            <a href="catalog.html" class="nav-link">Каталог</a>
-            <a href="comparison.html" class="nav-link">Сравнение<span class="comparison-counter">0</span></a>
-            <a href="recommendations.html" class="nav-link active">Рекомендации</a>
-            <a href="learn.html" class="nav-link">Обучение</a>
-        </nav>
-        
-        
-        <div class="nav-search-container">
-            <input type="text" class="nav-search" id="navSearch" 
-                   placeholder="Поиск товаров..." 
-                   oninput="showNavSearchSuggestions()"
-                   onkeypress="handleNavSearchEnter(event)">
-            <button class="nav-search-btn" onclick="navSearchProducts()">
-                🔍
-            </button>
-            <div id="navSearchSuggestions" class="nav-search-suggestions"></div>
-        </div>
-        
-        <div class="auth-buttons">
-    <a href="auth.html" class="btn btn-outline">Войти</a>
-    <a href="auth.html?tab=register" class="btn btn-primary">Регистрация</a>
-</div>
-        </div>
+      <div class="container"></div>
     </header>
 
     <main class="main">
-<div class="container recommendations-page">
-<div id="recommendationsAuthState" class="empty-state hidden">
-    <h3 style="margin: 0 0 15px 0; color: #374151;">Авторизуйтесь чтобы просматривать рекомендации</h3>
-    <p style="color: #6b7280; margin: 0 0 25px 0; max-width: 400px; margin-left: auto; margin-right: auto;"></p>
-    <a href="auth.html" class="btn btn-primary">Перейти к авторизации</a>
-</div>
-<div class="page-header">
-</div>
-<div class="recommendations-tabs">
-<button class="tab-btn active" onclick="openTab('popular')">
-<span>🔥</span> Популярное
-</button>
-<button class="tab-btn" onclick="openTab('trending')">
-<span>📈</span> Тренды
-</button>
-<button class="tab-btn" onclick="openTab('bestValue')">
-<span>💰</span> Выгода
-</button>
-<!-- Добавим вкладку для персональных рекомендаций -->
-<button class="tab-btn" onclick="openTab('personal')">
-<span>🎯</span> Для вас
-</button>
-<button class="tab-btn" onclick="openTab('priceDrop')">
-    <span>📉</span> Стало дешевле
-</button>
-</div>
-
-<div class="catalog-layout recommendations-layout">
-    <aside class="filters-sidebar" id="recFiltersPanel">
-        <h3>Фильтры</h3>
-        <div class="filter-group">
-            <label for="recommendationsSearch">Поиск</label>
-            <input id="recommendationsSearch" type="text" placeholder="Название или характеристика">
+      <div class="container recommendations-page">
+        <div id="recommendationsAuthState" class="empty-state hidden">
+          <h3 style="margin: 0 0 15px 0; color: #374151">Авторизуйтесь чтобы просматривать рекомендации</h3>
+          <p style="color: #6b7280; margin: 0 0 25px 0; max-width: 400px; margin-left: auto; margin-right: auto"></p>
+          <a href="auth.html" class="btn btn-primary">Перейти к авторизации</a>
         </div>
-        <div class="filter-group">
-            <label for="recommendationsCategory">Категория</label>
-            <select id="recommendationsCategory">
+        <div class="page-header"></div>
+        <div class="recommendations-tabs">
+          <button class="tab-btn active" onclick="openTab('popular')"><span>🔥</span> Популярное</button>
+          <button class="tab-btn" onclick="openTab('trending')"><span>📈</span> Тренды</button>
+          <button class="tab-btn" onclick="openTab('bestValue')"><span>💰</span> Выгода</button>
+          <!-- Добавим вкладку для персональных рекомендаций -->
+          <button class="tab-btn" onclick="openTab('personal')"><span>🎯</span> Для вас</button>
+          <button class="tab-btn" onclick="openTab('priceDrop')"><span>📉</span> Стало дешевле</button>
+        </div>
+
+        <div class="catalog-layout recommendations-layout">
+          <aside class="filters-sidebar" id="recFiltersPanel">
+            <h3>Фильтры</h3>
+            <div class="filter-group">
+              <label for="recommendationsCategory">Категория</label>
+              <select id="recommendationsCategory">
                 <option value="">Все категории</option>
-            </select>
-        </div>
-        <div class="filter-group">
-            <label>Цена, руб.</label>
-            <div class="price-range">
-                <input id="recommendationsMinPrice" type="number" min="0" placeholder="от">
-                <input id="recommendationsMaxPrice" type="number" min="0" placeholder="до">
+                <option value="smartphones">Смартфоны</option>
+                <option value="laptops">Ноутбуки</option>
+                <option value="tv">Телевизоры</option>
+                <option value="headphones">Наушники</option>
+                <option value="cameras">Фотоаппараты</option>
+                <option value="tablets">Планшеты</option>
+                <option value="smartwatches">Смарт-часы</option>
+                <option value="ebooks">Электронные книги</option>
+                <option value="drones">Дроны</option>
+                <option value="pc_components">Комплектующие ПК</option>
+                <option value="keyboards">Клавиатуры</option>
+                <option value="mouses">Мыши</option>
+                <option value="cases">Корпуса ПК</option>
+                <option value="drivers">Накопители</option>
+                <option value="fitness_trackers">Фитнес-трекеры</option>
+                <option value="power_units">Блоки питания</option>
+                <option value="microphones">Микрофоны</option>
+                <option value="webcams">Веб-камеры</option>
+                <option value="power_banks">Павербанки</option>
+                <option value="portable_speakers">Портативные колонки</option>
+                <option value="monitors">Мониторы</option>
+                <option value="accessories">Аксессуары</option>
+                <option value="gaming">Игровые консоли</option>
+                <option value="networking">Сетевое оборудование</option>
+                <option value="cpus">Процессоры</option>
+                <option value="motherboards">Материнские платы</option>
+                <option value="ram">Оперативная память</option>
+                <option value="graphics_cards">Видеокарты</option>
+                <option value="external_drives">Внешние накопители</option>
+                <option value="audio">Аудиосистемы</option>
+                <option value="smart_home">Умный дом</option>
+                <option value="wearables">Носимые устройства</option>
+                <option value="other">Другое</option>
+              </select>
             </div>
-        </div>
-        <div class="filter-actions">
-            <button id="recommendationsResetFilters" class="btn btn-secondary">Сбросить все</button>
-            <button id="recommendationsApplyFilters" class="btn btn-primary" onclick="applyRecommendationsFilters({ closeMobileDrawers: true })">Применить</button>
-        </div>
-    </aside>
-    <section class="products-section">
-        <div class="catalog-mobile-drawer-triggers">
-            <button type="button" class="btn btn-outline btn-small" id="btnRecOpenFilters">Фильтры</button>
-            <button type="button" class="btn btn-outline btn-small" id="btnRecOpenSort">Сортировка</button>
-        </div>
-        <div class="catalog-drawer-backdrop" id="recDrawerBackdrop" hidden></div>
-        <div class="section-header">
-            <h2>Подборки рекомендаций</h2>
-            <div class="sort-panel-drawer" id="recSortPanel">
+            <div class="filter-group">
+              <label>Цена, руб.</label>
+              <div class="price-range">
+                <input type="number" id="recommendationsMinPrice" placeholder="от" min="0" />
+                <input type="number" id="recommendationsMaxPrice" placeholder="до" min="0" />
+              </div>
+            </div>
+            <div id="recommendationsDynamicFilters"></div>
+            <div class="filter-actions">
+              <button class="btn btn-secondary" id="recommendationsResetFilters">Сбросить все</button>
+              <button
+                class="btn btn-primary"
+                id="recommendationsApplyFilters"
+                onclick="applyRecommendationsFilters({ closeMobileDrawers: true })"
+              >
+                Применить
+              </button>
+            </div>
+            <div class="filters-sidebar__hint">
+              <button
+                type="button"
+                class="btn btn-outline btn-small"
+                style="width: 100%; padding: 0.5rem; font-size: 0.85rem"
+                onclick="resetRecommendationsFilters()"
+              >
+                Сбросить всё и показать все товары
+              </button>
+            </div>
+          </aside>
+          <section class="products-section">
+            <div class="catalog-mobile-drawer-triggers">
+              <button type="button" class="btn btn-outline btn-small" id="btnRecOpenFilters">Фильтры</button>
+              <button type="button" class="btn btn-outline btn-small" id="btnRecOpenSort">Сортировка</button>
+            </div>
+            <div class="catalog-drawer-backdrop" id="recDrawerBackdrop" hidden></div>
+            <div class="section-header">
+              <h2>Подборки рекомендаций</h2>
+              <div class="sort-panel-drawer" id="recSortPanel">
                 <div class="sort-options">
-                    <label for="recommendationsSort">Сортировка:</label>
-                    <select id="recommendationsSort">
-                        <option value="relevance">По релевантности</option>
-                        <option value="rating">По рейтингу</option>
-                        <option value="price_asc">По цене (возр.)</option>
-                        <option value="price_desc">По цене (убыв.)</option>
-                        <option value="name">По названию</option>
-                    </select>
-                    <button class="btn btn-primary" style="padding:10px" onclick="applyRecommendationsFilters({ closeMobileDrawers: true })">Применить</button>
+                  <label for="recommendationsSort">Сортировка:</label>
+                  <select id="recommendationsSort">
+                    <option value="relevance">По релевантности</option>
+                    <option value="rating">По рейтингу</option>
+                    <option value="price_asc">По цене (возр.)</option>
+                    <option value="price_desc">По цене (убыв.)</option>
+                    <option value="name">По названию</option>
+                  </select>
+                  <button
+                    class="btn btn-primary"
+                    style="padding: 10px"
+                    onclick="applyRecommendationsFilters({ closeMobileDrawers: true })"
+                  >
+                    Применить
+                  </button>
                 </div>
+              </div>
             </div>
+
+            <div id="popular" class="tab-content active">
+              <div class="tab-header">
+                <h2>Самые популярные товары</h2>
+                <button class="refresh-btn" onclick="refreshPopular()"><span>↻</span> Обновить</button>
+              </div>
+              <p style="color: #6b7280; margin-bottom: 1.5rem; padding-left: 5px">
+                Товары, которые чаще всего просматривают и покупают наши пользователи
+              </p>
+              <div class="products-grid" id="popularProducts">
+                <!-- Популярные товары будут загружены сюда -->
+              </div>
+            </div>
+
+            <div id="trending" class="tab-content">
+              <div class="tab-header">
+                <h2>Набирают популярность</h2>
+                <button class="refresh-btn" onclick="refreshTrending()"><span>↻</span> Обновить</button>
+              </div>
+              <p style="color: #6b7280; margin-bottom: 1.5rem">
+                Новинки и товары, которые быстро набирают популярность
+              </p>
+              <div class="products-grid" id="trendingProducts">
+                <!-- Трендовые товары будут загружены сюда -->
+              </div>
+            </div>
+
+            <div id="bestValue" class="tab-content">
+              <div class="tab-header">
+                <h2>Лучшее за свои деньги</h2>
+                <button class="refresh-btn" onclick="refreshBestValue()"><span>↻</span> Обновить</button>
+              </div>
+              <p style="color: #6b7280; margin-bottom: 1.5rem">
+                Оптимальное соотношение цены и качества по отзывам пользователей
+              </p>
+              <div class="products-grid" id="bestValueProducts">
+                <!-- Товары с лучшим соотношением цены и качества будут загружены сюда -->
+              </div>
+            </div>
+
+            <!-- НОВАЯ ВКЛАДКА: Персональные рекомендации -->
+            <div id="personal" class="tab-content">
+              <div class="tab-header">
+                <h2>Персональные рекомендации для вас</h2>
+                <button class="refresh-btn" onclick="loadPersonalRecommendations()">
+                  <!-- Вызов обновления -->
+                  <span>↻</span> Обновить
+                </button>
+              </div>
+              <p style="color: #6b7280; margin-bottom: 1.5rem">
+                Товары, которые могут вас заинтересовать, исходя из ваших предпочтений
+              </p>
+              <div class="products-grid" id="personalProducts">
+                <!-- Персональные рекомендации будут загружены сюда -->
+              </div>
+            </div>
+
+            <div id="priceDrop" class="tab-content">
+              <div class="tab-header">
+                <h2>Товары со значительным снижением цены</h2>
+                <button class="refresh-btn" onclick="loadRecommendationsByType('priceDrop')">
+                  <span>↻</span> Обновить
+                </button>
+              </div>
+              <p style="color: #6b7280; margin-bottom: 1.5rem">Техника, которая подешевела за последние 2 недели</p>
+              <div class="products-grid" id="priceDropProducts">
+                <!-- Товары со скидкой будут загружены сюда -->
+              </div>
+            </div>
+          </section>
+          <!-- /.products-section -->
         </div>
-
-<div id="popular" class="tab-content active">
-<div class="tab-header">
-<h2>Самые популярные товары</h2>
-<button class="refresh-btn" onclick="refreshPopular()">
-<span>↻</span> Обновить
-</button>
-</div>
-<p style="color: #6b7280; margin-bottom: 1.5rem; padding-left: 5px;">
-Товары, которые чаще всего просматривают и покупают наши пользователи
-</p>
-<div class="products-grid" id="popularProducts">
-<!-- Популярные товары будут загружены сюда -->
-</div>
-</div>
-
-<div id="trending" class="tab-content">
-<div class="tab-header">
-<h2>Набирают популярность</h2>
-<button class="refresh-btn" onclick="refreshTrending()">
-<span>↻</span> Обновить
-</button>
-</div>
-<p style="color: #6b7280; margin-bottom: 1.5rem;">
-Новинки и товары, которые быстро набирают популярность
-</p>
-<div class="products-grid" id="trendingProducts">
-<!-- Трендовые товары будут загружены сюда -->
-</div>
-</div>
-
-<div id="bestValue" class="tab-content">
-<div class="tab-header">
-<h2>Лучшее за свои деньги</h2>
-<button class="refresh-btn" onclick="refreshBestValue()">
-<span>↻</span> Обновить
-</button>
-</div>
-<p style="color: #6b7280; margin-bottom: 1.5rem;">
-Оптимальное соотношение цены и качества по отзывам пользователей
-</p>
-<div class="products-grid" id="bestValueProducts">
-<!-- Товары с лучшим соотношением цены и качества будут загружены сюда -->
-</div>
-</div>
-
-<!-- НОВАЯ ВКЛАДКА: Персональные рекомендации -->
-<div id="personal" class="tab-content">
-<div class="tab-header">
-<h2>Персональные рекомендации для вас</h2>
-<button class="refresh-btn" onclick="loadPersonalRecommendations()"> <!-- Вызов обновления -->
-<span>↻</span> Обновить
-</button>
-</div>
-<p style="color: #6b7280; margin-bottom: 1.5rem;">
-Товары, которые могут вас заинтересовать, исходя из ваших предпочтений
-</p>
-<div class="products-grid" id="personalProducts">
-<!-- Персональные рекомендации будут загружены сюда -->
-</div>
-</div>
-
-<div id="priceDrop" class="tab-content">
-    <div class="tab-header">
-        <h2>Товары со значительным снижением цены</h2>
-        <button class="refresh-btn" onclick="loadRecommendationsByType('priceDrop')">
-            <span>↻</span> Обновить
-        </button>
-    </div>
-    <p style="color: #6b7280; margin-bottom: 1.5rem;">
-        Техника, которая подешевела за последние 2 недели
-    </p>
-    <div class="products-grid" id="priceDropProducts">
-        <!-- Товары со скидкой будут загружены сюда -->
-    </div>
-</div>
-
-</div> <!-- /.products-section -->
-</div> <!-- /.catalog-layout -->
-</div> <!-- /.container recommendations-page -->
-</main>
+        <!-- /.catalog-layout -->
+      </div>
+      <!-- /.container recommendations-page -->
+    </main>
 
     <footer class="footer">
-        <div class="container">
-            <p>&copy; 2025-2026 tech-nozone. Все права защищены.</p>
-        </div>
+      <div class="container">
+        <p>&copy; 2025-2026 tech-nozone. Все права защищены.</p>
+      </div>
     </footer>
     <script src="config.js"></script>
     <script src="script.js?v=import2"></script>
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-  const bd = document.getElementById('recDrawerBackdrop');
-  const filt = document.getElementById('recFiltersPanel');
-  const sortP = document.getElementById('recSortPanel');
-  function closeRecDrawers() {
-    if (bd) bd.hidden = true;
-    filt?.classList.remove('is-open');
-    sortP?.classList.remove('is-open');
-  }
-  window.__closeRecommendationsMobileDrawers = closeRecDrawers;
+    <script src="site-footer.js"></script>
+    <script>
+      document.addEventListener('DOMContentLoaded', function () {
+        const bd = document.getElementById('recDrawerBackdrop');
+        const filt = document.getElementById('recFiltersPanel');
+        const sortP = document.getElementById('recSortPanel');
+        function closeRecDrawers() {
+          if (bd) bd.hidden = true;
+          filt?.classList.remove('is-open');
+          sortP?.classList.remove('is-open');
+        }
+        window.__closeRecommendationsMobileDrawers = closeRecDrawers;
 
-  document.getElementById('btnRecOpenFilters')?.addEventListener('click', () => {
-    closeRecDrawers();
-    if (bd) bd.hidden = false;
-    filt?.classList.add('is-open');
-  });
-  document.getElementById('btnRecOpenSort')?.addEventListener('click', () => {
-    closeRecDrawers();
-    if (bd) bd.hidden = false;
-    sortP?.classList.add('is-open');
-  });
-  bd?.addEventListener('click', closeRecDrawers);
-});
-</script>
+        document.getElementById('btnRecOpenFilters')?.addEventListener('click', () => {
+          closeRecDrawers();
+          if (bd) bd.hidden = false;
+          filt?.classList.add('is-open');
+        });
+        document.getElementById('btnRecOpenSort')?.addEventListener('click', () => {
+          closeRecDrawers();
+          if (bd) bd.hidden = false;
+          sortP?.classList.add('is-open');
+        });
+        bd?.addEventListener('click', closeRecDrawers);
 
-</body>
+        const filterActions = filt?.querySelector('.filter-actions');
+        filterActions?.querySelector('.btn-secondary')?.addEventListener('click', () => {
+          setTimeout(closeRecDrawers, 0);
+        });
+        filterActions?.querySelector('.btn-primary')?.addEventListener('click', () => {
+          setTimeout(closeRecDrawers, 0);
+        });
+        filt?.querySelector('.filters-sidebar__hint button')?.addEventListener('click', () => {
+          setTimeout(closeRecDrawers, 0);
+        });
+        document.querySelector('#recSortPanel .btn-primary')?.addEventListener('click', () => {
+          setTimeout(closeRecDrawers, 0);
+        });
+      });
+    </script>
+  </body>
 </html>

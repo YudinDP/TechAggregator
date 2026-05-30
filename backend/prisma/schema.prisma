@@ -9,7 +9,8 @@ datasource db {
 model User {
   id           Int          @id @default(autoincrement())
   email        String       @unique
-  passwordHash String
+  passwordHash String?
+  googleId     String?      @unique
   fullName     String?
   role         String       @default("user")
   createdAt    DateTime     @default(now())
@@ -19,8 +20,10 @@ model User {
   requests     Request[]
   reviews      Review[]
   viewLogs     ViewLog[]
-  searchLogs   SearchLog[]
-  avatarUrl    String?
+  searchLogs         SearchLog[]
+  avatarUrl          String?
+  lessonSuggestions  LessonSuggestion[]
+  supportTickets     SupportTicket[]
 }
 
 model Product {
@@ -159,6 +162,48 @@ model SearchLog {
 
   @@index([query])
   @@index([createdAt])
+}
+
+/// Предложения тем уроков от пользователей (страница обучения).
+model LessonSuggestion {
+  id          Int       @id @default(autoincrement())
+  userId      Int?
+  userName    String?
+  userEmail   String?
+  topic       String
+  category    String?
+  message     String?
+  status      String    @default("pending")
+  adminNotes  String?
+  createdAt   DateTime  @default(now())
+  processedAt DateTime?
+  user        User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([status])
+  @@index([createdAt])
+  @@index([userId])
+}
+
+/// Обращения в поддержку с футера сайта.
+model SupportTicket {
+  id          Int       @id @default(autoincrement())
+  userId      Int?
+  userName    String?
+  userEmail   String
+  issueType   String    @default("other")
+  subject     String?
+  message     String
+  pageUrl     String?
+  clientIp    String?
+  status      String    @default("pending")
+  adminNotes  String?
+  createdAt   DateTime  @default(now())
+  processedAt DateTime?
+  user        User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([status])
+  @@index([createdAt])
+  @@index([userId])
 }
 
 /// Периодический импорт каталога по URL (файл JSON/Excel на стороне магазина).

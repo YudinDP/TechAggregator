@@ -81,16 +81,12 @@
 
     const promise = (async () => {
       try {
-        const res = await fetch(
-          `${getApiBase()}/api/learn/product-lessons/${encodeURIComponent(key)}`
-        );
+        const res = await fetch(`${getApiBase()}/api/learn/product-lessons/${encodeURIComponent(key)}`);
         if (res.ok) {
           const data = await res.json();
           if (data && Array.isArray(data.slides) && data.slides.length) return data;
         }
-      } catch (e) {
-        console.warn('[LearnMode] API недоступен:', e.message || e);
-      }
+      } catch (e) {}
       try {
         const res = await fetch(`${getStaticLearnBase()}/product-lessons/_default.json`);
         if (res.ok) return res.json();
@@ -113,8 +109,8 @@
             <div class="learn-importance-row__head">
               <span class="learn-importance-row__label">${escapeHtml(item.label || '')}</span>
               <span class="learn-importance-row__badge learn-importance-row__badge--${level}">${escapeHtml(
-          level === 'high' ? 'важно' : level === 'low' ? 'доп.' : 'полезно'
-        )}</span>
+                level === 'high' ? 'важно' : level === 'low' ? 'доп.' : 'полезно'
+              )}</span>
             </div>
             <div class="learn-importance-row__track">
               <div class="learn-importance-row__fill learn-importance-row__fill--${level}" style="width:${w}%"></div>
@@ -126,13 +122,9 @@
   }
 
   function buildSlideHtml(slide, index, total) {
-    const paras = (slide.paragraphs || [])
-      .map((p) => `<p class="learn-slide__p">${escapeHtml(p)}</p>`)
-      .join('');
+    const paras = (slide.paragraphs || []).map((p) => `<p class="learn-slide__p">${escapeHtml(p)}</p>`).join('');
     const tips = (slide.tips || []).length
-      ? `<ul class="learn-slide__tips">${slide.tips
-          .map((t) => `<li>${escapeHtml(t)}</li>`)
-          .join('')}</ul>`
+      ? `<ul class="learn-slide__tips">${slide.tips.map((t) => `<li>${escapeHtml(t)}</li>`).join('')}</ul>`
       : '';
 
     let imageBlock = '';
@@ -157,8 +149,12 @@
   }
 
   function specKeyMatchesRow(rowKey, targetKey, labelMap) {
-    const rk = String(rowKey || '').toLowerCase().trim();
-    const tk = String(targetKey || '').toLowerCase().trim();
+    const rk = String(rowKey || '')
+      .toLowerCase()
+      .trim();
+    const tk = String(targetKey || '')
+      .toLowerCase()
+      .trim();
     if (!tk) return false;
     if (rk === tk) return true;
     if (labelMap && labelMap[rk] === tk) return true;

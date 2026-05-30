@@ -179,33 +179,21 @@
 
     const promise = (async () => {
       try {
-        const res = await fetch(
-          `${getApiBase()}/api/learn/spec-hints/${encodeURIComponent(key)}`
-        );
+        const res = await fetch(`${getApiBase()}/api/learn/spec-hints/${encodeURIComponent(key)}`);
         if (res.ok) {
           const data = await res.json();
           const hints = data.hints && typeof data.hints === 'object' ? data.hints : {};
-          const labelMap =
-            data.labelMap && typeof data.labelMap === 'object' ? data.labelMap : {};
+          const labelMap = data.labelMap && typeof data.labelMap === 'object' ? data.labelMap : {};
           if (Object.keys(hints).length > 0) {
             return { hints, labelMap };
           }
         }
-      } catch (e) {
-        console.warn('[LearnHints] API недоступен:', e.message || e);
-      }
+      } catch (e) {}
 
       try {
         const pack = await fetchSpecHintsFromStatic(key);
-        console.info(
-          '[LearnHints] Загружено из статики:',
-          key,
-          Object.keys(pack.hints).length,
-          'подсказок'
-        );
         return pack;
       } catch (e2) {
-        console.warn('[LearnHints] Статика недоступна:', e2.message || e2);
         return { hints: {}, labelMap: {} };
       }
     })();
@@ -215,7 +203,9 @@
   }
 
   function normalizeLabelKey(specKey) {
-    return String(specKey || '').toLowerCase().trim();
+    return String(specKey || '')
+      .toLowerCase()
+      .trim();
   }
 
   function resolveHintForSpecKey(specKey, hints, labelMap) {
@@ -267,10 +257,7 @@
     }
     if (Array.isArray(hint.ranges) && hint.ranges.length > 0) {
       const items = hint.ranges
-        .map(
-          (r) =>
-            `<li><strong>${escapeHtml(r.label || '')}:</strong> ${escapeHtml(r.text || '')}</li>`
-        )
+        .map((r) => `<li><strong>${escapeHtml(r.label || '')}:</strong> ${escapeHtml(r.text || '')}</li>`)
         .join('');
       sections.push(
         `<section class="spec-hint-popover__section"><h4>Ориентиры</h4><ul class="spec-hint-popover__list">${items}</ul></section>`
@@ -494,13 +481,6 @@
     container.appendChild(frag);
 
     if (withHints === 0 && Object.keys(hints).length > 0) {
-      console.warn(
-        '[LearnHints] Подсказки загружены, но не совпали ключи характеристик товара.',
-        'Категория:',
-        product.category,
-        'Ключи:',
-        entries.map(([k]) => k)
-      );
     }
   }
 

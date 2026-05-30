@@ -158,7 +158,11 @@ function buildSpecs(mapped, extras, rowObject) {
     const nk = normHeader(k);
     if (!nk || skip.has(nk)) continue;
     if (v == null || v === '') continue;
-    const key = nk.replace(/[^a-z0-9_]/gi, '_').replace(/_+/g, '_').replace(/^_|_$/g, '') || 'field';
+    const key =
+      nk
+        .replace(/[^a-z0-9_]/gi, '_')
+        .replace(/_+/g, '_')
+        .replace(/^_|_$/g, '') || 'field';
     if (!specs[key]) specs[key] = String(v).trim();
   }
   return specs;
@@ -328,7 +332,13 @@ function previewRowToRawImportRow(row) {
 function parseJsonBuffer(buf) {
   const text = buf.toString('utf8').replace(/^\uFEFF/, '');
   const data = JSON.parse(text);
-  const rows = Array.isArray(data) ? data : Array.isArray(data.items) ? data.items : Array.isArray(data.products) ? data.products : null;
+  const rows = Array.isArray(data)
+    ? data
+    : Array.isArray(data.items)
+      ? data.items
+      : Array.isArray(data.products)
+        ? data.products
+        : null;
   if (!rows) {
     throw new Error('JSON: ожидается массив или объект с полем items/products — массивом товаров.');
   }
@@ -509,8 +519,7 @@ async function runProductImport(prisma, opts) {
       const result = await prisma.$transaction(async (tx) => {
         const existing = await findProductByMatch(tx, ex.importSku || null, ex.name, ex.category);
 
-        const productRating =
-          ex.storeRating != null && Number.isFinite(ex.storeRating) ? ex.storeRating : undefined;
+        const productRating = ex.storeRating != null && Number.isFinite(ex.storeRating) ? ex.storeRating : undefined;
 
         if (!existing) {
           const product = await tx.product.create({

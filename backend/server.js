@@ -9,7 +9,7 @@ require('dotenv').config();
 const MIN_VIEWS_FOR_ANALYTICS = 5;
 const bcrypt = require('bcrypt');
 const { promisify } = require('util');
-const axios = require('axios'); 
+const axios = require('axios');
 const cheerio = require('cheerio');
 const puppeteer = require('puppeteer-extra'); //Используем puppeteer-extra
 const StealthPlugin = require('puppeteer-extra-plugin-stealth');
@@ -21,7 +21,9 @@ function readEnvValue(...keys) {
   for (const key of keys) {
     const raw = process.env[key];
     if (raw == null) continue;
-    const normalized = String(raw).trim().replace(/^['"]|['"]$/g, '');
+    const normalized = String(raw)
+      .trim()
+      .replace(/^['"]|['"]$/g, '');
     if (normalized) return normalized;
   }
   return null;
@@ -65,7 +67,13 @@ const prisma = new PrismaClient({ adapter });
 
 const multer = require('multer');
 const crypto = require('crypto');
-const { parseImportBuffer, runProductImport, buildImportPreview, previewRowToRawImportRow } = require('./services/productImport');
+const {
+  parseImportBuffer,
+  runProductImport,
+  buildImportPreview,
+  previewRowToRawImportRow
+} = require('./services/productImport');
+const { isGoogleAuthConfigured, verifyGoogleIdToken, findOrCreateGoogleUser } = require('./services/googleAuth');
 
 const importUpload = multer({
   storage: multer.memoryStorage(),
@@ -74,8 +82,7 @@ const importUpload = multer({
     const name = String(file.originalname || '');
     const mime = String(file.mimetype || '');
     const extOk = /\.(json|xlsx|xls|csv)$/i.test(name);
-    const mimeOk =
-      /json|spreadsheet|excel|csv|officedocument/i.test(mime) || mime === 'application/octet-stream';
+    const mimeOk = /json|spreadsheet|excel|csv|officedocument/i.test(mime) || mime === 'application/octet-stream';
     if (extOk || mimeOk) cb(null, true);
     else cb(new Error('Допустимы файлы .json, .xlsx, .xls, .csv'));
   }
@@ -90,6 +97,130 @@ async function ensureSellerColumns() {
   }
 }
 
+async function ensureFeedbackTables() {
+  try {
+    await prisma.$executeRawUnsafe(`
+      CREATE TABLE IF NOT EXISTS "LessonSuggestion" (
+        "id" SERIAL NOT NULL,
+        "userId" INTEGER,
+        "userName" TEXT,
+        "userEmail" TEXT,
+        "topic" TEXT NOT NULL,
+        "category" TEXT,
+        "message" TEXT,
+        "status" TEXT NOT NULL DEFAULT 'pending',
+        "adminNotes" TEXT,
+        "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        "processedAt" TIMESTAMP(3),
+        CONSTRAINT "LessonSuggestion_pkey" PRIMARY KEY ("id")
+      )
+    `);
+    await prisma.$executeRawUnsafe(`
+      CREATE TABLE IF NOT EXISTS "SupportTicket" (
+        "id" SERIAL NOT NULL,
+        "userId" INTEGER,
+        "userName" TEXT,
+        "userEmail" TEXT NOT NULL,
+        "issueType" TEXT NOT NULL DEFAULT 'other',
+        "subject" TEXT,
+        "message" TEXT NOT NULL,
+        "pageUrl" TEXT,
+        "clientIp" TEXT,
+        "status" TEXT NOT NULL DEFAULT 'pending',
+        "adminNotes" TEXT,
+        "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        "processedAt" TIMESTAMP(3),
+        CONSTRAINT "SupportTicket_pkey" PRIMARY KEY ("id")
+      )
+    `);
+    await prisma.$executeRawUnsafe(
+      'CREATE INDEX IF NOT EXISTS "LessonSuggestion_status_idx" ON "LessonSuggestion"("status")'
+    );
+    await prisma.$executeRawUnsafe(
+      'CREATE INDEX IF NOT EXISTS "LessonSuggestion_createdAt_idx" ON "LessonSuggestion"("createdAt")'
+    );
+    await prisma.$executeRawUnsafe(
+      'CREATE INDEX IF NOT EXISTS "LessonSuggestion_userId_idx" ON "LessonSuggestion"("userId")'
+    );
+    await prisma.$executeRawUnsafe(
+      'CREATE INDEX IF NOT EXISTS "SupportTicket_status_idx" ON "SupportTicket"("status")'
+    );
+    await prisma.$executeRawUnsafe(
+      'CREATE INDEX IF NOT EXISTS "SupportTicket_createdAt_idx" ON "SupportTicket"("createdAt")'
+    );
+    await prisma.$executeRawUnsafe(
+      'CREATE INDEX IF NOT EXISTS "SupportTicket_userId_idx" ON "SupportTicket"("userId")'
+    );
+  } catch (e) {
+    console.warn('[DB] ensureFeedbackTables:', e.message);
+  }
+}
+
+async function migrateLegacyFeedbackFiles() {
+  const legacyLessonFile = path.join(__dirname, 'data', 'lesson-suggestions.json');
+  const legacySupportFile = path.join(__dirname, 'data', 'support-tickets.json');
+  try {
+    const lessonCount = await prisma.lessonSuggestion.count();
+    if (lessonCount === 0 && fs.existsSync(legacyLessonFile)) {
+      const state = readJsonFileSafe(legacyLessonFile, { items: [] });
+      const items = Array.isArray(state.items) ? state.items : [];
+      for (const it of items) {
+        if (!it || !it.topic) continue;
+        await prisma.lessonSuggestion.create({
+          data: {
+            userId: it.userId != null ? Number(it.userId) : null,
+            userName: it.userName || null,
+            userEmail: it.userEmail || null,
+            topic: String(it.topic),
+            category: it.category || null,
+            message: it.message || null,
+            status: it.status || 'pending',
+            adminNotes: it.adminNotes || null,
+            createdAt: it.createdAt ? new Date(it.createdAt) : undefined,
+            processedAt: it.processedAt ? new Date(it.processedAt) : null
+          }
+        });
+      }
+      if (items.length) console.log(`[DB] Импортировано предложений уроков из JSON: ${items.length}`);
+    }
+  } catch (e) {
+    console.warn('[DB] migrateLegacyFeedbackFiles (lessons):', e.message);
+  }
+  try {
+    const supportCount = await prisma.supportTicket.count();
+    if (supportCount === 0 && fs.existsSync(legacySupportFile)) {
+      const state = readJsonFileSafe(legacySupportFile, { items: [] });
+      const items = Array.isArray(state.items) ? state.items : [];
+      for (const it of items) {
+        if (!it || !it.message || !it.userEmail) continue;
+        await prisma.supportTicket.create({
+          data: {
+            userId: it.userId != null ? Number(it.userId) : null,
+            userName: it.userName || null,
+            userEmail: String(it.userEmail),
+            issueType: it.issueType || 'other',
+            subject: it.subject || null,
+            message: String(it.message),
+            pageUrl: it.pageUrl || null,
+            clientIp: it.clientIp || null,
+            status: it.status || 'pending',
+            adminNotes: it.adminNotes || null,
+            createdAt: it.createdAt ? new Date(it.createdAt) : undefined,
+            processedAt: it.processedAt ? new Date(it.processedAt) : null
+          }
+        });
+      }
+      if (items.length) console.log(`[DB] Импортировано обращений поддержки из JSON: ${items.length}`);
+    }
+  } catch (e) {
+    console.warn('[DB] migrateLegacyFeedbackFiles (support):', e.message);
+  }
+}
+
+async function initFeedbackStorage() {
+  await ensureFeedbackTables();
+  await migrateLegacyFeedbackFiles();
+}
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -107,7 +238,6 @@ const LEARN_ROOT = path.join(__dirname, '..', 'learn');
 const LEARN_SPEC_HINTS_DIR = path.join(LEARN_ROOT, 'spec-hints');
 const LEARN_PRODUCT_LESSONS_DIR = path.join(LEARN_ROOT, 'product-lessons');
 const LEARN_LESSONS_DIR = path.join(LEARN_ROOT, 'lessons');
-const LESSON_SUGGESTIONS_FILE = path.join(__dirname, 'data', 'lesson-suggestions.json');
 
 function readPriceSyncState() {
   try {
@@ -297,9 +427,10 @@ function loadProductLessons(category) {
     safe ||
     'устройства';
   const specific = safe ? loadLearnJsonFile(path.join('product-lessons', `${safe}.json`)) : null;
-  const base = specific && Array.isArray(specific.slides) && specific.slides.length
-    ? specific
-    : loadLearnJsonFile('product-lessons/_default.json');
+  const base =
+    specific && Array.isArray(specific.slides) && specific.slides.length
+      ? specific
+      : loadLearnJsonFile('product-lessons/_default.json');
   if (!base) return { category: safe, title: `Как выбрать: ${displayName}`, slides: [] };
   const merged = applyCategoryPlaceholders(JSON.parse(JSON.stringify(base)), displayName);
   if (!specific && merged.title && merged.title.includes('{categoryName}')) {
@@ -339,7 +470,10 @@ function mergeLearnLabelMap(category) {
 
 //=== ОБУЧЕНИЕ: уроки на отдельной странице (learn/lessons/*.json) ===
 function safeLessonId(id) {
-  return String(id || '').toLowerCase().replace(/[^a-z0-9_-]/g, '').slice(0, 80);
+  return String(id || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9_-]/g, '')
+    .slice(0, 80);
 }
 
 function loadLessonsIndex() {
@@ -369,22 +503,7 @@ function loadLessonById(id) {
   }
 }
 
-function readLessonSuggestions() {
-  return readJsonFileSafe(LESSON_SUGGESTIONS_FILE, { items: [] });
-}
-
-function writeLessonSuggestions(data) {
-  writeJsonFileSafe(LESSON_SUGGESTIONS_FILE, data || { items: [] });
-}
-
-function nextLessonSuggestionId(items) {
-  let maxId = 0;
-  for (const it of items) {
-    const n = Number(it?.id);
-    if (Number.isFinite(n) && n > maxId) maxId = n;
-  }
-  return maxId + 1;
-}
+const SUPPORT_ISSUE_TYPES = new Set(['bug', 'account', 'data', 'other']);
 
 function readStoreSignals() {
   return readJsonFileSafe(STORE_SIGNALS_FILE, { items: [] });
@@ -398,7 +517,8 @@ function mergeStoreSignalsObjects(prev, next) {
   const a = prev && typeof prev === 'object' ? prev : {};
   const b = next && typeof next === 'object' ? next : {};
   return {
-    rating: b.rating != null && Number.isFinite(Number(b.rating)) ? Number(b.rating) : a.rating != null ? a.rating : null,
+    rating:
+      b.rating != null && Number.isFinite(Number(b.rating)) ? Number(b.rating) : a.rating != null ? a.rating : null,
     reviewsCount:
       b.reviewsCount != null && Number.isFinite(Number(b.reviewsCount))
         ? Math.round(Number(b.reviewsCount))
@@ -425,9 +545,10 @@ function upsertStoreSignalsItem(productId, storeName, sellerName, signals, { mer
     `${Number(i.productId)}:${String(i.storeName || '').trim()}:${i.sellerName ? String(i.sellerName).trim() : ''}`;
   const key = `${pid}:${signalStore}:${signalSeller || ''}`;
   const existingRow = items.find((i) => rowKey(i) === key) || null;
-  const merged = mergeWithExisting ? mergeStoreSignalsObjects(existingRow, signals) : mergeStoreSignalsObjects({}, signals);
-  const hasAny =
-    merged.rating != null || merged.reviewsCount != null || merged.stock != null;
+  const merged = mergeWithExisting
+    ? mergeStoreSignalsObjects(existingRow, signals)
+    : mergeStoreSignalsObjects({}, signals);
+  const hasAny = merged.rating != null || merged.reviewsCount != null || merged.stock != null;
   if (!hasAny) return;
   const filtered = items.filter((i) => rowKey(i) !== key);
   filtered.push({
@@ -485,45 +606,136 @@ function isMissingTableError(error, modelName) {
 }
 
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY, //Передаём API-ключ напрямую в конструктор
+  apiKey: process.env.OPENAI_API_KEY //Передаём API-ключ напрямую в конструктор
 });
 const groq = new Groq({
-  apiKey: process.env.GROQ_API_KEY,
+  apiKey: process.env.GROQ_API_KEY
 });
 
 const CATEGORY_TO_SPECS_MAP = {
   //=== СМАРТФОНЫ ===
   smartphones: {
-    screen_size: ['диагональ экрана', 'диагональ', 'размер экрана', 'экран', 'дисплей', 'размер дисплея', 'inch', 'дюймы'],
+    screen_size: [
+      'диагональ экрана',
+      'диагональ',
+      'размер экрана',
+      'экран',
+      'дисплей',
+      'размер дисплея',
+      'inch',
+      'дюймы'
+    ],
     screen_resolution: ['разрешение экрана', 'разрешение дисплея', 'разрешение', 'pixel', 'пиксели', 'resolution'],
-    screen_technology: ['тип матрицы экрана', 'тип матрицы', 'тип экрана', 'технология экрана', 'тип дисплея', 'панель', 'display type', 'matrix'],
+    screen_technology: [
+      'тип матрицы экрана',
+      'тип матрицы',
+      'тип экрана',
+      'технология экрана',
+      'тип дисплея',
+      'панель',
+      'display type',
+      'matrix'
+    ],
     screen_refresh_rate: ['частота обновления экрана', 'частота обновления', 'герцовка', 'hz', 'refresh rate', 'Гц'],
     cpu_brand: ['бренд процессора', 'производитель процессора', 'vendor cpu', 'cpu manufacturer', 'процессор бренд'],
     cpu_model: ['процессор', 'модель процессора', 'чипсет', 'soc', 'cpu model', 'chip', 'чип'],
     cpu_cores: ['количество ядер', 'ядра', 'cores', 'число ядер', 'cpu cores'],
     ram_size: ['оперативная память', 'объём озу', 'оперативка', 'ram', 'memory', 'память ram', 'озу'],
     ram_type: ['тип оперативной памяти', 'тип ram', 'ram type', 'тип памяти', 'ddr'],
-    storage_capacity: ['встроенная память', 'объём памяти', 'пзу', 'накопитель', 'storage', 'internal storage', 'память устройства'],
+    storage_capacity: [
+      'встроенная память',
+      'объём памяти',
+      'пзу',
+      'накопитель',
+      'storage',
+      'internal storage',
+      'память устройства'
+    ],
     storage_type: ['тип накопителя', 'тип памяти', 'storage type', 'ufs', 'emmc', 'тип хранилища'],
-    rear_camera_count: ['количество задних камер', 'кол-во камер', 'число камер', 'камеры', 'main cameras', 'основные камеры'],
-    rear_camera_primary_mp: ['разрешение основной камеры', 'основная камера', 'главная камера', 'primary camera', 'mp основной камеры', 'мегапиксели основной камеры'],
-    rear_camera_sensor_model: ['модель сенсора камеры', 'модель матрицы', 'сенсор', 'sensor', 'camera sensor', 'матрица камеры'],
-    rear_camera_sensor_size: ['размер сенсора камеры', 'размер матрицы', 'sensor size', 'размер сенсора', 'дюйм матрицы'],
-    front_camera_mp: ['разрешение фронтальной камеры', 'фронтальная камера', 'селфи-камера', 'front camera', 'передняя камера', 'мегапиксели фронтальной камеры'],
-    battery_capacity_mah: ['ёмкость аккумулятора', 'емкость аккумулятора', 'емкость батареи', 'батарея', 'аккумулятор', 'mah', 'battery', 'ёмкость'],
+    rear_camera_count: [
+      'количество задних камер',
+      'кол-во камер',
+      'число камер',
+      'камеры',
+      'main cameras',
+      'основные камеры'
+    ],
+    rear_camera_primary_mp: [
+      'разрешение основной камеры',
+      'основная камера',
+      'главная камера',
+      'primary camera',
+      'mp основной камеры',
+      'мегапиксели основной камеры'
+    ],
+    rear_camera_sensor_model: [
+      'модель сенсора камеры',
+      'модель матрицы',
+      'сенсор',
+      'sensor',
+      'camera sensor',
+      'матрица камеры'
+    ],
+    rear_camera_sensor_size: [
+      'размер сенсора камеры',
+      'размер матрицы',
+      'sensor size',
+      'размер сенсора',
+      'дюйм матрицы'
+    ],
+    front_camera_mp: [
+      'разрешение фронтальной камеры',
+      'фронтальная камера',
+      'селфи-камера',
+      'front camera',
+      'передняя камера',
+      'мегапиксели фронтальной камеры'
+    ],
+    battery_capacity_mah: [
+      'ёмкость аккумулятора',
+      'емкость аккумулятора',
+      'емкость батареи',
+      'батарея',
+      'аккумулятор',
+      'mah',
+      'battery',
+      'ёмкость'
+    ],
     battery_type: ['тип аккумулятора', 'тип батареи', 'battery type', 'li-ion', 'li-poly'],
     os: ['операционная система', 'ос', 'версия ос', 'оболочка', 'android', 'ios', 'операционка', 'system'],
     os_version: ['версия ос', 'версия операционной системы', 'os version', 'версия android', 'версия ios'],
     weight_g: ['вес', 'вес устройства', 'вес без упаковки', 'масса', 'weight', 'граммы'],
     dimensions_mm: ['размеры', 'габариты', 'высота x ширина x толщина', 'dimensions', 'размеры корпуса', 'д х ш х т'],
     sim_slots: ['количество sim-карт', 'sim', 'сим-карты', 'лоток sim', 'количество sim', 'sim cards', 'слоты sim'],
-    connectivity: ['беспроводные интерфейсы', 'связь', 'интерфейсы', 'коммуникации', 'wireless', 'connectivity', 'подключение'],
-    water_resistance: ['степень защиты', 'влагозащита', 'защита от воды', 'ip', 'waterproof', 'защита ip', 'класс защиты'],
+    connectivity: [
+      'беспроводные интерфейсы',
+      'связь',
+      'интерфейсы',
+      'коммуникации',
+      'wireless',
+      'connectivity',
+      'подключение'
+    ],
+    water_resistance: [
+      'степень защиты',
+      'влагозащита',
+      'защита от воды',
+      'ip',
+      'waterproof',
+      'защита ip',
+      'класс защиты'
+    ],
     gpu_model: ['видеокарта', 'графический адаптер', 'gpu', 'graphics', 'графический процессор', 'видеочип'],
     charging_type: ['тип зарядки', 'зарядка', 'charging', 'type-c', 'micro-usb', 'разъём зарядки'],
     wireless_charging: ['беспроводная зарядка', 'wireless charging', 'qi', 'бесконтактная зарядка', 'wireless charge'],
     nfc_support: ['nfc', 'бесконтактная оплата', 'nfc support', 'поддержка nfc', 'оплата телефоном'],
-    fingerprint_scanner: ['сканер отпечатка', 'дактилоскопический сканер', 'fingerprint', 'отпечаток пальца', 'биометрия'],
+    fingerprint_scanner: [
+      'сканер отпечатка',
+      'дактилоскопический сканер',
+      'fingerprint',
+      'отпечаток пальца',
+      'биометрия'
+    ],
     face_unlock: ['разблокировка лицом', 'распознавание лица', 'face id', 'face unlock', 'face recognition'],
     network_support: ['поддержка сетей', 'сети', '5g', '4g', 'lte', 'network', 'поколение связи']
   },
@@ -561,7 +773,13 @@ const CATEGORY_TO_SPECS_MAP = {
     keyboard_support: ['поддержка клавиатуры', 'keyboard support', 'клавиатура', 'подключение клавиатуры'],
     keyboard_included: ['клавиатура в комплекте', 'keyboard included', 'клавиатура в коробке'],
     ram_form_factor: ['форм-фактор озу', 'ram type', 'тип памяти', 'lpddr', 'ddr'],
-    storage_expandable: ['расширение памяти', 'expandable storage', 'слот карты памяти', 'microsd', 'расширяемая память'],
+    storage_expandable: [
+      'расширение памяти',
+      'expandable storage',
+      'слот карты памяти',
+      'microsd',
+      'расширяемая память'
+    ],
     storage_max_gb: ['макс. объём расширения', 'max storage', 'максимальная карта памяти', 'поддержка карт'],
     battery_charging_type: ['тип зарядки аккумулятора', 'charging type', 'разъём зарядки', 'type-c', 'зарядка'],
     battery_charging_speed: ['скорость зарядки', 'charging speed', 'fast charging', 'быстрая зарядка', 'ватты зарядки'],
@@ -573,7 +791,15 @@ const CATEGORY_TO_SPECS_MAP = {
     diagonal_in: ['диагональ', 'размер экрана', 'diagonal', 'inches', 'дюймы', 'размер tv', 'screen size'],
     screen_format: ['формат экрана', 'формат', 'aspect ratio', '16:9', '21:9', 'соотношение сторон'],
     hdr_support: ['поддержка hdr', 'hdr', 'hdr10', 'dolby vision', 'hdr support', 'высокий динамический диапазон'],
-    smart_platform: ['платформа smart tv', 'smart tv', 'операционная система', 'tizen', 'webos', 'android tv', 'smart platform'],
+    smart_platform: [
+      'платформа smart tv',
+      'smart tv',
+      'операционная система',
+      'tizen',
+      'webos',
+      'android tv',
+      'smart platform'
+    ],
     sound_power_w: ['мощность звука', 'мощность динамиков', 'sound power', 'watt', 'ватты звука', 'audio power'],
     sound_channels: ['количество каналов', 'sound channels', 'аудиоканалы', '2.0', '5.1', 'звук'],
     mount_type: ['тип крепления', 'крепление', 'mount', 'vesa', 'настенное крепление', 'подставка'],
@@ -588,12 +814,44 @@ const CATEGORY_TO_SPECS_MAP = {
     driver_size_mm: ['размер драйвера', 'driver size', 'диаметр динамика', 'мм драйвер', 'размер динамика', 'driver'],
     driver_type: ['тип драйвера', 'driver type', 'тип динамика', 'dynamic', 'planar', 'electrostatic'],
     impedance_ohms: ['сопротивление', 'impedance', 'омы', 'ohms', 'импеданс', 'электрическое сопротивление'],
-    frequency_response_hz: ['частотный диапазон', 'frequency response', 'частоты', 'hz диапазон', 'ачх', 'frequency range'],
+    frequency_response_hz: [
+      'частотный диапазон',
+      'frequency response',
+      'частоты',
+      'hz диапазон',
+      'ачх',
+      'frequency range'
+    ],
     sensitivity_db: ['чувствительность', 'sensitivity', 'дб', 'db', 'громкость', 'sensitivity db'],
-    microphone_frequency_response: ['частотный диапазон микрофона', 'микрофон частоты', 'mic frequency', 'диапазон микрофона'],
-    microphone_noise_reduction: ['шумоподавление микрофона', 'mic noise reduction', 'подавление шума микрофона', 'anc mic'],
-    wireless_standard: ['стандарт беспроводной связи', 'bluetooth version', 'bluetooth', 'wireless', 'версия bluetooth', '5.0', '5.2'],
-    wireless_range_m: ['дальность беспроводной связи', 'wireless range', 'радиус действия', 'range', 'метров', 'bluetooth range'],
+    microphone_frequency_response: [
+      'частотный диапазон микрофона',
+      'микрофон частоты',
+      'mic frequency',
+      'диапазон микрофона'
+    ],
+    microphone_noise_reduction: [
+      'шумоподавление микрофона',
+      'mic noise reduction',
+      'подавление шума микрофона',
+      'anc mic'
+    ],
+    wireless_standard: [
+      'стандарт беспроводной связи',
+      'bluetooth version',
+      'bluetooth',
+      'wireless',
+      'версия bluetooth',
+      '5.0',
+      '5.2'
+    ],
+    wireless_range_m: [
+      'дальность беспроводной связи',
+      'wireless range',
+      'радиус действия',
+      'range',
+      'метров',
+      'bluetooth range'
+    ],
     charging_port: ['порт зарядки', 'charging port', 'разъём зарядки', 'type-c', 'micro-usb', 'зарядка'],
     charging_time_h: ['время зарядки', 'charging time', 'часы зарядки', 'время полной зарядки'],
     anc_type: ['тип шумоподавления', 'anc type', 'noise cancellation', 'тип anc', 'active noise cancelling'],
@@ -626,7 +884,12 @@ const CATEGORY_TO_SPECS_MAP = {
     iso_range: ['диапазон iso', 'iso', 'iso range', 'светочувствительность', 'iso sensitivity'],
     shutter_speed: ['скорость срабатывания затвора', 'shutter speed', 'выдержка', 'shutter', 'затвор'],
     viewfinder_type: ['тип видоискателя', 'viewfinder', 'evf', 'оптический видоискатель', 'электронный видоискатель'],
-    viewfinder_magnification: ['увеличение видоискателя', 'viewfinder magnification', 'видоискатель увеличение', 'magnification'],
+    viewfinder_magnification: [
+      'увеличение видоискателя',
+      'viewfinder magnification',
+      'видоискатель увеличение',
+      'magnification'
+    ],
     lcd_type: ['тип жк-дисплея', 'lcd type', 'экран', 'дисплей', 'lcd', 'tilt screen', 'touch lcd'],
     lcd_size_in: ['размер жк-дисплея', 'lcd size', 'размер экрана', 'дюймы экрана', 'display size'],
     lcd_touch: ['сенсорный дисплей', 'touch screen', 'touch lcd', 'тачскрин', 'сенсорный экран'],
@@ -660,7 +923,13 @@ const CATEGORY_TO_SPECS_MAP = {
   ebooks: {
     screen_surface_type: ['тип поверхности экрана', 'surface type', 'покрытие экрана', 'glare-free', 'антиблик'],
     screen_frontlight: ['подсветка экрана', 'frontlight', 'подсветка', 'backlight', 'освещение экрана'],
-    screen_frontlight_color: ['цвет подсветки', 'color frontlight', 'теплая подсветка', 'adjustable light', 'цветовая температура'],
+    screen_frontlight_color: [
+      'цвет подсветки',
+      'color frontlight',
+      'теплая подсветка',
+      'adjustable light',
+      'цветовая температура'
+    ],
     screen_page_turn_buttons: ['кнопки перелистывания', 'page turn buttons', 'кнопки страниц', 'physical buttons'],
     storage_available_gb: ['доступная память', 'available storage', 'свободная память', 'gb памяти'],
     file_formats_supported: ['поддерживаемые форматы файлов', 'formats', 'форматы', 'epub', 'pdf', 'fb2', 'mobi'],
@@ -703,7 +972,12 @@ const CATEGORY_TO_SPECS_MAP = {
     max_fps: ['максимальный fps', 'max frame rate', 'кадры в секунду', '120fps', '60fps'],
     backward_compatibility: ['обратная совместимость', 'backward compat', 'совместимость', 'old games support'],
     optical_drive: ['оптический привод', 'disc drive', 'blu-ray', 'dvd', 'привод дисков'],
-    controller_battery: ['батарея контроллера', 'controller battery', 'время работы геймпада', 'battery life controller'],
+    controller_battery: [
+      'батарея контроллера',
+      'controller battery',
+      'время работы геймпада',
+      'battery life controller'
+    ],
     online_service: ['онлайн сервис', 'online service', 'подписка', 'xbox live', 'ps plus', 'nintendo online']
   },
 
@@ -794,7 +1068,14 @@ const CATEGORY_TO_SPECS_MAP = {
   //=== УМНЫЙ ДОМ ===
   smart_home: {
     connectivity_protocol: ['протокол связи', 'protocol', 'zigbee', 'z-wave', 'wifi', 'bluetooth', 'thread'],
-    voice_assistant: ['голосовой помощник', 'voice assistant', 'alexa', 'google assistant', 'siri', 'голосовое управление'],
+    voice_assistant: [
+      'голосовой помощник',
+      'voice assistant',
+      'alexa',
+      'google assistant',
+      'siri',
+      'голосовое управление'
+    ],
     automation_support: ['поддержка автоматизации', 'automation', 'сценарии', 'routines', 'умные сценарии'],
     energy_monitoring: ['мониторинг энергии', 'energy monitoring', 'потребление', 'power monitoring', 'учёт энергии'],
     local_control: ['локальное управление', 'local control', 'без интернета', 'offline control', 'автономная работа'],
@@ -847,31 +1128,33 @@ const CATEGORY_TO_SPECS_MAP = {
 
 //Функция нормализации характеристик
 function normalizeProductSpecs(rawSpecs, category) {
-    if (!rawSpecs || typeof rawSpecs !== 'object') return {};
-    
-    //Получаем карту синонимов для выбранной категории
-    const categoryMap = SPEC_SYNONYMS_MAP[category];
-    
-    //Если для категории нет шаблона, возвращаем как есть (или можно вернуть пустой объект)
-    if (!categoryMap) return rawSpecs; 
-    
-    const normalizedSpecs = {};
-    const rawEntries = Object.entries(rawSpecs);
-    
-    for (const [standardKey, synonyms] of Object.entries(categoryMap)) {
-        //Ищем совпадение в полученных данных по массиву синонимов
-        const found = rawEntries.find(([rawKey]) => {
-            const normalizedRawKey = rawKey.toLowerCase().trim();
-            return synonyms.some(syn => normalizedRawKey.includes(syn.toLowerCase()));
-        });
-        
-        if (found) {
-            let [, rawValue] = found;
-            //Очищаем значение от HTML тегов и лишних пробелов
-            normalizedSpecs[standardKey] = String(rawValue).replace(/<[^>]+>/g, '').trim();
-        }
+  if (!rawSpecs || typeof rawSpecs !== 'object') return {};
+
+  //Получаем карту синонимов для выбранной категории
+  const categoryMap = SPEC_SYNONYMS_MAP[category];
+
+  //Если для категории нет шаблона, возвращаем как есть (или можно вернуть пустой объект)
+  if (!categoryMap) return rawSpecs;
+
+  const normalizedSpecs = {};
+  const rawEntries = Object.entries(rawSpecs);
+
+  for (const [standardKey, synonyms] of Object.entries(categoryMap)) {
+    //Ищем совпадение в полученных данных по массиву синонимов
+    const found = rawEntries.find(([rawKey]) => {
+      const normalizedRawKey = rawKey.toLowerCase().trim();
+      return synonyms.some((syn) => normalizedRawKey.includes(syn.toLowerCase()));
+    });
+
+    if (found) {
+      let [, rawValue] = found;
+      //Очищаем значение от HTML тегов и лишних пробелов
+      normalizedSpecs[standardKey] = String(rawValue)
+        .replace(/<[^>]+>/g, '')
+        .trim();
     }
-    return normalizedSpecs;
+  }
+  return normalizedSpecs;
 }
 
 const CORS_STATIC_ORIGINS = new Set([
@@ -914,6 +1197,61 @@ app.use((req, res, next) => {
   next();
 });
 
+function signAuthToken(user) {
+  return jwt.sign(
+    {
+      id: user.id,
+      email: user.email,
+      role: user.role
+    },
+    process.env.JWT_SECRET,
+    { expiresIn: '7d' }
+  );
+}
+
+app.get('/api/auth/google/config', (_req, res) => {
+  const clientId = String(process.env.GOOGLE_CLIENT_ID || '').trim();
+  if (!clientId) {
+    return res.json({ enabled: false });
+  }
+  res.json({ enabled: true, clientId });
+});
+
+app.post('/api/auth/google', async (req, res) => {
+  const credential = String(req.body?.credential || '').trim();
+  if (!credential) {
+    return res.status(400).json({ error: 'Отсутствует Google credential' });
+  }
+  if (!isGoogleAuthConfigured()) {
+    return res.status(503).json({ error: 'Вход через Google не настроен на сервере' });
+  }
+
+  try {
+    const payload = await verifyGoogleIdToken(credential);
+    const user = await findOrCreateGoogleUser(prisma, payload);
+    const token = signAuthToken(user);
+
+    res.json({
+      token,
+      user: {
+        id: user.id,
+        email: user.email,
+        fullName: user.fullName,
+        role: user.role,
+        avatarUrl: user.avatarUrl
+      }
+    });
+  } catch (error) {
+    if (error.code === 'GOOGLE_NOT_CONFIGURED') {
+      return res.status(503).json({ error: 'Вход через Google не настроен на сервере' });
+    }
+    if (error.code === 'GOOGLE_EMAIL_REQUIRED' || error.code === 'GOOGLE_EMAIL_NOT_VERIFIED') {
+      return res.status(400).json({ error: 'Google не предоставил подтверждённый email' });
+    }
+    console.error('Ошибка Google OAuth:', error);
+    res.status(401).json({ error: 'Не удалось проверить вход через Google' });
+  }
+});
 
 app.post('/api/auth/register', async (req, res) => {
   const { email, password, fullName } = req.body;
@@ -951,43 +1289,32 @@ app.post('/api/auth/login', async (req, res) => {
       return res.status(400).json({ error: 'Неверный email или пароль' });
     }
 
+    if (!user.passwordHash) {
+      return res.status(400).json({ error: 'Этот аккаунт зарегистрирован через Google. Войдите через Google.' });
+    }
+
     //Сравнить введённый пароль с хэшем из БД
     const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
     if (!isPasswordValid) {
       return res.status(400).json({ error: 'Неверный email или пароль' });
     }
-    //В payload обязательно включаем id, email и role
-    const token = jwt.sign(
-      {
-        id: user.id,
-        email: user.email,
-
-        role: user.role 
-      },
-      process.env.JWT_SECRET, 
-      { expiresIn: '7d' } //Токен действителен 7 дней
-    );
-
-
+    const token = signAuthToken(user);
 
     //Отправляем токен и основную информацию о пользователе
     res.json({
-      token: token, 
+      token: token,
       user: {
         id: user.id,
         email: user.email,
-        fullName: user.fullName, 
-        role: user.role 
+        fullName: user.fullName,
+        role: user.role
       }
     });
-    
-
   } catch (error) {
     console.error('Ошибка входа:', error); //Логируем ошибку на сервере
     res.status(500).json({ error: 'Ошибка сервера при входе' });
   }
 });
-
 
 app.get('/api/products', async (req, res) => {
   try {
@@ -1082,13 +1409,19 @@ app.listen(PORT, () => {
   ensureSellerColumns().catch((e) => {
     console.warn('[DB] ensureSellerColumns startup error:', e.message);
   });
-  setInterval(() => {
-    try {
-      scheduleAutomaticPriceSyncIfDue();
-    } catch (e) {
-      console.error('[PRICE SYNC] scheduler:', e);
-    }
-  }, 60 * 60 * 1000);
+  initFeedbackStorage().catch((e) => {
+    console.warn('[DB] initFeedbackStorage startup error:', e.message);
+  });
+  setInterval(
+    () => {
+      try {
+        scheduleAutomaticPriceSyncIfDue();
+      } catch (e) {
+        console.error('[PRICE SYNC] scheduler:', e);
+      }
+    },
+    60 * 60 * 1000
+  );
   setTimeout(() => {
     try {
       scheduleAutomaticPriceSyncIfDue();
@@ -1156,7 +1489,7 @@ app.get('/api/favorites', async (req, res) => {
         }
       }
     });
-    res.json(favorites.map(f => f.product));
+    res.json(favorites.map((f) => f.product));
   } catch (err) {
     console.error('Ошибка избранного:', err);
     res.status(401).json({ error: 'Неверный токен' });
@@ -1219,10 +1552,11 @@ app.get('/api/profile/alerts', async (req, res) => {
             }
           }
         }
-        const signal = signalItems.find((s) =>
-          Number(s.productId) === Number(product.id) &&
-          String(s.storeName || '').toLowerCase() === storeName.toLowerCase() &&
-          String(s.sellerName || '').toLowerCase() === sellerName.toLowerCase()
+        const signal = signalItems.find(
+          (s) =>
+            Number(s.productId) === Number(product.id) &&
+            String(s.storeName || '').toLowerCase() === storeName.toLowerCase() &&
+            String(s.sellerName || '').toLowerCase() === sellerName.toLowerCase()
         );
         const stock = Number(signal?.stock);
         if (Number.isFinite(stock) && stock >= 0 && stock < 10) {
@@ -1273,13 +1607,12 @@ app.get('/api/comparisons', async (req, res) => {
         }
       }
     });
-    res.json(comparisons.map(c => c.product));
+    res.json(comparisons.map((c) => c.product));
   } catch (err) {
     console.error('Ошибка сравнения:', err);
     res.status(401).json({ error: 'Неверный токен' });
   }
 });
-
 
 //Добавить в избранное
 app.post('/api/favorites', async (req, res) => {
@@ -1351,7 +1684,7 @@ app.delete('/api/comparisons/clear', async (req, res) => {
       select: { id: true }
     });
 
-    const productIds = productsInCategory.map(p => p.id);
+    const productIds = productsInCategory.map((p) => p.id);
 
     if (productIds.length === 0) {
       return res.json({ message: 'Нет товаров в этой категории', count: 0 });
@@ -1365,11 +1698,10 @@ app.delete('/api/comparisons/clear', async (req, res) => {
       }
     });
 
-    res.json({ 
+    res.json({
       message: `Удалено ${result.count} товаров из категории "${category}"`,
-      count: result.count 
+      count: result.count
     });
-
   } catch (err) {
     console.error('Ошибка очистки сравнения:', err);
     res.status(500).json({ error: 'Не удалось очистить сравнение' });
@@ -1423,7 +1755,6 @@ app.delete('/api/comparisons/:id', async (req, res) => {
     } else {
       res.status(404).json({ error: 'Товар не найден в сравнении' });
     }
-
   } catch (err) {
     console.error('Ошибка удаления сравнения:', err);
     res.status(500).json({ error: 'Не удалось удалить товар из сравнения' });
@@ -1455,25 +1786,23 @@ app.get('/api/products/:id/price-history', async (req, res) => {
       return res.status(400).json({ error: 'Invalid product ID' });
     }
 
-    console.log(`Fetching price history for product ID: ${productId}`); //Лог для отладки
-
     //Запрашиваем историю цен из БД через Prisma
     const priceHistoryRecords = await prisma.priceHistory.findMany({
       where: {
-        productId: productId, //Фильтруем по ID товара
+        productId: productId //Фильтруем по ID товара
       },
       select: {
         storeName: true, //Выбираем имя магазина
         sellerName: true,
-        price: true,     //Выбираем цену
-        date: true,      //Выбираем дату
+        price: true, //Выбираем цену
+        date: true //Выбираем дату
         //id и createdAt не обязательны для графика, можно не включать
       },
       orderBy: [
         { storeName: 'asc' }, //Сначала сортируем по магазину
         { sellerName: 'asc' },
-        { date: 'asc' }       //Потом по дате
-      ],
+        { date: 'asc' } //Потом по дате
+      ]
     });
 
     const currentPriceRows = await prisma.price.findMany({
@@ -1486,12 +1815,9 @@ app.get('/api/products/:id/price-history', async (req, res) => {
       return acc;
     }, {});
 
-    console.log(`Found ${priceHistoryRecords.length} records for product ID: ${productId}`); //Лог для отладки
-
     //Если записи не найдены
     if (priceHistoryRecords.length === 0) {
-       console.log(`No price history found for product ID: ${productId}`);
-       return res.status(200).json({}); //Возвращаем пустой объект или массив, если нет данных
+      return res.status(200).json({}); //Возвращаем пустой объект или массив, если нет данных
     }
 
     //Группируем записи по магазинам для удобства построения графика
@@ -1512,11 +1838,8 @@ app.get('/api/products/:id/price-history', async (req, res) => {
       return acc;
     }, {});
 
-    console.log(`Grouped data by store for product ID: ${productId}`, Object.keys(groupedByStore)); //Лог для отладки
-
     //Отправляем сгруппированные данные клиенту
     res.json(groupedByStore);
-
   } catch (error) {
     console.error('Error fetching price history:', error);
     //Отправляем ошибку клиенту
@@ -1575,8 +1898,7 @@ app.post('/api/reviews', authenticateToken, async (req, res) => {
   console.log('Тело запроса (req.body):', req.body);
   console.log('Пользователь из токена (req.user):', req.user);
 
-  
-  const { productId, rating, text } = req.body; 
+  const { productId, rating, text } = req.body;
 
   if (
     //productId должен быть числом (как пришедшее с клиента) или строкой, которую можно превратить в число
@@ -1597,7 +1919,7 @@ app.post('/api/reviews', authenticateToken, async (req, res) => {
 
   //Проверяем, существует ли товар
   const productExists = await prisma.product.findUnique({
-    where: { id: parsedProductId } 
+    where: { id: parsedProductId }
   });
   if (!productExists) {
     console.log(`   ОШИБКА: Товар с ID ${parsedProductId} не найден.`);
@@ -1608,19 +1930,18 @@ app.post('/api/reviews', authenticateToken, async (req, res) => {
     console.log(`   Подготовка к созданию отзыва для товара ${parsedProductId}, рейтинг ${rating}, текст: "${text}"`);
     //Создаём отзыв
     const newReview = await prisma.review.create({
-       data:{
+      data: {
         userId: req.user.id,
-        productId: parsedProductId, 
+        productId: parsedProductId,
         userName: req.user.fullName || req.user.email.split('@')[0],
         rating: rating,
-        comment: text ? text.trim() : null, 
+        comment: text ? text.trim() : null
         //isApproved: false, status: 'pending' - установлены по умолчанию
       }
     });
 
     console.log(`   Отзыв успешно создан в БД с ID ${newReview.id}, comment: "${newReview.comment}"`);
     res.status(201).json(newReview);
-
   } catch (error) {
     console.error('   ОШИБКА СОЗДАНИЯ ОТЗЫВА В БАЗЕ:', error);
     res.status(500).json({ error: 'Failed to create review' });
@@ -1628,37 +1949,38 @@ app.post('/api/reviews', authenticateToken, async (req, res) => {
   console.log('--- КОНЕЦ ОБРАБОТКИ POST /api/reviews ---');
 });
 
-
-
 async function recalculateProductRating(productId) {
   console.log(`[DEBUG] recalculateProductRating: Начинаю пересчёт для товара ID: ${productId}`);
 
   try {
-    
     const avgRatingResult = await prisma.review.aggregate({
       where: {
         productId: productId,
-        isApproved: true 
+        isApproved: true
       },
       _avg: {
-        rating: true 
+        rating: true
       }
     });
 
     //avgRatingResult._avg.rating может быть null, если нет одобренных отзывов
     const newAverageRating = avgRatingResult._avg.rating;
-    console.log(`[DEBUG] recalculateProductRating: Средняя оценка (из aggregate): ${newAverageRating} (type: ${typeof newAverageRating})`);
+    console.log(
+      `[DEBUG] recalculateProductRating: Средняя оценка (из aggregate): ${newAverageRating} (type: ${typeof newAverageRating})`
+    );
 
     const updatedProduct = await prisma.product.update({
-      where: { id: productId }, 
-       data:{
+      where: { id: productId },
+      data: {
         //Поля, КОТОРЫЕ обновляются (в данном случае - rating)
         //Если newAverageRating - число, используем его, иначе устанавливаем 0.0
         rating: typeof newAverageRating === 'number' ? newAverageRating : 0.0
       }
     });
 
-    console.log(`[DEBUG] recalculateProductRating: Рейтинг товара ID ${productId} обновлён до ${updatedProduct.rating}`);
+    console.log(
+      `[DEBUG] recalculateProductRating: Рейтинг товара ID ${productId} обновлён до ${updatedProduct.rating}`
+    );
   } catch (error) {
     console.error(`[ERROR] recalculateProductRating: Ошибка пересчёта для товара ID ${productId}:`, error.message);
     //Не выбрасываем ошибку, чтобы не прерывать основной процесс (например, добавление/одобрение отзыва)
@@ -1679,20 +2001,20 @@ app.get('/api/products/:id/reviews', async (req, res) => {
     const reviews = await prisma.review.findMany({
       where: {
         productId: productId,
-        isApproved: true 
+        isApproved: true
       },
       include: {
-        user: { //Подгружаем данные пользователя (если есть), чтобы показать fullName
+        user: {
+          //Подгружаем данные пользователя (если есть), чтобы показать fullName
           select: { fullName: true } //Выбираем только имя, не пароль и т.д.
         }
       },
       orderBy: {
-        createdAt: 'desc' 
+        createdAt: 'desc'
       }
     });
 
     res.json(reviews);
-
   } catch (error) {
     console.error('Error fetching reviews:', error);
     res.status(500).json({ error: 'Failed to fetch reviews' });
@@ -1702,7 +2024,6 @@ app.get('/api/products/:id/reviews', async (req, res) => {
 //Отправить запрос на добавление товара (требует авторизации)
 app.post('/api/requests', authenticateToken, async (req, res) => {
   try {
-
     const { productName, category, url, comment } = req.body;
     const userId = req.user.id;
 
@@ -1725,23 +2046,21 @@ app.post('/api/requests', authenticateToken, async (req, res) => {
     //Создаём запрос
     //ПЕРЕДАЁМ url и comment в data
     const newRequest = await prisma.request.create({
-       data:{
+      data: {
         userId, //ID пользователя
         productName: productName.trim(), //Название товара
         category: category ? category.trim() : null, //Категория (опционально)
-        url: url ? url.trim() : null, 
-        comment: comment ? comment.trim() : null, 
+        url: url ? url.trim() : null,
+        comment: comment ? comment.trim() : null
       }
     });
 
     res.status(201).json(newRequest);
-
   } catch (error) {
     console.error('Error creating request:', error);
     res.status(500).json({ error: 'Failed to create request' });
   }
 });
-
 
 const requireAdminRole = (req, res, next) => {
   if (!req.user || req.user.role !== 'admin') {
@@ -1778,15 +2097,15 @@ app.patch('/api/admin/reviews/:id', authenticateToken, requireAdminRole, async (
   try {
     const updatedReview = await prisma.review.update({
       where: { id: reviewId },
-       data:{
+      data: {
         status: status,
-        isApproved: status === 'approved', 
+        isApproved: status === 'approved',
         adminNotes: adminNotes || null,
         processedAt: new Date()
       },
       include: {
         user: { select: { fullName: true, email: true } },
-        product: { select: { id: true, name: true, category: true } } 
+        product: { select: { id: true, name: true, category: true } }
       }
     });
 
@@ -1805,7 +2124,7 @@ app.delete('/api/admin/reviews/:id', authenticateToken, requireAdminRole, async 
   try {
     const reviewToDelete = await prisma.review.findUnique({
       where: { id: reviewId },
-      select: { productId: true } 
+      select: { productId: true }
     });
 
     if (!reviewToDelete) {
@@ -1903,32 +2222,24 @@ app.post('/api/learn/topic-suggestions', authenticateToken, async (req, res) => 
       }
     } catch (_) {}
 
-    const state = readLessonSuggestions();
-    const items = Array.isArray(state.items) ? state.items : [];
-    const recordsByUser = items.filter(
-      (it) => it && Number(it.userId) === Number(req.user.id) && it.status === 'pending'
-    );
-    if (recordsByUser.length >= 10) {
+    const pendingCount = await prisma.lessonSuggestion.count({
+      where: { userId: req.user.id, status: 'pending' }
+    });
+    if (pendingCount >= 10) {
       return res.status(429).json({ error: 'У вас слишком много необработанных предложений. Дождитесь модерации.' });
     }
 
-    const id = nextLessonSuggestionId(items);
-    const now = new Date().toISOString();
-    const record = {
-      id,
-      userId: req.user.id,
-      userName,
-      userEmail,
-      topic: topicStr,
-      category: categoryStr || null,
-      message: messageStr || null,
-      status: 'pending',
-      adminNotes: null,
-      createdAt: now,
-      processedAt: null
-    };
-    items.push(record);
-    writeLessonSuggestions({ items });
+    const record = await prisma.lessonSuggestion.create({
+      data: {
+        userId: req.user.id,
+        userName,
+        userEmail,
+        topic: topicStr,
+        category: categoryStr || null,
+        message: messageStr || null,
+        status: 'pending'
+      }
+    });
     res.status(201).json(record);
   } catch (e) {
     console.error('[learn] topic suggestion create:', e);
@@ -1937,12 +2248,13 @@ app.post('/api/learn/topic-suggestions', authenticateToken, async (req, res) => 
 });
 
 //=== Админка: список предложений тем уроков ===
-app.get('/api/admin/lesson-suggestions', authenticateToken, requireAdminRole, (_req, res) => {
+app.get('/api/admin/lesson-suggestions', authenticateToken, requireAdminRole, async (_req, res) => {
   try {
-    const state = readLessonSuggestions();
-    const items = Array.isArray(state.items) ? state.items : [];
-    const sorted = [...items].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-    res.json(sorted);
+    const items = await prisma.lessonSuggestion.findMany({
+      orderBy: { createdAt: 'desc' },
+      include: { user: { select: { fullName: true, email: true } } }
+    });
+    res.json(items);
   } catch (e) {
     console.error('[learn] admin list:', e);
     res.status(500).json({ error: 'Не удалось загрузить предложения' });
@@ -1950,7 +2262,7 @@ app.get('/api/admin/lesson-suggestions', authenticateToken, requireAdminRole, (_
 });
 
 //=== Админка: обновление статуса предложения темы ===
-app.patch('/api/admin/lesson-suggestions/:id', authenticateToken, requireAdminRole, (req, res) => {
+app.patch('/api/admin/lesson-suggestions/:id', authenticateToken, requireAdminRole, async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
     if (!Number.isFinite(id)) {
@@ -1961,22 +2273,18 @@ app.patch('/api/admin/lesson-suggestions/:id', authenticateToken, requireAdminRo
       return res.status(400).json({ error: 'status должен быть pending|approved|rejected' });
     }
 
-    const state = readLessonSuggestions();
-    const items = Array.isArray(state.items) ? state.items : [];
-    const idx = items.findIndex((it) => Number(it?.id) === id);
-    if (idx === -1) return res.status(404).json({ error: 'Предложение не найдено' });
+    const existing = await prisma.lessonSuggestion.findUnique({ where: { id } });
+    if (!existing) return res.status(404).json({ error: 'Предложение не найдено' });
 
-    items[idx] = {
-      ...items[idx],
-      status,
-      adminNotes:
-        typeof adminNotes === 'string'
-          ? adminNotes.trim() || null
-          : items[idx].adminNotes || null,
-      processedAt: new Date().toISOString()
-    };
-    writeLessonSuggestions({ items });
-    res.json(items[idx]);
+    const updated = await prisma.lessonSuggestion.update({
+      where: { id },
+      data: {
+        status,
+        adminNotes: typeof adminNotes === 'string' ? adminNotes.trim() || null : existing.adminNotes,
+        processedAt: new Date()
+      }
+    });
+    res.json(updated);
   } catch (e) {
     console.error('[learn] admin patch:', e);
     res.status(500).json({ error: 'Не удалось обновить предложение' });
@@ -1984,18 +2292,18 @@ app.patch('/api/admin/lesson-suggestions/:id', authenticateToken, requireAdminRo
 });
 
 //=== Админка: удаление предложения темы ===
-app.delete('/api/admin/lesson-suggestions/:id', authenticateToken, requireAdminRole, (req, res) => {
+app.delete('/api/admin/lesson-suggestions/:id', authenticateToken, requireAdminRole, async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
     if (!Number.isFinite(id)) {
       return res.status(400).json({ error: 'Неверный id' });
     }
-    const state = readLessonSuggestions();
-    const items = Array.isArray(state.items) ? state.items : [];
-    const before = items.length;
-    const remaining = items.filter((it) => Number(it?.id) !== id);
-    if (remaining.length === before) return res.status(404).json({ error: 'Предложение не найдено' });
-    writeLessonSuggestions({ items: remaining });
+    try {
+      await prisma.lessonSuggestion.delete({ where: { id } });
+    } catch (err) {
+      if (err?.code === 'P2025') return res.status(404).json({ error: 'Предложение не найдено' });
+      throw err;
+    }
     res.json({ ok: true });
   } catch (e) {
     console.error('[learn] admin delete:', e);
@@ -2003,7 +2311,147 @@ app.delete('/api/admin/lesson-suggestions/:id', authenticateToken, requireAdminR
   }
 });
 
+//=== Поддержка: обращения пользователей (с сайта, в т.ч. без авторизации) ===
+app.post('/api/support/tickets', authenticateTokenOptional, async (req, res) => {
+  try {
+    const { issueType, message, userEmail, pageUrl } = req.body || {};
+    const issue = typeof issueType === 'string' ? issueType.trim() : 'other';
+    if (!SUPPORT_ISSUE_TYPES.has(issue)) {
+      return res.status(400).json({ error: 'Некорректный тип обращения.' });
+    }
+    const messageStr = typeof message === 'string' ? message.trim() : '';
+    let emailStr = typeof userEmail === 'string' ? userEmail.trim() : '';
+    const pageStr = typeof pageUrl === 'string' ? pageUrl.trim().slice(0, 500) : null;
 
+    if (!messageStr || messageStr.length < 10) {
+      return res.status(400).json({ error: 'Сообщение обязательно (минимум 10 символов).' });
+    }
+    if (messageStr.length > 4000) {
+      return res.status(400).json({ error: 'Сообщение слишком длинное (максимум 4000 символов).' });
+    }
+
+    let userId = req.user?.id ?? null;
+    let resolvedName = null;
+    let resolvedEmail = emailStr || null;
+
+    if (userId) {
+      try {
+        const u = await prisma.user.findUnique({
+          where: { id: userId },
+          select: { fullName: true, email: true }
+        });
+        if (u) {
+          resolvedName = u.fullName || null;
+          resolvedEmail = resolvedEmail || u.email || null;
+        }
+      } catch (_) {}
+    }
+
+    if (!resolvedEmail) {
+      return res.status(400).json({ error: 'Укажите e-mail для обратной связи или войдите в аккаунт.' });
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(resolvedEmail)) {
+      return res.status(400).json({ error: 'Некорректный e-mail.' });
+    }
+
+    const ipKey = String(req.ip || req.headers['x-forwarded-for'] || 'unknown').slice(0, 80);
+    const fifteenMinAgo = new Date(Date.now() - 15 * 60 * 1000);
+    const recentFromIp = await prisma.supportTicket.count({
+      where: { status: 'pending', clientIp: ipKey, createdAt: { gte: fifteenMinAgo } }
+    });
+    if (recentFromIp >= 5) {
+      return res.status(429).json({ error: 'Слишком много обращений. Подождите 15 минут.' });
+    }
+    if (userId) {
+      const pendingByUser = await prisma.supportTicket.count({
+        where: { userId, status: 'pending' }
+      });
+      if (pendingByUser >= 15) {
+        return res
+          .status(429)
+          .json({ error: 'У вас много необработанных обращений. Дождитесь ответа администратора.' });
+      }
+    }
+
+    const record = await prisma.supportTicket.create({
+      data: {
+        userId,
+        userName: resolvedName,
+        userEmail: resolvedEmail,
+        issueType: issue,
+        message: messageStr,
+        pageUrl: pageStr,
+        clientIp: ipKey,
+        status: 'pending'
+      }
+    });
+    res.status(201).json(record);
+  } catch (e) {
+    console.error('[support] ticket create:', e);
+    res.status(500).json({ error: 'Не удалось сохранить обращение' });
+  }
+});
+
+app.get('/api/admin/support-tickets', authenticateToken, requireAdminRole, async (_req, res) => {
+  try {
+    const items = await prisma.supportTicket.findMany({
+      orderBy: { createdAt: 'desc' },
+      include: { user: { select: { fullName: true, email: true } } }
+    });
+    res.json(items);
+  } catch (e) {
+    console.error('[support] admin list:', e);
+    res.status(500).json({ error: 'Не удалось загрузить обращения' });
+  }
+});
+
+app.patch('/api/admin/support-tickets/:id', authenticateToken, requireAdminRole, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (!Number.isFinite(id)) {
+      return res.status(400).json({ error: 'Неверный id' });
+    }
+    const { status, adminNotes } = req.body || {};
+    if (!status || !['pending', 'approved', 'rejected'].includes(status)) {
+      return res.status(400).json({ error: 'status должен быть pending|approved|rejected' });
+    }
+
+    const existing = await prisma.supportTicket.findUnique({ where: { id } });
+    if (!existing) return res.status(404).json({ error: 'Обращение не найдено' });
+
+    const updated = await prisma.supportTicket.update({
+      where: { id },
+      data: {
+        status,
+        adminNotes: typeof adminNotes === 'string' ? adminNotes.trim() || null : existing.adminNotes,
+        processedAt: new Date()
+      }
+    });
+    res.json(updated);
+  } catch (e) {
+    console.error('[support] admin patch:', e);
+    res.status(500).json({ error: 'Не удалось обновить обращение' });
+  }
+});
+
+app.delete('/api/admin/support-tickets/:id', authenticateToken, requireAdminRole, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (!Number.isFinite(id)) {
+      return res.status(400).json({ error: 'Неверный id' });
+    }
+    try {
+      await prisma.supportTicket.delete({ where: { id } });
+    } catch (err) {
+      if (err?.code === 'P2025') return res.status(404).json({ error: 'Обращение не найдено' });
+      throw err;
+    }
+    res.json({ ok: true });
+  } catch (e) {
+    console.error('[support] admin delete:', e);
+    res.status(500).json({ error: 'Не удалось удалить обращение' });
+  }
+});
 
 //GET /api/admin/tables - Получить список всех таблиц (для выбора в админке)
 app.get('/api/admin/tables', authenticateToken, requireAdminRole, async (req, res) => {
@@ -2017,7 +2465,7 @@ app.get('/api/admin/tables', authenticateToken, requireAdminRole, async (req, re
       ORDER BY table_name;
     `;
     //Результат возвращается как массив объектов { table_name: '...' }
-    const tableNames = result.map(row => row.table_name);
+    const tableNames = result.map((row) => row.table_name);
     res.json(tableNames);
   } catch (error) {
     console.error('Error fetching table list:', error);
@@ -2030,13 +2478,13 @@ app.get('/api/admin/table/:tableName', authenticateToken, requireAdminRole, asyn
   const tableName = req.params.tableName;
   const allowedTables = ['Product', 'ProductSpec', 'Price', 'Review', 'Request', 'User', 'PriceHistory'];
   const prismaModelMap = {
-    'Product': 'product',
-    'ProductSpec': 'productSpec',
-    'Price': 'price',
-    'Review': 'review',
-    'Request': 'request',
-    'User': 'user',
-    'PriceHistory': 'priceHistory'
+    Product: 'product',
+    ProductSpec: 'productSpec',
+    Price: 'price',
+    Review: 'review',
+    Request: 'request',
+    User: 'user',
+    PriceHistory: 'priceHistory'
   };
 
   if (!allowedTables.includes(tableName)) {
@@ -2083,13 +2531,13 @@ app.post('/api/admin/table/:tableName', authenticateToken, requireAdminRole, asy
   const tableName = req.params.tableName;
   const allowedTables = ['Product', 'ProductSpec', 'Price', 'Review', 'Request', 'User', 'PriceHistory'];
   const prismaModelMap = {
-    'Product': 'product',
-    'ProductSpec': 'productSpec',
-    'Price': 'price',
-    'Review': 'review',
-    'Request': 'request',
-    'User': 'user',
-    'PriceHistory': 'priceHistory'
+    Product: 'product',
+    ProductSpec: 'productSpec',
+    Price: 'price',
+    Review: 'review',
+    Request: 'request',
+    User: 'user',
+    PriceHistory: 'priceHistory'
   };
 
   if (!allowedTables.includes(tableName)) {
@@ -2109,7 +2557,6 @@ app.post('/api/admin/table/:tableName', authenticateToken, requireAdminRole, asy
       throw new Error(`Model client for ${tableName} (${prismaModelKey}) not found in Prisma.`);
     }
 
-
     const createdRecord = await modelClient.create({
       data: data
     });
@@ -2127,13 +2574,13 @@ app.put('/api/admin/table/:tableName/:id', authenticateToken, requireAdminRole, 
 
   const allowedTables = ['Product', 'ProductSpec', 'Price', 'Review', 'Request', 'User', 'PriceHistory'];
   const prismaModelMap = {
-    'Product': 'product',
-    'ProductSpec': 'productSpec',
-    'Price': 'price',
-    'Review': 'review',
-    'Request': 'request',
-    'User': 'user',
-    'PriceHistory': 'priceHistory'
+    Product: 'product',
+    ProductSpec: 'productSpec',
+    Price: 'price',
+    Review: 'review',
+    Request: 'request',
+    User: 'user',
+    PriceHistory: 'priceHistory'
   };
 
   if (!allowedTables.includes(tableName)) {
@@ -2158,7 +2605,7 @@ app.put('/api/admin/table/:tableName/:id', authenticateToken, requireAdminRole, 
     }
 
     const modelTypeMap = {
-      'product': {
+      product: {
         id: 'Int',
         name: 'String',
         category: 'String',
@@ -2167,24 +2614,24 @@ app.put('/api/admin/table/:tableName/:id', authenticateToken, requireAdminRole, 
         rating: 'Float',
         isActive: 'Boolean',
         createdAt: 'DateTime',
-        updatedAt: 'DateTime',
+        updatedAt: 'DateTime'
       },
-      'productSpec': { 
+      productSpec: {
         id: 'Int',
-        productId: 'Int', 
+        productId: 'Int',
         specKey: 'String',
-        specValue: 'String',
+        specValue: 'String'
       },
-      'price': {
+      price: {
         id: 'Int',
         productId: 'Int',
         storeName: 'String',
         sellerName: 'String?',
-        price: 'Int', 
+        price: 'Int',
         url: 'String',
-        recordedAt: 'DateTime',
+        recordedAt: 'DateTime'
       },
-      'review': {
+      review: {
         id: 'Int',
         userId: 'Int',
         productId: 'Int',
@@ -2196,9 +2643,9 @@ app.put('/api/admin/table/:tableName/:id', authenticateToken, requireAdminRole, 
         adminNotes: 'String?',
         createdAt: 'DateTime',
         updatedAt: 'DateTime',
-        processedAt: 'DateTime?',
+        processedAt: 'DateTime?'
       },
-      'request': {
+      request: {
         id: 'Int',
         userId: 'Int',
         productId: 'Int',
@@ -2206,24 +2653,24 @@ app.put('/api/admin/table/:tableName/:id', authenticateToken, requireAdminRole, 
         requestType: 'String',
         message: 'String?',
         createdAt: 'DateTime',
-        updatedAt: 'DateTime',
+        updatedAt: 'DateTime'
       },
-      'user': {
+      user: {
         id: 'Int',
         email: 'String',
         fullName: 'String',
         role: 'String',
         createdAt: 'DateTime',
-        updatedAt: 'DateTime',
+        updatedAt: 'DateTime'
       },
-      'priceHistory': {
+      priceHistory: {
         id: 'Int',
         productId: 'Int',
         storeName: 'String',
         sellerName: 'String?',
         price: 'Int', //или Float/Decimal
-        date: 'DateTime',
-      },
+        date: 'DateTime'
+      }
     };
 
     const expectedTypes = modelTypeMap[prismaModelKey];
@@ -2271,17 +2718,14 @@ app.put('/api/admin/table/:tableName/:id', authenticateToken, requireAdminRole, 
     }
 
     const updatedRecord = await modelClient.update({
-       
-        where: { id: recordId }, //Условие
-         data:{
-          ...dataForUpdate //Правильное место для передачи полей обновления
-        }
-      
+      where: { id: recordId }, //Условие
+      data: {
+        ...dataForUpdate //Правильное место для передачи полей обновления
+      }
     });
 
     console.log(`Запись ID ${recordId} в таблице ${tableName} успешно обновлена.`, updatedRecord);
     res.json(updatedRecord);
-
   } catch (error) {
     console.error(`Error updating record in table ${tableName}:`, error);
     res.status(500).json({ error: `Не удалось обновить запись в таблице ${tableName}` });
@@ -2293,13 +2737,13 @@ app.delete('/api/admin/table/:tableName/bulk', authenticateToken, requireAdminRo
   const tableName = req.params.tableName;
   const allowedTables = ['Product', 'ProductSpec', 'Price', 'Review', 'Request', 'User', 'PriceHistory'];
   const prismaModelMap = {
-    'Product': 'product',
-    'ProductSpec': 'productSpec',
-    'Price': 'price',
-    'Review': 'review',
-    'Request': 'request',
-    'User': 'user',
-    'PriceHistory': 'priceHistory'
+    Product: 'product',
+    ProductSpec: 'productSpec',
+    Price: 'price',
+    Review: 'review',
+    Request: 'request',
+    User: 'user',
+    PriceHistory: 'priceHistory'
   };
 
   if (!allowedTables.includes(tableName)) {
@@ -2345,13 +2789,13 @@ app.delete('/api/admin/table/:tableName/:id', authenticateToken, requireAdminRol
   const recordId = parseInt(req.params.id, 10);
   const allowedTables = ['Product', 'ProductSpec', 'Price', 'Review', 'Request', 'User', 'PriceHistory'];
   const prismaModelMap = {
-    'Product': 'product',
-    'ProductSpec': 'productSpec',
-    'Price': 'price',
-    'Review': 'review',
-    'Request': 'request',
-    'User': 'user',
-    'PriceHistory': 'priceHistory'
+    Product: 'product',
+    ProductSpec: 'productSpec',
+    Price: 'price',
+    Review: 'review',
+    Request: 'request',
+    User: 'user',
+    PriceHistory: 'priceHistory'
   };
 
   if (!allowedTables.includes(tableName)) {
@@ -2379,183 +2823,187 @@ app.delete('/api/admin/table/:tableName/:id', authenticateToken, requireAdminRol
   }
 });
 
-
 //Маршрут для получения основной статистики админ-панели
 app.get('/api/admin/dashboard-stats', authenticateToken, requireAdminRole, async (req, res) => {
-    try {
-        const now = new Date();
-        const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        const totalProducts = await prisma.product.count();
-        //Считаем отзывы, ожидающие модерации (например, со статусом 'pending')
-        const pendingReviews = await prisma.review.count({ where: { status: 'pending' } });
-        const newReviews = await prisma.review.count({ where: { createdAt: { gte: todayStart } } });
-        //Или, если используется isApproved: false
-        //const pendingReviews = await prisma.review.count({ where: { isApproved: false } });
+  try {
+    const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const totalProducts = await prisma.product.count();
+    //Считаем отзывы, ожидающие модерации (например, со статусом 'pending')
+    const pendingReviews = await prisma.review.count({ where: { status: 'pending' } });
+    const newReviews = await prisma.review.count({ where: { createdAt: { gte: todayStart } } });
+    //Или, если используется isApproved: false
+    //const pendingReviews = await prisma.review.count({ where: { isApproved: false } });
 
-        //Считаем запросы, ожидающие модерации (со статусом 'pending')
-        const pendingRequests = await prisma.request.count({ where: { status: 'pending' } });
+    //Считаем запросы, ожидающие модерации (со статусом 'pending')
+    const pendingRequests = await prisma.request.count({ where: { status: 'pending' } });
 
-        res.json({
-            totalProducts,
-            pendingReviews,
-            pendingRequests,
-            newReviews
-        });
-    } catch (error) {
-        console.error('Error fetching dashboard stats:', error);
-        res.status(500).json({ error: 'Не удалось загрузить статистику', details: error.message });
-    }
+    res.json({
+      totalProducts,
+      pendingReviews,
+      pendingRequests,
+      newReviews
+    });
+  } catch (error) {
+    console.error('Error fetching dashboard stats:', error);
+    res.status(500).json({ error: 'Не удалось загрузить статистику', details: error.message });
+  }
 });
 
 //Маршрут для получения аналитики (счётчики, не хранящиеся постоянно)
 app.get('/api/admin/analytics/stats', authenticateToken, requireAdminRole, async (req, res) => {
+  try {
+    const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const yesterdayStart = new Date(todayStart.getTime() - 24 * 60 * 60 * 1000);
+
+    //Просмотры за вчера и сегодня
+    const viewsYesterday = await prisma.viewLog.count({ where: { viewedAt: { gte: yesterdayStart, lt: todayStart } } });
+    const viewsToday = await prisma.viewLog.count({ where: { viewedAt: { gte: todayStart } } });
+
+    //Переходы к покупке за вчера и сегодня
+    let purchaseClicksYesterday = 0;
+    let purchaseClicksToday = 0;
     try {
-        const now = new Date();
-        const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        const yesterdayStart = new Date(todayStart.getTime() - 24 * 60 * 60 * 1000);
-
-        //Просмотры за вчера и сегодня
-        const viewsYesterday = await prisma.viewLog.count({ where: { viewedAt: { gte: yesterdayStart, lt: todayStart } } });
-        const viewsToday = await prisma.viewLog.count({ where: { viewedAt: { gte: todayStart } } });
-
-        //Переходы к покупке за вчера и сегодня
-        let purchaseClicksYesterday = 0;
-        let purchaseClicksToday = 0;
-        try {
-          purchaseClicksYesterday = await prisma.purchaseClick.count({ where: { clickedAt: { gte: yesterdayStart, lt: todayStart } } });
-          purchaseClicksToday = await prisma.purchaseClick.count({ where: { clickedAt: { gte: todayStart } } });
-        } catch (purchaseError) {
-          if (!isMissingTableError(purchaseError, 'PurchaseClick')) {
-            throw purchaseError;
-          }
-          console.warn('Таблица PurchaseClick не найдена, используем purchaseClicks=0 до применения миграции.');
-        }
-
-        //Популярные поиски
-        const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-        const searches = await prisma.searchLog.groupBy({
-            by: ['query'],
-            _count: true,
-            where: { createdAt: { gte: weekAgo } },
-            orderBy: { _count: { query: 'desc' } },
-            take: 5
-        });
-
-        //Популярные товары по просмотрам (за 30 дней)
-        const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-        const groupedViews = await prisma.viewLog.groupBy({
-          by: ['productId'],
-          _count: { productId: true },
-          where: { viewedAt: { gte: monthAgo } },
-          orderBy: { _count: { productId: 'desc' } },
-          take: 6
-        });
-
-        const popularProductIds = groupedViews.map(item => item.productId);
-        const popularProductsData = popularProductIds.length > 0
-          ? await prisma.product.findMany({
-              where: { id: { in: popularProductIds } },
-              select: {
-                id: true,
-                name: true,
-                imageUrl: true,
-                category: true,
-                prices: {
-                  select: { price: true },
-                  orderBy: { price: 'asc' },
-                  take: 1
-                }
-              }
-            })
-          : [];
-
-        const popularProductsMap = new Map(popularProductsData.map(product => [product.id, product]));
-        const popularProducts = groupedViews
-          .map((item) => {
-            const product = popularProductsMap.get(item.productId);
-            if (!product) return null;
-            return {
-              id: product.id,
-              name: product.name,
-              category: product.category,
-              imageUrl: product.imageUrl,
-              minPrice: product.prices[0]?.price ?? null,
-              viewCount: item._count.productId
-            };
-          })
-          .filter(Boolean);
-
-        const getPercentChange = (todayValue, yesterdayValue) => {
-          if (yesterdayValue === 0) {
-            return todayValue > 0 ? 100 : 0;
-          }
-          return Number((((todayValue - yesterdayValue) / yesterdayValue) * 100).toFixed(1));
-        };
-
-        const averageResponseTime = responseTimeSamples.length > 0
-          ? Number((responseTimeSamples.reduce((sum, value) => sum + value, 0) / responseTimeSamples.length).toFixed(1))
-          : 0;
-        const memoryLoadPercent = Number((((os.totalmem() - os.freemem()) / os.totalmem()) * 100).toFixed(1));
-        const cpuCount = Math.max(1, os.cpus()?.length || 1);
-        const rawLoad = os.loadavg?.()[0] ?? 0;
-        const normalizedCpuLoad = rawLoad > 0 ? Number(Math.min(100, (rawLoad / cpuCount) * 100).toFixed(1)) : 0;
-        const serverLoad = normalizedCpuLoad > 0
-          ? Number(((normalizedCpuLoad * 0.45) + (memoryLoadPercent * 0.55)).toFixed(1))
-          : memoryLoadPercent;
-
-        const onlineSince = new Date(now.getTime() - 15 * 60 * 1000);
-        const [recentViewUsers, recentSearchUsers] = await Promise.all([
-          prisma.viewLog.findMany({
-            where: { viewedAt: { gte: onlineSince }, userId: { not: null } },
-            select: { userId: true }
-          }),
-          prisma.searchLog.findMany({
-            where: { createdAt: { gte: onlineSince }, userId: { not: null } },
-            select: { userId: true }
-          })
-        ]);
-
-        const onlineUserIds = new Set([
-          ...recentViewUsers.map((item) => item.userId),
-          ...recentSearchUsers.map((item) => item.userId)
-        ]);
-
-        try {
-          const recentPurchaseUsers = await prisma.purchaseClick.findMany({
-            where: { clickedAt: { gte: onlineSince }, userId: { not: null } },
-            select: { userId: true }
-          });
-          recentPurchaseUsers.forEach((item) => onlineUserIds.add(item.userId));
-        } catch (purchaseOnlineError) {
-          if (!isMissingTableError(purchaseOnlineError, 'PurchaseClick')) {
-            throw purchaseOnlineError;
-          }
-        }
-
-        const uptimeSeconds = process.uptime();
-
-        res.json({
-            totalProducts: await prisma.product.count(),
-            totalUsers: await prisma.user.count(),
-            totalReviews: await prisma.review.count(),
-            totalRequests: await prisma.request.count(),
-            dailyViews: viewsToday,
-            purchaseClicks: purchaseClicksToday,
-            dailyViewsChange: getPercentChange(viewsToday, viewsYesterday),
-            purchaseClicksChange: getPercentChange(purchaseClicksToday, purchaseClicksYesterday),
-            popularSearches: searches.map(s => ({ term: s.query, count: s._count.query })),
-            popularProducts,
-            serverLoad,
-            memoryLoad: memoryLoadPercent,
-            cpuLoad: normalizedCpuLoad,
-            responseTime: averageResponseTime,
-            onlineUsers: onlineUserIds.size,
-            uptimeHours: Number((uptimeSeconds / 3600).toFixed(2))
-        });
-    } catch (error) {
-        console.error('Ошибка аналитики:', error);
-        res.status(500).json({ error: 'Ошибка загрузки аналитики' });
+      purchaseClicksYesterday = await prisma.purchaseClick.count({
+        where: { clickedAt: { gte: yesterdayStart, lt: todayStart } }
+      });
+      purchaseClicksToday = await prisma.purchaseClick.count({ where: { clickedAt: { gte: todayStart } } });
+    } catch (purchaseError) {
+      if (!isMissingTableError(purchaseError, 'PurchaseClick')) {
+        throw purchaseError;
+      }
+      console.warn('Таблица PurchaseClick не найдена, используем purchaseClicks=0 до применения миграции.');
     }
+
+    //Популярные поиски
+    const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const searches = await prisma.searchLog.groupBy({
+      by: ['query'],
+      _count: true,
+      where: { createdAt: { gte: weekAgo } },
+      orderBy: { _count: { query: 'desc' } },
+      take: 5
+    });
+
+    //Популярные товары по просмотрам (за 30 дней)
+    const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    const groupedViews = await prisma.viewLog.groupBy({
+      by: ['productId'],
+      _count: { productId: true },
+      where: { viewedAt: { gte: monthAgo } },
+      orderBy: { _count: { productId: 'desc' } },
+      take: 6
+    });
+
+    const popularProductIds = groupedViews.map((item) => item.productId);
+    const popularProductsData =
+      popularProductIds.length > 0
+        ? await prisma.product.findMany({
+            where: { id: { in: popularProductIds } },
+            select: {
+              id: true,
+              name: true,
+              imageUrl: true,
+              category: true,
+              prices: {
+                select: { price: true },
+                orderBy: { price: 'asc' },
+                take: 1
+              }
+            }
+          })
+        : [];
+
+    const popularProductsMap = new Map(popularProductsData.map((product) => [product.id, product]));
+    const popularProducts = groupedViews
+      .map((item) => {
+        const product = popularProductsMap.get(item.productId);
+        if (!product) return null;
+        return {
+          id: product.id,
+          name: product.name,
+          category: product.category,
+          imageUrl: product.imageUrl,
+          minPrice: product.prices[0]?.price ?? null,
+          viewCount: item._count.productId
+        };
+      })
+      .filter(Boolean);
+
+    const getPercentChange = (todayValue, yesterdayValue) => {
+      if (yesterdayValue === 0) {
+        return todayValue > 0 ? 100 : 0;
+      }
+      return Number((((todayValue - yesterdayValue) / yesterdayValue) * 100).toFixed(1));
+    };
+
+    const averageResponseTime =
+      responseTimeSamples.length > 0
+        ? Number((responseTimeSamples.reduce((sum, value) => sum + value, 0) / responseTimeSamples.length).toFixed(1))
+        : 0;
+    const memoryLoadPercent = Number((((os.totalmem() - os.freemem()) / os.totalmem()) * 100).toFixed(1));
+    const cpuCount = Math.max(1, os.cpus()?.length || 1);
+    const rawLoad = os.loadavg?.()[0] ?? 0;
+    const normalizedCpuLoad = rawLoad > 0 ? Number(Math.min(100, (rawLoad / cpuCount) * 100).toFixed(1)) : 0;
+    const serverLoad =
+      normalizedCpuLoad > 0
+        ? Number((normalizedCpuLoad * 0.45 + memoryLoadPercent * 0.55).toFixed(1))
+        : memoryLoadPercent;
+
+    const onlineSince = new Date(now.getTime() - 15 * 60 * 1000);
+    const [recentViewUsers, recentSearchUsers] = await Promise.all([
+      prisma.viewLog.findMany({
+        where: { viewedAt: { gte: onlineSince }, userId: { not: null } },
+        select: { userId: true }
+      }),
+      prisma.searchLog.findMany({
+        where: { createdAt: { gte: onlineSince }, userId: { not: null } },
+        select: { userId: true }
+      })
+    ]);
+
+    const onlineUserIds = new Set([
+      ...recentViewUsers.map((item) => item.userId),
+      ...recentSearchUsers.map((item) => item.userId)
+    ]);
+
+    try {
+      const recentPurchaseUsers = await prisma.purchaseClick.findMany({
+        where: { clickedAt: { gte: onlineSince }, userId: { not: null } },
+        select: { userId: true }
+      });
+      recentPurchaseUsers.forEach((item) => onlineUserIds.add(item.userId));
+    } catch (purchaseOnlineError) {
+      if (!isMissingTableError(purchaseOnlineError, 'PurchaseClick')) {
+        throw purchaseOnlineError;
+      }
+    }
+
+    const uptimeSeconds = process.uptime();
+
+    res.json({
+      totalProducts: await prisma.product.count(),
+      totalUsers: await prisma.user.count(),
+      totalReviews: await prisma.review.count(),
+      totalRequests: await prisma.request.count(),
+      dailyViews: viewsToday,
+      purchaseClicks: purchaseClicksToday,
+      dailyViewsChange: getPercentChange(viewsToday, viewsYesterday),
+      purchaseClicksChange: getPercentChange(purchaseClicksToday, purchaseClicksYesterday),
+      popularSearches: searches.map((s) => ({ term: s.query, count: s._count.query })),
+      popularProducts,
+      serverLoad,
+      memoryLoad: memoryLoadPercent,
+      cpuLoad: normalizedCpuLoad,
+      responseTime: averageResponseTime,
+      onlineUsers: onlineUserIds.size,
+      uptimeHours: Number((uptimeSeconds / 3600).toFixed(2))
+    });
+  } catch (error) {
+    console.error('Ошибка аналитики:', error);
+    res.status(500).json({ error: 'Ошибка загрузки аналитики' });
+  }
 });
 
 //Получить популярные поиски
@@ -2599,7 +3047,6 @@ app.get('/api/admin/users', authenticateToken, requireAdminRole, async (req, res
     res.status(500).json({ error: 'Не удалось загрузить пользователей' });
   }
 });
-
 
 app.post('/api/admin/users/:id/send-message', authenticateToken, requireAdminRole, async (req, res) => {
   const userId = parseInt(req.params.id, 10);
@@ -2646,7 +3093,6 @@ app.delete('/api/admin/users/:id', authenticateToken, requireAdminRole, async (r
   }
 });
 
-
 async function parseProductFromDnsShop(url, proxy = null) {
   console.log(`Парсим товар с DNS (puppeteer): ${url}, через proxy: ${proxy || 'нет'}`);
 
@@ -2672,10 +3118,10 @@ async function parseProductFromDnsShop(url, proxy = null) {
         '--disable-ipc-flooding-protection',
         '--disable-background-networking',
         '--lang=ru-RU',
-        '--timezone-policy=host',
+        '--timezone-policy=host'
         //'--proxy-server=http://bfwdtevx:t1qa9ys45t14@185.199.229.156:7492',
         //'--user-data-dir=/tmp/chrome-user-data', //Опционально: использовать профиль
-      ],
+      ]
     };
 
     if (proxy) {
@@ -2688,11 +3134,12 @@ async function parseProductFromDnsShop(url, proxy = null) {
     const page = await browser.newPage();
 
     await page.setExtraHTTPHeaders({
-      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+      Accept:
+        'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
       'Accept-Language': 'ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7',
       'Accept-Encoding': 'gzip, deflate, br',
       'Cache-Control': 'no-cache',
-      'Pragma': 'no-cache',
+      Pragma: 'no-cache',
       'Sec-Ch-Ua': '"Chromium";v="120", "Not_A Brand";v="8"',
       'Sec-Ch-Ua-Mobile': '?0',
       'Sec-Fetch-Dest': 'document',
@@ -2700,33 +3147,38 @@ async function parseProductFromDnsShop(url, proxy = null) {
       'Sec-Fetch-Site': 'none',
       'Sec-Fetch-User': '?1',
       'Upgrade-Insecure-Requests': '1',
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36' 
+      'User-Agent':
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
     });
 
-    await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
+    await page.setUserAgent(
+      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+    );
 
     await page.setViewport({ width: 1920, height: 1080 });
     await page.evaluateOnNewDocument(() => {
       Object.defineProperty(navigator, 'webdriver', {
-        get: () => undefined,
+        get: () => undefined
       });
       Object.defineProperty(navigator, 'plugins', {
-        get: () => [1, 2, 3, 4, 5],
+        get: () => [1, 2, 3, 4, 5]
       });
       Object.defineProperty(navigator, 'languages', {
-        get: () => ['ru-RU', 'ru', 'en-US', 'en'],
+        get: () => ['ru-RU', 'ru', 'en-US', 'en']
       });
     });
 
     console.log(`   Открываем страницу: ${url}`);
     const response = await page.goto(url, {
       waitUntil: 'networkidle2', //Ждём стабильности сети
-      timeout: 30000, //Увеличиваем таймаут
+      timeout: 30000 //Увеличиваем таймаут
     });
 
     const status = response.status();
     if (status === 401 || status === 403 || status === 429) {
-      throw new Error(`DNS-шоп вернул статус ${status} - доступ запрещён или ограничение скорости. IP может быть заблокирован.`);
+      throw new Error(
+        `DNS-шоп вернул статус ${status} - доступ запрещён или ограничение скорости. IP может быть заблокирован.`
+      );
     } else if (!response.ok()) {
       throw new Error(`DNS-шоп вернул статус ${status} - ошибка загрузки страницы.`);
     }
@@ -2746,11 +3198,7 @@ async function parseProductFromDnsShop(url, proxy = null) {
       const name = nameElement?.innerText?.trim() || 'Неизвестное название';
 
       let price = null;
-      const priceSelectors = [
-        '[data-marker="price"] span',
-        '.current-price span',
-        '.price-value span'
-      ];
+      const priceSelectors = ['[data-marker="price"] span', '.current-price span', '.price-value span'];
 
       for (const sel of priceSelectors) {
         const priceEl = document.querySelector(sel);
@@ -2764,9 +3212,10 @@ async function parseProductFromDnsShop(url, proxy = null) {
         }
       }
 
-      let imageUrl = document.querySelector('[data-marker="gallery"] img')?.src ||
-                     document.querySelector('[data-marker="slider"] img')?.src ||
-                     null;
+      let imageUrl =
+        document.querySelector('[data-marker="gallery"] img')?.src ||
+        document.querySelector('[data-marker="slider"] img')?.src ||
+        null;
       if (imageUrl && !imageUrl.startsWith('http')) {
         if (imageUrl.startsWith('//')) {
           imageUrl = 'https:' + imageUrl;
@@ -2781,7 +3230,7 @@ async function parseProductFromDnsShop(url, proxy = null) {
       const specBlock = document.querySelector('[data-marker="chars"]'); //Это пример, может отличаться
       if (specBlock) {
         const specRows = specBlock.querySelectorAll('tr'); //Или dl dt/dd
-        specRows.forEach(tr => {
+        specRows.forEach((tr) => {
           const th = tr.querySelector('th'); //Или dt
           const td = tr.querySelector('td'); //Или dd
           if (th && td) {
@@ -2798,7 +3247,7 @@ async function parseProductFromDnsShop(url, proxy = null) {
         name,
         price, //Может быть null
         imageUrl, //Может быть null
-        specs, //Может быть пустым объектом
+        specs //Может быть пустым объектом
       };
     });
 
@@ -2814,7 +3263,6 @@ async function parseProductFromDnsShop(url, proxy = null) {
       sourceUrl: url,
       specs: data.specs
     };
-
   } catch (error) {
     if (browser) {
       await browser.close().catch(console.error);
@@ -2849,10 +3297,10 @@ async function parseProductFromOzon(url, proxy = null) {
         '--disable-ipc-flooding-protection',
         '--disable-background-networking',
         '--lang=ru-RU',
-        '--timezone-policy=host',
+        '--timezone-policy=host'
         //'--proxy-server=http://your-proxy-ip:port', //Если прокси передан, можно указать здесь
         //'--user-data-dir=/tmp/chrome-user-data', //Опционально: использовать профиль
-      ],
+      ]
     };
 
     if (proxy) {
@@ -2865,11 +3313,12 @@ async function parseProductFromOzon(url, proxy = null) {
     const page = await browser.newPage();
 
     await page.setExtraHTTPHeaders({
-      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+      Accept:
+        'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
       'Accept-Language': 'ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7',
       'Accept-Encoding': 'gzip, deflate, br',
       'Cache-Control': 'no-cache',
-      'Pragma': 'no-cache',
+      Pragma: 'no-cache',
       'Sec-Ch-Ua': '"Chromium";v="120", "Not_A Brand";v="8"',
       'Sec-Ch-Ua-Mobile': '?0',
       'Sec-Fetch-Dest': 'document',
@@ -2877,45 +3326,47 @@ async function parseProductFromOzon(url, proxy = null) {
       'Sec-Fetch-Site': 'none',
       'Sec-Fetch-User': '?1',
       'Upgrade-Insecure-Requests': '1',
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36' 
+      'User-Agent':
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
     });
 
-    await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
+    await page.setUserAgent(
+      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+    );
 
     await page.setViewport({ width: 1920, height: 1080 });
     await page.evaluateOnNewDocument(() => {
       Object.defineProperty(navigator, 'webdriver', {
-        get: () => undefined,
+        get: () => undefined
       });
       Object.defineProperty(navigator, 'plugins', {
-        get: () => [1, 2, 3, 4, 5],
+        get: () => [1, 2, 3, 4, 5]
       });
       Object.defineProperty(navigator, 'languages', {
-        get: () => ['ru-RU', 'ru', 'en-US', 'en'],
+        get: () => ['ru-RU', 'ru', 'en-US', 'en']
       });
     });
-  
 
     console.log(`   Открываем страницу: ${url}`);
     const response = await page.goto(url, {
       waitUntil: 'networkidle2',
-      timeout: 30000, //Увеличиваем таймаут
+      timeout: 30000 //Увеличиваем таймаут
     });
 
     const status = response.status();
     if (status === 401 || status === 403 || status === 429) {
-      throw new Error(`OZON вернул статус ${status} - доступ запрещён или ограничение скорости. IP может быть заблокирован.`);
+      throw new Error(
+        `OZON вернул статус ${status} - доступ запрещён или ограничение скорости. IP может быть заблокирован.`
+      );
     } else if (!response.ok()) {
       throw new Error(`OZON вернул статус ${status} - ошибка загрузки страницы.`);
     }
 
-  
     await page.waitForTimeout(Math.random() * 2000 + 1000);
     await page.evaluate(() => {
       window.scrollBy(0, window.innerHeight / 3);
     });
     await page.waitForTimeout(Math.random() * 1000 + 500);
-  
 
     //Ждём загрузки названия и цены (OZON часто использует динамическую загрузку)
     await page.waitForSelector('h1[data-widget="webTitle"]', { timeout: 15000 });
@@ -2926,11 +3377,7 @@ async function parseProductFromOzon(url, proxy = null) {
       const name = nameElement?.innerText?.trim() || 'Неизвестное название';
 
       let price = null;
-      const priceSelectors = [
-        '[class*="c-price"] span',
-        '[data-widget="price"] span',
-        '.ui-kit-product-price span'
-      ];
+      const priceSelectors = ['[class*="c-price"] span', '[data-widget="price"] span', '.ui-kit-product-price span'];
 
       for (const sel of priceSelectors) {
         const priceEl = document.querySelector(sel);
@@ -2944,14 +3391,15 @@ async function parseProductFromOzon(url, proxy = null) {
         }
       }
 
-      let imageUrl = document.querySelector('[data-widget="primaryImage"] img')?.src ||
-                     document.querySelector('[data-widget="secondaryImage"] img')?.src ||
-                     null;
+      let imageUrl =
+        document.querySelector('[data-widget="primaryImage"] img')?.src ||
+        document.querySelector('[data-widget="secondaryImage"] img')?.src ||
+        null;
       if (imageUrl && !imageUrl.startsWith('http')) {
         if (imageUrl.startsWith('//')) {
           imageUrl = 'https:' + imageUrl;
         } else if (imageUrl.startsWith('/')) {
-          imageUrl = 'https://www.ozon.ru' + imageUrl; 
+          imageUrl = 'https://www.ozon.ru' + imageUrl;
         }
       }
 
@@ -2960,7 +3408,7 @@ async function parseProductFromOzon(url, proxy = null) {
       const specBlock = document.querySelector('[data-widget="description"]'); //Это просто пример
       if (specBlock) {
         const specRows = specBlock.querySelectorAll('table tr'); //Или dl dt/dd
-        specRows.forEach(tr => {
+        specRows.forEach((tr) => {
           const th = tr.querySelector('th'); //Или dt
           const td = tr.querySelector('td'); //Или dd
           if (th && td) {
@@ -2977,7 +3425,7 @@ async function parseProductFromOzon(url, proxy = null) {
         name,
         price, //Может быть null
         imageUrl, //Может быть null
-        specs, //Может быть пустым объектом
+        specs //Может быть пустым объектом
       };
     });
 
@@ -2993,7 +3441,6 @@ async function parseProductFromOzon(url, proxy = null) {
       sourceUrl: url,
       specs: data.specs
     };
-
   } catch (error) {
     if (browser) {
       await browser.close().catch(console.error);
@@ -3012,12 +3459,7 @@ function getWebStorePuppeteerProfile(hostname) {
   if (host === 'citilink.ru' || host.endsWith('.citilink.ru')) {
     return { key: 'citilink', storeName: 'Citilink', sourceLabel: 'Citilink (puppeteer)' };
   }
-  if (
-    host === 'regard.ru' ||
-    host.endsWith('.regard.ru') ||
-    host === 'redgard.ru' ||
-    host.endsWith('.redgard.ru')
-  ) {
+  if (host === 'regard.ru' || host.endsWith('.regard.ru') || host === 'redgard.ru' || host.endsWith('.redgard.ru')) {
     return { key: 'regard', storeName: 'Regard', sourceLabel: 'Regard / Регард (puppeteer)' };
   }
   if (host.includes('aliexpress.')) {
@@ -3071,8 +3513,7 @@ async function parseProductFromWebStore(url, proxy = null, profile = null) {
     browser = await puppeteer.launch(launchOptions);
     const page = await browser.newPage();
     await page.setExtraHTTPHeaders({
-      Accept:
-        'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
       'Accept-Language': 'ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7',
       'Upgrade-Insecure-Requests': '1'
     });
@@ -3099,9 +3540,7 @@ async function parseProductFromWebStore(url, proxy = null, profile = null) {
       throw new Error(`Магазин вернул статус ${status} (доступ или лимиты). При необходимости укажите прокси.`);
     }
 
-    await page.evaluate(() =>
-      window.scrollBy(0, Math.min(window.innerHeight, Math.floor(window.innerHeight * 0.6)))
-    );
+    await page.evaluate(() => window.scrollBy(0, Math.min(window.innerHeight, Math.floor(window.innerHeight * 0.6))));
     await page.waitForTimeout(1200);
 
     await page.waitForSelector('body', { timeout: 6000 }).catch(() => {});
@@ -3114,10 +3553,7 @@ async function parseProductFromWebStore(url, proxy = null, profile = null) {
     }
 
     const data = await page.evaluate((siteKey) => {
-      const normPrice = (n) =>
-        typeof n === 'number' && n > 0 && n < 1e9 && Number.isFinite(n)
-          ? Math.round(n)
-          : null;
+      const normPrice = (n) => (typeof n === 'number' && n > 0 && n < 1e9 && Number.isFinite(n) ? Math.round(n) : null);
 
       const digitsFromStr = (s) => {
         if (!s) return null;
@@ -3152,10 +3588,7 @@ async function parseProductFromWebStore(url, proxy = null, profile = null) {
         for (const obj of list) {
           const t = obj['@type'];
           const isProduct =
-            t === 'Product' ||
-            (Array.isArray(t) && t.includes('Product')) ||
-            t === undefined ||
-            t === null;
+            t === 'Product' || (Array.isArray(t) && t.includes('Product')) || t === undefined || t === null;
           if (obj.name && isProduct) {
             if (!name) name = String(obj.name).trim();
           }
@@ -3215,8 +3648,7 @@ async function parseProductFromWebStore(url, proxy = null, profile = null) {
 
       if (siteKey === 'regard') {
         const rg =
-          document.querySelector('.Prices_current') ||
-          document.querySelector('[class*="ProductPrice_current"]');
+          document.querySelector('.Prices_current') || document.querySelector('[class*="ProductPrice_current"]');
         price = price || digitsFromStr(rg?.innerText);
       }
 
@@ -3312,8 +3744,7 @@ async function parseProductFromWebStore(url, proxy = null, profile = null) {
       }
 
       if (imageUrl && !/^https?:/i.test(imageUrl)) {
-        imageUrl =
-          imageUrl.startsWith('//') ? `https:${imageUrl}` : new URL(imageUrl, location.href).href;
+        imageUrl = imageUrl.startsWith('//') ? `https:${imageUrl}` : new URL(imageUrl, location.href).href;
       }
 
       return { name: name || 'Неизвестное название', price, imageUrl, specs };
@@ -3400,99 +3831,109 @@ app.post('/api/admin/parse-product', authenticateToken, requireAdminRole, async 
 
 //POST /api/admin/manual-add-product - Добавить товар вручную
 app.post('/api/admin/manual-add-product', authenticateToken, requireAdminRole, async (req, res) => {
-    const { name, category, description, imageUrl, specs, prices } = req.body;
+  const { name, category, description, imageUrl, specs, prices } = req.body;
 
-    if (!name || !category) {
-        return res.status(400).json({ error: 'Название и категория обязательны.' });
-    }
+  if (!name || !category) {
+    return res.status(400).json({ error: 'Название и категория обязательны.' });
+  }
 
+  try {
+    await ensureSellerColumns();
+    //Транзакция гарантирует, что либо всё сохранится, либо ничего
+    const newProduct = await prisma.$transaction(async (tx) => {
+      //1. Создаем основной товар
+      const product = await tx.product.create({
+        data: {
+          name: name.trim(),
+          category: category.trim(),
+          description: description || null,
+          imageUrl: imageUrl || null,
+          rating: 0.0,
+          isActive: true //Товар сразу активен и виден в каталоге
+        }
+      });
+
+      //2. Сохраняем характеристики
+      if (specs && typeof specs === 'object' && Object.keys(specs).length > 0) {
+        await Promise.all(
+          Object.entries(specs)
+            .map(([key, val]) => {
+              if (key && val) {
+                return tx.productSpec.create({
+                  data: { productId: product.id, specKey: key, specValue: String(val) }
+                });
+              }
+              return null;
+            })
+            .filter((p) => p !== null)
+        );
+      }
+
+      //3. Сохраняем цены И историю цен
+      if (prices && Array.isArray(prices) && prices.length > 0) {
+        await Promise.all(
+          prices
+            .map((p) => {
+              const storeName = p.storeName ? p.storeName.trim() : 'Unknown';
+              const sellerName = p.sellerName ? String(p.sellerName).trim() : null;
+              const price = parseFloat(p.price);
+
+              if (storeName && !isNaN(price)) {
+                //Сохраняем текущую цену
+                const priceRecord = tx.price.create({
+                  data: {
+                    productId: product.id,
+                    storeName: storeName,
+                    sellerName: sellerName || null,
+                    price: price,
+                    url: p.url || ''
+                  }
+                });
+                //Сохраняем запись в историю
+                const historyRecord = tx.priceHistory.create({
+                  data: {
+                    productId: product.id,
+                    storeName: storeName,
+                    sellerName: sellerName || null,
+                    price: price,
+                    date: new Date()
+                  }
+                });
+                return Promise.all([priceRecord, historyRecord]);
+              }
+              return null;
+            })
+            .flat()
+            .filter((p) => p !== null)
+        );
+      }
+
+      return product;
+    });
+
+    console.log('✅ Товар создан:', newProduct.name);
     try {
-        await ensureSellerColumns();
-        //Транзакция гарантирует, что либо всё сохранится, либо ничего
-        const newProduct = await prisma.$transaction(async (tx) => {
-            //1. Создаем основной товар
-            const product = await tx.product.create({
-                data: {
-                    name: name.trim(),
-                    category: category.trim(),
-                    description: description || null,
-                    imageUrl: imageUrl || null,
-                    rating: 0.0,
-                    isActive: true //Товар сразу активен и виден в каталоге
-                }
-            });
-
-            //2. Сохраняем характеристики
-            if (specs && typeof specs === 'object' && Object.keys(specs).length > 0) {
-                await Promise.all(Object.entries(specs).map(([key, val]) => {
-                    if (key && val) {
-                        return tx.productSpec.create({
-                            data: { productId: product.id, specKey: key, specValue: String(val) }
-                        });
-                    }
-                    return null;
-                }).filter(p => p !== null));
-            }
-
-            //3. Сохраняем цены И историю цен
-            if (prices && Array.isArray(prices) && prices.length > 0) {
-                await Promise.all(prices.map(p => {
-                    const storeName = p.storeName ? p.storeName.trim() : 'Unknown';
-                    const sellerName = p.sellerName ? String(p.sellerName).trim() : null;
-                    const price = parseFloat(p.price);
-                    
-                    if (storeName && !isNaN(price)) {
-                        //Сохраняем текущую цену
-                        const priceRecord = tx.price.create({
-                          data: {
-                            productId: product.id,
-                            storeName: storeName,
-                            sellerName: sellerName || null,
-                            price: price,
-                            url: p.url || ''
-                          }
-                          });
-                        //Сохраняем запись в историю
-                        const historyRecord = tx.priceHistory.create({
-                            data: {
-                              productId: product.id,
-                              storeName: storeName,
-                              sellerName: sellerName || null,
-                              price: price,
-                              date: new Date()
-                            }
-                        });
-                        return Promise.all([priceRecord, historyRecord]);
-                    }
-                    return null;
-                }).flat().filter(p => p !== null));
-            }
-
-            return product;
-        });
-
-        console.log('✅ Товар создан:', newProduct.name);
-        try {
-          await refreshStoreSignalsForProduct(newProduct.id);
-        } catch (sigErr) {
-          console.warn('[store-signals] после manual-add-product:', sigErr.message || sigErr);
-        }
-        res.status(201).json(newProduct);
-
-    } catch (error) {
-        console.error('❌ Ошибка создания товара:', error);
-        const isMissingSellerColumn =
-          String(error?.message || '').includes('sellerName') &&
-          String(error?.message || '').toLowerCase().includes('column');
-        if (isMissingSellerColumn) {
-          return res.status(500).json({
-            error: 'В БД отсутствуют новые поля sellerName. Перезапустите сервер (автодобавление колонок) или примените миграцию.'
-          });
-        }
-        res.status(500).json({ error: `Не удалось сохранить товар: ${error.message}` });
+      await refreshStoreSignalsForProduct(newProduct.id);
+    } catch (sigErr) {
+      console.warn('[store-signals] после manual-add-product:', sigErr.message || sigErr);
     }
+    res.status(201).json(newProduct);
+  } catch (error) {
+    console.error('❌ Ошибка создания товара:', error);
+    const isMissingSellerColumn =
+      String(error?.message || '').includes('sellerName') &&
+      String(error?.message || '')
+        .toLowerCase()
+        .includes('column');
+    if (isMissingSellerColumn) {
+      return res.status(500).json({
+        error:
+          'В БД отсутствуют новые поля sellerName. Перезапустите сервер (автодобавление колонок) или примените миграцию.'
+      });
+    }
+    res.status(500).json({ error: `Не удалось сохранить товар: ${error.message}` });
+  }
 });
-
 
 async function executeProductImportFromParsed({ rows, storeName, sellerName, rowIndexBase = 0 }) {
   await ensureSellerColumns();
@@ -3686,7 +4127,13 @@ app.post('/api/admin/import/preview-json', authenticateToken, requireAdminRole, 
     if (rawText) {
       try {
         const data = JSON.parse(rawText);
-        rawRows = Array.isArray(data) ? data : Array.isArray(data.items) ? data.items : Array.isArray(data.products) ? data.products : null;
+        rawRows = Array.isArray(data)
+          ? data
+          : Array.isArray(data.items)
+            ? data.items
+            : Array.isArray(data.products)
+              ? data.products
+              : null;
       } catch (e) {
         return res.json({
           format: 'json',
@@ -3887,7 +4334,8 @@ app.patch('/api/admin/import/feeds/:id', authenticateToken, requireAdminRole, as
     const data = {};
     if (req.body.url !== undefined) data.url = String(req.body.url || '').trim();
     if (req.body.storeName !== undefined) data.storeName = String(req.body.storeName || '').trim();
-    if (req.body.sellerName !== undefined) data.sellerName = req.body.sellerName ? String(req.body.sellerName).trim() : null;
+    if (req.body.sellerName !== undefined)
+      data.sellerName = req.body.sellerName ? String(req.body.sellerName).trim() : null;
     if (req.body.enabled !== undefined) data.enabled = Boolean(req.body.enabled);
     const feed = await prisma.importFeed.update({ where: { id }, data });
     res.json(feed);
@@ -3992,7 +4440,6 @@ app.post('/api/admin/import/feeds/:id/commit', authenticateToken, requireAdminRo
   }
 });
 
-
 //История цен
 
 app.get('/api/admin/price-history/:productId', authenticateToken, requireAdminRole, async (req, res) => {
@@ -4017,71 +4464,74 @@ app.get('/api/admin/price-history/:productId', authenticateToken, requireAdminRo
 
 //POST /api/admin/price-history - Добавить новую запись в историю цен
 app.post('/api/admin/price-history', authenticateToken, requireAdminRole, async (req, res) => {
-    const { productId, storeName, sellerName, price, date, url: purchaseUrl } = req.body;
+  const { productId, storeName, sellerName, price, date, url: purchaseUrl } = req.body;
 
-    //Валидация
-    if (!productId || !storeName || typeof price !== 'number' || isNaN(price) || price < 0 || !date) {
-        return res.status(400).json({ error: 'Необходимо указать productId, storeName, корректную цену (число >= 0) и дату.' });
-    }
-    const parsedDate = new Date(date);
-    if (isNaN(parsedDate.getTime())) {
-        return res.status(400).json({ error: 'Неверный формат даты. Используйте YYYY-MM-DDTHH:mm:ss.sssZ или YYYY-MM-DD.' });
-    }
+  //Валидация
+  if (!productId || !storeName || typeof price !== 'number' || isNaN(price) || price < 0 || !date) {
+    return res
+      .status(400)
+      .json({ error: 'Необходимо указать productId, storeName, корректную цену (число >= 0) и дату.' });
+  }
+  const parsedDate = new Date(date);
+  if (isNaN(parsedDate.getTime())) {
+    return res
+      .status(400)
+      .json({ error: 'Неверный формат даты. Используйте YYYY-MM-DDTHH:mm:ss.sssZ или YYYY-MM-DD.' });
+  }
 
-    try {
-        //1. Создаем запись в истории
-        const newHistoryEntry = await prisma.priceHistory.create({
-            data: {
-                productId: productId,
-                storeName: storeName,
-                sellerName: sellerName ? String(sellerName).trim() : null,
-                price: price,
-                date: parsedDate
-            }
-        });
+  try {
+    //1. Создаем запись в истории
+    const newHistoryEntry = await prisma.priceHistory.create({
+      data: {
+        productId: productId,
+        storeName: storeName,
+        sellerName: sellerName ? String(sellerName).trim() : null,
+        price: price,
+        date: parsedDate
+      }
+    });
 
-        //2. Синхронизируем текущую цену (таблица Price) с новой исторической записью
-        //Ищем, есть ли уже запись о цене для этого товара в этом магазине
-        const existingPrice = await prisma.price.findFirst({
-            where: {
-                productId: productId,
-                storeName: storeName,
-                sellerName: sellerName ? String(sellerName).trim() : null
-            }
-        });
+    //2. Синхронизируем текущую цену (таблица Price) с новой исторической записью
+    //Ищем, есть ли уже запись о цене для этого товара в этом магазине
+    const existingPrice = await prisma.price.findFirst({
+      where: {
+        productId: productId,
+        storeName: storeName,
+        sellerName: sellerName ? String(sellerName).trim() : null
+      }
+    });
 
-        const urlTrimmed =
-          purchaseUrl != null && String(purchaseUrl).trim() !== '' ? String(purchaseUrl).trim() : null;
+    const urlTrimmed = purchaseUrl != null && String(purchaseUrl).trim() !== '' ? String(purchaseUrl).trim() : null;
 
-        if (existingPrice) {
-            //Если запись есть — обновляем цену и дату записи
-            await prisma.price.update({
-                where: { id: existingPrice.id },
-                data: {
-                    price: price,
-                    recordedAt: new Date(),
-                    ...(urlTrimmed ? { url: urlTrimmed } : {})
-                }
-            });
-        } else {
-            //Если записи нет — создаем новую (первоначальная цена)
-            await prisma.price.create({
-                data: {
-                    productId: productId,
-                    storeName: storeName,
-                    sellerName: sellerName ? String(sellerName).trim() : null,
-                    price: price,
-                    url: urlTrimmed || '',
-                    recordedAt: new Date()
-                }
-            });
+    if (existingPrice) {
+      //Если запись есть — обновляем цену и дату записи
+      await prisma.price.update({
+        where: { id: existingPrice.id },
+        data: {
+          price: price,
+          recordedAt: new Date(),
+          ...(urlTrimmed ? { url: urlTrimmed } : {})
         }
-
-        res.status(201).json({ message: 'Price history entry added and current price updated.', entry: newHistoryEntry });
-    } catch (error) {
-        console.error('Error adding price history entry:', error);
-        res.status(500).json({ error: 'Failed to add price history entry.' });
+      });
+    } else {
+      //Если записи нет — создаем новую (первоначальная цена)
+      await prisma.price.create({
+        data: {
+          productId: productId,
+          storeName: storeName,
+          sellerName: sellerName ? String(sellerName).trim() : null,
+          price: price,
+          url: urlTrimmed || '',
+          recordedAt: new Date()
+        }
+      });
     }
+
+    res.status(201).json({ message: 'Price history entry added and current price updated.', entry: newHistoryEntry });
+  } catch (error) {
+    console.error('Error adding price history entry:', error);
+    res.status(500).json({ error: 'Failed to add price history entry.' });
+  }
 });
 
 //PUT /api/admin/price-history/:id - Обновить запись в истории цен
@@ -4096,7 +4546,7 @@ app.put('/api/admin/price-history/:id', authenticateToken, requireAdminRole, asy
   try {
     const updatedEntry = await prisma.priceHistory.update({
       where: { id: historyId },
-       data:{
+      data: {
         storeName: storeName.trim(),
         price: price,
         date: new Date(date)
@@ -4157,7 +4607,6 @@ app.get('/api/admin/products', authenticateToken, requireAdminRole, async (req, 
     });
 
     res.json(products);
-
   } catch (error) {
     console.error('Error fetching products for admin:', error);
     res.status(500).json({ error: 'Failed to fetch products' });
@@ -4166,82 +4615,85 @@ app.get('/api/admin/products', authenticateToken, requireAdminRole, async (req, 
 
 //POST /api/admin/products - Создать новый товар (только для администраторов)
 app.post('/api/admin/products', authenticateToken, requireAdminRole, async (req, res) => {
-    const { name, category, description, imageUrl, specs, prices, isActive } = req.body;
-    
-    //Валидация (минимальная)
-    if (!name || !category) {
-        return res.status(400).json({ error: 'Название и категория обязательны.' });
-    }
-    
-    try {
-        //Используем транзакцию для согласованного создания товара и связанных данных
-        const newProduct = await prisma.$transaction(async (tx) => {
-            //1. Создаём основной товар
-            const product = await tx.product.create({
-                data: {
-                    name: name.trim(),
-                    category: category.trim(),
-                    description: description ? description.trim() : null,
-                    imageUrl: imageUrl || null,
-                    rating: 0.0,
-                    isActive: isActive !== undefined ? isActive : true
-                }
-            });
-            
-            //2. Создаём характеристики (если есть)
-            if (specs && typeof specs === 'object' && Object.keys(specs).length > 0) {
-                const specEntries = Object.entries(specs);
-                await Promise.all(
-                    specEntries.map(([specKey, specValue]) => {
-                        if (typeof specValue === 'string' && specValue.trim()) {
-                            return tx.productSpec.create({
-                                data: {
-                                    productId: product.id,
-                                    specKey: specKey.trim(),
-                                    specValue: specValue.trim()
-                                }
-                            });
-                        }
-                        return null;
-                    }).filter(p => p !== null)
-                );
-            }
-            
-            //3. Создаём цены (если есть)
-            if (Array.isArray(prices) && prices.length > 0) {
-                await Promise.all(
-                    prices.map(priceEntry => {
-                        if (priceEntry.storeName && typeof priceEntry.price === 'number' && priceEntry.url) {
-                            return tx.price.create({
-                                data: {
-                                    productId: product.id,
-                                    storeName: priceEntry.storeName.trim(),
-                                    sellerName: priceEntry.sellerName ? String(priceEntry.sellerName).trim() : null,
-                                    price: priceEntry.price,
-                                    url: priceEntry.url.trim()
-                                }
-                            });
-                        }
-                        return null;
-                    }).filter(p => p !== null)
-                );
-            }
-            
-            return product;
-        });
-        
-        console.log('Новый товар создан с характеристиками и ценами:', newProduct);
-        try {
-          await refreshStoreSignalsForProduct(newProduct.id);
-        } catch (sigErr) {
-          console.warn('[store-signals] после POST /api/admin/products:', sigErr.message || sigErr);
+  const { name, category, description, imageUrl, specs, prices, isActive } = req.body;
+
+  //Валидация (минимальная)
+  if (!name || !category) {
+    return res.status(400).json({ error: 'Название и категория обязательны.' });
+  }
+
+  try {
+    //Используем транзакцию для согласованного создания товара и связанных данных
+    const newProduct = await prisma.$transaction(async (tx) => {
+      //1. Создаём основной товар
+      const product = await tx.product.create({
+        data: {
+          name: name.trim(),
+          category: category.trim(),
+          description: description ? description.trim() : null,
+          imageUrl: imageUrl || null,
+          rating: 0.0,
+          isActive: isActive !== undefined ? isActive : true
         }
-        res.status(201).json(newProduct);
-        
-    } catch (error) {
-        console.error('Ошибка создания товара:', error);
-        res.status(500).json({ error: 'Не удалось создать товар: ' + error.message });
+      });
+
+      //2. Создаём характеристики (если есть)
+      if (specs && typeof specs === 'object' && Object.keys(specs).length > 0) {
+        const specEntries = Object.entries(specs);
+        await Promise.all(
+          specEntries
+            .map(([specKey, specValue]) => {
+              if (typeof specValue === 'string' && specValue.trim()) {
+                return tx.productSpec.create({
+                  data: {
+                    productId: product.id,
+                    specKey: specKey.trim(),
+                    specValue: specValue.trim()
+                  }
+                });
+              }
+              return null;
+            })
+            .filter((p) => p !== null)
+        );
+      }
+
+      //3. Создаём цены (если есть)
+      if (Array.isArray(prices) && prices.length > 0) {
+        await Promise.all(
+          prices
+            .map((priceEntry) => {
+              if (priceEntry.storeName && typeof priceEntry.price === 'number' && priceEntry.url) {
+                return tx.price.create({
+                  data: {
+                    productId: product.id,
+                    storeName: priceEntry.storeName.trim(),
+                    sellerName: priceEntry.sellerName ? String(priceEntry.sellerName).trim() : null,
+                    price: priceEntry.price,
+                    url: priceEntry.url.trim()
+                  }
+                });
+              }
+              return null;
+            })
+            .filter((p) => p !== null)
+        );
+      }
+
+      return product;
+    });
+
+    console.log('Новый товар создан с характеристиками и ценами:', newProduct);
+    try {
+      await refreshStoreSignalsForProduct(newProduct.id);
+    } catch (sigErr) {
+      console.warn('[store-signals] после POST /api/admin/products:', sigErr.message || sigErr);
     }
+    res.status(201).json(newProduct);
+  } catch (error) {
+    console.error('Ошибка создания товара:', error);
+    res.status(500).json({ error: 'Не удалось создать товар: ' + error.message });
+  }
 });
 
 //рекоммендации
@@ -4276,13 +4728,12 @@ async function getUserPreferences(userId) {
 
     //Возвращаем объект с предпочтениями
     return {
-      favoriteProductIds: favoriteProducts.map(fp => fp.product.id),
-      favoriteCategories: [...new Set(favoriteProducts.map(fp => fp.product.category))], //Уникальные категории
-      comparisonProductIds: comparisonProducts.map(cp => cp.product.id),
-      comparisonCategories: [...new Set(comparisonProducts.map(cp => cp.product.category))], //Уникальные категории
+      favoriteProductIds: favoriteProducts.map((fp) => fp.product.id),
+      favoriteCategories: [...new Set(favoriteProducts.map((fp) => fp.product.category))], //Уникальные категории
+      comparisonProductIds: comparisonProducts.map((cp) => cp.product.id),
+      comparisonCategories: [...new Set(comparisonProducts.map((cp) => cp.product.category))], //Уникальные категории
       reviewedProducts: reviewedProducts //Включаем отзывы для анализа
     };
-
   } catch (error) {
     console.error(`[ERROR] getUserPreferences: Не удалось получить предпочтения для пользователя ID ${userId}:`, error);
     //Возвращаем пустой объект в случае ошибки
@@ -4299,7 +4750,7 @@ async function getUserPreferences(userId) {
 app.get('/api/recommendations/popular', authenticateToken, async (req, res) => {
   try {
     const { category, sort = 'views_desc' } = req.query;
-    
+
     //1. Получаем топ просматриваемых ID
     const topViews = await prisma.viewLog.groupBy({
       by: ['productId'],
@@ -4310,22 +4761,27 @@ app.get('/api/recommendations/popular', authenticateToken, async (req, res) => {
 
     //2. Загружаем товары
     const products = await prisma.product.findMany({
-      where: { isActive: true, id: { in: topViews.map(v => v.productId) } },
-      include: { prices: { orderBy: { price: 'asc' }, take: 1 }, specs: true, _count: { select: { reviews: { where: { isApproved: true } } } } }
+      where: { isActive: true, id: { in: topViews.map((v) => v.productId) } },
+      include: {
+        prices: { orderBy: { price: 'asc' }, take: 1 },
+        specs: true,
+        _count: { select: { reviews: { where: { isApproved: true } } } }
+      }
     });
 
     //3. Добавляем метрики и фильтруем
-    let result = products.map(p => ({
+    let result = products.map((p) => ({
       ...p,
-      viewCount: topViews.find(v => v.productId === p.id)?._count.productId || 0
+      viewCount: topViews.find((v) => v.productId === p.id)?._count.productId || 0
     }));
 
     if (category && category !== 'all') {
-      result = result.filter(p => p.category === category);
+      result = result.filter((p) => p.category === category);
     }
 
     //4. Сортируем
-    if (sort === 'price_asc') result.sort((a, b) => (a.prices[0]?.price || Infinity) - (b.prices[0]?.price || Infinity));
+    if (sort === 'price_asc')
+      result.sort((a, b) => (a.prices[0]?.price || Infinity) - (b.prices[0]?.price || Infinity));
     else if (sort === 'rating_desc') result.sort((a, b) => b.rating - a.rating);
     else result.sort((a, b) => b.viewCount - a.viewCount); //По умолчанию по просмотрам
 
@@ -4338,235 +4794,237 @@ app.get('/api/recommendations/popular', authenticateToken, async (req, res) => {
 
 //GET /api/recommendations/trending - Получить трендовые товары (например, недавно добавленные или с растущим рейтингом)
 app.get('/api/recommendations/trending', authenticateToken, async (req, res) => {
-    try {
-        const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+  try {
+    const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
-        const trending = await prisma.viewLog.groupBy({
-            by: ['productId'],
-            _count: { productId: true },
-            where: { viewedAt: { gte: weekAgo } },
-            orderBy: { _count: { productId: 'desc' } },
-            take: 20
-        });
+    const trending = await prisma.viewLog.groupBy({
+      by: ['productId'],
+      _count: { productId: true },
+      where: { viewedAt: { gte: weekAgo } },
+      orderBy: { _count: { productId: 'desc' } },
+      take: 20
+    });
 
-        //Если трендов нет — показываем новинки
-        if (trending.length < 5) {
-            const newProducts = await prisma.product.findMany({
-                where: { isActive: true },
-                include: {
-                    prices: { orderBy: { price: 'asc' }, take: 1 },
-                    specs: true
-                },
-                orderBy: { createdAt: 'desc' }, //Сортировка по дате добавления
-                take: 12
-            });
-            return res.json(newProducts);
-        }
-
-        const productIds = trending.map(item => item.productId);
-        const products = await prisma.product.findMany({
-            where: { id: { in: productIds }, isActive: true },
-            include: {
-                prices: { orderBy: { price: 'asc' }, take: 1 },
-                specs: true
-            }
-        });
-
-        const sortedProducts = products.sort((a, b) => productIds.indexOf(a.id) - productIds.indexOf(b.id));
-        res.json(sortedProducts);
-    } catch (error) {
-        console.error('Ошибка получения трендов:', error);
-        res.status(500).json({ error: 'Failed to fetch trending products' });
+    //Если трендов нет — показываем новинки
+    if (trending.length < 5) {
+      const newProducts = await prisma.product.findMany({
+        where: { isActive: true },
+        include: {
+          prices: { orderBy: { price: 'asc' }, take: 1 },
+          specs: true
+        },
+        orderBy: { createdAt: 'desc' }, //Сортировка по дате добавления
+        take: 12
+      });
+      return res.json(newProducts);
     }
+
+    const productIds = trending.map((item) => item.productId);
+    const products = await prisma.product.findMany({
+      where: { id: { in: productIds }, isActive: true },
+      include: {
+        prices: { orderBy: { price: 'asc' }, take: 1 },
+        specs: true
+      }
+    });
+
+    const sortedProducts = products.sort((a, b) => productIds.indexOf(a.id) - productIds.indexOf(b.id));
+    res.json(sortedProducts);
+  } catch (error) {
+    console.error('Ошибка получения трендов:', error);
+    res.status(500).json({ error: 'Failed to fetch trending products' });
+  }
 });
 
 //GET /api/recommendations/best-value - Получить товары с лучшим соотношением цена/качество
 app.get('/api/recommendations/best-value', authenticateToken, async (req, res) => {
-    try {
-        const products = await prisma.product.findMany({
-            where: { isActive: true },
-            include: {
-                prices: { orderBy: { price: 'asc' }, take: 1 },
-                _count: { select: { reviews: { where: { isApproved: true } } } }
-            }
-        });
-        const catAvg = {};
-        products.forEach(p => {
-            const price = p.prices[0]?.price;
-            if (price) {
-                if (!catAvg[p.category]) catAvg[p.category] = [];
-                catAvg[p.category].push(price);
-            }
-        });
-        Object.keys(catAvg).forEach(cat => {
-            const prices = catAvg[cat];
-            catAvg[cat] = prices.reduce((a, b) => a + b, 0) / prices.length;
-        });
-        const valueProducts = products.map(p => {
-            const minPrice = p.prices[0]?.price || catAvg[p.category] || 10000;
-            const avgCatPrice = catAvg[p.category] || minPrice;
-            const priceRatio = minPrice / avgCatPrice;
-            const reviews = p._count.reviews;
-            //Скор выгоды: чем выше рейтинг/отзывы и чем ниже цена относительно категории, тем лучше
-            const score = (p.rating * (Math.log2(reviews + 1) + 1)) / (priceRatio + 0.5);
-            return { ...p, valueScore: parseFloat(score.toFixed(2)) };
-        });
-        valueProducts.sort((a, b) => b.valueScore - a.valueScore);
-        res.json(valueProducts.slice(0, 12));
-    } catch (error) {
-        console.error('Error best-value:', error);
-        res.status(500).json({ error: 'Failed to fetch best-value' });
-    }
+  try {
+    const products = await prisma.product.findMany({
+      where: { isActive: true },
+      include: {
+        prices: { orderBy: { price: 'asc' }, take: 1 },
+        _count: { select: { reviews: { where: { isApproved: true } } } }
+      }
+    });
+    const catAvg = {};
+    products.forEach((p) => {
+      const price = p.prices[0]?.price;
+      if (price) {
+        if (!catAvg[p.category]) catAvg[p.category] = [];
+        catAvg[p.category].push(price);
+      }
+    });
+    Object.keys(catAvg).forEach((cat) => {
+      const prices = catAvg[cat];
+      catAvg[cat] = prices.reduce((a, b) => a + b, 0) / prices.length;
+    });
+    const valueProducts = products.map((p) => {
+      const minPrice = p.prices[0]?.price || catAvg[p.category] || 10000;
+      const avgCatPrice = catAvg[p.category] || minPrice;
+      const priceRatio = minPrice / avgCatPrice;
+      const reviews = p._count.reviews;
+      //Скор выгоды: чем выше рейтинг/отзывы и чем ниже цена относительно категории, тем лучше
+      const score = (p.rating * (Math.log2(reviews + 1) + 1)) / (priceRatio + 0.5);
+      return { ...p, valueScore: parseFloat(score.toFixed(2)) };
+    });
+    valueProducts.sort((a, b) => b.valueScore - a.valueScore);
+    res.json(valueProducts.slice(0, 12));
+  } catch (error) {
+    console.error('Error best-value:', error);
+    res.status(500).json({ error: 'Failed to fetch best-value' });
+  }
 });
 
 //GET /api/recommendations/personal - Получить персонализированные рекомендации
 app.get('/api/recommendations/personal', authenticateToken, async (req, res) => {
-    try {
-        const userId = req.user.id;
-        const monthAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-        const views = await prisma.viewLog.findMany({
-            where: { userId, viewedAt: { gte: monthAgo } },
-            orderBy: { viewedAt: 'desc' },
-            select: { productId: true }
-        });
-        const viewedIds = [...new Set(views.map(v => v.productId).filter(Boolean))];
-        if (viewedIds.length === 0) {
-            return res.json(await prisma.product.findMany({
-                where: { isActive: true },
-                include: { prices: { orderBy: { price: 'asc' }, take: 1 } },
-                orderBy: { rating: 'desc' },
-                take: 12
-            }));
-        }
-
-        const viewedProductsRaw = await prisma.product.findMany({
-            where: { isActive: true, id: { in: viewedIds } },
-            include: { prices: { orderBy: { price: 'asc' } } }
-        });
-
-        const viewedOrder = new Map(viewedIds.map((id, index) => [id, index]));
-        const viewedProducts = viewedProductsRaw
-            .sort((a, b) => (viewedOrder.get(a.id) ?? 9999) - (viewedOrder.get(b.id) ?? 9999))
-            .slice(0, 6)
-            .map(product => ({
-                ...product,
-                recommendationType: 'viewed',
-                similarityScore: 1,
-                personalScore: 100
-            }));
-
-        const candidateProducts = await prisma.product.findMany({
-            where: { isActive: true, id: { notIn: viewedIds } },
-            include: { prices: { orderBy: { price: 'asc' } } }
-        });
-
-        const similarCandidates = candidateProducts
-            .map(product => {
-                const maxSimilarity = viewedProductsRaw.reduce((best, viewed) => {
-                    return Math.max(best, calculateSimilarity(viewed, product));
-                }, 0);
-                const ratingComponent = Math.min(1, (product.rating || 0) / 5);
-                const personalScore = (maxSimilarity * 0.75 + ratingComponent * 0.25) * 100;
-
-                return {
-                    ...product,
-                    recommendationType: 'similar',
-                    similarityScore: parseFloat(maxSimilarity.toFixed(3)),
-                    personalScore: parseFloat(personalScore.toFixed(1))
-                };
-            })
-            .filter(product => product.similarityScore >= 0.2)
-            .sort((a, b) => b.personalScore - a.personalScore);
-
-        const recommendations = [];
-        const seenIds = new Set();
-
-        for (const product of viewedProducts) {
-            if (!seenIds.has(product.id)) {
-                seenIds.add(product.id);
-                recommendations.push(product);
-            }
-            if (recommendations.length >= 12) break;
-        }
-
-        for (const product of similarCandidates) {
-            if (!seenIds.has(product.id)) {
-                seenIds.add(product.id);
-                recommendations.push(product);
-            }
-            if (recommendations.length >= 12) break;
-        }
-
-        if (recommendations.length < 12) {
-            const fallbackProducts = await prisma.product.findMany({
-                where: {
-                    isActive: true,
-                    id: { notIn: Array.from(seenIds) }
-                },
-                include: { prices: { orderBy: { price: 'asc' }, take: 1 } },
-                orderBy: { rating: 'desc' },
-                take: 12 - recommendations.length
-            });
-
-            fallbackProducts.forEach(product => {
-                recommendations.push({
-                    ...product,
-                    recommendationType: 'fallback',
-                    similarityScore: 0,
-                    personalScore: parseFloat((((product.rating || 0) / 5) * 40).toFixed(1))
-                });
-            });
-        }
-
-        res.json(recommendations.slice(0, 12));
-    } catch (error) {
-        console.error('Error personal:', error);
-        res.status(500).json({ error: 'Failed to fetch personal' });
+  try {
+    const userId = req.user.id;
+    const monthAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const views = await prisma.viewLog.findMany({
+      where: { userId, viewedAt: { gte: monthAgo } },
+      orderBy: { viewedAt: 'desc' },
+      select: { productId: true }
+    });
+    const viewedIds = [...new Set(views.map((v) => v.productId).filter(Boolean))];
+    if (viewedIds.length === 0) {
+      return res.json(
+        await prisma.product.findMany({
+          where: { isActive: true },
+          include: { prices: { orderBy: { price: 'asc' }, take: 1 } },
+          orderBy: { rating: 'desc' },
+          take: 12
+        })
+      );
     }
+
+    const viewedProductsRaw = await prisma.product.findMany({
+      where: { isActive: true, id: { in: viewedIds } },
+      include: { prices: { orderBy: { price: 'asc' } } }
+    });
+
+    const viewedOrder = new Map(viewedIds.map((id, index) => [id, index]));
+    const viewedProducts = viewedProductsRaw
+      .sort((a, b) => (viewedOrder.get(a.id) ?? 9999) - (viewedOrder.get(b.id) ?? 9999))
+      .slice(0, 6)
+      .map((product) => ({
+        ...product,
+        recommendationType: 'viewed',
+        similarityScore: 1,
+        personalScore: 100
+      }));
+
+    const candidateProducts = await prisma.product.findMany({
+      where: { isActive: true, id: { notIn: viewedIds } },
+      include: { prices: { orderBy: { price: 'asc' } } }
+    });
+
+    const similarCandidates = candidateProducts
+      .map((product) => {
+        const maxSimilarity = viewedProductsRaw.reduce((best, viewed) => {
+          return Math.max(best, calculateSimilarity(viewed, product));
+        }, 0);
+        const ratingComponent = Math.min(1, (product.rating || 0) / 5);
+        const personalScore = (maxSimilarity * 0.75 + ratingComponent * 0.25) * 100;
+
+        return {
+          ...product,
+          recommendationType: 'similar',
+          similarityScore: parseFloat(maxSimilarity.toFixed(3)),
+          personalScore: parseFloat(personalScore.toFixed(1))
+        };
+      })
+      .filter((product) => product.similarityScore >= 0.2)
+      .sort((a, b) => b.personalScore - a.personalScore);
+
+    const recommendations = [];
+    const seenIds = new Set();
+
+    for (const product of viewedProducts) {
+      if (!seenIds.has(product.id)) {
+        seenIds.add(product.id);
+        recommendations.push(product);
+      }
+      if (recommendations.length >= 12) break;
+    }
+
+    for (const product of similarCandidates) {
+      if (!seenIds.has(product.id)) {
+        seenIds.add(product.id);
+        recommendations.push(product);
+      }
+      if (recommendations.length >= 12) break;
+    }
+
+    if (recommendations.length < 12) {
+      const fallbackProducts = await prisma.product.findMany({
+        where: {
+          isActive: true,
+          id: { notIn: Array.from(seenIds) }
+        },
+        include: { prices: { orderBy: { price: 'asc' }, take: 1 } },
+        orderBy: { rating: 'desc' },
+        take: 12 - recommendations.length
+      });
+
+      fallbackProducts.forEach((product) => {
+        recommendations.push({
+          ...product,
+          recommendationType: 'fallback',
+          similarityScore: 0,
+          personalScore: parseFloat((((product.rating || 0) / 5) * 40).toFixed(1))
+        });
+      });
+    }
+
+    res.json(recommendations.slice(0, 12));
+  } catch (error) {
+    console.error('Error personal:', error);
+    res.status(500).json({ error: 'Failed to fetch personal' });
+  }
 });
 
 app.get('/api/recommendations/price-drops', authenticateToken, async (req, res) => {
-    try {
-        const daysAgo = 14;
-        const startDate = new Date(Date.now() - daysAgo * 24 * 60 * 60 * 1000);
-        const history = await prisma.priceHistory.findMany({
-            where: { date: { gte: startDate } },
-            orderBy: { date: 'asc' }
-        });
-        const productStoreHistory = {};
-        history.forEach(h => {
-            const key = `${h.productId}_${h.storeName}`;
-            if (!productStoreHistory[key]) productStoreHistory[key] = [];
-            productStoreHistory[key].push({ date: h.date, price: h.price });
-        });
-        const droppedProducts = {};
-        for (const [key, records] of Object.entries(productStoreHistory)) {
-            if (records.length < 2) continue;
-            const oldPrice = records[0].price;
-            const newPrice = records[records.length - 1].price;
-            if (oldPrice > 0 && newPrice < oldPrice) {
-                const dropPercent = ((oldPrice - newPrice) / oldPrice) * 100;
-                if (dropPercent >= 5) {
-                    const prodId = parseInt(key.split('_')[0]);
-                    if (!droppedProducts[prodId] || dropPercent > droppedProducts[prodId].dropPercent) {
-                        droppedProducts[prodId] = { dropPercent: parseFloat(dropPercent.toFixed(1)), oldPrice, newPrice };
-                    }
-                }
-            }
+  try {
+    const daysAgo = 14;
+    const startDate = new Date(Date.now() - daysAgo * 24 * 60 * 60 * 1000);
+    const history = await prisma.priceHistory.findMany({
+      where: { date: { gte: startDate } },
+      orderBy: { date: 'asc' }
+    });
+    const productStoreHistory = {};
+    history.forEach((h) => {
+      const key = `${h.productId}_${h.storeName}`;
+      if (!productStoreHistory[key]) productStoreHistory[key] = [];
+      productStoreHistory[key].push({ date: h.date, price: h.price });
+    });
+    const droppedProducts = {};
+    for (const [key, records] of Object.entries(productStoreHistory)) {
+      if (records.length < 2) continue;
+      const oldPrice = records[0].price;
+      const newPrice = records[records.length - 1].price;
+      if (oldPrice > 0 && newPrice < oldPrice) {
+        const dropPercent = ((oldPrice - newPrice) / oldPrice) * 100;
+        if (dropPercent >= 5) {
+          const prodId = parseInt(key.split('_')[0]);
+          if (!droppedProducts[prodId] || dropPercent > droppedProducts[prodId].dropPercent) {
+            droppedProducts[prodId] = { dropPercent: parseFloat(dropPercent.toFixed(1)), oldPrice, newPrice };
+          }
         }
-        if (Object.keys(droppedProducts).length === 0) return res.json([]);
-        const prodIds = Object.keys(droppedProducts).map(Number);
-        const products = await prisma.product.findMany({
-            where: { isActive: true, id: { in: prodIds } },
-            include: { prices: { orderBy: { price: 'asc' }, take: 1 } }
-        });
-        const result = products.map(p => ({ ...p, priceDrop: droppedProducts[p.id] || null }));
-        result.sort((a, b) => (b.priceDrop?.dropPercent || 0) - (a.priceDrop?.dropPercent || 0));
-        res.json(result.slice(0, 12));
-    } catch (error) {
-        console.error('Error price-drops:', error);
-        res.status(500).json({ error: 'Failed to fetch price drops' });
+      }
     }
+    if (Object.keys(droppedProducts).length === 0) return res.json([]);
+    const prodIds = Object.keys(droppedProducts).map(Number);
+    const products = await prisma.product.findMany({
+      where: { isActive: true, id: { in: prodIds } },
+      include: { prices: { orderBy: { price: 'asc' }, take: 1 } }
+    });
+    const result = products.map((p) => ({ ...p, priceDrop: droppedProducts[p.id] || null }));
+    result.sort((a, b) => (b.priceDrop?.dropPercent || 0) - (a.priceDrop?.dropPercent || 0));
+    res.json(result.slice(0, 12));
+  } catch (error) {
+    console.error('Error price-drops:', error);
+    res.status(500).json({ error: 'Failed to fetch price drops' });
+  }
 });
 
 //Вспомогательная функция для расчёта схожести товаров (упрощённый пример)
@@ -4583,13 +5041,17 @@ function calculateSimilarity(productA, productB) {
 
   const specsA = productA.specs && typeof productA.specs === 'object' ? productA.specs : {};
   const specsB = productB.specs && typeof productB.specs === 'object' ? productB.specs : {};
-  const commonSpecKeys = Object.keys(specsA).filter(key => key in specsB);
+  const commonSpecKeys = Object.keys(specsA).filter((key) => key in specsB);
 
   if (commonSpecKeys.length > 0) {
     let specMatches = 0;
-    commonSpecKeys.forEach(key => {
-      const valA = String(specsA[key] ?? '').trim().toLowerCase();
-      const valB = String(specsB[key] ?? '').trim().toLowerCase();
+    commonSpecKeys.forEach((key) => {
+      const valA = String(specsA[key] ?? '')
+        .trim()
+        .toLowerCase();
+      const valB = String(specsB[key] ?? '')
+        .trim()
+        .toLowerCase();
       if (!valA || !valB) return;
       if (valA === valB || valA.includes(valB) || valB.includes(valA)) {
         specMatches += 1;
@@ -4611,7 +5073,6 @@ function calculateSimilarity(productA, productB) {
   return totalWeight > 0 ? score / totalWeight : 0;
 }
 
-
 //Редактирование профиля
 app.patch('/api/profile', authenticateToken, async (req, res) => {
   const userId = req.user.id;
@@ -4624,7 +5085,7 @@ app.patch('/api/profile', authenticateToken, async (req, res) => {
   try {
     const updatedUser = await prisma.user.update({
       where: { id: userId },
-       data:{
+      data: {
         fullName: fullName ? fullName.trim() : undefined
       }
     });
@@ -4637,7 +5098,6 @@ app.patch('/api/profile', authenticateToken, async (req, res) => {
       createdAt: updatedUser.createdAt,
       updatedAt: updatedUser.updatedAt
     });
-
   } catch (error) {
     console.error('Ошибка обновления профиля:', error);
     res.status(500).json({ error: 'Failed to update profile' });
@@ -4665,6 +5125,10 @@ app.post('/api/change-password', authenticateToken, async (req, res) => {
       return res.status(404).json({ error: 'Пользователь не найден.' });
     }
 
+    if (!user.passwordHash) {
+      return res.status(400).json({ error: 'Для аккаунта Google смена пароля недоступна.' });
+    }
+
     const isOldPasswordValid = await bcrypt.compare(oldPassword, user.passwordHash);
     if (!isOldPasswordValid) {
       return res.status(400).json({ error: 'Неверный старый пароль.' });
@@ -4674,13 +5138,12 @@ app.post('/api/change-password', authenticateToken, async (req, res) => {
 
     await prisma.user.update({
       where: { id: userId },
-       data:{
+      data: {
         passwordHash: newHashedPassword
       }
     });
 
     res.json({ message: 'Пароль успешно изменён.' });
-
   } catch (error) {
     console.error('Ошибка смены пароля:', error);
     res.status(500).json({ error: 'Failed to change password' });
@@ -4689,11 +5152,11 @@ app.post('/api/change-password', authenticateToken, async (req, res) => {
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     //Путь к папке для сохранения файлов (относительно корня сервера)
-    cb(null, 'uploads/avatars/'); 
+    cb(null, 'uploads/avatars/');
   },
   filename: function (req, file, cb) {
     //Генерируем уникальное имя файла
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
     //Сохраняем с оригинальным расширением
     cb(null, req.user.id + '_' + uniqueSuffix + path.extname(file.originalname));
   }
@@ -4721,7 +5184,6 @@ app.put('/api/profile/avatar', authenticateToken, upload.single('avatar'), async
 
   //Проверяем, был ли загружен файл
   if (!req.file) {
-   
     return res.status(400).json({ error: 'Файл аватара обязателен.' });
   }
 
@@ -4732,7 +5194,7 @@ app.put('/api/profile/avatar', authenticateToken, upload.single('avatar'), async
     //Предположим, в схеме Prisma у модели User есть поле avatarUrl String?
     const updatedUser = await prisma.user.update({
       where: { id: userId },
-       data:{
+      data: {
         avatarUrl: avatarPath //Сохраняем путь к файлу
       }
     });
@@ -4748,7 +5210,6 @@ app.put('/api/profile/avatar', authenticateToken, upload.single('avatar'), async
         role: updatedUser.role
       }
     });
-
   } catch (error) {
     console.error('Ошибка смены аватара:', error);
     //Удаляем загруженный файл, если обновление в БД не удалось
@@ -4773,7 +5234,8 @@ app.use((error, req, res, next) => {
     }
     //Другие ошибки Multer, если нужно
     return res.status(400).json({ error: error.message });
-  } else if (error.message.includes('Недопустимый тип файла')) { //Проверка по сообщению из fileFilter
+  } else if (error.message.includes('Недопустимый тип файла')) {
+    //Проверка по сообщению из fileFilter
     return res.status(400).json({ error: error.message });
   }
   //Если ошибка не от Multer, передаём дальше
@@ -4790,16 +5252,16 @@ app.get('/api/test-fetch', authenticateToken, requireAdminRole, async (req, res)
   try {
     console.log(`[TEST FETCH] Запрашиваем HTML для: ${url}, через proxy: ${proxy || 'нет'}`);
 
-  
     const axiosConfig = {
       method: 'GET',
       url: url,
       headers: {
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+        Accept:
+          'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
         'Accept-Language': 'ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7',
         'Accept-Encoding': 'gzip, deflate, br',
         'Cache-Control': 'no-cache',
-        'Pragma': 'no-cache',
+        Pragma: 'no-cache',
         'Sec-Ch-Ua': '"Chromium";v="120", "Not_A Brand";v="8"',
         'Sec-Ch-Ua-Mobile': '?0',
         'Sec-Ch-Ua-Platform': '"Windows"',
@@ -4808,11 +5270,12 @@ app.get('/api/test-fetch', authenticateToken, requireAdminRole, async (req, res)
         'Sec-Fetch-Site': 'none',
         'Sec-Fetch-User': '?1',
         'Upgrade-Insecure-Requests': '1',
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+        'User-Agent':
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
       },
       timeout: 30000, //30 секунд
-      //Добавляем gzip декомпрессию 
-      decompress: true,
+      //Добавляем gzip декомпрессию
+      decompress: true
     };
 
     if (proxy) {
@@ -4820,7 +5283,6 @@ app.get('/api/test-fetch', authenticateToken, requireAdminRole, async (req, res)
       axiosConfig.httpsAgent = new HttpsProxyAgent(proxy);
       console.log(`   Используется прокси для axios: ${proxy}`);
     }
-    
 
     const response = await axios(axiosConfig);
 
@@ -4830,20 +5292,18 @@ app.get('/api/test-fetch', authenticateToken, requireAdminRole, async (req, res)
       throw new Error(`Сайт вернул статус ${response.status} - ошибка загрузки страницы.`);
     }
 
-    const html = response.data; 
+    const html = response.data;
 
     console.log(`[TEST FETCH] HTML получен, длина: ${html.length}`);
 
-    
     const $ = cheerio.load(html);
 
-    
     let parsedData = {};
     const parsedUrl = new URL(url);
 
     if (parsedUrl.hostname.includes('dns-shop.ru')) {
       console.log('[TEST FETCH]  Парсим как DNS-шоп (через cheerio)...');
-      
+
       const nameElement = $('h1[data-state="product-title"]'); //Пример селектора
       parsedData.name = nameElement.text().trim() || 'Неизвестное название';
 
@@ -4856,7 +5316,6 @@ app.get('/api/test-fetch', authenticateToken, requireAdminRole, async (req, res)
         const scriptContent = $(script).html();
         //Ищем примеры паттернов в содержимом script
         if (scriptContent.includes('price') && !priceFoundInScript) {
-        
           const priceMatch = scriptContent.match(/"price"\s*:\s*(\d+)/);
           if (priceMatch) {
             price = parseInt(priceMatch[1], 10);
@@ -4867,11 +5326,7 @@ app.get('/api/test-fetch', authenticateToken, requireAdminRole, async (req, res)
 
       //Если не нашли в script, пробуем в DOM
       if (!price) {
-        const priceSelectors = [
-          '[data-marker="price"] span',
-          '.current-price span',
-          '.price-value span'
-        ];
+        const priceSelectors = ['[data-marker="price"] span', '.current-price span', '.price-value span'];
         for (const sel of priceSelectors) {
           const priceEl = $(sel);
           if (priceEl.length) {
@@ -4886,9 +5341,10 @@ app.get('/api/test-fetch', authenticateToken, requireAdminRole, async (req, res)
       }
       parsedData.price = price; //Может быть null
 
-      let imageUrl = $('[data-marker="gallery"] img').first().attr('src') ||
-                     $('[data-marker="slider"] img').first().attr('src') ||
-                     null;
+      let imageUrl =
+        $('[data-marker="gallery"] img').first().attr('src') ||
+        $('[data-marker="slider"] img').first().attr('src') ||
+        null;
       if (imageUrl && !imageUrl.startsWith('http')) {
         if (imageUrl.startsWith('//')) {
           imageUrl = 'https:' + imageUrl;
@@ -4898,13 +5354,14 @@ app.get('/api/test-fetch', authenticateToken, requireAdminRole, async (req, res)
       }
       parsedData.imageUrl = imageUrl; //Может быть null
 
-      //Извлечение характеристик 
+      //Извлечение характеристик
       parsedData.specs = {};
       //DNS хранит характеристики часто в отдельной вкладке или динамически
       //Попробуем найти в DOM, если они есть
       const specBlock = $('[data-marker="chars"]'); //Пример
       if (specBlock.length) {
-        specBlock.find('tr').each((i, row) => { //Или dl dt/dd
+        specBlock.find('tr').each((i, row) => {
+          //Или dl dt/dd
           const th = $(row).find('th'); //Или dt
           const td = $(row).find('td'); //Или dd
           if (th.length && td.length) {
@@ -4918,7 +5375,6 @@ app.get('/api/test-fetch', authenticateToken, requireAdminRole, async (req, res)
       }
       parsedData.source = 'DNS (fetch+cheerio)';
       parsedData.sourceUrl = url;
-
     } else if (parsedUrl.hostname.includes('ozon.ru')) {
       console.log('[TEST FETCH]  Парсим как OZON (через cheerio)...');
 
@@ -4945,11 +5401,7 @@ app.get('/api/test-fetch', authenticateToken, requireAdminRole, async (req, res)
 
       //Если не нашли в script, пробуем в DOM
       if (!price) {
-        const priceSelectors = [
-          '[class*="c-price"] span',
-          '[data-widget="price"] span',
-          '.ui-kit-product-price span'
-        ];
+        const priceSelectors = ['[class*="c-price"] span', '[data-widget="price"] span', '.ui-kit-product-price span'];
         for (const sel of priceSelectors) {
           const priceEl = $(sel);
           if (priceEl.length) {
@@ -4964,9 +5416,10 @@ app.get('/api/test-fetch', authenticateToken, requireAdminRole, async (req, res)
       }
       parsedData.price = price; //Может быть null
 
-      let imageUrl = $('[data-widget="primaryImage"] img').first().attr('src') ||
-                     $('[data-widget="secondaryImage"] img').first().attr('src') ||
-                     null;
+      let imageUrl =
+        $('[data-widget="primaryImage"] img').first().attr('src') ||
+        $('[data-widget="secondaryImage"] img').first().attr('src') ||
+        null;
       if (imageUrl && !imageUrl.startsWith('http')) {
         if (imageUrl.startsWith('//')) {
           imageUrl = 'https:' + imageUrl;
@@ -4981,7 +5434,8 @@ app.get('/api/test-fetch', authenticateToken, requireAdminRole, async (req, res)
       //OZON часто хранит в отдельной вкладке или динамически
       const specBlock = $('[data-widget="description"]'); //Пример
       if (specBlock.length) {
-        specBlock.find('table tr').each((i, row) => { //Или dl dt/dd
+        specBlock.find('table tr').each((i, row) => {
+          //Или dl dt/dd
           const th = $(row).find('th'); //Или dt
           const td = $(row).find('td'); //Или dd
           if (th.length && td.length) {
@@ -4995,27 +5449,22 @@ app.get('/api/test-fetch', authenticateToken, requireAdminRole, async (req, res)
       }
       parsedData.source = 'OZON (fetch+cheerio)';
       parsedData.sourceUrl = url;
-
     } else {
       return res.status(400).json({ error: 'Поддержка сайта не реализована или не указана.' });
     }
-   
 
     console.log('[TEST FETCH]  Данные извлечены (через cheerio):', parsedData);
 
-    
     res.json({
       success: true,
       message: 'Парсинг завершён (данные НЕ сохранены в БД) - FETCH+CHEERIO',
       parsedData: parsedData
     });
-
   } catch (error) {
     console.error('[TEST FETCH]  Ошибка парсинга (fetch+cheerio):', error.message);
     res.status(500).json({ error: `Ошибка парсинга (fetch+cheerio): ${error.message}` });
   }
 });
-
 
 app.get('/api/test-parse', authenticateToken, requireAdminRole, async (req, res) => {
   const testUrl = 'https://httpbin.org/html';
@@ -5043,8 +5492,8 @@ app.get('/api/test-parse', authenticateToken, requireAdminRole, async (req, res)
         '--disable-ipc-flooding-protection',
         '--disable-background-networking',
         '--lang=ru-RU',
-        '--timezone-policy=host',
-      ],
+        '--timezone-policy=host'
+      ]
     };
 
     browser = await puppeteer.launch(launchOptions);
@@ -5052,11 +5501,12 @@ app.get('/api/test-parse', authenticateToken, requireAdminRole, async (req, res)
     const page = await browser.newPage();
 
     await page.setExtraHTTPHeaders({
-      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+      Accept:
+        'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
       'Accept-Language': 'ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7',
       'Accept-Encoding': 'gzip, deflate, br',
       'Cache-Control': 'no-cache',
-      'Pragma': 'no-cache',
+      Pragma: 'no-cache',
       'Sec-Ch-Ua': '"Chromium";v="120", "Not_A Brand";v="8"',
       'Sec-Ch-Ua-Mobile': '?0',
       'Sec-Fetch-Dest': 'document',
@@ -5064,10 +5514,13 @@ app.get('/api/test-parse', authenticateToken, requireAdminRole, async (req, res)
       'Sec-Fetch-Site': 'none',
       'Sec-Fetch-User': '?1',
       'Upgrade-Insecure-Requests': '1',
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+      'User-Agent':
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
     });
 
-    await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
+    await page.setUserAgent(
+      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+    );
     await page.setViewport({ width: 1920, height: 1080 });
 
     await page.evaluateOnNewDocument(() => {
@@ -5087,9 +5540,9 @@ app.get('/api/test-parse', authenticateToken, requireAdminRole, async (req, res)
     }
 
     await page.evaluate(async () => {
-      await new Promise(resolve => setTimeout(resolve, Math.random() * 2000 + 1000));
+      await new Promise((resolve) => setTimeout(resolve, Math.random() * 2000 + 1000));
       window.scrollBy(0, window.innerHeight / 3);
-      await new Promise(resolve => setTimeout(resolve, Math.random() * 1000 + 500));
+      await new Promise((resolve) => setTimeout(resolve, Math.random() * 1000 + 500));
     });
 
     const data = await page.evaluate(() => {
@@ -5107,7 +5560,6 @@ app.get('/api/test-parse', authenticateToken, requireAdminRole, async (req, res)
       message: 'Тестовый парсинг завершён успешно (данные НЕ сохранены в БД)',
       parsedData: data
     });
-
   } catch (error) {
     if (browser) {
       await browser.close().catch(console.error);
@@ -5118,28 +5570,28 @@ app.get('/api/test-parse', authenticateToken, requireAdminRole, async (req, res)
 });
 
 function coerceApiSystemsPrice(value) {
-    if (value == null || value === '') return null;
-    const n = typeof value === 'number' ? value : parseFloat(String(value).replace(/\s/g, '').replace(',', '.'));
-    if (!Number.isFinite(n) || n <= 0) return null;
-    return Math.round(n);
+  if (value == null || value === '') return null;
+  const n = typeof value === 'number' ? value : parseFloat(String(value).replace(/\s/g, '').replace(',', '.'));
+  if (!Number.isFinite(n) || n <= 0) return null;
+  return Math.round(n);
 }
 
 function coerceMarketParserPrice(value) {
-    if (value == null || value === '') return null;
-    const n = typeof value === 'number' ? value : parseFloat(String(value).replace(/\s/g, '').replace(',', '.'));
-    if (!Number.isFinite(n) || n <= 0) return null;
-    return Math.round(n);
+  if (value == null || value === '') return null;
+  const n = typeof value === 'number' ? value : parseFloat(String(value).replace(/\s/g, '').replace(',', '.'));
+  if (!Number.isFinite(n) || n <= 0) return null;
+  return Math.round(n);
 }
 
 function normalizeComparableUrl(urlString) {
-    try {
-        const u = new URL(urlString);
-        const host = u.hostname.replace(/^www\./i, '').toLowerCase();
-        const path = (u.pathname || '').replace(/\/+$/, '').toLowerCase();
-        return `${host}${path}`;
-    } catch {
-        return null;
-    }
+  try {
+    const u = new URL(urlString);
+    const host = u.hostname.replace(/^www\./i, '').toLowerCase();
+    const path = (u.pathname || '').replace(/\/+$/, '').toLowerCase();
+    return `${host}${path}`;
+  } catch {
+    return null;
+  }
 }
 
 const MARKETPARSER_API_KEY = process.env.MARKETPARSER_API_KEY || null;
@@ -5147,937 +5599,986 @@ const MARKETPARSER_BASE_URL = process.env.MARKETPARSER_BASE_URL || 'https://cp2.
 const marketParserCampaignCache = new Map();
 
 function getMarketParserSourceKeyForHost(hostname) {
-    const raw = String(hostname || '').toLowerCase().replace(/^www\./, '');
+  const raw = String(hostname || '')
+    .toLowerCase()
+    .replace(/^www\./, '');
 
-    if (raw.includes('dns-shop.ru')) return 'dns';
-    if (raw.includes('ozon.ru')) return 'ozon';
-    if (raw === 'megamarket.ru' || raw.endsWith('.megamarket.ru')) return 'megamarket';
-    if (raw.includes('mvideo.ru') || raw.includes('m-video.ru')) return 'mvideo';
-    if (raw.includes('avito.ru')) return 'avito';
+  if (raw.includes('dns-shop.ru')) return 'dns';
+  if (raw.includes('ozon.ru')) return 'ozon';
+  if (raw === 'megamarket.ru' || raw.endsWith('.megamarket.ru')) return 'megamarket';
+  if (raw.includes('mvideo.ru') || raw.includes('m-video.ru')) return 'mvideo';
+  if (raw.includes('avito.ru')) return 'avito';
 
-    return null;
+  return null;
 }
 
 function isMarketParserHostSupported(hostname) {
-    return !!getMarketParserSourceKeyForHost(hostname);
+  return !!getMarketParserSourceKeyForHost(hostname);
 }
 
 function getMarketParserCampaignIdFromEnvBySource(sourceKey) {
-    if (sourceKey === 'dns') return process.env.MARKETPARSER_CAMPAIGN_ID_DNS || null;
-    if (sourceKey === 'ozon') return process.env.MARKETPARSER_CAMPAIGN_ID_OZON || null;
-    if (sourceKey === 'megamarket') return process.env.MARKETPARSER_CAMPAIGN_ID_MEGAMARKET || null;
-    if (sourceKey === 'mvideo') return process.env.MARKETPARSER_CAMPAIGN_ID_MVIDEO || null;
-    if (sourceKey === 'avito') return process.env.MARKETPARSER_CAMPAIGN_ID_AVITO || null;
-    return null;
+  if (sourceKey === 'dns') return process.env.MARKETPARSER_CAMPAIGN_ID_DNS || null;
+  if (sourceKey === 'ozon') return process.env.MARKETPARSER_CAMPAIGN_ID_OZON || null;
+  if (sourceKey === 'megamarket') return process.env.MARKETPARSER_CAMPAIGN_ID_MEGAMARKET || null;
+  if (sourceKey === 'mvideo') return process.env.MARKETPARSER_CAMPAIGN_ID_MVIDEO || null;
+  if (sourceKey === 'avito') return process.env.MARKETPARSER_CAMPAIGN_ID_AVITO || null;
+  return null;
 }
 
 function getStoreNameForHost(hostname) {
-    const raw = String(hostname || '').toLowerCase().replace(/^www\./, '');
-    if (raw.includes('dns-shop.ru')) return 'DNS';
-    if (raw.includes('ozon.ru')) return 'OZON';
-    if (raw === 'megamarket.ru' || raw.endsWith('.megamarket.ru')) return 'MegaMarket';
-    if (raw.includes('mvideo.ru') || raw.includes('m-video.ru')) return 'MVideo';
-    if (raw.includes('avito.ru')) return 'Avito';
-    if (raw.includes('citilink.ru')) return 'Citilink';
-    if (raw.includes('regard.ru') || raw.includes('redgard.ru')) return 'Regard';
-    if (raw.includes('aliexpress.')) return 'AliExpress';
-    if (raw.includes('wildberries.ru') || raw.includes('wb.ru')) return 'Wildberries';
-    if (raw.includes('market.yandex.ru') || raw.includes('yandex.ru')) return 'Yandex Market';
-    if (raw.includes('ebay.')) return 'eBay';
-    return null;
+  const raw = String(hostname || '')
+    .toLowerCase()
+    .replace(/^www\./, '');
+  if (raw.includes('dns-shop.ru')) return 'DNS';
+  if (raw.includes('ozon.ru')) return 'OZON';
+  if (raw === 'megamarket.ru' || raw.endsWith('.megamarket.ru')) return 'MegaMarket';
+  if (raw.includes('mvideo.ru') || raw.includes('m-video.ru')) return 'MVideo';
+  if (raw.includes('avito.ru')) return 'Avito';
+  if (raw.includes('citilink.ru')) return 'Citilink';
+  if (raw.includes('regard.ru') || raw.includes('redgard.ru')) return 'Regard';
+  if (raw.includes('aliexpress.')) return 'AliExpress';
+  if (raw.includes('wildberries.ru') || raw.includes('wb.ru')) return 'Wildberries';
+  if (raw.includes('market.yandex.ru') || raw.includes('yandex.ru')) return 'Yandex Market';
+  if (raw.includes('ebay.')) return 'eBay';
+  return null;
 }
 
 async function resolveMarketParserCampaignIdForHost(hostname) {
-    const sourceKey = getMarketParserSourceKeyForHost(hostname);
-    if (!sourceKey) return null;
+  const sourceKey = getMarketParserSourceKeyForHost(hostname);
+  if (!sourceKey) return null;
 
-    const envCampaignId = getMarketParserCampaignIdFromEnvBySource(sourceKey);
-    if (envCampaignId) return String(envCampaignId).trim();
+  const envCampaignId = getMarketParserCampaignIdFromEnvBySource(sourceKey);
+  if (envCampaignId) return String(envCampaignId).trim();
 
-    if (marketParserCampaignCache.has(sourceKey)) {
-        return marketParserCampaignCache.get(sourceKey);
-    }
+  if (marketParserCampaignCache.has(sourceKey)) {
+    return marketParserCampaignCache.get(sourceKey);
+  }
 
-    const campaignsData = await marketParserRequest('GET', '/campaigns.json', { timeout: 20000 });
-    const campaigns = campaignsData?.response?.campaigns || [];
-    const list = Array.isArray(campaigns) ? campaigns : [];
-    if (!list.length) return null;
+  const campaignsData = await marketParserRequest('GET', '/campaigns.json', { timeout: 20000 });
+  const campaigns = campaignsData?.response?.campaigns || [];
+  const list = Array.isArray(campaigns) ? campaigns : [];
+  if (!list.length) return null;
 
-    const keywordMap = {
-        dns: ['dns', 'днс'],
-        ozon: ['ozon', 'озон'],
-        megamarket: ['megamarket', 'mega market', 'мегамаркет', 'сбермегамаркет'],
-        mvideo: ['mvideo', 'm.video', 'мвидео', 'м.видео'],
-        avito: ['avito', 'авито']
-    };
-    const kws = keywordMap[sourceKey] || [];
+  const keywordMap = {
+    dns: ['dns', 'днс'],
+    ozon: ['ozon', 'озон'],
+    megamarket: ['megamarket', 'mega market', 'мегамаркет', 'сбермегамаркет'],
+    mvideo: ['mvideo', 'm.video', 'мвидео', 'м.видео'],
+    avito: ['avito', 'авито']
+  };
+  const kws = keywordMap[sourceKey] || [];
 
-    const matched = list.find((c) => {
-        const nm = String(c?.name || '').toLowerCase();
-        return kws.some((kw) => nm.includes(kw));
-    });
+  const matched = list.find((c) => {
+    const nm = String(c?.name || '').toLowerCase();
+    return kws.some((kw) => nm.includes(kw));
+  });
 
-    const id = matched?.id != null ? String(matched.id) : null;
-    if (id) marketParserCampaignCache.set(sourceKey, id);
-    return id;
+  const id = matched?.id != null ? String(matched.id) : null;
+  if (id) marketParserCampaignCache.set(sourceKey, id);
+  return id;
 }
 
 async function marketParserRequest(method, path, { params = undefined, data = undefined, timeout = 20000 } = {}) {
-    if (!MARKETPARSER_API_KEY) {
-        throw new Error('MARKETPARSER_API_KEY не задан. Добавьте ключ в переменные окружения.');
-    }
-    const url = `${MARKETPARSER_BASE_URL}${path.startsWith('/') ? '' : '/'}${path}`;
-    try {
-        const res = await axios.request({
-            method,
-            url,
-            params,
-            data,
-            timeout,
-            headers: {
-                'Api-Key': MARKETPARSER_API_KEY,
-                'Content-Type': 'application/json'
-            }
-        });
-        return res.data;
-    } catch (e) {
-        const status = e?.response?.status;
-        const payload = e?.response?.data;
-        const message = payload?.message || e?.message || 'Ошибка MarketParser';
-        if (status) throw new Error(`MarketParser HTTP ${status}: ${message}`);
-        throw new Error(`MarketParser: ${message}`);
-    }
+  if (!MARKETPARSER_API_KEY) {
+    throw new Error('MARKETPARSER_API_KEY не задан. Добавьте ключ в переменные окружения.');
+  }
+  const url = `${MARKETPARSER_BASE_URL}${path.startsWith('/') ? '' : '/'}${path}`;
+  try {
+    const res = await axios.request({
+      method,
+      url,
+      params,
+      data,
+      timeout,
+      headers: {
+        'Api-Key': MARKETPARSER_API_KEY,
+        'Content-Type': 'application/json'
+      }
+    });
+    return res.data;
+  } catch (e) {
+    const status = e?.response?.status;
+    const payload = e?.response?.data;
+    const message = payload?.message || e?.message || 'Ошибка MarketParser';
+    if (status) throw new Error(`MarketParser HTTP ${status}: ${message}`);
+    throw new Error(`MarketParser: ${message}`);
+  }
 }
 
 async function marketParserWaitCampaignPriceProcessed(campaignId, { timeoutMs = 90000, pollMs = 2500 } = {}) {
-    const started = Date.now();
-    while (Date.now() - started < timeoutMs) {
-        const info = await marketParserRequest('GET', `/campaigns/${campaignId}/price.json`, { timeout: 20000 });
-        const isOk = !!(info?.response?.isSuccessfullyProcessed ?? info?.response?.price?.isSuccessfullyProcessed);
-        if (isOk) return true;
-        await delay(pollMs);
-    }
-    throw new Error('MarketParser: прайс кампании не обработан вовремя (timeout).');
+  const started = Date.now();
+  while (Date.now() - started < timeoutMs) {
+    const info = await marketParserRequest('GET', `/campaigns/${campaignId}/price.json`, { timeout: 20000 });
+    const isOk = !!(info?.response?.isSuccessfullyProcessed ?? info?.response?.price?.isSuccessfullyProcessed);
+    if (isOk) return true;
+    await delay(pollMs);
+  }
+  throw new Error('MarketParser: прайс кампании не обработан вовремя (timeout).');
 }
 
 async function marketParserWaitReportFinished(campaignId, reportId, { timeoutMs = 120000, pollMs = 2500 } = {}) {
-    const started = Date.now();
-    while (Date.now() - started < timeoutMs) {
-        const info = await marketParserRequest('GET', `/campaigns/${campaignId}/reports/${reportId}.json`, { timeout: 20000 });
-        const r = info?.response || null;
-        if (r?.isSuccessfullyFinished) return r;
-        if (r?.status === 'ERROR') throw new Error('MarketParser: отчёт завершился со статусом ERROR.');
-        await delay(pollMs);
-    }
-    throw new Error('MarketParser: отчёт не завершился вовремя (timeout).');
+  const started = Date.now();
+  while (Date.now() - started < timeoutMs) {
+    const info = await marketParserRequest('GET', `/campaigns/${campaignId}/reports/${reportId}.json`, {
+      timeout: 20000
+    });
+    const r = info?.response || null;
+    if (r?.isSuccessfullyFinished) return r;
+    if (r?.status === 'ERROR') throw new Error('MarketParser: отчёт завершился со статусом ERROR.');
+    await delay(pollMs);
+  }
+  throw new Error('MarketParser: отчёт не завершился вовремя (timeout).');
 }
 
 function coerceSpecsFromMarketParserProduct(product) {
-    if (!product || typeof product !== 'object') return {};
-    const candidates = [
-        product.specs,
-        product.properties,
-        product.params,
-        product.characteristics,
-        product.attributes,
-        product.features,
-        product.details
-    ].filter(Boolean);
+  if (!product || typeof product !== 'object') return {};
+  const candidates = [
+    product.specs,
+    product.properties,
+    product.params,
+    product.characteristics,
+    product.attributes,
+    product.features,
+    product.details
+  ].filter(Boolean);
 
-    for (const c of candidates) {
-        if (c && typeof c === 'object' && !Array.isArray(c)) return c;
-        if (Array.isArray(c)) {
-            const out = {};
-            for (const item of c) {
-                const k = item?.name || item?.key || item?.title;
-                const v = item?.value || item?.val || item?.text;
-                if (k && v != null) out[String(k).trim()] = String(v).trim();
-            }
-            if (Object.keys(out).length) return out;
-        }
+  for (const c of candidates) {
+    if (c && typeof c === 'object' && !Array.isArray(c)) return c;
+    if (Array.isArray(c)) {
+      const out = {};
+      for (const item of c) {
+        const k = item?.name || item?.key || item?.title;
+        const v = item?.value || item?.val || item?.text;
+        if (k && v != null) out[String(k).trim()] = String(v).trim();
+      }
+      if (Object.keys(out).length) return out;
     }
+  }
 
-    const custom = product.custom;
-    if (custom && typeof custom === 'object' && !Array.isArray(custom)) {
-        const maybe = custom.specs || custom.properties || custom.params || null;
-        if (maybe && typeof maybe === 'object') return maybe;
-    }
+  const custom = product.custom;
+  if (custom && typeof custom === 'object' && !Array.isArray(custom)) {
+    const maybe = custom.specs || custom.properties || custom.params || null;
+    if (maybe && typeof maybe === 'object') return maybe;
+  }
 
-    return {};
+  return {};
 }
 
 function coerceImageUrlFromMarketParserProduct(product) {
-    if (!product || typeof product !== 'object') return null;
-    const candidates = [
-        product.imageUrl,
-        product.image_url,
-        product.image,
-        product.picture,
-        product.photo,
-        product.previewImage,
-        product.preview_image,
-        product.prev_image
-    ].filter(Boolean);
-    for (const c of candidates) {
-        if (typeof c === 'string' && c.trim()) return c.trim();
-        if (Array.isArray(c) && c[0] && typeof c[0] === 'string') return c[0];
-    }
-    if (Array.isArray(product.photos) && product.photos[0]?.url) return product.photos[0].url;
-    return null;
+  if (!product || typeof product !== 'object') return null;
+  const candidates = [
+    product.imageUrl,
+    product.image_url,
+    product.image,
+    product.picture,
+    product.photo,
+    product.previewImage,
+    product.preview_image,
+    product.prev_image
+  ].filter(Boolean);
+  for (const c of candidates) {
+    if (typeof c === 'string' && c.trim()) return c.trim();
+    if (Array.isArray(c) && c[0] && typeof c[0] === 'string') return c[0];
+  }
+  if (Array.isArray(product.photos) && product.photos[0]?.url) return product.photos[0].url;
+  return null;
 }
 
 function coerceNameFromMarketParserProduct(product, fallbackUrl) {
-    const raw = product?.name || product?.title || product?.productName || product?.product_name || null;
-    if (raw && typeof raw === 'string') {
-        const t = raw.trim();
-        if (t && (!fallbackUrl || t !== fallbackUrl)) return t;
-    }
-    return null;
+  const raw = product?.name || product?.title || product?.productName || product?.product_name || null;
+  if (raw && typeof raw === 'string') {
+    const t = raw.trim();
+    if (t && (!fallbackUrl || t !== fallbackUrl)) return t;
+  }
+  return null;
 }
 
 function coercePriceFromMarketParserProduct(product) {
-    if (!product || typeof product !== 'object') return null;
-    const direct = coerceMarketParserPrice(
-        product.price ??
-            product.currentPrice ??
-            product.salePrice ??
-            product.minPrice ??
-            product.min_price ??
-            product.medianPrice ??
-            product.averagePrice
-    );
-    if (direct) return direct;
+  if (!product || typeof product !== 'object') return null;
+  const direct = coerceMarketParserPrice(
+    product.price ??
+      product.currentPrice ??
+      product.salePrice ??
+      product.minPrice ??
+      product.min_price ??
+      product.medianPrice ??
+      product.averagePrice
+  );
+  if (direct) return direct;
 
-    const offers = Array.isArray(product.offers) ? product.offers : [];
-    const offerPrices = offers
-        .map((o) => coerceMarketParserPrice(o?.price ?? o?.salePrice ?? o?.currentPrice))
-        .filter((n) => n != null);
-    if (offerPrices.length) return Math.min(...offerPrices);
-    return null;
+  const offers = Array.isArray(product.offers) ? product.offers : [];
+  const offerPrices = offers
+    .map((o) => coerceMarketParserPrice(o?.price ?? o?.salePrice ?? o?.currentPrice))
+    .filter((n) => n != null);
+  if (offerPrices.length) return Math.min(...offerPrices);
+  return null;
 }
 
 async function fetchProductFromMarketParserByUrl(urlString, { timeoutMs = 180000 } = {}) {
-    let parsedUrl;
-    try {
-        parsedUrl = new URL(urlString);
-    } catch {
-        throw new Error('Некорректный URL');
-    }
+  let parsedUrl;
+  try {
+    parsedUrl = new URL(urlString);
+  } catch {
+    throw new Error('Некорректный URL');
+  }
 
-    const host = parsedUrl.hostname.toLowerCase();
-    const campaignId = await resolveMarketParserCampaignIdForHost(host);
-    if (!campaignId) {
-        throw new Error(
-            `Для домена ${host} не найдена кампания MarketParser. Укажите MARKETPARSER_CAMPAIGN_ID_* в .env или создайте кампанию с понятным названием (OZON/DNS/MegaMarket/MVideo/Avito), чтобы автоопределение сработало.`
-        );
-    }
+  const host = parsedUrl.hostname.toLowerCase();
+  const campaignId = await resolveMarketParserCampaignIdForHost(host);
+  if (!campaignId) {
+    throw new Error(
+      `Для домена ${host} не найдена кампания MarketParser. Укажите MARKETPARSER_CAMPAIGN_ID_* в .env или создайте кампанию с понятным названием (OZON/DNS/MegaMarket/MVideo/Avito), чтобы автоопределение сработало.`
+    );
+  }
 
-    const ourId = normalizeComparableUrl(urlString) || urlString;
+  const ourId = normalizeComparableUrl(urlString) || urlString;
 
-    await marketParserRequest('POST', `/campaigns/${campaignId}/price.json`, {
-        timeout: 30000,
-        data: {
-            products: [
-                {
-                    name: urlString,
-                    id: ourId,
-                    custom: { source_url: urlString }
-                }
-            ]
+  await marketParserRequest('POST', `/campaigns/${campaignId}/price.json`, {
+    timeout: 30000,
+    data: {
+      products: [
+        {
+          name: urlString,
+          id: ourId,
+          custom: { source_url: urlString }
         }
-    });
+      ]
+    }
+  });
 
-    await marketParserWaitCampaignPriceProcessed(campaignId, { timeoutMs: Math.min(timeoutMs, 120000), pollMs: 2500 });
+  await marketParserWaitCampaignPriceProcessed(campaignId, { timeoutMs: Math.min(timeoutMs, 120000), pollMs: 2500 });
 
-    const report = await marketParserRequest('POST', `/campaigns/${campaignId}/reports.json`, { timeout: 20000, data: {} });
-    const reportId = report?.response?.id || report?.response?.report?.id || null;
-    if (!reportId) throw new Error('MarketParser: не удалось получить reportId при создании отчёта.');
+  const report = await marketParserRequest('POST', `/campaigns/${campaignId}/reports.json`, {
+    timeout: 20000,
+    data: {}
+  });
+  const reportId = report?.response?.id || report?.response?.report?.id || null;
+  if (!reportId) throw new Error('MarketParser: не удалось получить reportId при создании отчёта.');
 
-    await marketParserWaitReportFinished(campaignId, reportId, { timeoutMs, pollMs: 2500 });
+  await marketParserWaitReportFinished(campaignId, reportId, { timeoutMs, pollMs: 2500 });
 
-    const results = await marketParserRequest('GET', `/campaigns/${campaignId}/reports/${reportId}/results.json`, {
-        timeout: 30000,
-        params: { per_page: 100 }
-    });
+  const results = await marketParserRequest('GET', `/campaigns/${campaignId}/reports/${reportId}/results.json`, {
+    timeout: 30000,
+    params: { per_page: 100 }
+  });
 
-    const products = results?.response?.products || results?.response?.items || results?.response || [];
-    const list = Array.isArray(products) ? products : [];
-    const product =
-        list.find((p) => String(p?.ourId || p?.our_id || '').trim() === String(ourId).trim()) ||
-        list.find((p) => normalizeComparableUrl(p?.custom?.source_url || '') === normalizeComparableUrl(urlString)) ||
-        list[0] ||
-        null;
+  const products = results?.response?.products || results?.response?.items || results?.response || [];
+  const list = Array.isArray(products) ? products : [];
+  const product =
+    list.find((p) => String(p?.ourId || p?.our_id || '').trim() === String(ourId).trim()) ||
+    list.find((p) => normalizeComparableUrl(p?.custom?.source_url || '') === normalizeComparableUrl(urlString)) ||
+    list[0] ||
+    null;
 
-    if (!product) throw new Error('MarketParser: результаты отчёта пустые.');
+  if (!product) throw new Error('MarketParser: результаты отчёта пустые.');
 
-    const name = coerceNameFromMarketParserProduct(product, urlString);
-    const price = coercePriceFromMarketParserProduct(product);
-    const imageUrl = coerceImageUrlFromMarketParserProduct(product);
-    const specs = coerceSpecsFromMarketParserProduct(product);
+  const name = coerceNameFromMarketParserProduct(product, urlString);
+  const price = coercePriceFromMarketParserProduct(product);
+  const imageUrl = coerceImageUrlFromMarketParserProduct(product);
+  const specs = coerceSpecsFromMarketParserProduct(product);
 
-    return {
-        source: 'MarketParser',
-        name: name || null,
-        price,
-        imageUrl: imageUrl || null,
-        sourceUrl: urlString,
-        specs: specs || {}
-    };
+  return {
+    source: 'MarketParser',
+    name: name || null,
+    price,
+    imageUrl: imageUrl || null,
+    sourceUrl: urlString,
+    specs: specs || {}
+  };
 }
 
 async function fetchPriceFromApiSystemsByUrl(urlString) {
-    const modelInfo = extractModelIdFromUrl(urlString);
-    if (!modelInfo?.id) {
-        throw new Error('Не удалось извлечь ID товара из ссылки (нужна карточка Яндекс.Маркета или Wildberries).');
-    }
-    if (modelInfo.source === 'wildberries') {
-        const wbOfferData = await fetchWildberriesOfferPriceFromApiSystems(modelInfo.id, urlString);
-        return {
-            price: wbOfferData.price,
-            parsedName: wbOfferData.parsedName,
-            sellerName: wbOfferData.sellerName || null,
-            source: modelInfo.source
-        };
-    }
-    const data = await fetchProductSpecsFromApiSystems(modelInfo.id, modelInfo.source);
+  const modelInfo = extractModelIdFromUrl(urlString);
+  if (!modelInfo?.id) {
+    throw new Error('Не удалось извлечь ID товара из ссылки (нужна карточка Яндекс.Маркета или Wildberries).');
+  }
+  if (modelInfo.source === 'wildberries') {
+    const wbOfferData = await fetchWildberriesOfferPriceFromApiSystems(modelInfo.id, urlString);
     return {
-        price: coerceApiSystemsPrice(data.price),
-        parsedName: data.name || null,
-        sellerName: data.sellerName || null,
-        source: modelInfo.source
+      price: wbOfferData.price,
+      parsedName: wbOfferData.parsedName,
+      sellerName: wbOfferData.sellerName || null,
+      source: modelInfo.source
     };
+  }
+  const data = await fetchProductSpecsFromApiSystems(modelInfo.id, modelInfo.source);
+  return {
+    price: coerceApiSystemsPrice(data.price),
+    parsedName: data.name || null,
+    sellerName: data.sellerName || null,
+    source: modelInfo.source
+  };
 }
 
 async function fetchWildberriesOfferPriceFromApiSystems(modelId, requestedUrl = null) {
-    if (!API_SYSTEMS_KEY) {
-        throw new Error('API_KEY для API Systems не найден в переменных окружения.');
+  if (!API_SYSTEMS_KEY) {
+    throw new Error('API_KEY для API Systems не найден в переменных окружения.');
+  }
+
+  const offersUrl = `http://wb.apisystem.name/models/${modelId}/offers`;
+  const response = await axios.get(offersUrl, {
+    params: {
+      api_key: API_SYSTEMS_KEY,
+      format: 'json',
+      count: 10,
+      page: 1
+    },
+    timeout: 10000
+  });
+
+  if (response.status !== 200) {
+    throw new Error(`API Systems WB offers вернул статус ${response.status}`);
+  }
+
+  const payload = response.data || {};
+  if (payload.status !== 'OK') {
+    throw new Error(`API Systems WB offers вернул ошибку: ${payload.status || 'UNKNOWN'}`);
+  }
+
+  const offers = Array.isArray(payload.offers) ? payload.offers : [];
+  let price = coerceApiSystemsPrice(payload.price_min) || coerceApiSystemsPrice(payload.price_avg);
+  let parsedName = null;
+  let sellerName = null;
+
+  if (offers.length > 0) {
+    const requestedNorm = requestedUrl ? normalizeComparableUrl(requestedUrl) : null;
+    let offer = null;
+
+    if (requestedNorm) {
+      offer = offers.find((o) => normalizeComparableUrl(o.url || o.product_url) === requestedNorm) || null;
+    }
+    if (!offer && requestedNorm) {
+      offer =
+        offers.find((o) => {
+          const n = normalizeComparableUrl(o.url || o.product_url);
+          return n && (n.includes(requestedNorm) || requestedNorm.includes(n));
+        }) || null;
+    }
+    if (!offer) {
+      offer = offers.find((o) => coerceApiSystemsPrice(o.price_wb_pay) || coerceApiSystemsPrice(o.price)) || offers[0];
     }
 
-    const offersUrl = `http://wb.apisystem.name/models/${modelId}/offers`;
-    const response = await axios.get(offersUrl, {
-        params: {
-            api_key: API_SYSTEMS_KEY,
-            format: 'json',
-            count: 10,
-            page: 1
-        },
-        timeout: 10000
-    });
+    price = price || coerceApiSystemsPrice(offer.price_wb_pay) || coerceApiSystemsPrice(offer.price);
+    parsedName = offer.offer_name || null;
+    const raw =
+      offer.shop_name ||
+      offer.seller_name ||
+      offer.supplier_name ||
+      offer.supplier ||
+      offer.vendor_name ||
+      offer.store_name ||
+      offer.shop;
+    if (raw != null && String(raw).trim()) sellerName = String(raw).trim();
+  }
 
-    if (response.status !== 200) {
-        throw new Error(`API Systems WB offers вернул статус ${response.status}`);
-    }
-
-    const payload = response.data || {};
-    if (payload.status !== 'OK') {
-        throw new Error(`API Systems WB offers вернул ошибку: ${payload.status || 'UNKNOWN'}`);
-    }
-
-    const offers = Array.isArray(payload.offers) ? payload.offers : [];
-    let price = coerceApiSystemsPrice(payload.price_min) || coerceApiSystemsPrice(payload.price_avg);
-    let parsedName = null;
-    let sellerName = null;
-
-    if (offers.length > 0) {
-        const requestedNorm = requestedUrl ? normalizeComparableUrl(requestedUrl) : null;
-        let offer = null;
-
-        if (requestedNorm) {
-            offer = offers.find((o) => normalizeComparableUrl(o.url || o.product_url) === requestedNorm) || null;
-        }
-        if (!offer && requestedNorm) {
-            offer = offers.find((o) => {
-                const n = normalizeComparableUrl(o.url || o.product_url);
-                return n && (n.includes(requestedNorm) || requestedNorm.includes(n));
-            }) || null;
-        }
-        if (!offer) {
-            offer = offers.find((o) => coerceApiSystemsPrice(o.price_wb_pay) || coerceApiSystemsPrice(o.price)) || offers[0];
-        }
-
-        price = price || coerceApiSystemsPrice(offer.price_wb_pay) || coerceApiSystemsPrice(offer.price);
-        parsedName = offer.offer_name || null;
-        const raw =
-          offer.shop_name ||
-          offer.seller_name ||
-          offer.supplier_name ||
-          offer.supplier ||
-          offer.vendor_name ||
-          offer.store_name ||
-          offer.shop;
-        if (raw != null && String(raw).trim()) sellerName = String(raw).trim();
-    }
-
-    return { price, parsedName, sellerName };
+  return { price, parsedName, sellerName };
 }
 
 async function requestEbayAccessTokenForBase(baseUrl) {
-    const credentials = Buffer.from(`${EBAY_CLIENT_ID}:${EBAY_CLIENT_SECRET}`).toString('base64');
-    let lastError = null;
-    for (const scope of EBAY_OAUTH_SCOPES) {
-        try {
-            const response = await axios.post(
-                `${baseUrl}/identity/v1/oauth2/token`,
-                new URLSearchParams({
-                    grant_type: 'client_credentials',
-                    scope
-                }).toString(),
-                {
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                        Authorization: `Basic ${credentials}`
-                    },
-                    timeout: 15000
-                }
-            );
-            return {
-                token: response.data.access_token,
-                expiresInMs: Number(response.data.expires_in || 7200) * 1000,
-                base: baseUrl
-            };
-        } catch (e) {
-            lastError = e;
-            if (e?.response?.data?.error !== 'invalid_scope') {
-                break;
-            }
+  const credentials = Buffer.from(`${EBAY_CLIENT_ID}:${EBAY_CLIENT_SECRET}`).toString('base64');
+  let lastError = null;
+  for (const scope of EBAY_OAUTH_SCOPES) {
+    try {
+      const response = await axios.post(
+        `${baseUrl}/identity/v1/oauth2/token`,
+        new URLSearchParams({
+          grant_type: 'client_credentials',
+          scope
+        }).toString(),
+        {
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            Authorization: `Basic ${credentials}`
+          },
+          timeout: 15000
         }
+      );
+      return {
+        token: response.data.access_token,
+        expiresInMs: Number(response.data.expires_in || 7200) * 1000,
+        base: baseUrl
+      };
+    } catch (e) {
+      lastError = e;
+      if (e?.response?.data?.error !== 'invalid_scope') {
+        break;
+      }
     }
-    throw lastError || new Error('eBay OAuth token request failed');
+  }
+  throw lastError || new Error('eBay OAuth token request failed');
 }
 
 async function getEbayAccessToken() {
-    if (!EBAY_CLIENT_ID || !EBAY_CLIENT_SECRET) {
-        throw new Error('EBAY_CLIENT_ID и EBAY_CLIENT_SECRET не заданы в .env');
-    }
-    const now = Date.now();
-    if (ebayTokenCache.token && ebayTokenCache.base && now < ebayTokenCache.expiresAt - 60000) {
-        return { token: ebayTokenCache.token, base: ebayTokenCache.base };
-    }
+  if (!EBAY_CLIENT_ID || !EBAY_CLIENT_SECRET) {
+    throw new Error('EBAY_CLIENT_ID и EBAY_CLIENT_SECRET не заданы в .env');
+  }
+  const now = Date.now();
+  if (ebayTokenCache.token && ebayTokenCache.base && now < ebayTokenCache.expiresAt - 60000) {
+    return { token: ebayTokenCache.token, base: ebayTokenCache.base };
+  }
 
-    const preferred = EBAY_BASE;
-    const sandboxCreds = isLikelySandboxEbayCredentials(EBAY_CLIENT_ID, EBAY_CLIENT_SECRET);
-    const preferredResolved = preferred || (sandboxCreds ? EBAY_SANDBOX_BASE : 'https://api.ebay.com');
-    const baseByCreds = sandboxCreds ? EBAY_SANDBOX_BASE : 'https://api.ebay.com';
-    const allowSandboxFallback = String(process.env.EBAY_ALLOW_SANDBOX_FALLBACK || 'false').toLowerCase() === 'true';
-    const initial = preferredResolved === EBAY_SANDBOX_BASE ? EBAY_SANDBOX_BASE : baseByCreds;
-    const fallback = initial === EBAY_SANDBOX_BASE ? 'https://api.ebay.com' : EBAY_SANDBOX_BASE;
-    const candidates = [initial, ...(allowSandboxFallback ? [fallback] : [])];
+  const preferred = EBAY_BASE;
+  const sandboxCreds = isLikelySandboxEbayCredentials(EBAY_CLIENT_ID, EBAY_CLIENT_SECRET);
+  const preferredResolved = preferred || (sandboxCreds ? EBAY_SANDBOX_BASE : 'https://api.ebay.com');
+  const baseByCreds = sandboxCreds ? EBAY_SANDBOX_BASE : 'https://api.ebay.com';
+  const allowSandboxFallback = String(process.env.EBAY_ALLOW_SANDBOX_FALLBACK || 'false').toLowerCase() === 'true';
+  const initial = preferredResolved === EBAY_SANDBOX_BASE ? EBAY_SANDBOX_BASE : baseByCreds;
+  const fallback = initial === EBAY_SANDBOX_BASE ? 'https://api.ebay.com' : EBAY_SANDBOX_BASE;
+  const candidates = [initial, ...(allowSandboxFallback ? [fallback] : [])];
 
-    let lastError = null;
-    for (const baseUrl of candidates) {
-        try {
-            const tokenData = await requestEbayAccessTokenForBase(baseUrl);
-            ebayTokenCache = {
-                token: tokenData.token,
-                expiresAt: now + tokenData.expiresInMs,
-                base: baseUrl
-            };
-            console.log('[eBay] OAuth token acquired for base:', baseUrl);
-            return { token: tokenData.token, base: baseUrl };
-        } catch (err) {
-            lastError = err;
-            console.warn(
-                '[eBay] Token request failed for base:',
-                baseUrl,
-                err.response?.status || err.message,
-                `(clientIdLen=${String(EBAY_CLIENT_ID || '').length}, secretLen=${String(EBAY_CLIENT_SECRET || '').length})`
-            );
-        }
+  let lastError = null;
+  for (const baseUrl of candidates) {
+    try {
+      const tokenData = await requestEbayAccessTokenForBase(baseUrl);
+      ebayTokenCache = {
+        token: tokenData.token,
+        expiresAt: now + tokenData.expiresInMs,
+        base: baseUrl
+      };
+      console.log('[eBay] OAuth token acquired for base:', baseUrl);
+      return { token: tokenData.token, base: baseUrl };
+    } catch (err) {
+      lastError = err;
+      console.warn(
+        '[eBay] Token request failed for base:',
+        baseUrl,
+        err.response?.status || err.message,
+        `(clientIdLen=${String(EBAY_CLIENT_ID || '').length}, secretLen=${String(EBAY_CLIENT_SECRET || '').length})`
+      );
     }
-    const details = lastError?.response?.data ? JSON.stringify(lastError.response.data) : (lastError?.message || 'unknown');
-    throw new Error(`eBay OAuth failed for prod/sandbox. ${details}`);
+  }
+  const details = lastError?.response?.data ? JSON.stringify(lastError.response.data) : lastError?.message || 'unknown';
+  throw new Error(`eBay OAuth failed for prod/sandbox. ${details}`);
 }
 
 function coerceNumberPrice(priceLike) {
-    if (priceLike == null) return null;
-    const raw = typeof priceLike === 'number' ? String(priceLike) : String(priceLike).replace(',', '.');
-    const n = Number(raw.replace(/[^\d.]/g, ''));
-    if (!Number.isFinite(n) || n <= 0) return null;
-    return Math.round(n);
+  if (priceLike == null) return null;
+  const raw = typeof priceLike === 'number' ? String(priceLike) : String(priceLike).replace(',', '.');
+  const n = Number(raw.replace(/[^\d.]/g, ''));
+  if (!Number.isFinite(n) || n <= 0) return null;
+  return Math.round(n);
 }
 
 function normalizeCurrencyCode(raw) {
-    const codeRaw = String(raw || '').trim();
-    if (!codeRaw) return 'RUB';
+  const codeRaw = String(raw || '').trim();
+  if (!codeRaw) return 'RUB';
 
-    const code = codeRaw.toUpperCase();
+  const code = codeRaw.toUpperCase();
 
-    if (code.includes('₽') || code === 'RUR' || code === 'RUB' || code.includes('RUB')) return 'RUB';
-    if (code.includes('USD') || code.includes('US$')) return 'USD';
-    if (code.includes('EUR')) return 'EUR';
-    if (code.includes('CNY') || code.includes('YUAN')) return 'CNY';
-    if (code.includes('KZT')) return 'KZT';
-    if (code.includes('BYN')) return 'BYN';
+  if (code.includes('₽') || code === 'RUR' || code === 'RUB' || code.includes('RUB')) return 'RUB';
+  if (code.includes('USD') || code.includes('US$')) return 'USD';
+  if (code.includes('EUR')) return 'EUR';
+  if (code.includes('CNY') || code.includes('YUAN')) return 'CNY';
+  if (code.includes('KZT')) return 'KZT';
+  if (code.includes('BYN')) return 'BYN';
 
-    return code;
+  return code;
 }
 
 function convertToRub(amount, currency = 'RUB') {
-    const value = Number(amount);
-    if (!Number.isFinite(value) || value <= 0) return null;
-    const code = normalizeCurrencyCode(currency);
-    if (code === 'RUB') return Math.round(value);
+  const value = Number(amount);
+  if (!Number.isFinite(value) || value <= 0) return null;
+  const code = normalizeCurrencyCode(currency);
+  if (code === 'RUB') return Math.round(value);
 
-    const rates = {
-        USD: Number(process.env.FX_USD_RUB || 92),
-        EUR: Number(process.env.FX_EUR_RUB || 100),
-        CNY: Number(process.env.FX_CNY_RUB || 12.7),
-        KZT: Number(process.env.FX_KZT_RUB || 0.19),
-        BYN: Number(process.env.FX_BYN_RUB || 28.5)
-    };
-    const rate = rates[code];
-    if (!Number.isFinite(rate) || rate <= 0) {
-        //не даём “пропасть” офферу — считаем, что это RUB.
-        console.warn(`[FX] Неизвестная валюта '${currency}' (норм: ${code}). Считаю как RUB.`);
-        return Math.round(value);
-    }
-    return Math.round(value * rate);
+  const rates = {
+    USD: Number(process.env.FX_USD_RUB || 92),
+    EUR: Number(process.env.FX_EUR_RUB || 100),
+    CNY: Number(process.env.FX_CNY_RUB || 12.7),
+    KZT: Number(process.env.FX_KZT_RUB || 0.19),
+    BYN: Number(process.env.FX_BYN_RUB || 28.5)
+  };
+  const rate = rates[code];
+  if (!Number.isFinite(rate) || rate <= 0) {
+    //не даём “пропасть” офферу — считаем, что это RUB.
+    console.warn(`[FX] Неизвестная валюта '${currency}' (норм: ${code}). Считаю как RUB.`);
+    return Math.round(value);
+  }
+  return Math.round(value * rate);
 }
 
 function extractStoreSignalsFromOffer(offer = {}) {
-    const rating = Number(offer.rating ?? offer.score ?? offer.storeRating ?? NaN);
-    const reviewsCount = Number(offer.reviewsCount ?? offer.review_count ?? offer.reviews ?? NaN);
-    const stock =
-        Number(offer.stock ?? offer.quantity ?? offer.qty ?? offer.availableQuantity ?? offer.availabilityCount ?? NaN);
+  const rating = Number(offer.rating ?? offer.score ?? offer.storeRating ?? NaN);
+  const reviewsCount = Number(offer.reviewsCount ?? offer.review_count ?? offer.reviews ?? NaN);
+  const stock = Number(
+    offer.stock ?? offer.quantity ?? offer.qty ?? offer.availableQuantity ?? offer.availabilityCount ?? NaN
+  );
 
-    return {
-        rating: Number.isFinite(rating) ? Math.max(0, Math.min(5, rating)) : null,
-        reviewsCount: Number.isFinite(reviewsCount) && reviewsCount >= 0 ? Math.round(reviewsCount) : null,
-        stock: Number.isFinite(stock) && stock >= 0 ? Math.round(stock) : null
-    };
+  return {
+    rating: Number.isFinite(rating) ? Math.max(0, Math.min(5, rating)) : null,
+    reviewsCount: Number.isFinite(reviewsCount) && reviewsCount >= 0 ? Math.round(reviewsCount) : null,
+    stock: Number.isFinite(stock) && stock >= 0 ? Math.round(stock) : null
+  };
 }
 
 function transliterateRuToLat(text) {
-    const map = {
-        а: 'a', б: 'b', в: 'v', г: 'g', д: 'd', е: 'e', ё: 'e', ж: 'zh', з: 'z', и: 'i', й: 'y',
-        к: 'k', л: 'l', м: 'm', н: 'n', о: 'o', п: 'p', р: 'r', с: 's', т: 't', у: 'u', ф: 'f',
-        х: 'h', ц: 'ts', ч: 'ch', ш: 'sh', щ: 'sch', ъ: '', ы: 'y', ь: '', э: 'e', ю: 'yu', я: 'ya'
-    };
-    return String(text || '')
-        .toLowerCase()
-        .split('')
-        .map((ch) => (Object.prototype.hasOwnProperty.call(map, ch) ? map[ch] : ch))
-        .join('');
+  const map = {
+    а: 'a',
+    б: 'b',
+    в: 'v',
+    г: 'g',
+    д: 'd',
+    е: 'e',
+    ё: 'e',
+    ж: 'zh',
+    з: 'z',
+    и: 'i',
+    й: 'y',
+    к: 'k',
+    л: 'l',
+    м: 'm',
+    н: 'n',
+    о: 'o',
+    п: 'p',
+    р: 'r',
+    с: 's',
+    т: 't',
+    у: 'u',
+    ф: 'f',
+    х: 'h',
+    ц: 'ts',
+    ч: 'ch',
+    ш: 'sh',
+    щ: 'sch',
+    ъ: '',
+    ы: 'y',
+    ь: '',
+    э: 'e',
+    ю: 'yu',
+    я: 'ya'
+  };
+  return String(text || '')
+    .toLowerCase()
+    .split('')
+    .map((ch) => (Object.prototype.hasOwnProperty.call(map, ch) ? map[ch] : ch))
+    .join('');
 }
 
 function extractEbayLegacyItemIdFromUrl(urlString) {
-    try {
-        const parsed = new URL(urlString);
-        const pathname = parsed.pathname || '';
-        const direct = pathname.match(/\/itm\/(?:[^/]+\/)?(\d+)/i);
-        if (direct?.[1]) return direct[1];
-        const alt = pathname.match(/\/(\d{9,})/);
-        if (alt?.[1]) return alt[1];
-        return parsed.searchParams.get('item') || null;
-    } catch {
-        return null;
-    }
+  try {
+    const parsed = new URL(urlString);
+    const pathname = parsed.pathname || '';
+    const direct = pathname.match(/\/itm\/(?:[^/]+\/)?(\d+)/i);
+    if (direct?.[1]) return direct[1];
+    const alt = pathname.match(/\/(\d{9,})/);
+    if (alt?.[1]) return alt[1];
+    return parsed.searchParams.get('item') || null;
+  } catch {
+    return null;
+  }
 }
 
 function mapEbayItemToUnified(item) {
-    const aspects = {};
-    const localizedAspects = Array.isArray(item?.localizedAspects) ? item.localizedAspects : [];
-    for (const aspect of localizedAspects) {
-        const key = String(aspect?.name || '').trim();
-        const vals = Array.isArray(aspect?.value) ? aspect.value : [];
-        const value = vals.filter(Boolean).join(', ').trim();
-        if (key && value) aspects[key] = value;
-    }
-    return {
-        source: 'eBay API',
-        name: item?.title || null,
-        price: coerceNumberPrice(item?.price?.value),
-        imageUrl: item?.image?.imageUrl || item?.thumbnailImages?.[0]?.imageUrl || null,
-        sourceUrl: item?.itemWebUrl || null,
-        specs: aspects
-    };
+  const aspects = {};
+  const localizedAspects = Array.isArray(item?.localizedAspects) ? item.localizedAspects : [];
+  for (const aspect of localizedAspects) {
+    const key = String(aspect?.name || '').trim();
+    const vals = Array.isArray(aspect?.value) ? aspect.value : [];
+    const value = vals.filter(Boolean).join(', ').trim();
+    if (key && value) aspects[key] = value;
+  }
+  return {
+    source: 'eBay API',
+    name: item?.title || null,
+    price: coerceNumberPrice(item?.price?.value),
+    imageUrl: item?.image?.imageUrl || item?.thumbnailImages?.[0]?.imageUrl || null,
+    sourceUrl: item?.itemWebUrl || null,
+    specs: aspects
+  };
 }
 
 async function searchEbayItems(query, limit = 5) {
-    const { token, base } = await getEbayAccessToken();
-    const response = await axios.get(`${base}/buy/browse/v1/item_summary/search`, {
-        params: {
-            q: query,
-            limit: Math.min(Math.max(parseInt(limit, 10) || 5, 1), 20),
-            filter: 'buyingOptions:{FIXED_PRICE}'
-        },
-        headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-            'X-EBAY-C-MARKETPLACE-ID': 'EBAY_US'
-        },
-        timeout: 20000
-    });
-    return Array.isArray(response?.data?.itemSummaries) ? response.data.itemSummaries : [];
+  const { token, base } = await getEbayAccessToken();
+  const response = await axios.get(`${base}/buy/browse/v1/item_summary/search`, {
+    params: {
+      q: query,
+      limit: Math.min(Math.max(parseInt(limit, 10) || 5, 1), 20),
+      filter: 'buyingOptions:{FIXED_PRICE}'
+    },
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+      'X-EBAY-C-MARKETPLACE-ID': 'EBAY_US'
+    },
+    timeout: 20000
+  });
+  return Array.isArray(response?.data?.itemSummaries) ? response.data.itemSummaries : [];
 }
 
 async function fetchEbayProductByUrlOrQuery({ url = null, query = null }) {
-    const itemId = url ? extractEbayLegacyItemIdFromUrl(url) : null;
-    const { token, base } = await getEbayAccessToken();
+  const itemId = url ? extractEbayLegacyItemIdFromUrl(url) : null;
+  const { token, base } = await getEbayAccessToken();
 
-    if (itemId) {
-        const detailResp = await axios.get(`${base}/buy/browse/v1/item/get_item_by_legacy_id`, {
-            params: { legacy_item_id: itemId },
-            headers: {
-                Authorization: `Bearer ${token}`,
-                'Content-Type': 'application/json',
-                'X-EBAY-C-MARKETPLACE-ID': 'EBAY_US'
-            },
-            timeout: 20000
-        });
-        return mapEbayItemToUnified(detailResp.data || {});
-    }
+  if (itemId) {
+    const detailResp = await axios.get(`${base}/buy/browse/v1/item/get_item_by_legacy_id`, {
+      params: { legacy_item_id: itemId },
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+        'X-EBAY-C-MARKETPLACE-ID': 'EBAY_US'
+      },
+      timeout: 20000
+    });
+    return mapEbayItemToUnified(detailResp.data || {});
+  }
 
-    if (!query || !String(query).trim()) {
-        throw new Error('Для eBay не удалось извлечь item_id из URL и не передан query.');
-    }
+  if (!query || !String(query).trim()) {
+    throw new Error('Для eBay не удалось извлечь item_id из URL и не передан query.');
+  }
 
-    const found = await searchEbayItems(String(query).trim(), 1);
-    const first = found[0];
-    if (!first) {
-        throw new Error('eBay не вернул результатов по запросу.');
-    }
+  const found = await searchEbayItems(String(query).trim(), 1);
+  const first = found[0];
+  if (!first) {
+    throw new Error('eBay не вернул результатов по запросу.');
+  }
 
-    return {
-        source: 'eBay API',
-        name: first.title || null,
-        price: convertToRub(first?.price?.value, first?.price?.currency || 'USD'),
-        imageUrl: first?.image?.imageUrl || null,
-        sourceUrl: first?.itemWebUrl || url || null,
-        specs: {}
-    };
+  return {
+    source: 'eBay API',
+    name: first.title || null,
+    price: convertToRub(first?.price?.value, first?.price?.currency || 'USD'),
+    imageUrl: first?.image?.imageUrl || null,
+    sourceUrl: first?.itemWebUrl || url || null,
+    specs: {}
+  };
 }
 
 function buildPricesApiHeaderVariants() {
-    const k = String(PRICESAPI_KEY || '').trim();
-    const variants = [{ 'x-api-key': k }];
-    variants.push({ Authorization: `Bearer ${k}` });
-    return variants;
+  const k = String(PRICESAPI_KEY || '').trim();
+  const variants = [{ 'x-api-key': k }];
+  variants.push({ Authorization: `Bearer ${k}` });
+  return variants;
 }
 
 async function requestPricesApiGet(pathname, params, timeoutMs) {
-    let lastErr = null;
-    for (const headers of buildPricesApiHeaderVariants()) {
-        try {
-            return await axios.get(`${PRICESAPI_BASE}${pathname}`, {
-                params,
-                headers,
-                timeout: timeoutMs
-            });
-        } catch (e) {
-            lastErr = e;
-            const code = e?.response?.data?.error?.code || '';
-            const message = String(e?.response?.data?.error?.message || '');
-            const authIssue = code === 'VALIDATION_ERROR' || /api key/i.test(message);
-            if (!authIssue) break;
-        }
+  let lastErr = null;
+  for (const headers of buildPricesApiHeaderVariants()) {
+    try {
+      return await axios.get(`${PRICESAPI_BASE}${pathname}`, {
+        params,
+        headers,
+        timeout: timeoutMs
+      });
+    } catch (e) {
+      lastErr = e;
+      const code = e?.response?.data?.error?.code || '';
+      const message = String(e?.response?.data?.error?.message || '');
+      const authIssue = code === 'VALIDATION_ERROR' || /api key/i.test(message);
+      if (!authIssue) break;
     }
-    throw lastErr;
+  }
+  throw lastErr;
 }
 
 async function searchProductsInPricesApi(query, country = PRICESAPI_DEFAULT_COUNTRY, limit = 5) {
-    if (!PRICESAPI_KEY) {
-        throw new Error('PRICESAPI_KEY не задан в .env');
+  if (!PRICESAPI_KEY) {
+    throw new Error('PRICESAPI_KEY не задан в .env');
+  }
+  try {
+    const requestParams = {
+      q: query,
+      country,
+      limit: Math.min(Math.max(parseInt(limit, 10) || 5, 1), 10)
+    };
+    const response = await requestPricesApiGet('/products/search', requestParams, 30000);
+    const ok = !!response?.data?.success;
+    if (!ok) {
+      const msg = response?.data?.error?.message || response?.data?.message || 'unknown';
+      throw new Error(`PricesAPI search: not success. ${msg}`);
     }
-    try {
-        const requestParams = {
-            q: query,
-            country,
-            limit: Math.min(Math.max(parseInt(limit, 10) || 5, 1), 10)
-        };
-        const response = await requestPricesApiGet('/products/search', requestParams, 30000);
-        const ok = !!response?.data?.success;
-        if (!ok) {
-            const msg = response?.data?.error?.message || response?.data?.message || 'unknown';
-            throw new Error(`PricesAPI search: not success. ${msg}`);
-        }
-        return Array.isArray(response.data?.data?.results) ? response.data.data.results : [];
-    } catch (err) {
-        const status = err.response?.status;
-        const data = err.response?.data;
-        const code = data?.error?.code || null;
-        const supported = Array.isArray(data?.error?.supported) ? data.error.supported : null;
-        console.error('[PricesAPI search] ERROR', {
-            status,
-            country,
-            query: query ? String(query).slice(0, 120) : null,
-            code,
-            supported,
-            data
-        });
+    return Array.isArray(response.data?.data?.results) ? response.data.data.results : [];
+  } catch (err) {
+    const status = err.response?.status;
+    const data = err.response?.data;
+    const code = data?.error?.code || null;
+    const supported = Array.isArray(data?.error?.supported) ? data.error.supported : null;
+    console.error('[PricesAPI search] ERROR', {
+      status,
+      country,
+      query: query ? String(query).slice(0, 120) : null,
+      code,
+      supported,
+      data
+    });
 
-        if (status === 404 && code === 'SEARCH_EMPTY') {
-            console.warn('[PricesAPI search] No results for query:', query ? String(query).slice(0, 120) : null);
-            return [];
-        }
-
-        
-        if (status === 400 && code === 'COUNTRY_NOT_SUPPORTED') {
-            const preferences = ['us', 'de', 'gb', 'pl', 'fr'];
-            const supportedLower = (supported || []).map((c) => String(c).toLowerCase());
-            const pick =
-                supportedLower.find((c) => c === PRICESAPI_DEFAULT_COUNTRY) ||
-                preferences.find((p) => supportedLower.includes(p)) ||
-                supportedLower[0] ||
-                'us';
-
-            console.warn('[PricesAPI search] Retry with supported country:', pick);
-            const response2 = await requestPricesApiGet('/products/search', {
-                q: query,
-                country: pick,
-                limit: Math.min(Math.max(parseInt(limit, 10) || 5, 1), 10)
-            }, 30000);
-            if (response2?.data?.success) {
-                return Array.isArray(response2.data?.data?.results) ? response2.data.data.results : [];
-            }
-        }
-
-        throw err;
+    if (status === 404 && code === 'SEARCH_EMPTY') {
+      console.warn('[PricesAPI search] No results for query:', query ? String(query).slice(0, 120) : null);
+      return [];
     }
+
+    if (status === 400 && code === 'COUNTRY_NOT_SUPPORTED') {
+      const preferences = ['us', 'de', 'gb', 'pl', 'fr'];
+      const supportedLower = (supported || []).map((c) => String(c).toLowerCase());
+      const pick =
+        supportedLower.find((c) => c === PRICESAPI_DEFAULT_COUNTRY) ||
+        preferences.find((p) => supportedLower.includes(p)) ||
+        supportedLower[0] ||
+        'us';
+
+      console.warn('[PricesAPI search] Retry with supported country:', pick);
+      const response2 = await requestPricesApiGet(
+        '/products/search',
+        {
+          q: query,
+          country: pick,
+          limit: Math.min(Math.max(parseInt(limit, 10) || 5, 1), 10)
+        },
+        30000
+      );
+      if (response2?.data?.success) {
+        return Array.isArray(response2.data?.data?.results) ? response2.data.data.results : [];
+      }
+    }
+
+    throw err;
+  }
 }
 
 async function fetchPricesApiOffers(productId, country = PRICESAPI_DEFAULT_COUNTRY) {
-    if (!PRICESAPI_KEY) {
-        throw new Error('PRICESAPI_KEY не задан в .env');
+  if (!PRICESAPI_KEY) {
+    throw new Error('PRICESAPI_KEY не задан в .env');
+  }
+  try {
+    const response = await requestPricesApiGet(`/products/${productId}/offers`, { country }, 60000);
+    if (!response?.data?.success) {
+      const msg = response?.data?.error?.message || response?.data?.message || 'unknown';
+      throw new Error(`PricesAPI offers: not success. ${msg}`);
     }
-    try {
-        const response = await requestPricesApiGet(`/products/${productId}/offers`, { country }, 60000);
-        if (!response?.data?.success) {
-            const msg = response?.data?.error?.message || response?.data?.message || 'unknown';
-            throw new Error(`PricesAPI offers: not success. ${msg}`);
-        }
-        return Array.isArray(response.data?.data?.offers) ? response.data.data.offers : [];
-    } catch (err) {
-        const status = err.response?.status;
-        const data = err.response?.data;
-        const code = data?.error?.code || null;
-        const supported = Array.isArray(data?.error?.supported) ? data.error.supported : null;
-        console.error('[PricesAPI offers] ERROR', {
-            status,
-            country,
-            productId,
-            code,
-            supported,
-            data
-        });
+    return Array.isArray(response.data?.data?.offers) ? response.data.data.offers : [];
+  } catch (err) {
+    const status = err.response?.status;
+    const data = err.response?.data;
+    const code = data?.error?.code || null;
+    const supported = Array.isArray(data?.error?.supported) ? data.error.supported : null;
+    console.error('[PricesAPI offers] ERROR', {
+      status,
+      country,
+      productId,
+      code,
+      supported,
+      data
+    });
 
-        if (status === 400 && code === 'COUNTRY_NOT_SUPPORTED') {
-            const preferences = ['us', 'de', 'gb', 'pl', 'fr'];
-            const supportedLower = (supported || []).map((c) => String(c).toLowerCase());
-            const pick =
-                supportedLower.find((c) => c === PRICESAPI_DEFAULT_COUNTRY) ||
-                preferences.find((p) => supportedLower.includes(p)) ||
-                supportedLower[0] ||
-                'us';
+    if (status === 400 && code === 'COUNTRY_NOT_SUPPORTED') {
+      const preferences = ['us', 'de', 'gb', 'pl', 'fr'];
+      const supportedLower = (supported || []).map((c) => String(c).toLowerCase());
+      const pick =
+        supportedLower.find((c) => c === PRICESAPI_DEFAULT_COUNTRY) ||
+        preferences.find((p) => supportedLower.includes(p)) ||
+        supportedLower[0] ||
+        'us';
 
-            console.warn('[PricesAPI offers] Retry with supported country:', pick);
-            const response2 = await requestPricesApiGet(`/products/${productId}/offers`, { country: pick }, 60000);
-            if (response2?.data?.success) {
-                return Array.isArray(response2.data?.data?.offers) ? response2.data.data.offers : [];
-            }
-        }
-
-        throw err;
+      console.warn('[PricesAPI offers] Retry with supported country:', pick);
+      const response2 = await requestPricesApiGet(`/products/${productId}/offers`, { country: pick }, 60000);
+      if (response2?.data?.success) {
+        return Array.isArray(response2.data?.data?.offers) ? response2.data.data.offers : [];
+      }
     }
+
+    throw err;
+  }
 }
 
 function mapPricesApiOffersToUnified(offers = []) {
-    const list = Array.isArray(offers) ? offers : [];
-    return list
-        .map((o) => {
-            const priceRub = convertToRub(o.price, o.currency || 'RUB');
-            return {
-                storeName: o.merchant || o.store || o.source || 'PricesAPI',
-                sellerName: o.seller || o.merchant || null,
-                priceRub,
-                url: o.url || o.link || '',
-                source: 'PricesAPI.io',
-                originalPrice: coerceNumberPrice(o.price),
-                originalCurrency: normalizeCurrencyCode(o.currency || 'RUB'),
-                storeSignals: extractStoreSignalsFromOffer(o)
-            };
-        })
-        .filter((o) => o.priceRub != null);
+  const list = Array.isArray(offers) ? offers : [];
+  return list
+    .map((o) => {
+      const priceRub = convertToRub(o.price, o.currency || 'RUB');
+      return {
+        storeName: o.merchant || o.store || o.source || 'PricesAPI',
+        sellerName: o.seller || o.merchant || null,
+        priceRub,
+        url: o.url || o.link || '',
+        source: 'PricesAPI.io',
+        originalPrice: coerceNumberPrice(o.price),
+        originalCurrency: normalizeCurrencyCode(o.currency || 'RUB'),
+        storeSignals: extractStoreSignalsFromOffer(o)
+      };
+    })
+    .filter((o) => o.priceRub != null);
 }
 
 function pickBestPricesApiOffer(offers, requestedUrl = null) {
-    const list = Array.isArray(offers) ? offers : [];
-    const requestedNorm = requestedUrl ? normalizeComparableUrl(requestedUrl) : null;
-    if (!list.length) return null;
+  const list = Array.isArray(offers) ? offers : [];
+  const requestedNorm = requestedUrl ? normalizeComparableUrl(requestedUrl) : null;
+  if (!list.length) return null;
 
-    if (requestedNorm) {
-        const exact = list.find((o) => normalizeComparableUrl(o.url || o.link || '') === requestedNorm);
-        if (exact) return exact;
-    }
-    const withPrice = list
-        .map((o) => ({ raw: o, p: coerceNumberPrice(o.price) }))
-        .filter((x) => x.p != null)
-        .sort((a, b) => a.p - b.p);
-    return withPrice.length ? withPrice[0].raw : list[0];
+  if (requestedNorm) {
+    const exact = list.find((o) => normalizeComparableUrl(o.url || o.link || '') === requestedNorm);
+    if (exact) return exact;
+  }
+  const withPrice = list
+    .map((o) => ({ raw: o, p: coerceNumberPrice(o.price) }))
+    .filter((x) => x.p != null)
+    .sort((a, b) => a.p - b.p);
+  return withPrice.length ? withPrice[0].raw : list[0];
 }
 
 async function fetchPricesApiProductByUrlOrQuery({ url = null, query = null, country = PRICESAPI_DEFAULT_COUNTRY }) {
-    const normalizeQuery = (q) => String(q || '')
-        .replace(/\([^)]*\)/g, ' ')
-        .replace(/\+/g, ' ')
-        .replace(/[^\p{L}\p{N}\s-]/gu, ' ')
-        .replace(/\s+/g, ' ')
-        .trim();
-    const queries = [];
-    if (url && String(url).trim()) queries.push(String(url).trim());
-    if (query && String(query).trim()) {
-        const raw = String(query).trim();
-        const cleaned = normalizeQuery(raw);
-        const transliterated = transliterateRuToLat(cleaned || raw);
-        const compactModel = (cleaned || raw)
-            .split(' ')
-            .filter((part) => part.length > 1)
-            .slice(0, 5)
-            .join(' ');
-        queries.push(raw);
-        if (cleaned && cleaned !== raw) queries.push(cleaned);
-        if (transliterated && transliterated !== cleaned && transliterated !== raw) queries.push(transliterated);
-        if (compactModel && compactModel !== raw && compactModel !== cleaned) queries.push(compactModel);
-    }
-    const uniqueQueries = Array.from(new Set(queries.filter(Boolean)));
-    if (!uniqueQueries.length) {
-        throw new Error('Для PricesAPI требуется URL или query.');
-    }
+  const normalizeQuery = (q) =>
+    String(q || '')
+      .replace(/\([^)]*\)/g, ' ')
+      .replace(/\+/g, ' ')
+      .replace(/[^\p{L}\p{N}\s-]/gu, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  const queries = [];
+  if (url && String(url).trim()) queries.push(String(url).trim());
+  if (query && String(query).trim()) {
+    const raw = String(query).trim();
+    const cleaned = normalizeQuery(raw);
+    const transliterated = transliterateRuToLat(cleaned || raw);
+    const compactModel = (cleaned || raw)
+      .split(' ')
+      .filter((part) => part.length > 1)
+      .slice(0, 5)
+      .join(' ');
+    queries.push(raw);
+    if (cleaned && cleaned !== raw) queries.push(cleaned);
+    if (transliterated && transliterated !== cleaned && transliterated !== raw) queries.push(transliterated);
+    if (compactModel && compactModel !== raw && compactModel !== cleaned) queries.push(compactModel);
+  }
+  const uniqueQueries = Array.from(new Set(queries.filter(Boolean)));
+  if (!uniqueQueries.length) {
+    throw new Error('Для PricesAPI требуется URL или query.');
+  }
 
-    let product = null;
-    const countryCandidates = Array.from(new Set([country, PRICESAPI_DEFAULT_COUNTRY, ...PRICESAPI_FALLBACK_COUNTRIES].filter(Boolean)));
-    for (const candidateQuery of uniqueQueries) {
-        for (const countryCode of countryCandidates) {
-            const results = await searchProductsInPricesApi(candidateQuery, countryCode, 5);
-            product = results[0] || null;
-            if (product?.id) {
-                console.log('[PricesAPI] matched query candidate:', candidateQuery.slice(0, 120), 'country:', countryCode);
-                country = countryCode;
-                break;
-            }
-        }
-        if (product?.id) break;
+  let product = null;
+  const countryCandidates = Array.from(
+    new Set([country, PRICESAPI_DEFAULT_COUNTRY, ...PRICESAPI_FALLBACK_COUNTRIES].filter(Boolean))
+  );
+  for (const candidateQuery of uniqueQueries) {
+    for (const countryCode of countryCandidates) {
+      const results = await searchProductsInPricesApi(candidateQuery, countryCode, 5);
+      product = results[0] || null;
+      if (product?.id) {
+        console.log('[PricesAPI] matched query candidate:', candidateQuery.slice(0, 120), 'country:', countryCode);
+        country = countryCode;
+        break;
+      }
     }
-    if (!product?.id) {
-        throw new Error('PricesAPI не вернул подходящий товар (SEARCH_EMPTY).');
-    }
-    const offers = await fetchPricesApiOffers(product.id, country);
-    const bestOffer = pickBestPricesApiOffer(offers, url);
-    return {
-        source: 'PricesAPI.io',
-        name: product.title || null,
-        price: convertToRub(bestOffer?.price, bestOffer?.currency || 'RUB'),
-        imageUrl: product.image || null,
-        sourceUrl: bestOffer?.url || bestOffer?.link || null,
-        specs: {},
-        priceStoreName: bestOffer?.merchant || bestOffer?.store || bestOffer?.source || 'PricesAPI',
-        sellerName: bestOffer?.merchant || bestOffer?.seller || null,
-        priceSource: 'PricesAPI.io'
-    };
+    if (product?.id) break;
+  }
+  if (!product?.id) {
+    throw new Error('PricesAPI не вернул подходящий товар (SEARCH_EMPTY).');
+  }
+  const offers = await fetchPricesApiOffers(product.id, country);
+  const bestOffer = pickBestPricesApiOffer(offers, url);
+  return {
+    source: 'PricesAPI.io',
+    name: product.title || null,
+    price: convertToRub(bestOffer?.price, bestOffer?.currency || 'RUB'),
+    imageUrl: product.image || null,
+    sourceUrl: bestOffer?.url || bestOffer?.link || null,
+    specs: {},
+    priceStoreName: bestOffer?.merchant || bestOffer?.store || bestOffer?.source || 'PricesAPI',
+    sellerName: bestOffer?.merchant || bestOffer?.seller || null,
+    priceSource: 'PricesAPI.io'
+  };
 }
 
 async function collectApiOffersForProduct({ productName, sourceUrl = null, country = PRICESAPI_DEFAULT_COUNTRY }) {
-    const rows = [];
+  const rows = [];
 
-    if (sourceUrl) {
-        try {
-            const u = new URL(sourceUrl);
-            const host = String(u.hostname || '').toLowerCase();
-            if (host.includes('wildberries.ru') || host.includes('wb.ru') || host.includes('market.yandex.ru') || host.includes('yandex.ru')) {
-                const api = await fetchPriceFromApiSystemsByUrl(sourceUrl);
-                if (api?.price != null) {
-                    const storeName = host.includes('wildberries.ru') || host.includes('wb.ru') ? 'Wildberries' : 'Yandex Market';
-                    rows.push({
-                        storeName,
-                        sellerName: null,
-                        price: coerceNumberPrice(api.price),
-                        url: sourceUrl,
-                        source: 'API Systems',
-                        parsedName: api.parsedName || null,
-                        storeSignals: { rating: null, reviewsCount: null, stock: null }
-                    });
-                }
-            }
-        } catch {
-            
+  if (sourceUrl) {
+    try {
+      const u = new URL(sourceUrl);
+      const host = String(u.hostname || '').toLowerCase();
+      if (
+        host.includes('wildberries.ru') ||
+        host.includes('wb.ru') ||
+        host.includes('market.yandex.ru') ||
+        host.includes('yandex.ru')
+      ) {
+        const api = await fetchPriceFromApiSystemsByUrl(sourceUrl);
+        if (api?.price != null) {
+          const storeName = host.includes('wildberries.ru') || host.includes('wb.ru') ? 'Wildberries' : 'Yandex Market';
+          rows.push({
+            storeName,
+            sellerName: null,
+            price: coerceNumberPrice(api.price),
+            url: sourceUrl,
+            source: 'API Systems',
+            parsedName: api.parsedName || null,
+            storeSignals: { rating: null, reviewsCount: null, stock: null }
+          });
         }
-    }
+      }
+    } catch {}
+  }
 
-    if (productName && EBAY_CLIENT_ID && EBAY_CLIENT_SECRET) {
-        try {
-            const ebayItems = await searchEbayItems(productName, 3);
-            const best = ebayItems
-                .map((item) => ({
-                    item,
-                    rub: convertToRub(item?.price?.value, item?.price?.currency || 'USD')
-                }))
-                .filter((x) => x.rub != null)
-                .sort((a, b) => a.rub - b.rub)[0];
-            if (best) {
-                const sellerRatingPct = Number(best.item?.seller?.feedbackPercentage ?? NaN);
-                const sellerRating5 = Number.isFinite(sellerRatingPct) ? Math.max(0, Math.min(5, sellerRatingPct / 20)) : null;
-                const sellerReviews = Number(best.item?.seller?.feedbackScore ?? NaN);
-                const stockCount = Number(best.item?.estimatedAvailabilities?.[0]?.estimatedAvailableQuantity ?? NaN);
-                rows.push({
-                    storeName: 'eBay',
-                    sellerName: best.item?.seller?.username || null,
-                    price: best.rub,
-                    url: best.item?.itemWebUrl || '',
-                    source: 'eBay API',
-                    parsedName: best.item?.title || null,
-                    storeSignals: {
-                        rating: Number.isFinite(sellerRating5) ? sellerRating5 : null,
-                        reviewsCount: Number.isFinite(sellerReviews) ? Math.round(sellerReviews) : null,
-                        stock: Number.isFinite(stockCount) ? Math.round(stockCount) : null
-                    }
-                });
-            }
-        } catch (e) {
-            console.warn('[PRICE SYNC] eBay API by name:', e.message);
+  if (productName && EBAY_CLIENT_ID && EBAY_CLIENT_SECRET) {
+    try {
+      const ebayItems = await searchEbayItems(productName, 3);
+      const best = ebayItems
+        .map((item) => ({
+          item,
+          rub: convertToRub(item?.price?.value, item?.price?.currency || 'USD')
+        }))
+        .filter((x) => x.rub != null)
+        .sort((a, b) => a.rub - b.rub)[0];
+      if (best) {
+        const sellerRatingPct = Number(best.item?.seller?.feedbackPercentage ?? NaN);
+        const sellerRating5 = Number.isFinite(sellerRatingPct) ? Math.max(0, Math.min(5, sellerRatingPct / 20)) : null;
+        const sellerReviews = Number(best.item?.seller?.feedbackScore ?? NaN);
+        const stockCount = Number(best.item?.estimatedAvailabilities?.[0]?.estimatedAvailableQuantity ?? NaN);
+        rows.push({
+          storeName: 'eBay',
+          sellerName: best.item?.seller?.username || null,
+          price: best.rub,
+          url: best.item?.itemWebUrl || '',
+          source: 'eBay API',
+          parsedName: best.item?.title || null,
+          storeSignals: {
+            rating: Number.isFinite(sellerRating5) ? sellerRating5 : null,
+            reviewsCount: Number.isFinite(sellerReviews) ? Math.round(sellerReviews) : null,
+            stock: Number.isFinite(stockCount) ? Math.round(stockCount) : null
+          }
+        });
+      }
+    } catch (e) {
+      console.warn('[PRICE SYNC] eBay API by name:', e.message);
+    }
+  }
+
+  if (PRICESAPI_KEY && (productName || sourceUrl)) {
+    try {
+      const searchQuery = productName || sourceUrl;
+      const pricesCountry = country || PRICESAPI_DEFAULT_COUNTRY;
+      const products = await searchProductsInPricesApi(searchQuery, pricesCountry, 1);
+      const first = products[0];
+      if (first?.id) {
+        const offers = await fetchPricesApiOffers(first.id, pricesCountry);
+        const mapped = mapPricesApiOffersToUnified(offers);
+        console.log('[PricesAPI by name] ', {
+          searchQuery: searchQuery ? String(searchQuery).slice(0, 80) : null,
+          country: pricesCountry,
+          productId: first.id,
+          offersCount: Array.isArray(offers) ? offers.length : 0,
+          mappedCount: Array.isArray(mapped) ? mapped.length : 0
+        });
+        for (const offer of mapped) {
+          rows.push({
+            storeName: offer.storeName,
+            sellerName: offer.sellerName || null,
+            price: offer.priceRub,
+            url: offer.url,
+            source: offer.source,
+            parsedName: first.title || productName || null,
+            storeSignals: offer.storeSignals || { rating: null, reviewsCount: null, stock: null }
+          });
         }
+      }
+    } catch (e) {
+      console.warn('[PRICE SYNC] PricesAPI by name/url:', e.message);
     }
+  }
 
-    if (PRICESAPI_KEY && (productName || sourceUrl)) {
-        try {
-            const searchQuery = productName || sourceUrl;
-            const pricesCountry = country || PRICESAPI_DEFAULT_COUNTRY;
-            const products = await searchProductsInPricesApi(searchQuery, pricesCountry, 1);
-            const first = products[0];
-            if (first?.id) {
-                const offers = await fetchPricesApiOffers(first.id, pricesCountry);
-                const mapped = mapPricesApiOffersToUnified(offers);
-                console.log('[PricesAPI by name] ', {
-                    searchQuery: searchQuery ? String(searchQuery).slice(0, 80) : null,
-                    country: pricesCountry,
-                    productId: first.id,
-                    offersCount: Array.isArray(offers) ? offers.length : 0,
-                    mappedCount: Array.isArray(mapped) ? mapped.length : 0
-                });
-                for (const offer of mapped) {
-                    rows.push({
-                        storeName: offer.storeName,
-                        sellerName: offer.sellerName || null,
-                        price: offer.priceRub,
-                        url: offer.url,
-                        source: offer.source,
-                        parsedName: first.title || productName || null,
-                        storeSignals: offer.storeSignals || { rating: null, reviewsCount: null, stock: null }
-                    });
-                }
-            }
-        } catch (e) {
-            console.warn('[PRICE SYNC] PricesAPI by name/url:', e.message);
-        }
-    }
-
-    const dedup = new Map();
-    for (const row of rows) {
-        const key = `${String(row.storeName || '').toLowerCase()}::${String(row.sellerName || '').toLowerCase()}::${normalizeComparableUrl(row.url || '') || ''}`;
-        if (!dedup.has(key)) dedup.set(key, row);
-    }
-    return Array.from(dedup.values());
+  const dedup = new Map();
+  for (const row of rows) {
+    const key = `${String(row.storeName || '').toLowerCase()}::${String(row.sellerName || '').toLowerCase()}::${normalizeComparableUrl(row.url || '') || ''}`;
+    if (!dedup.has(key)) dedup.set(key, row);
+  }
+  return Array.from(dedup.values());
 }
-
 
 async function fetchParsedPriceForStoreUrl(url, proxy = null, context = {}) {
   if (!url || typeof url !== 'string') {
@@ -6105,7 +6606,10 @@ async function fetchParsedPriceForStoreUrl(url, proxy = null, context = {}) {
       storeSignals: { rating: null, reviewsCount: null, stock: null }
     });
   }
-  if (host.includes('market.yandex.ru') || (host.includes('yandex.ru') && (parsedUrl.pathname.includes('/card/') || parsedUrl.pathname.includes('/product--')))) {
+  if (
+    host.includes('market.yandex.ru') ||
+    (host.includes('yandex.ru') && (parsedUrl.pathname.includes('/card/') || parsedUrl.pathname.includes('/product--')))
+  ) {
     let parsedName = null;
     let price = null;
     let sellerName = null;
@@ -6119,7 +6623,6 @@ async function fetchParsedPriceForStoreUrl(url, proxy = null, context = {}) {
       console.warn('[PRICE SYNC] API Systems (Я.М):', e.message);
     }
 
-  
     if (price == null) {
       try {
         const htmlPrice = await extractPriceFromYandexMarket(trimmed);
@@ -6204,7 +6707,6 @@ async function collectPriceSyncResults(options = {}) {
   let processed = 0;
 
   outer: for (const product of products) {
-
     for (const priceRow of product.prices) {
       if (processed >= maxStores) break outer;
 
@@ -6346,15 +6848,10 @@ async function applyPriceSyncResults(resultRows) {
     const signalSeller = row.sellerName || priceRow?.sellerName || null;
     upsertStoreSignalsItem(row.productId, signalStore, signalSeller, signals, { mergeWithExisting: true });
 
-    const hasSignals =
-      signals &&
-      (signals.rating != null || signals.reviewsCount != null || signals.stock != null);
+    const hasSignals = signals && (signals.rating != null || signals.reviewsCount != null || signals.stock != null);
 
     const oldPriceNum = row.oldPrice != null ? Number(row.oldPrice) : null;
-    const dropPct =
-      oldPriceNum && oldPriceNum > 0
-        ? ((oldPriceNum - newPrice) / oldPriceNum) * 100
-        : 0;
+    const dropPct = oldPriceNum && oldPriceNum > 0 ? ((oldPriceNum - newPrice) / oldPriceNum) * 100 : 0;
     const lowStock = hasSignals && signals?.stock != null && Number(signals.stock) >= 0 && Number(signals.stock) < 10;
     if (dropPct > 5 || lowStock) {
       const favUsers = await prisma.favorite.findMany({
@@ -6565,7 +7062,6 @@ app.post('/api/admin/fetch-price-from-url', authenticateToken, requireAdminRole,
   }
 });
 
-
 async function parseProductWithGPT(url, htmlContent = null) {
   console.log(`[GPT] Запрашиваем информацию о товаре через GPT для URL: ${url}`);
 
@@ -6586,27 +7082,28 @@ async function parseProductWithGPT(url, htmlContent = null) {
   `;
 
   try {
-   
     const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini", //Используем новую модель
+      model: 'gpt-4o-mini', //Используем новую модель
       messages: [
-        { "role": "system", "content": "Ты помощник по извлечению структурированной информации о товаре из интернет-магазина." },
-        { "role": "user", "content": prompt }
+        {
+          role: 'system',
+          content: 'Ты помощник по извлечению структурированной информации о товаре из интернет-магазина.'
+        },
+        { role: 'user', content: prompt }
       ],
-      temperature: 0, 
-      max_tokens: 1000, //Ограничиваем длину ответа
+      temperature: 0,
+      max_tokens: 1000 //Ограничиваем длину ответа
     });
-    
 
-    const responseContent = completion.choices[0].message.content.trim(); 
+    const responseContent = completion.choices[0].message.content.trim();
     console.log(`[GPT] Raw response: ${responseContent}`);
 
     let cleanedResponse = responseContent.replace(/```json\s*([\s\S]*?)\s*```/g, '$1').trim();
     if (cleanedResponse.startsWith('```')) {
-        cleanedResponse = cleanedResponse.substring(3).trim();
+      cleanedResponse = cleanedResponse.substring(3).trim();
     }
     if (cleanedResponse.endsWith('```')) {
-        cleanedResponse = cleanedResponse.substring(0, cleanedResponse.length - 3).trim();
+      cleanedResponse = cleanedResponse.substring(0, cleanedResponse.length - 3).trim();
     }
 
     const parsedData = JSON.parse(cleanedResponse);
@@ -6619,17 +7116,16 @@ async function parseProductWithGPT(url, htmlContent = null) {
         price: parsedData.price ? parseFloat(parsedData.price) : null,
         imageUrl: null,
         sourceUrl: url,
-        specs: parsedData.specs || {},
+        specs: parsedData.specs || {}
       };
     } else {
       console.error('[GPT] Ответ не является объектом:', parsedData);
       return null;
     }
-
   } catch (error) {
     console.error('[GPT] Ошибка при вызове API или парсинге ответа:', error.message);
-    if (error.response) { 
-      console.error('[GPT] Статус ошибки API (если есть):', error.status); 
+    if (error.response) {
+      console.error('[GPT] Статус ошибки API (если есть):', error.status);
       console.error('[GPT] Данные ошибки (если есть):', error.message);
     }
     return null;
@@ -6637,202 +7133,243 @@ async function parseProductWithGPT(url, htmlContent = null) {
 }
 
 app.post('/api/admin/parse-product', authenticateToken, requireAdminRole, async (req, res) => {
-    const body = req.body || {};
-    const { url, category, proxy, query, productName, parseName, name, title } = body;
-    const fallbackQuery = [query, productName, parseName, name, title].find((v) => typeof v === 'string' && v.trim()) || null;
-    if (!url && !fallbackQuery) return res.status(400).json({ error: 'Укажите URL товара или query (название).' });
+  const body = req.body || {};
+  const { url, category, proxy, query, productName, parseName, name, title } = body;
+  const fallbackQuery =
+    [query, productName, parseName, name, title].find((v) => typeof v === 'string' && v.trim()) || null;
+  if (!url && !fallbackQuery) return res.status(400).json({ error: 'Укажите URL товара или query (название).' });
 
-    let parsedUrl = null;
-    if (url) {
-        try { parsedUrl = new URL(url); } catch (e) { return res.status(400).json({ error: 'Неверный формат URL.' }); }
+  let parsedUrl = null;
+  if (url) {
+    try {
+      parsedUrl = new URL(url);
+    } catch (e) {
+      return res.status(400).json({ error: 'Неверный формат URL.' });
     }
+  }
 
-    const host = parsedUrl?.hostname?.toLowerCase() || '';
-    const isYm =
-      !!host && (host.includes('market.yandex.ru') ||
+  const host = parsedUrl?.hostname?.toLowerCase() || '';
+  const isYm =
+    !!host &&
+    (host.includes('market.yandex.ru') ||
       (host.includes('yandex.ru') &&
         (parsedUrl.pathname.includes('/card/') || parsedUrl.pathname.includes('/product--'))));
-    const isWb = !!host && (host.includes('wildberries.ru') || host.includes('wb.ru'));
-    const isEbay = !!host && host.includes('ebay.');
+  const isWb = !!host && (host.includes('wildberries.ru') || host.includes('wb.ru'));
+  const isEbay = !!host && host.includes('ebay.');
 
-    console.log(`  Парсинг карточки: url=${url || 'N/A'}, query=${fallbackQuery || 'N/A'}`);
+  console.log(`  Парсинг карточки: url=${url || 'N/A'}, query=${fallbackQuery || 'N/A'}`);
 
-    try {
-        let parsedData;
+  try {
+    let parsedData;
 
-        if (isYm || isWb) {
-            const modelInfo = extractModelIdFromUrl(url);
-            if (!modelInfo?.id) {
-                return res.status(400).json({ error: 'Не удалось извлечь ID модели из ссылки.' });
-            }
-            const { id: modelId, source } = modelInfo;
-            console.log(`  API Systems: modelId=${modelId}, источник=${source}`);
+    if (isYm || isWb) {
+      const modelInfo = extractModelIdFromUrl(url);
+      if (!modelInfo?.id) {
+        return res.status(400).json({ error: 'Не удалось извлечь ID модели из ссылки.' });
+      }
+      const { id: modelId, source } = modelInfo;
+      console.log(`  API Systems: modelId=${modelId}, источник=${source}`);
 
-            parsedData = await fetchProductSpecsFromApiSystems(modelId, source);
-            parsedData.category = category || null;
-            parsedData.sourceUrl = parsedData.sourceUrl || url;
+      parsedData = await fetchProductSpecsFromApiSystems(modelId, source);
+      parsedData.category = category || null;
+      parsedData.sourceUrl = parsedData.sourceUrl || url;
 
-            let marketPrice = coerceApiSystemsPrice(parsedData.price);
-            if (source === 'yandex_market') {
-                parsedData.priceStoreName = 'Yandex Market';
-                if (marketPrice != null) {
-                    parsedData.priceSource = 'Яндекс Маркет (API Systems)';
-                }
-            } else if (source === 'wildberries') {
-                parsedData.priceStoreName = 'Wildberries';
-                if (marketPrice == null) {
-                    try {
-                        const wbOfferPrice = await fetchPriceFromApiSystemsByUrl(url);
-                        marketPrice = wbOfferPrice.price;
-                    } catch (wbErr) {
-                        console.warn(' Не удалось получить цену WB через offers:', wbErr.message);
-                    }
-                }
-                parsedData.priceSource = marketPrice != null ? 'Wildberries (API Systems offers)' : null;
-            }
-            parsedData.price = marketPrice;
-            if (marketPrice) {
-                console.log(`  Цена: ${marketPrice} ₽ (${parsedData.priceSource || 'источник не указан'})`);
-            }
-        } else if (isEbay) {
-            parsedData = await fetchEbayProductByUrlOrQuery({
-                url: url || null,
-                query: fallbackQuery || null
-            });
-            parsedData.category = category || null;
-            parsedData.sourceUrl = parsedData.sourceUrl || url || null;
-            parsedData.priceStoreName = 'eBay';
-            parsedData.priceSource = parsedData.price != null ? 'eBay API' : null;
-        } else {
-            parsedData = await fetchPricesApiProductByUrlOrQuery({
-                url: url || null,
-                query: fallbackQuery || null,
-                country: PRICESAPI_DEFAULT_COUNTRY
-            });
-            parsedData.category = category || null;
-            parsedData.sourceUrl = parsedData.sourceUrl || url || null;
+      let marketPrice = coerceApiSystemsPrice(parsedData.price);
+      if (source === 'yandex_market') {
+        parsedData.priceStoreName = 'Yandex Market';
+        if (marketPrice != null) {
+          parsedData.priceSource = 'Яндекс Маркет (API Systems)';
         }
-
-        if ((!parsedData.specs || !Object.keys(parsedData.specs).length) && parsedData.name) {
-            try {
-                const aiSpecs = await parseProductWithGroq(parsedData.name, parsedData.sourceUrl || url || null);
-                if (aiSpecs?.specs && typeof aiSpecs.specs === 'object') {
-                    parsedData.specs = aiSpecs.specs;
-                }
-            } catch (specErr) {
-                console.warn(' Не удалось дополнить характеристики через GROQ:', specErr.message);
-            }
+      } else if (source === 'wildberries') {
+        parsedData.priceStoreName = 'Wildberries';
+        if (marketPrice == null) {
+          try {
+            const wbOfferPrice = await fetchPriceFromApiSystemsByUrl(url);
+            marketPrice = wbOfferPrice.price;
+          } catch (wbErr) {
+            console.warn(' Не удалось получить цену WB через offers:', wbErr.message);
+          }
         }
+        parsedData.priceSource = marketPrice != null ? 'Wildberries (API Systems offers)' : null;
+      }
+      parsedData.price = marketPrice;
+      if (marketPrice) {
+        console.log(`  Цена: ${marketPrice} ₽ (${parsedData.priceSource || 'источник не указан'})`);
+      }
+    } else if (isEbay) {
+      parsedData = await fetchEbayProductByUrlOrQuery({
+        url: url || null,
+        query: fallbackQuery || null
+      });
+      parsedData.category = category || null;
+      parsedData.sourceUrl = parsedData.sourceUrl || url || null;
+      parsedData.priceStoreName = 'eBay';
+      parsedData.priceSource = parsedData.price != null ? 'eBay API' : null;
+    } else {
+      parsedData = await fetchPricesApiProductByUrlOrQuery({
+        url: url || null,
+        query: fallbackQuery || null,
+        country: PRICESAPI_DEFAULT_COUNTRY
+      });
+      parsedData.category = category || null;
+      parsedData.sourceUrl = parsedData.sourceUrl || url || null;
+    }
 
-        const aggregatedOffers = await collectApiOffersForProduct({
-            productName: parsedData.name || fallbackQuery || null,
-            sourceUrl: parsedData.sourceUrl || url || null,
-            country: PRICESAPI_DEFAULT_COUNTRY
-        });
-        parsedData.prices = aggregatedOffers.map((o) => ({
-            storeName: o.storeName,
-            sellerName: o.sellerName || null,
-            price: o.price,
-            url: o.url || '',
-            source: o.source || 'API'
-        }));
-        if (!parsedData.price && parsedData.prices.length) {
-            parsedData.price = parsedData.prices[0].price;
-            parsedData.priceStoreName = parsedData.prices[0].storeName;
-            parsedData.sourceUrl = parsedData.sourceUrl || parsedData.prices[0].url || null;
-            parsedData.priceSource = parsedData.prices[0].source || 'API';
+    if ((!parsedData.specs || !Object.keys(parsedData.specs).length) && parsedData.name) {
+      try {
+        const aiSpecs = await parseProductWithGroq(parsedData.name, parsedData.sourceUrl || url || null);
+        if (aiSpecs?.specs && typeof aiSpecs.specs === 'object') {
+          parsedData.specs = aiSpecs.specs;
         }
+      } catch (specErr) {
+        console.warn(' Не удалось дополнить характеристики через GROQ:', specErr.message);
+      }
+    }
 
-        const SYNONYM_MAP = {
-            screen_size: ['диагональ экрана', 'диагональ', 'размер экрана', 'экран', 'дисплей'],
-            screen_resolution: ['разрешение экрана', 'разрешение дисплея'],
-            screen_technology: ['тип матрицы экрана', 'тип матрицы', 'тип экрана', 'технология экрана', 'тип дисплея'],
-            screen_refresh_rate: ['частота обновления экрана', 'частота обновления', 'герцовка'],
-            cpu_brand: ['бренд процессора', 'производитель процессора', 'vendor cpu'],
-            cpu_model: ['процессор', 'модель процессора', 'чипсет', 'soc'],
-            ram_size: ['оперативная память', 'объём озу', 'оперативка', 'ram'],
-            storage_capacity: ['встроенная память', 'объём памяти', 'пзу', 'накопитель'],
-            rear_camera_count: ['количество задних камер', 'кол-во камер', 'число камер'],
-            rear_camera_primary_mp: ['разрешение основной камеры', 'основная камера', 'главная камера'],
-            rear_camera_sensor_model: ['модель сенсора камеры', 'модель матрицы', 'сенсор'],
-            rear_camera_sensor_size: ['размер сенсора камеры', 'размер матрицы'],
-            front_camera_mp: ['разрешение фронтальной камеры', 'фронтальная камера', 'селфи-камера'],
-            battery_capacity_mah: ['ёмкость аккумулятора', 'емкость аккумулятора', 'емкость батареи', 'батарея', 'аккумулятор'],
-            battery_type: ['тип аккумулятора', 'тип батареи'],
-            os: ['операционная система', 'ос', 'версия ос', 'оболочка'],
-            os_version: ['версия ос', 'версия операционной системы'],
-            weight_g: ['вес', 'вес устройства', 'вес без упаковки', 'масса'],
-            dimensions_mm: ['размеры', 'габариты', 'высота x ширина x толщина'],
-            sim_slots: ['количество sim-карт', 'sim', 'сим-карты', 'лоток sim', 'количество sim'],
-            connectivity: ['беспроводные интерфейсы', 'связь', 'интерфейсы', 'коммуникации'],
-            water_resistance: ['степень защиты', 'влагозащита', 'защита от воды', 'ip'],
-            gpu_model: ['видеокарта', 'графический адаптер', 'gpu']
-        };
+    const aggregatedOffers = await collectApiOffersForProduct({
+      productName: parsedData.name || fallbackQuery || null,
+      sourceUrl: parsedData.sourceUrl || url || null,
+      country: PRICESAPI_DEFAULT_COUNTRY
+    });
+    parsedData.prices = aggregatedOffers.map((o) => ({
+      storeName: o.storeName,
+      sellerName: o.sellerName || null,
+      price: o.price,
+      url: o.url || '',
+      source: o.source || 'API'
+    }));
+    if (!parsedData.price && parsedData.prices.length) {
+      parsedData.price = parsedData.prices[0].price;
+      parsedData.priceStoreName = parsedData.prices[0].storeName;
+      parsedData.sourceUrl = parsedData.sourceUrl || parsedData.prices[0].url || null;
+      parsedData.priceSource = parsedData.prices[0].source || 'API';
+    }
 
-        const normalizeSpecs = (rawSpecs, category) => {
-    const normalized = {};
-    if (!rawSpecs || typeof rawSpecs !== 'object') return normalized;
-    
-    //Получаем словарь синонимов для выбранной категории
-    const categoryMap = SYNONYM_MAP[category] || {};
+    const SYNONYM_MAP = {
+      screen_size: ['диагональ экрана', 'диагональ', 'размер экрана', 'экран', 'дисплей'],
+      screen_resolution: ['разрешение экрана', 'разрешение дисплея'],
+      screen_technology: ['тип матрицы экрана', 'тип матрицы', 'тип экрана', 'технология экрана', 'тип дисплея'],
+      screen_refresh_rate: ['частота обновления экрана', 'частота обновления', 'герцовка'],
+      cpu_brand: ['бренд процессора', 'производитель процессора', 'vendor cpu'],
+      cpu_model: ['процессор', 'модель процессора', 'чипсет', 'soc'],
+      ram_size: ['оперативная память', 'объём озу', 'оперативка', 'ram'],
+      storage_capacity: ['встроенная память', 'объём памяти', 'пзу', 'накопитель'],
+      rear_camera_count: ['количество задних камер', 'кол-во камер', 'число камер'],
+      rear_camera_primary_mp: ['разрешение основной камеры', 'основная камера', 'главная камера'],
+      rear_camera_sensor_model: ['модель сенсора камеры', 'модель матрицы', 'сенсор'],
+      rear_camera_sensor_size: ['размер сенсора камеры', 'размер матрицы'],
+      front_camera_mp: ['разрешение фронтальной камеры', 'фронтальная камера', 'селфи-камера'],
+      battery_capacity_mah: [
+        'ёмкость аккумулятора',
+        'емкость аккумулятора',
+        'емкость батареи',
+        'батарея',
+        'аккумулятор'
+      ],
+      battery_type: ['тип аккумулятора', 'тип батареи'],
+      os: ['операционная система', 'ос', 'версия ос', 'оболочка'],
+      os_version: ['версия ос', 'версия операционной системы'],
+      weight_g: ['вес', 'вес устройства', 'вес без упаковки', 'масса'],
+      dimensions_mm: ['размеры', 'габариты', 'высота x ширина x толщина'],
+      sim_slots: ['количество sim-карт', 'sim', 'сим-карты', 'лоток sim', 'количество sim'],
+      connectivity: ['беспроводные интерфейсы', 'связь', 'интерфейсы', 'коммуникации'],
+      water_resistance: ['степень защиты', 'влагозащита', 'защита от воды', 'ip'],
+      gpu_model: ['видеокарта', 'графический адаптер', 'gpu']
+    };
 
-    for (const [rawKey, rawValue] of Object.entries(rawSpecs)) {
+    const normalizeSpecs = (rawSpecs, category) => {
+      const normalized = {};
+      if (!rawSpecs || typeof rawSpecs !== 'object') return normalized;
+
+      //Получаем словарь синонимов для выбранной категории
+      const categoryMap = SYNONYM_MAP[category] || {};
+
+      for (const [rawKey, rawValue] of Object.entries(rawSpecs)) {
         const cleanKey = rawKey.toLowerCase().trim();
         let matchedKey = null;
 
         //Ищем совпадение в карте категории
         if (Object.keys(categoryMap).length > 0) {
-            for (const [stdKey, synonyms] of Object.entries(categoryMap)) {
-                if (synonyms.some(syn => cleanKey.includes(syn.toLowerCase()))) {
-                    matchedKey = stdKey;
-                    break; //Берём первое совпадение, чтобы избежать дублей
-                }
+          for (const [stdKey, synonyms] of Object.entries(categoryMap)) {
+            if (synonyms.some((syn) => cleanKey.includes(syn.toLowerCase()))) {
+              matchedKey = stdKey;
+              break; //Берём первое совпадение, чтобы избежать дублей
             }
+          }
         }
 
         //Если не нашли в карте, используем очищенное оригинальное название
         const finalKey = matchedKey || cleanKey.replace(/\s+/g, '_');
-        
+
         if (rawValue && String(rawValue).trim()) {
-            normalized[finalKey] = String(rawValue).replace(/<[^>]+>/g, '').trim();
+          normalized[finalKey] = String(rawValue)
+            .replace(/<[^>]+>/g, '')
+            .trim();
         }
-    }
-    return normalized;
-};
+      }
+      return normalized;
+    };
 
-//Применение нормализации к данным
-parsedData.specs = normalizeSpecs(parsedData.specs, category);
-        console.log(' ✅ Характеристики нормализованы. Ключи:', Object.keys(parsedData.specs));
+    //Применение нормализации к данным
+    parsedData.specs = normalizeSpecs(parsedData.specs, category);
+    console.log(' ✅ Характеристики нормализованы. Ключи:', Object.keys(parsedData.specs));
 
-        res.json({ message: 'Парсинг завершён успешно.', parsedData });
-    } catch (error) {
-        console.error(' ❌ Ошибка парсинга:', error.message);
-        res.status(500).json({ error: `Ошибка при получении данных: ${error.message}` });
-    }
+    res.json({ message: 'Парсинг завершён успешно.', parsedData });
+  } catch (error) {
+    console.error(' ❌ Ошибка парсинга:', error.message);
+    res.status(500).json({ error: `Ошибка при получении данных: ${error.message}` });
+  }
 });
 
-
 async function parseProductWithGroq(productName, sourceUrl = null) {
-  console.log(`[GROQ-KNOWLEDGE-SPECS-UPDATED] Запрашиваем характеристики у GROQ по названию: "${productName}", URL: ${sourceUrl}`);
+  console.log(
+    `[GROQ-KNOWLEDGE-SPECS-UPDATED] Запрашиваем характеристики у GROQ по названию: "${productName}", URL: ${sourceUrl}`
+  );
 
   //Определяем категорию по названию
-  const isSmartphone = productName.toLowerCase().includes('smartfon') || productName.toLowerCase().includes('iphone') || productName.toLowerCase().includes('samsung') || productName.toLowerCase().includes('xiaomi');
+  const isSmartphone =
+    productName.toLowerCase().includes('smartfon') ||
+    productName.toLowerCase().includes('iphone') ||
+    productName.toLowerCase().includes('samsung') ||
+    productName.toLowerCase().includes('xiaomi');
   const categoryType = isSmartphone ? 'smartphones' : 'other';
   //Определяем ожидаемые ключи (аналог CATEGORY_TO_SPECS_MAP)
   const expectedSpecsMap = {
     smartphones: [
-      'screen_size', 'screen_resolution', 'screen_technology', 'screen_refresh_rate',
-      'cpu_brand', 'cpu_model', 'cpu_cores', 'cpu_speed',
-      'ram_size', 'ram_type',
-      'storage_capacity', 'storage_type',
-      'rear_camera_count', 'rear_camera_primary_mp', 'rear_camera_features',
-      'front_camera_count', 'front_camera_mp', 'front_camera_features',
-      'battery_capacity', 'charging_type', 'wireless_charging',
-      'os', 'os_version',
-      'color', 'material', 'weight', 'dimensions',
-      'connectivity', 'sim_card_type', 'network_support',
-      'sensors', 'special_features',
-      'brand', 'model'
+      'screen_size',
+      'screen_resolution',
+      'screen_technology',
+      'screen_refresh_rate',
+      'cpu_brand',
+      'cpu_model',
+      'cpu_cores',
+      'cpu_speed',
+      'ram_size',
+      'ram_type',
+      'storage_capacity',
+      'storage_type',
+      'rear_camera_count',
+      'rear_camera_primary_mp',
+      'rear_camera_features',
+      'front_camera_count',
+      'front_camera_mp',
+      'front_camera_features',
+      'battery_capacity',
+      'charging_type',
+      'wireless_charging',
+      'os',
+      'os_version',
+      'color',
+      'material',
+      'weight',
+      'dimensions',
+      'connectivity',
+      'sim_card_type',
+      'network_support',
+      'sensors',
+      'special_features',
+      'brand',
+      'model'
     ]
     //Добавьте другие категории
   };
@@ -6856,12 +7393,16 @@ async function parseProductWithGroq(productName, sourceUrl = null) {
   try {
     const chatCompletion = await groq.chat.completions.create({
       messages: [
-        { "role": "system", "content": "Ты эксперт по характеристикам устройств. Отвечай только валидным JSON. Не включай цены или информацию о магазинах. Используй точные ключи характеристик." },
-        { "role": "user", "content": prompt }
+        {
+          role: 'system',
+          content:
+            'Ты эксперт по характеристикам устройств. Отвечай только валидным JSON. Не включай цены или информацию о магазинах. Используй точные ключи характеристик.'
+        },
+        { role: 'user', content: prompt }
       ],
-      model: "openai/gpt-oss-20b", //Используем рабочую модель
+      model: 'openai/gpt-oss-20b', //Используем рабочую модель
       temperature: 0, //0 для более детерминированного (предсказуемого) ответа
-      max_tokens: 1200, //Увеличиваем лимит
+      max_tokens: 1200 //Увеличиваем лимит
     });
 
     const responseContent = chatCompletion.choices[0].message.content.trim();
@@ -6878,7 +7419,7 @@ async function parseProductWithGroq(productName, sourceUrl = null) {
     }
 
     if (!cleanedResponse) {
-        throw new Error('Очищенный ответ пустой или не содержит JSON.');
+      throw new Error('Очищенный ответ пустой или не содержит JSON.');
     }
 
     console.log(`[GROQ-KNOWLEDGE-SPECS-UPDATED] Cleaned response for parsing: ${cleanedResponse}`);
@@ -6896,392 +7437,386 @@ async function parseProductWithGroq(productName, sourceUrl = null) {
         //price и imageUrl остаются null/undefined, берутся из первого этапа
         price: null,
         imageUrl: null,
-        sourceUrl: sourceUrl,
+        sourceUrl: sourceUrl
       };
     } else {
       console.error('[GROQ-KNOWLEDGE-SPECS-UPDATED] Ответ не является объектом:', parsedData);
       return null;
     }
-
   } catch (error) {
     console.error('[GROQ-KNOWLEDGE-SPECS-UPDATED] Ошибка при вызове API или парсинге ответа:', error.message);
     if (error instanceof SyntaxError) {
-        console.error('[GROQ-KNOWLEDGE-SPECS-UPDATED] Ошибка парсинга JSON:', error.message);
+      console.error('[GROQ-KNOWLEDGE-SPECS-UPDATED] Ошибка парсинга JSON:', error.message);
     }
     //Если ошибка связана с доступом (403), логируем это явно
     if (error.message.includes('403')) {
-        console.error('[GROQ-KNOWLEDGE-SPECS-UPDATED] ОШИБКА ДОСТУПА: Возможно, требуется VPN или доступ заблокирован по IP/региону.');
+      console.error(
+        '[GROQ-KNOWLEDGE-SPECS-UPDATED] ОШИБКА ДОСТУПА: Возможно, требуется VPN или доступ заблокирован по IP/региону.'
+      );
     }
     return null;
   }
 }
 
 async function fetchProductSpecsFromApiSystems(modelId, source) {
-    console.log(`[API-SYSTEMS] Запрашиваем характеристики для ID: ${modelId}, источник: ${source}`);
-    
-    if (!API_SYSTEMS_KEY) {
-        throw new Error('API_KEY для API Systems не найден в переменных окружения.');
-    }
-    
-    let baseUrl;
-    if (source === 'yandex_market') {
-        baseUrl = `http://market.apisystem.name/models/${modelId}/specification`;
-    } else if (source === 'wildberries') {
-        baseUrl = `http://wb.apisystem.name/models/${modelId}/specification`;
-    } else {
-        throw new Error(`Неизвестный источник: ${source}`);
-    }
-    
-    try {
-        //Задержка между запросами согласно ограничению API
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        const response = await axios.get(baseUrl, {
-            params: {
-                api_key: API_SYSTEMS_KEY,
-                format: 'json'
-            },
-            timeout: 10000
-        });
-        
-        if (response.status !== 200) {
-            throw new Error(`API Systems вернул статус ${response.status}`);
-        }
-        
-        const data = response.data;
-        console.log(`[API-SYSTEMS] Получен ответ для ID ${modelId}:`, data);
-        
-        if (data.status !== 'OK') {
-            throw new Error(`API Systems вернул ошибку: ${data.status}`);
-        }
-        
-        //🔑 ГЛАВНОЕ ИСПРАВЛЕНИЕ: данные могут быть в fields ИЛИ на верхнем уровне
-        const fields = data.fields || data;
-        
-        //Извлекаем базовую информацию
-        const name = fields.product_name || null;
-        const vendor = fields.vendor || null;
-        const description = fields.description || null;
-        
-        //Изображение: проверяем наличие и что photos — массив
-        const imageUrl = fields.prev_image || 
-            (fields.photos && Array.isArray(fields.photos) && fields.photos.length > 0 
-                ? fields.photos[0].url 
-                : null);
-        
-        //Цена (если есть в ответе)
-        const price = fields.price || null;
-        
-        //Извлекаем характеристики
-        const specs = {};
-        const specifications = fields.specifications || [];
-        
-        if (Array.isArray(specifications)) {
-            specifications.forEach(spec => {
-                const key = spec.name?.trim();
-                const value = spec.value;
-                //Проверяем, что значение не undefined/null
-                if (key && value !== undefined && value !== null) {
-                    specs[key] = String(value).trim();
-                }
-            });
-        }
-        
-        console.log(`[API-SYSTEMS] Извлечены данные:`, { 
-            name, 
-            price, 
-            imageUrl, 
-            specsCount: Object.keys(specs).length 
-        });
-        
-        const sellerName =
-          fields.shop_name ||
-          fields.seller_name ||
-          fields.supplier_name ||
-          fields.shop ||
-          fields.vendor_name ||
-          null;
+  console.log(`[API-SYSTEMS] Запрашиваем характеристики для ID: ${modelId}, источник: ${source}`);
 
-        return {
-            source: `API Systems (${source})`,
-            name: name,
-            price: price,
-            imageUrl: imageUrl,
-            sourceUrl: fields.url || null,
-            sellerName: sellerName && String(sellerName).trim() ? String(sellerName).trim() : null,
-            specs: specs,
-        };
-        
-    } catch (error) {
-        console.error(`[API-SYSTEMS] Ошибка при вызове API для ID ${modelId}:`, error.message);
-        if (error.response) {
-            console.error(`[API-SYSTEMS] Статус ошибки: ${error.response.status}`);
-            console.error(`[API-SYSTEMS] Ответ:`, error.response.data);
-        }
-        throw error;
+  if (!API_SYSTEMS_KEY) {
+    throw new Error('API_KEY для API Systems не найден в переменных окружения.');
+  }
+
+  let baseUrl;
+  if (source === 'yandex_market') {
+    baseUrl = `http://market.apisystem.name/models/${modelId}/specification`;
+  } else if (source === 'wildberries') {
+    baseUrl = `http://wb.apisystem.name/models/${modelId}/specification`;
+  } else {
+    throw new Error(`Неизвестный источник: ${source}`);
+  }
+
+  try {
+    //Задержка между запросами согласно ограничению API
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+
+    const response = await axios.get(baseUrl, {
+      params: {
+        api_key: API_SYSTEMS_KEY,
+        format: 'json'
+      },
+      timeout: 10000
+    });
+
+    if (response.status !== 200) {
+      throw new Error(`API Systems вернул статус ${response.status}`);
     }
+
+    const data = response.data;
+    console.log(`[API-SYSTEMS] Получен ответ для ID ${modelId}:`, data);
+
+    if (data.status !== 'OK') {
+      throw new Error(`API Systems вернул ошибку: ${data.status}`);
+    }
+
+    //🔑 ГЛАВНОЕ ИСПРАВЛЕНИЕ: данные могут быть в fields ИЛИ на верхнем уровне
+    const fields = data.fields || data;
+
+    //Извлекаем базовую информацию
+    const name = fields.product_name || null;
+    const vendor = fields.vendor || null;
+    const description = fields.description || null;
+
+    //Изображение: проверяем наличие и что photos — массив
+    const imageUrl =
+      fields.prev_image ||
+      (fields.photos && Array.isArray(fields.photos) && fields.photos.length > 0 ? fields.photos[0].url : null);
+
+    //Цена (если есть в ответе)
+    const price = fields.price || null;
+
+    //Извлекаем характеристики
+    const specs = {};
+    const specifications = fields.specifications || [];
+
+    if (Array.isArray(specifications)) {
+      specifications.forEach((spec) => {
+        const key = spec.name?.trim();
+        const value = spec.value;
+        //Проверяем, что значение не undefined/null
+        if (key && value !== undefined && value !== null) {
+          specs[key] = String(value).trim();
+        }
+      });
+    }
+
+    console.log(`[API-SYSTEMS] Извлечены данные:`, {
+      name,
+      price,
+      imageUrl,
+      specsCount: Object.keys(specs).length
+    });
+
+    const sellerName =
+      fields.shop_name || fields.seller_name || fields.supplier_name || fields.shop || fields.vendor_name || null;
+
+    return {
+      source: `API Systems (${source})`,
+      name: name,
+      price: price,
+      imageUrl: imageUrl,
+      sourceUrl: fields.url || null,
+      sellerName: sellerName && String(sellerName).trim() ? String(sellerName).trim() : null,
+      specs: specs
+    };
+  } catch (error) {
+    console.error(`[API-SYSTEMS] Ошибка при вызове API для ID ${modelId}:`, error.message);
+    if (error.response) {
+      console.error(`[API-SYSTEMS] Статус ошибки: ${error.response.status}`);
+      console.error(`[API-SYSTEMS] Ответ:`, error.response.data);
+    }
+    throw error;
+  }
 }
 
 async function extractPriceFromYandexMarket(url) {
-    try {
-        const response = await axios.get(url, {
-            timeout: 15000,
-            headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
-                'Accept-Language': 'ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7'
-            }
-        });
-        const $ = cheerio.load(response.data);
-        let price = null;
+  try {
+    const response = await axios.get(url, {
+      timeout: 15000,
+      headers: {
+        'User-Agent':
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+        Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+        'Accept-Language': 'ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7'
+      }
+    });
+    const $ = cheerio.load(response.data);
+    let price = null;
 
-        //1. JSON-LD разметка (самый надёжный источник на ЯМ)
-        $('script[type="application/ld+json"]').each((i, el) => {
-            try {
-                const data = JSON.parse($(el).text());
-                if (data.offers?.price) price = parseFloat(data.offers.price);
-                else if (Array.isArray(data.offers) && data.offers[0]?.price) price = parseFloat(data.offers[0].price);
-                else if (data['@type'] === 'Product' && data.offers?.price) price = parseFloat(data.offers.price);
-            } catch (e) {}
-        });
+    //1. JSON-LD разметка (самый надёжный источник на ЯМ)
+    $('script[type="application/ld+json"]').each((i, el) => {
+      try {
+        const data = JSON.parse($(el).text());
+        if (data.offers?.price) price = parseFloat(data.offers.price);
+        else if (Array.isArray(data.offers) && data.offers[0]?.price) price = parseFloat(data.offers[0].price);
+        else if (data['@type'] === 'Product' && data.offers?.price) price = parseFloat(data.offers.price);
+      } catch (e) {}
+    });
 
-        //2. Мета-теги (SEO)
-        if (!price) {
-            const metaPrice = $('meta[itemprop="price"]').attr('content');
-            if (metaPrice) price = parseFloat(metaPrice.replace(/[^\d.]/g, ''));
-        }
-
-        //3. Поиск в inline-скриптах (Yandex часто кладёт цену в window.__INITIAL_STATE__)
-        if (!price) {
-            $('script').each((i, el) => {
-                const content = $(el).html();
-                if (content && (content.includes('"price"') || content.includes('"offer"'))) {
-                    const match = content.match(/"price"\s*:\s*"?(\d+(?:\.\d+)?)"?/);
-                    if (match) price = parseFloat(match[1]);
-                }
-            });
-        }
-
-        //4. Атрибуты data-price или data-zone-name
-        if (!price) {
-            const dataPrice = $('[data-price]').first().attr('data-price') || $('[data-zone-name="price"]').first().attr('data-price');
-            if (dataPrice) price = parseFloat(dataPrice.replace(/[^\d.]/g, ''));
-        }
-
-        if (price && price > 0) {
-            console.log(`✅ Цена успешно спарсена со страницы: ${price} ₽`);
-            return price;
-        }
-        console.warn('⚠️ Цена не найдена в HTML Яндекс Маркета');
-        return null;
-    } catch (e) {
-        console.warn(`⚠️ Ошибка парсинга цены: ${e.message}`);
-        return null;
+    //2. Мета-теги (SEO)
+    if (!price) {
+      const metaPrice = $('meta[itemprop="price"]').attr('content');
+      if (metaPrice) price = parseFloat(metaPrice.replace(/[^\d.]/g, ''));
     }
+
+    //3. Поиск в inline-скриптах (Yandex часто кладёт цену в window.__INITIAL_STATE__)
+    if (!price) {
+      $('script').each((i, el) => {
+        const content = $(el).html();
+        if (content && (content.includes('"price"') || content.includes('"offer"'))) {
+          const match = content.match(/"price"\s*:\s*"?(\d+(?:\.\d+)?)"?/);
+          if (match) price = parseFloat(match[1]);
+        }
+      });
+    }
+
+    //4. Атрибуты data-price или data-zone-name
+    if (!price) {
+      const dataPrice =
+        $('[data-price]').first().attr('data-price') || $('[data-zone-name="price"]').first().attr('data-price');
+      if (dataPrice) price = parseFloat(dataPrice.replace(/[^\d.]/g, ''));
+    }
+
+    if (price && price > 0) {
+      console.log(`✅ Цена успешно спарсена со страницы: ${price} ₽`);
+      return price;
+    }
+    console.warn('⚠️ Цена не найдена в HTML Яндекс Маркета');
+    return null;
+  } catch (e) {
+    console.warn(`⚠️ Ошибка парсинга цены: ${e.message}`);
+    return null;
+  }
 }
 
 async function extractPriceFromStoreHtml(url, hostHint = null) {
+  const headers = {
+    'User-Agent':
+      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+    'Accept-Language': 'ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7'
+  };
+  const response = await axios.get(url, { timeout: 18000, headers });
+  const html = String(response.data || '');
+  const $ = cheerio.load(html);
+  const host = String(hostHint || new URL(url).hostname).toLowerCase();
+
+  const parsePriceText = (input) => {
+    if (input == null) return null;
+    const cleaned = String(input)
+      .replace(/\u00a0/g, ' ')
+      .trim();
+    const digits = cleaned.replace(/\s/g, '').replace(/[^\d]/g, '');
+    if (!digits) return null;
+    const n = parseInt(digits, 10);
+    return Number.isFinite(n) && n > 0 ? n : null;
+  };
+
+  const fromSelectors = (selectors) => {
+    for (const sel of selectors) {
+      const el = $(sel).first();
+      if (!el || !el.length) continue;
+      const candidate = el.attr('content') || el.attr('data-price') || el.attr('value') || el.text();
+      const price = parsePriceText(candidate);
+      if (price) return price;
+    }
+    return null;
+  };
+
+  let price = fromSelectors([
+    'meta[itemprop="price"]',
+    '[itemprop="price"][content]',
+    '[data-price]',
+    '[data-meta-price]',
+    '[data-testid*="price"]'
+  ]);
+
+  if (!price && host.includes('dns-shop.ru')) {
+    price = fromSelectors(['[data-product-price]', '[data-marker="price"] span', '.product-buy__price', '.price_g']);
+  }
+
+  if (!price && host.includes('ozon.ru')) {
+    price = fromSelectors([
+      '[data-widget="webPrice"] [data-price]',
+      '[data-widget="webPrice"] span',
+      '[class*="c-price"] span',
+      '[data-widget="price"] span'
+    ]);
+  }
+
+  if (!price && host.includes('megamarket.ru')) {
+    price = fromSelectors(['[itemprop="price"][content]', '[data-chp-id="goodsPriceFinal"] span', '[class*="price"]']);
+  }
+
+  if (!price && host.includes('aliexpress.')) {
+    const patterns = [
+      /"skuAmount"\s*:\s*\{\s*"value"\s*:\s*"(\d+)"/i,
+      /"couponPrice"\s*:\s*"([\d.,]+)"/i,
+      /"salePriceSimple"\s*:\s*"([\d.,]+)"/i,
+      /"price"\s*:\s*"([\d.,]+)"/i
+    ];
+    for (const re of patterns) {
+      const m = html.match(re);
+      if (m?.[1]) {
+        const p = parsePriceText(m[1]);
+        if (p) {
+          price = p;
+          break;
+        }
+      }
+    }
+  }
+
+  if (!price) {
+    const ldRegexes = [
+      /"price"\s*:\s*"?(?<price>\d+(?:[.,]\d+)?)"?/i,
+      /"lowPrice"\s*:\s*"?(?<price>\d+(?:[.,]\d+)?)"?/i
+    ];
+    for (const re of ldRegexes) {
+      const m = html.match(re);
+      const raw = m?.groups?.price || m?.[1];
+      if (raw) {
+        const p = parsePriceText(raw);
+        if (p) {
+          price = p;
+          break;
+        }
+      }
+    }
+  }
+
+  return price ? Math.round(price) : null;
+}
+
+async function extractStoreSignalsFromHtml(url, hostHint = null) {
+  try {
     const headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
-        'Accept-Language': 'ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7'
+      'User-Agent':
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+      'Accept-Language': 'ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7'
     };
     const response = await axios.get(url, { timeout: 18000, headers });
     const html = String(response.data || '');
     const $ = cheerio.load(html);
     const host = String(hostHint || new URL(url).hostname).toLowerCase();
 
-    const parsePriceText = (input) => {
-        if (input == null) return null;
-        const cleaned = String(input).replace(/\u00a0/g, ' ').trim();
-        const digits = cleaned.replace(/\s/g, '').replace(/[^\d]/g, '');
-        if (!digits) return null;
-        const n = parseInt(digits, 10);
-        return Number.isFinite(n) && n > 0 ? n : null;
+    const parseNum = (v) => {
+      if (v == null) return null;
+      const m = String(v)
+        .replace(',', '.')
+        .match(/(\d+(?:\.\d+)?)/);
+      if (!m) return null;
+      const n = parseFloat(m[1]);
+      return Number.isFinite(n) ? n : null;
+    };
+    const parseIntNum = (v) => {
+      const n = parseNum(v);
+      return n == null ? null : Math.round(n);
     };
 
-    const fromSelectors = (selectors) => {
-        for (const sel of selectors) {
-            const el = $(sel).first();
-            if (!el || !el.length) continue;
-            const candidate = el.attr('content') || el.attr('data-price') || el.attr('value') || el.text();
-            const price = parsePriceText(candidate);
-            if (price) return price;
-        }
-        return null;
+    let rating = null;
+    let reviewsCount = null;
+    let stock = null;
+
+    const ratingMeta =
+      $('meta[itemprop="ratingValue"]').attr('content') ||
+      $('meta[property="product:rating:value"]').attr('content') ||
+      $('meta[name="rating"]').attr('content');
+    rating = parseNum(ratingMeta);
+
+    const reviewsMeta =
+      $('meta[itemprop="reviewCount"]').attr('content') || $('meta[property="product:rating:count"]').attr('content');
+    reviewsCount = parseIntNum(reviewsMeta);
+
+    if (!rating || !reviewsCount) {
+      const allText = $('body').text().replace(/\s+/g, ' ');
+      if (!rating) {
+        const r =
+          allText.match(/рейтинг[^0-9]{0,12}(\d+(?:[.,]\d+)?)/i) || allText.match(/(\d+(?:[.,]\d+)?)\s*из\s*5/i);
+        rating = parseNum(r?.[1]);
+      }
+      if (!reviewsCount) {
+        const c = allText.match(/(\d[\d\s]{0,8})\s*отзыв/i) || allText.match(/отзыв[^0-9]{0,12}(\d[\d\s]{0,8})/i);
+        reviewsCount = parseIntNum(c?.[1]);
+      }
+    }
+
+    const stockPatterns = [
+      /в\s*наличии[^0-9]{0,10}(\d{1,4})/i,
+      /остал(?:ось|ся)[^0-9]{0,10}(\d{1,4})/i,
+      /(\d{1,4})\s*шт\.\s*в\s*наличии/i
+    ];
+    const htmlText = html.replace(/\s+/g, ' ');
+    for (const re of stockPatterns) {
+      const m = htmlText.match(re);
+      if (m?.[1]) {
+        stock = parseIntNum(m[1]);
+        if (stock != null) break;
+      }
+    }
+
+    if (host.includes('wildberries.ru') || host.includes('wb.ru')) {
+      const mRating = html.match(/"productValuation"\s*:\s*(\d+(?:\.\d+)?)/i);
+      const mFeedback = html.match(/"feedbacks"\s*:\s*(\d+)/i);
+      const mQty = html.match(/"quantity"\s*:\s*(\d+)/i);
+      rating = rating ?? parseNum(mRating?.[1]);
+      reviewsCount = reviewsCount ?? parseIntNum(mFeedback?.[1]);
+      stock = stock ?? parseIntNum(mQty?.[1]);
+    }
+
+    if (host.includes('market.yandex.ru') || host.includes('yandex.ru')) {
+      const mRating = html.match(/"rating(Value)?"\s*:\s*"?(?<v>\d+(?:\.\d+)?)"?/i);
+      const mReviews = html.match(/"reviewCount"\s*:\s*"?(?<v>\d+)"?/i);
+      rating = rating ?? parseNum(mRating?.groups?.v || mRating?.[2]);
+      reviewsCount = reviewsCount ?? parseIntNum(mReviews?.groups?.v || mReviews?.[1]);
+    }
+
+    return {
+      rating: rating != null ? Math.max(0, Math.min(5, rating)) : null,
+      reviewsCount: reviewsCount != null && reviewsCount >= 0 ? reviewsCount : null,
+      stock: stock != null && stock >= 0 ? stock : null
     };
-
-    let price = fromSelectors([
-        'meta[itemprop="price"]',
-        '[itemprop="price"][content]',
-        '[data-price]',
-        '[data-meta-price]',
-        '[data-testid*="price"]'
-    ]);
-
-    if (!price && host.includes('dns-shop.ru')) {
-        price = fromSelectors([
-            '[data-product-price]',
-            '[data-marker="price"] span',
-            '.product-buy__price',
-            '.price_g'
-        ]);
-    }
-
-    if (!price && host.includes('ozon.ru')) {
-        price = fromSelectors([
-            '[data-widget="webPrice"] [data-price]',
-            '[data-widget="webPrice"] span',
-            '[class*="c-price"] span',
-            '[data-widget="price"] span'
-        ]);
-    }
-
-    if (!price && host.includes('megamarket.ru')) {
-        price = fromSelectors([
-            '[itemprop="price"][content]',
-            '[data-chp-id="goodsPriceFinal"] span',
-            '[class*="price"]'
-        ]);
-    }
-
-    if (!price && host.includes('aliexpress.')) {
-        const patterns = [
-            /"skuAmount"\s*:\s*\{\s*"value"\s*:\s*"(\d+)"/i,
-            /"couponPrice"\s*:\s*"([\d.,]+)"/i,
-            /"salePriceSimple"\s*:\s*"([\d.,]+)"/i,
-            /"price"\s*:\s*"([\d.,]+)"/i
-        ];
-        for (const re of patterns) {
-            const m = html.match(re);
-            if (m?.[1]) {
-                const p = parsePriceText(m[1]);
-                if (p) {
-                    price = p;
-                    break;
-                }
-            }
-        }
-    }
-
-    if (!price) {
-        const ldRegexes = [
-            /"price"\s*:\s*"?(?<price>\d+(?:[.,]\d+)?)"?/i,
-            /"lowPrice"\s*:\s*"?(?<price>\d+(?:[.,]\d+)?)"?/i
-        ];
-        for (const re of ldRegexes) {
-            const m = html.match(re);
-            const raw = m?.groups?.price || m?.[1];
-            if (raw) {
-                const p = parsePriceText(raw);
-                if (p) {
-                    price = p;
-                    break;
-                }
-            }
-        }
-    }
-
-    return price ? Math.round(price) : null;
-}
-
-async function extractStoreSignalsFromHtml(url, hostHint = null) {
-    try {
-        const headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
-            'Accept-Language': 'ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7'
-        };
-        const response = await axios.get(url, { timeout: 18000, headers });
-        const html = String(response.data || '');
-        const $ = cheerio.load(html);
-        const host = String(hostHint || new URL(url).hostname).toLowerCase();
-
-        const parseNum = (v) => {
-            if (v == null) return null;
-            const m = String(v).replace(',', '.').match(/(\d+(?:\.\d+)?)/);
-            if (!m) return null;
-            const n = parseFloat(m[1]);
-            return Number.isFinite(n) ? n : null;
-        };
-        const parseIntNum = (v) => {
-            const n = parseNum(v);
-            return n == null ? null : Math.round(n);
-        };
-
-        let rating = null;
-        let reviewsCount = null;
-        let stock = null;
-
-        const ratingMeta =
-            $('meta[itemprop="ratingValue"]').attr('content') ||
-            $('meta[property="product:rating:value"]').attr('content') ||
-            $('meta[name="rating"]').attr('content');
-        rating = parseNum(ratingMeta);
-
-        const reviewsMeta =
-            $('meta[itemprop="reviewCount"]').attr('content') ||
-            $('meta[property="product:rating:count"]').attr('content');
-        reviewsCount = parseIntNum(reviewsMeta);
-
-        if (!rating || !reviewsCount) {
-            const allText = $('body').text().replace(/\s+/g, ' ');
-            if (!rating) {
-                const r = allText.match(/рейтинг[^0-9]{0,12}(\d+(?:[.,]\d+)?)/i) || allText.match(/(\d+(?:[.,]\d+)?)\s*из\s*5/i);
-                rating = parseNum(r?.[1]);
-            }
-            if (!reviewsCount) {
-                const c = allText.match(/(\d[\d\s]{0,8})\s*отзыв/i) || allText.match(/отзыв[^0-9]{0,12}(\d[\d\s]{0,8})/i);
-                reviewsCount = parseIntNum(c?.[1]);
-            }
-        }
-
-        const stockPatterns = [
-            /в\s*наличии[^0-9]{0,10}(\d{1,4})/i,
-            /остал(?:ось|ся)[^0-9]{0,10}(\d{1,4})/i,
-            /(\d{1,4})\s*шт\.\s*в\s*наличии/i
-        ];
-        const htmlText = html.replace(/\s+/g, ' ');
-        for (const re of stockPatterns) {
-            const m = htmlText.match(re);
-            if (m?.[1]) {
-                stock = parseIntNum(m[1]);
-                if (stock != null) break;
-            }
-        }
-
-        if (host.includes('wildberries.ru') || host.includes('wb.ru')) {
-            const mRating = html.match(/"productValuation"\s*:\s*(\d+(?:\.\d+)?)/i);
-            const mFeedback = html.match(/"feedbacks"\s*:\s*(\d+)/i);
-            const mQty = html.match(/"quantity"\s*:\s*(\d+)/i);
-            rating = rating ?? parseNum(mRating?.[1]);
-            reviewsCount = reviewsCount ?? parseIntNum(mFeedback?.[1]);
-            stock = stock ?? parseIntNum(mQty?.[1]);
-        }
-
-        if (host.includes('market.yandex.ru') || host.includes('yandex.ru')) {
-            const mRating = html.match(/"rating(Value)?"\s*:\s*"?(?<v>\d+(?:\.\d+)?)"?/i);
-            const mReviews = html.match(/"reviewCount"\s*:\s*"?(?<v>\d+)"?/i);
-            rating = rating ?? parseNum(mRating?.groups?.v || mRating?.[2]);
-            reviewsCount = reviewsCount ?? parseIntNum(mReviews?.groups?.v || mReviews?.[1]);
-        }
-
-        return {
-            rating: rating != null ? Math.max(0, Math.min(5, rating)) : null,
-            reviewsCount: reviewsCount != null && reviewsCount >= 0 ? reviewsCount : null,
-            stock: stock != null && stock >= 0 ? stock : null
-        };
-    } catch {
-        return { rating: null, reviewsCount: null, stock: null };
-    }
+  } catch {
+    return { rating: null, reviewsCount: null, stock: null };
+  }
 }
 
 async function enrichParsedResultWithHtmlSignals(trimmedUrl, parsedLike) {
   const out = {
     ...parsedLike,
-    storeSignals: parsedLike.storeSignals && typeof parsedLike.storeSignals === 'object'
-      ? { ...parsedLike.storeSignals }
-      : { rating: null, reviewsCount: null, stock: null }
+    storeSignals:
+      parsedLike.storeSignals && typeof parsedLike.storeSignals === 'object'
+        ? { ...parsedLike.storeSignals }
+        : { rating: null, reviewsCount: null, stock: null }
   };
   if (!trimmedUrl || typeof trimmedUrl !== 'string') return out;
   try {
@@ -7331,115 +7866,112 @@ async function refreshStoreSignalsForProduct(productId, { gapMs = 500 } = {}) {
 }
 
 async function extractPriceWithPuppeteerLite(url, proxy = null) {
-    let browser = null;
-    try {
-        const launchOptions = {
-            headless: true,
-            args: [
-                '--no-sandbox',
-                '--disable-setuid-sandbox',
-                '--disable-dev-shm-usage',
-                '--disable-gpu',
-                '--lang=ru-RU'
-            ]
-        };
-        if (proxy) launchOptions.args.push(`--proxy-server=${proxy}`);
+  let browser = null;
+  try {
+    const launchOptions = {
+      headless: true,
+      args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu', '--lang=ru-RU']
+    };
+    if (proxy) launchOptions.args.push(`--proxy-server=${proxy}`);
 
-        browser = await puppeteer.launch(launchOptions);
-        const page = await browser.newPage();
-        await page.setUserAgent(
-            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
-        );
-        await page.setViewport({ width: 1366, height: 900 });
-        await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 35000 });
-        await page.waitForTimeout(1200);
+    browser = await puppeteer.launch(launchOptions);
+    const page = await browser.newPage();
+    await page.setUserAgent(
+      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
+    );
+    await page.setViewport({ width: 1366, height: 900 });
+    await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 35000 });
+    await page.waitForTimeout(1200);
 
-        const html = await page.content();
-        const $ = cheerio.load(html);
-        const parsePriceText = (input) => {
-            if (!input) return null;
-            const digits = String(input).replace(/\u00a0/g, ' ').replace(/\s/g, '').replace(/[^\d]/g, '');
-            if (!digits) return null;
-            const n = parseInt(digits, 10);
-            return Number.isFinite(n) && n > 0 ? n : null;
-        };
-        const selectors = [
-            'meta[itemprop="price"]',
-            '[itemprop="price"][content]',
-            '[data-price]',
-            '[data-meta-price]',
-            '[class*="price"]',
-            '[data-testid*="price"]'
-        ];
-        for (const sel of selectors) {
-            const el = $(sel).first();
-            if (!el || !el.length) continue;
-            const candidate = el.attr('content') || el.attr('data-price') || el.text();
-            const p = parsePriceText(candidate);
-            if (p) return Math.round(p);
-        }
-        const m = html.match(/"price"\s*:\s*"?(?<price>\d+(?:[.,]\d+)?)"?/i);
-        const p = parsePriceText(m?.groups?.price || m?.[1]);
-        return p ? Math.round(p) : null;
-    } catch {
-        return null;
-    } finally {
-        if (browser) await browser.close().catch(() => {});
+    const html = await page.content();
+    const $ = cheerio.load(html);
+    const parsePriceText = (input) => {
+      if (!input) return null;
+      const digits = String(input)
+        .replace(/\u00a0/g, ' ')
+        .replace(/\s/g, '')
+        .replace(/[^\d]/g, '');
+      if (!digits) return null;
+      const n = parseInt(digits, 10);
+      return Number.isFinite(n) && n > 0 ? n : null;
+    };
+    const selectors = [
+      'meta[itemprop="price"]',
+      '[itemprop="price"][content]',
+      '[data-price]',
+      '[data-meta-price]',
+      '[class*="price"]',
+      '[data-testid*="price"]'
+    ];
+    for (const sel of selectors) {
+      const el = $(sel).first();
+      if (!el || !el.length) continue;
+      const candidate = el.attr('content') || el.attr('data-price') || el.text();
+      const p = parsePriceText(candidate);
+      if (p) return Math.round(p);
     }
+    const m = html.match(/"price"\s*:\s*"?(?<price>\d+(?:[.,]\d+)?)"?/i);
+    const p = parsePriceText(m?.groups?.price || m?.[1]);
+    return p ? Math.round(p) : null;
+  } catch {
+    return null;
+  } finally {
+    if (browser) await browser.close().catch(() => {});
+  }
 }
 
 function extractModelIdFromUrl(urlString) {
-    try {
-        const parsedUrl = new URL(urlString);
-        const hostname = parsedUrl.hostname.toLowerCase();
-        const pathname = parsedUrl.pathname;
+  try {
+    const parsedUrl = new URL(urlString);
+    const hostname = parsedUrl.hostname.toLowerCase();
+    const pathname = parsedUrl.pathname;
 
-        const isYandexMarketHost = hostname.includes('market.yandex.ru')
-            || (hostname.includes('yandex.ru') && (pathname.includes('/card/') || pathname.includes('/product--')));
+    const isYandexMarketHost =
+      hostname.includes('market.yandex.ru') ||
+      (hostname.includes('yandex.ru') && (pathname.includes('/card/') || pathname.includes('/product--')));
 
-        if (isYandexMarketHost) {
-            const match = pathname.match(/\/(\d+)(?:[\/?#]|$)/);
-            if (match) {
-                return { id: parseInt(match[1], 10), source: 'yandex_market' };
-            }
-        }
-
-        if (hostname.includes('wildberries.ru') || hostname.includes('wb.ru')) {
-            const match = pathname.match(/\/catalog\/(\d+)\/detail/i);
-            if (match) {
-                return { id: parseInt(match[1], 10), source: 'wildberries' };
-            }
-        }
-    } catch (e) {
-        console.error('Ошибка парсинга URL для извлечения ID:', e);
+    if (isYandexMarketHost) {
+      const match = pathname.match(/\/(\d+)(?:[\/?#]|$)/);
+      if (match) {
+        return { id: parseInt(match[1], 10), source: 'yandex_market' };
+      }
     }
-    return null;
-}
 
+    if (hostname.includes('wildberries.ru') || hostname.includes('wb.ru')) {
+      const match = pathname.match(/\/catalog\/(\d+)\/detail/i);
+      if (match) {
+        return { id: parseInt(match[1], 10), source: 'wildberries' };
+      }
+    }
+  } catch (e) {
+    console.error('Ошибка парсинга URL для извлечения ID:', e);
+  }
+  return null;
+}
 
 //Аналитика
 app.post('/api/analytics/track-view', authenticateTokenOptional, async (req, res) => {
-    try {
-        const { productId } = req.body;
-        //Если пользователь авторизован, берем его ID, иначе null
-        const userId = req.user?.id ? parseInt(req.user.id, 10) : null;
+  try {
+    const { productId } = req.body;
+    //Если пользователь авторизован, берем его ID, иначе null
+    const userId = req.user?.id ? parseInt(req.user.id, 10) : null;
 
-        if (!productId) {
-            return res.status(400).json({ error: 'Не указан ID товара' });
-        }
-
-        await prisma.viewLog.create({
-            data: {
-                productId: parseInt(productId), //Приводим к числу для базы данных
-                userId
-            }
-        });
-
-        res.status(200).json({ success: true });
-    } catch (error) {
-        console.error('Ошибка при записи просмотра:', error);
-        res.status(500).json({ error: 'Не удалось записать просмотр' });
+    if (!productId) {
+      return res.status(400).json({ error: 'Не указан ID товара' });
     }
+
+    await prisma.viewLog.create({
+      data: {
+        productId: parseInt(productId), //Приводим к числу для базы данных
+        userId
+      }
+    });
+
+    res.status(200).json({ success: true });
+  } catch (error) {
+    console.error('Ошибка при записи просмотра:', error);
+    res.status(500).json({ error: 'Не удалось записать просмотр' });
+  }
 });
 
 app.post('/api/analytics/track-purchase', authenticateTokenOptional, async (req, res) => {
@@ -7479,7 +8011,7 @@ app.post('/api/analytics/track-search', authenticateTokenOptional, async (req, r
     const userId = req.user?.id ? parseInt(req.user.id, 10) : null;
 
     await prisma.searchLog.create({
-       data:{
+      data: {
         query: query.trim(),
         userId: userId
       }
@@ -7523,4 +8055,3 @@ app.get('/api/products/:id/store-signals', async (req, res) => {
     res.status(500).json({ error: 'Не удалось получить сигналы магазинов' });
   }
 });
-

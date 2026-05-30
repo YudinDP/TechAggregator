@@ -7,7 +7,7 @@ const pool = new Pool({
   host: process.env.DB_HOST || 'localhost',
   database: process.env.DB_NAME || 'tech_aggregator',
   password: process.env.DB_PASSWORD || 'ваш_пароль_postgres',
-  port: process.env.DB_PORT || 5432,
+  port: process.env.DB_PORT || 5432
 });
 
 // Тест подключения
@@ -20,5 +20,5 @@ pool.query('SELECT NOW()', (err, res) => {
 });
 
 module.exports = {
-  query: (text, params) => pool.query(text, params),
+  query: (text, params) => pool.query(text, params)
 };

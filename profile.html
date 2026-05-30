@@ -1,438 +1,415 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="site-nav.js"></script>
     <script src="theme.js"></script>
     <title>Профиль пользователя - tech-nozone</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="dark-theme.css">
-    <link rel="icon" sizes="180x180" href="sources/logo.png">
+    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="dark-theme.css" />
+    <link rel="icon" sizes="180x180" href="sources/logo.png" />
     <style>
-        /* Стили для страницы профиля */
-        .profile-container {
-            max-width: 1200px;
-            margin: 2rem auto;
-            padding: 0 20px;
-        }
+      /* Стили для страницы профиля */
+      .profile-container {
+        max-width: 1200px;
+        margin: 2rem auto;
+        padding: 0 20px;
+      }
 
+      .profile-header {
+        display: flex;
+        align-items: center;
+        gap: 2rem;
+        margin-bottom: 2rem;
+        padding: 2rem;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      }
+
+      .profile-avatar-container {
+        position: relative;
+        width: 120px;
+        height: 120px;
+      }
+
+      .profile-avatar {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 4px solid #e5e7eb;
+      }
+
+      .profile-info {
+        flex: 1;
+      }
+
+      .profile-info h2 {
+        font-size: 1.8rem;
+        margin-bottom: 0.5rem;
+        color: #1f2937;
+      }
+
+      .profile-info p {
+        color: #6b7280;
+        margin-bottom: 0.5rem;
+      }
+
+      .profile-stats {
+        display: flex;
+        gap: 2rem;
+        margin-top: 1rem;
+      }
+
+      .stat-item {
+        text-align: center;
+      }
+
+      .stat-number {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: #2563eb;
+      }
+
+      .stat-label {
+        font-size: 0.9rem;
+        color: #6b7280;
+      }
+
+      .profile-content {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 2rem;
+        margin-bottom: 2rem;
+      }
+
+      .profile-card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        padding: 2rem;
+      }
+
+      .profile-card h3 {
+        font-size: 1.3rem;
+        margin-bottom: 1.5rem;
+        color: #1f2937;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .favorites-preview,
+      .comparisons-preview {
+        max-height: 200px;
+        overflow-y: auto;
+      }
+
+      .favorite-item,
+      .comparison-group {
+        padding: 0.75rem;
+        border-radius: 8px;
+        margin-bottom: 0.5rem;
+        background: #f9fafb;
+        transition: background-color 0.3s;
+      }
+
+      .favorite-item:hover,
+      .comparison-group:hover {
+        background: #f3f4f6;
+      }
+
+      .favorite-item img {
+        width: 50px;
+        height: 50px;
+        object-fit: contain;
+        background: #f8f9fa;
+        padding: 0.25rem;
+        border-radius: 4px;
+      }
+
+      .favorite-item-info {
+        flex: 1;
+      }
+
+      .favorite-item-name {
+        font-weight: 500;
+        margin-bottom: 0.25rem;
+      }
+
+      .favorite-item-price {
+        color: #2563eb;
+        font-weight: bold;
+      }
+
+      .comparison-title {
+        font-weight: 500;
+        margin-bottom: 0.5rem;
+      }
+
+      .comparison-items {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+      }
+
+      .comparison-item {
+        background: white;
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.8rem;
+        border: 1px solid #e5e7eb;
+      }
+
+      .view-all-btn {
+        display: block;
+        width: 100%;
+        padding: 0.75rem;
+        background: #f3f4f6;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        text-align: center;
+        color: #4b5563;
+        text-decoration: none;
+        font-weight: 500;
+        margin-top: 1rem;
+        transition:
+          background-color 0.3s,
+          color 0.3s;
+      }
+
+      .view-all-btn:hover {
+        background: #e5e7eb;
+        color: #1f2937;
+      }
+
+      .profile-actions {
+        display: flex;
+        gap: 1rem;
+        margin-top: 1rem;
+      }
+
+      .btn {
+        padding: 0.5rem 1rem;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-block;
+        font-weight: 500;
+        transition: all 0.3s;
+      }
+
+      .btn-primary {
+        background: #2563eb;
+        color: white;
+      }
+
+      .btn-primary:hover {
+        background: #1d4ed8;
+      }
+
+      .btn-outline {
+        background: transparent;
+        color: #2563eb;
+        border: 1px solid #2563eb;
+      }
+
+      .btn-outline:hover {
+        background: #eff6ff;
+      }
+
+      .remove-favorite-btn,
+      .remove-comparison-btn {
+        position: absolute;
+        top: 4px;
+        right: 4px;
+        background: #ef4444;
+        color: white;
+        border: none;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        font-weight: bold;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+        z-index: 10;
+      }
+
+      .favorite-item,
+      .comparison-group {
+        position: relative;
+        padding-left: 30px;
+      }
+
+      @media (max-width: 768px) {
         .profile-header {
-            display: flex;
-            align-items: center;
-            gap: 2rem;
-            margin-bottom: 2rem;
-            padding: 2rem;
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-
-        .profile-avatar-container {
-            position: relative;
-            width: 120px;
-            height: 120px;
-        }
-
-        .profile-avatar {
-            width: 100%;
-            height: 100%;
-            border-radius: 50%;
-            object-fit: cover;
-            border: 4px solid #e5e7eb;
-        }
-
-        .profile-info {
-            flex: 1;
-        }
-
-        .profile-info h2 {
-            font-size: 1.8rem;
-            margin-bottom: 0.5rem;
-            color: #1f2937;
-        }
-
-        .profile-info p {
-            color: #6b7280;
-            margin-bottom: 0.5rem;
-        }
-
-        .profile-stats {
-            display: flex;
-            gap: 2rem;
-            margin-top: 1rem;
-        }
-
-        .stat-item {
-            text-align: center;
-        }
-
-        .stat-number {
-            font-size: 1.5rem;
-            font-weight: bold;
-            color: #2563eb;
-        }
-
-        .stat-label {
-            font-size: 0.9rem;
-            color: #6b7280;
+          flex-direction: column;
+          text-align: center;
+          padding: 1.25rem;
         }
 
         .profile-content {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 2rem;
-            margin-bottom: 2rem;
+          grid-template-columns: 1fr;
+          gap: 1rem;
         }
 
         .profile-card {
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            padding: 2rem;
+          padding: 1.1rem;
         }
 
         .profile-card h3 {
-            font-size: 1.3rem;
-            margin-bottom: 1.5rem;
-            color: #1f2937;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
+          font-size: 1.05rem;
+          margin-bottom: 0.75rem;
         }
 
         .favorites-preview,
         .comparisons-preview {
-            max-height: 200px;
-            overflow-y: auto;
+          max-height: 140px;
         }
 
-        .favorite-item,
-        .comparison-group {
-            padding: 0.75rem;
-            border-radius: 8px;
-            margin-bottom: 0.5rem;
-            background: #f9fafb;
-            transition: background-color 0.3s;
-        }
-
-        .favorite-item:hover,
-        .comparison-group:hover {
-            background: #f3f4f6;
-        }
-
-        .favorite-item img {
-            width: 50px;
-            height: 50px;
-            object-fit: contain;
-            background: #f8f9fa;
-            padding: 0.25rem;
-            border-radius: 4px;
-        }
-
-        .favorite-item-info {
-            flex: 1;
-        }
-
-        .favorite-item-name {
-            font-weight: 500;
-            margin-bottom: 0.25rem;
-        }
-
-        .favorite-item-price {
-            color: #2563eb;
-            font-weight: bold;
-        }
-
-        .comparison-title {
-            font-weight: 500;
-            margin-bottom: 0.5rem;
-        }
-
-        .comparison-items {
-            display: flex;
-            gap: 0.5rem;
-            flex-wrap: wrap;
-        }
-
-        .comparison-item {
-            background: white;
-            padding: 0.25rem 0.5rem;
-            border-radius: 4px;
-            font-size: 0.8rem;
-            border: 1px solid #e5e7eb;
-        }
-
-        .view-all-btn {
-            display: block;
-            width: 100%;
-            padding: 0.75rem;
-            background: #f3f4f6;
-            border: 1px solid #e5e7eb;
-            border-radius: 8px;
-            text-align: center;
-            color: #4b5563;
-            text-decoration: none;
-            font-weight: 500;
-            margin-top: 1rem;
-            transition: background-color 0.3s, color 0.3s;
-        }
-
-        .view-all-btn:hover {
-            background: #e5e7eb;
-            color: #1f2937;
+        .profile-stats {
+          justify-content: center;
         }
 
         .profile-actions {
-            display: flex;
-            gap: 1rem;
-            margin-top: 1rem;
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 0.5rem;
         }
+      }
 
-        .btn {
-            padding: 0.5rem 1rem;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            text-decoration: none;
-            display: inline-block;
-            font-weight: 500;
-            transition: all 0.3s;
+      @media (min-width: 640px) and (max-width: 1024px) {
+        .profile-content {
+          grid-template-columns: 1fr 1fr;
         }
+      }
 
-        .btn-primary {
-            background: #2563eb;
-            color: white;
-        }
+      /* Тёмная тема: переопределение цветов ниже общих правил страницы */
+      [data-theme='dark'] .profile-container .profile-info h2,
+      [data-theme='dark'] .profile-container .profile-card h3 {
+        color: #f1f5f9;
+      }
 
-        .btn-primary:hover {
-            background: #1d4ed8;
-        }
+      [data-theme='dark'] .profile-container .profile-info p,
+      [data-theme='dark'] .profile-container .stat-label {
+        color: #94a3b8;
+      }
 
-        .btn-outline {
-            background: transparent;
-            color: #2563eb;
-            border: 1px solid #2563eb;
-        }
-
-        .btn-outline:hover {
-            background: #eff6ff;
-        }
-
-        .remove-favorite-btn,
-.remove-comparison-btn {
-  position: absolute;
-  top: 4px;
-  right: 4px;
-  background: #ef4444;
-  color: white;
-  border: none;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  font-weight: bold;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 16px;
-  z-index: 10;
-}
-
-.favorite-item,
-.comparison-group {
-  position: relative;
-  padding-left: 30px;
-}
-
-        @media (max-width: 768px) {
-            .profile-header {
-                flex-direction: column;
-                text-align: center;
-                padding: 1.25rem;
-            }
-
-            .profile-content {
-                grid-template-columns: 1fr;
-                gap: 1rem;
-            }
-
-            .profile-card {
-                padding: 1.1rem;
-            }
-
-            .profile-card h3 {
-                font-size: 1.05rem;
-                margin-bottom: 0.75rem;
-            }
-
-            .favorites-preview,
-            .comparisons-preview {
-                max-height: 140px;
-            }
-
-            .profile-stats {
-                justify-content: center;
-            }
-
-            .profile-actions {
-                display: grid;
-                grid-template-columns: 1fr 1fr;
-                gap: 0.5rem;
-            }
-        }
-
-        @media (min-width: 640px) and (max-width: 1024px) {
-            .profile-content {
-                grid-template-columns: 1fr 1fr;
-            }
-        }
-
-        /* Тёмная тема: переопределение цветов ниже общих правил страницы */
-        [data-theme="dark"] .profile-container .profile-info h2,
-        [data-theme="dark"] .profile-container .profile-card h3 {
-            color: #f1f5f9;
-        }
-
-        [data-theme="dark"] .profile-container .profile-info p,
-        [data-theme="dark"] .profile-container .stat-label {
-            color: #94a3b8;
-        }
-
-        [data-theme="dark"] .profile-container .favorite-item-name,
-        [data-theme="dark"] .profile-container .comparison-title {
-            color: #f1f5f9;
-        }
+      [data-theme='dark'] .profile-container .favorite-item-name,
+      [data-theme='dark'] .profile-container .comparison-title {
+        color: #f1f5f9;
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <header class="header">
-        <div class="container">
-            <div class="logo">
-                <h1><a href="index.html" style="color: inherit; text-decoration: none;">tech-nozone</a></h1>
-            </div>
-            <nav class="nav">
-                <a href="index.html" class="nav-link">Главная</a>
-                <a href="catalog.html" class="nav-link">Каталог</a>
-                <a href="comparison.html" class="nav-link">Сравнение<span class="comparison-counter">0</span></a>
-                <a href="recommendations.html" class="nav-link">Рекомендации</a>
-                <a href="learn.html" class="nav-link">Обучение</a>
-            </nav>
-            <div class="nav-search-container">
-                <input type="text" class="nav-search" id="navSearch"
-                       placeholder="Поиск товаров..."
-                       oninput="showNavSearchSuggestions()"
-                       onkeypress="handleNavSearchEnter(event)">
-                <button class="nav-search-btn" onclick="navSearchProducts()">
-                    🔍
-                </button>
-                <div id="navSearchSuggestions" class="nav-search-suggestions"></div>
-            </div>
-            <div class="auth-buttons">
-                <a href="profile.html" class="btn btn-outline">Профиль</a>
-                <a href="#" class="btn btn-primary" onclick="logout()">Выйти</a>
-            </div>
-        </div>
+      <div class="container"></div>
     </header>
 
     <main class="main">
-        <div class="profile-container">
-            <div class="profile-header">
-                <div class="profile-avatar-container">
-                    <img src="sources/default-user-avatar.png" alt="Аватар" class="profile-avatar" id="profileAvatar">
-                </div>
-                <div class="profile-info">
-                    <h2 id="userName">Иван Петров</h2>
-                    <p id="userEmail">ivan@example.com</p>
-                    <p id="userJoinDate">Дата регистрации: 15 января 2024</p>
-                    <div class="profile-stats">
-                        <div class="stat-item">
-                            <div class="stat-number" id="statFavorites">0</div>
-                            <div class="stat-label">Избранное</div>
-                        </div>
-                        <div class="stat-item">
-                            <div class="stat-number" id="statComparisons">0</div>
-                            <div class="stat-label">Сравнения</div>
-                        </div>
-                        <div class="stat-item">
-                            <div class="stat-number" id="statViews">0</div>
-                            <div class="stat-label">Просмотры</div>
-                        </div>
-                    </div>
-                    <div class="profile-actions">
-                        <button class="btn btn-primary" onclick="editProfile()">Редактировать профиль</button>
-                        <button class="btn btn-outline" onclick="changePassword()">Сменить пароль</button>
-                        <a href="admin.html" id="adminPanelButton" class="btn btn-admin-panel" >Перейти в админ-панель</a>
-                    </div>
-                </div>
+      <div class="profile-container">
+        <div class="profile-header">
+          <div class="profile-avatar-container">
+            <img src="sources/default-user-avatar.png" alt="Аватар" class="profile-avatar" id="profileAvatar" />
+          </div>
+          <div class="profile-info">
+            <h2 id="userName">Иван Петров</h2>
+            <p id="userEmail">ivan@example.com</p>
+            <p id="userJoinDate">Дата регистрации: 15 января 2024</p>
+            <div class="profile-stats">
+              <div class="stat-item">
+                <div class="stat-number" id="statFavorites">0</div>
+                <div class="stat-label">Избранное</div>
+              </div>
+              <div class="stat-item">
+                <div class="stat-number" id="statComparisons">0</div>
+                <div class="stat-label">Сравнения</div>
+              </div>
+              <div class="stat-item">
+                <div class="stat-number" id="statViews">0</div>
+                <div class="stat-label">Просмотры</div>
+              </div>
             </div>
-
-            <div class="profile-content">
-                <!-- Избранное -->
-<div class="profile-card">
-  <h3>❤️ Избранные товары</h3>
-  <div class="favorites-preview" id="favoritesPreview">
-    <div id="noFavoritesMessage" class="empty-preview-message" style="display: none;">
-      Нет избранных товаров
-    </div>
-  </div>
-  <a href="favorites.html" class="view-all-btn">Просмотреть все избранные</a>
-</div>
-
-<!-- Сравнения -->
-<div class="profile-card">
-  <h3>📋 Мои сравнения</h3>
-  <div class="comparisons-preview" id="comparisonsPreview">
-    <div id="noComparisonsMessage" class="empty-preview-message" style="display: none;">
-      Нет созданных сравнений
-    </div>
-  </div>
-  <a href="comparison.html" class="view-all-btn">Просмотреть все сравнения</a>
-</div>
-<div class="profile-card">
-  <h3>🔔 Важные уведомления (3 дня)</h3>
-  <div class="comparisons-preview" id="alertsPreview">
-    <div id="noAlertsMessage" class="empty-preview-message" style="display: none;">
-      Новых уведомлений нет
-    </div>
-  </div>
-</div>
+            <div class="profile-actions">
+              <button class="btn btn-primary" onclick="editProfile()">Редактировать профиль</button>
+              <button class="btn btn-outline" onclick="changePassword()">Сменить пароль</button>
+              <a href="admin.html" id="adminPanelButton" class="btn btn-admin-panel">Перейти в админ-панель</a>
             </div>
+          </div>
         </div>
+
+        <div class="profile-content">
+          <!-- Избранное -->
+          <div class="profile-card">
+            <h3>❤️ Избранные товары</h3>
+            <div class="favorites-preview" id="favoritesPreview">
+              <div id="noFavoritesMessage" class="empty-preview-message" style="display: none">
+                Нет избранных товаров
+              </div>
+            </div>
+            <a href="favorites.html" class="view-all-btn">Просмотреть все избранные</a>
+          </div>
+
+          <!-- Сравнения -->
+          <div class="profile-card">
+            <h3>📋 Мои сравнения</h3>
+            <div class="comparisons-preview" id="comparisonsPreview">
+              <div id="noComparisonsMessage" class="empty-preview-message" style="display: none">
+                Нет созданных сравнений
+              </div>
+            </div>
+            <a href="comparison.html" class="view-all-btn">Просмотреть все сравнения</a>
+          </div>
+          <div class="profile-card">
+            <h3>🔔 Важные уведомления (3 дня)</h3>
+            <div class="comparisons-preview" id="alertsPreview">
+              <div id="noAlertsMessage" class="empty-preview-message" style="display: none">Новых уведомлений нет</div>
+            </div>
+          </div>
+        </div>
+      </div>
     </main>
 
     <footer class="footer">
-        <div class="container">
-            <p>&copy; 2025-2026 tech-nozone. Все права защищены.</p>
-        </div>
+      <div class="container">
+        <p>&copy; 2025-2026 tech-nozone. Все права защищены.</p>
+      </div>
     </footer>
 
     <script>
-document.addEventListener('DOMContentLoaded', function () {
-  //Проверяем токен
-  const token = localStorage.getItem('techAggregatorToken');
-  if (!token) {
-    alert('Пожалуйста, войдите в аккаунт');
-    window.location.href = 'auth.html';
-    return;
-  }
+      document.addEventListener('DOMContentLoaded', function () {
+        //Проверяем токен
+        const token = localStorage.getItem('techAggregatorToken');
+        if (!token) {
+          alert('Пожалуйста, войдите в аккаунт');
+          window.location.href = 'auth.html';
+          return;
+        }
 
-  //Загружаем данные
-  loadProfileDataFromAPI();
-});
+        //Загружаем данные
+        loadProfileDataFromAPI();
+      });
 
-//Функции действий
-function editProfile() {
-  alert('Функция редактирования профиля будет реализована позже');
-}
-function changePassword() {
-  alert('Функция смены пароля будет реализована позже');
-}
-function logout() {
-  localStorage.removeItem('techAggregatorToken');
-  window.location.href = 'index.html';
-}
-</script>
+      //Функции действий
+      function editProfile() {
+        alert('Функция редактирования профиля будет реализована позже');
+      }
+      function changePassword() {
+        alert('Функция смены пароля будет реализована позже');
+      }
+      function logout() {
+        localStorage.removeItem('techAggregatorToken');
+        window.location.href = 'index.html';
+      }
+    </script>
     <script src="config.js"></script>
     <script src="script.js?v=import2"></script>
-</body>
+    <script src="site-footer.js"></script>
+  </body>
 </html>

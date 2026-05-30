@@ -1,403 +1,404 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="site-nav.js"></script>
     <script src="theme.js"></script>
     <title>Каталог техники - tech-nozone</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="dark-theme.css">
-    <link rel="icon" sizes="180x180" href="sources/logo.png">
+    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="dark-theme.css" />
+    <link rel="icon" sizes="180x180" href="sources/logo.png" />
     <style>
+      .catalog-layout {
+        display: grid;
+        grid-template-columns: 280px 1fr;
+        gap: 2rem;
+        min-height: 600px;
+      }
+
+      .filters-sidebar {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 12px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        max-height: calc(100vh - 180px);
+        overflow-y: auto;
+        position: sticky;
+        top: 120px;
+      }
+
+      .filters-sidebar::-webkit-scrollbar {
+        width: 6px;
+      }
+
+      .filters-sidebar::-webkit-scrollbar-track {
+        background: #f5f5f5;
+        border-radius: 3px;
+      }
+
+      .filters-sidebar::-webkit-scrollbar-thumb {
+        background: #c1c1c1;
+        border-radius: 3px;
+      }
+
+      .filters-sidebar h3 {
+        margin-top: 0;
+        margin-bottom: 1.5rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 2px solid #3b82f6;
+        color: #1f2937;
+      }
+
+      .filter-group {
+        margin-bottom: 1.5rem;
+      }
+
+      .filter-group label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+        color: #374151;
+      }
+
+      .filter-group select,
+      .filter-group input {
+        width: 100%;
+        padding: 0.6rem;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        font-size: 0.95rem;
+      }
+
+      .price-range {
+        display: flex;
+        gap: 0.5rem;
+      }
+
+      .filter-actions {
+        display: flex;
+        gap: 0.75rem;
+        margin-top: 2rem;
+        padding-top: 1rem;
+        border-top: 1px solid #e5e7eb;
+      }
+
+      .filter-actions .btn {
+        flex: 1;
+        padding: 0.6rem;
+      }
+
+      @media (max-width: 1024px) {
         .catalog-layout {
-            display: grid;
-            grid-template-columns: 280px 1fr;
-            gap: 2rem;
-            min-height: 600px;
+          grid-template-columns: 250px 1fr;
+          gap: 1.5rem;
         }
-        
-        .filters-sidebar {
-            background: white;
-            padding: 1.5rem;
-            border-radius: 12px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            max-height: calc(100vh - 180px);
-            overflow-y: auto;
-            position: sticky;
-            top: 120px;
+      }
+
+      @media (max-width: 768px) {
+        .catalog-layout {
+          grid-template-columns: 1fr;
+          gap: 0.85rem;
         }
-        
-        .filters-sidebar::-webkit-scrollbar {
-            width: 6px;
-        }
-        
-        .filters-sidebar::-webkit-scrollbar-track {
-            background: #f5f5f5;
-            border-radius: 3px;
-        }
-        
-        .filters-sidebar::-webkit-scrollbar-thumb {
-            background: #c1c1c1;
-            border-radius: 3px;
-        }
-        
-        .filters-sidebar h3 {
-            margin-top: 0;
-            margin-bottom: 1.5rem;
-            padding-bottom: 0.75rem;
-            border-bottom: 2px solid #3b82f6;
-            color: #1f2937;
-        }
-        
-        .filter-group {
-            margin-bottom: 1.5rem;
-        }
-        
-        .filter-group label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: 500;
-            color: #374151;
-        }
-        
-        .filter-group select,
-        .filter-group input {
-            width: 100%;
-            padding: 0.6rem;
-            border: 1px solid #d1d5db;
-            border-radius: 6px;
-            font-size: 0.95rem;
-        }
-        
-        .price-range {
-            display: flex;
-            gap: 0.5rem;
-        }
-        
-        .filter-actions {
-            display: flex;
-            gap: 0.75rem;
-            margin-top: 2rem;
-            padding-top: 1rem;
-            border-top: 1px solid #e5e7eb;
-        }
-        
-        .filter-actions .btn {
-            flex: 1;
-            padding: 0.6rem;
-        }
-        
-        @media (max-width: 1024px) {
-            .catalog-layout {
-                grid-template-columns: 250px 1fr;
-                gap: 1.5rem;
-            }
-        }
-        
-        @media (max-width: 768px) {
-            .catalog-layout {
-                grid-template-columns: 1fr;
-                gap: 0.85rem;
-            }
-            .filter-actions {
-                position: sticky;
-                bottom: 0;
-                background: white;
-                padding-top: 0.65rem;
-                margin-top: 1rem;
-            }
-        }
+      }
     </style>
     <script>
-//Применяем фильтры из URL при загрузке
-function applyURLFilters() {
-  const urlParams = new URLSearchParams(window.location.search);
-  const search = urlParams.get('search');
-  const category = urlParams.get('category');
+      //Применяем фильтры из URL при загрузке
+      function applyURLFilters() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const search = urlParams.get('search');
+        const category = urlParams.get('category');
 
-  if (category) {
-    document.getElementById('categorySelect').value = category;
-    updateFilters(); //обновляет динамические фильтры
-  }
+        if (category) {
+          document.getElementById('categorySelect').value = category;
+          updateFilters(); //обновляет динамические фильтры
+        }
 
-  if (search) {
-    document.getElementById('mainSearch').value = search;
-    //Фильтруем товары по поисковому запросу
-    filterProductsBySearch(search);
-  } else {
-    //Если нет поиска — просто фильтруем по категории/цене
-    filterProducts();
-  }
-}
+        if (search) {
+          document.getElementById('mainSearch').value = search;
+          //Фильтруем товары по поисковому запросу
+          filterProductsBySearch(search);
+        } else {
+          //Если нет поиска — просто фильтруем по категории/цене
+          filterProducts();
+        }
+      }
 
-//Фильтрация товаров по поисковому запросу
-function filterProductsBySearch(query) {
-  const lowerQuery = query.toLowerCase();
-  let filtered = demoProducts.filter(product =>
-    product.name.toLowerCase().includes(lowerQuery) ||
-    (product.specs && Object.values(product.specs).some(
-      value => value.toString().toLowerCase().includes(lowerQuery)
-    ))
-  );
+      //Фильтрация товаров по поисковому запросу
+      function filterProductsBySearch(query) {
+        let filtered =
+          typeof resolveProductsForSearchQuery === 'function'
+            ? resolveProductsForSearchQuery(query)
+            : demoProducts.filter((product) => product.name.toLowerCase().includes(query.toLowerCase()));
 
-  //Применяем остальные фильтры (категория, цена и т.д.)
-  const category = document.getElementById('categorySelect')?.value || '';
-  if (category) {
-    filtered = filtered.filter(p => p.category === category);
-  }
+        //Применяем остальные фильтры (категория, цена и т.д.)
+        const category = document.getElementById('categorySelect')?.value || '';
+        if (category) {
+          filtered = filtered.filter((p) => p.category === category);
+        }
 
-  const minPrice = parseFloat(document.getElementById('minPrice')?.value) || 0;
-  const maxPrice = parseFloat(document.getElementById('maxPrice')?.value) || Infinity;
-  filtered = filtered.filter(p => {
-    const price = getMinPrice(p) || 0;
-    return price >= minPrice && price <= maxPrice;
-  });
+        const minPrice = parseFloat(document.getElementById('minPrice')?.value) || 0;
+        const maxPrice = parseFloat(document.getElementById('maxPrice')?.value) || Infinity;
+        filtered = filtered.filter((p) => {
+          const price = getMinPrice(p) || 0;
+          return price >= minPrice && price <= maxPrice;
+        });
 
-  displayProducts(filtered);
-  updateProductsInfo(filtered.length, category);
-}
-</script>
-</head>
-<body>
+        displayProducts(filtered);
+        updateProductsInfo(filtered.length, category);
+      }
+    </script>
+  </head>
+  <body>
     <header class="header">
-<div class="container">
-<div class="logo">
-<h1><a href="index.html" style="color: inherit; text-decoration: none;">tech-nozone</a></h1>
-</div>
-<nav class="nav">
-<a href="index.html" class="nav-link">Главная</a>
-<a href="catalog.html" class="nav-link active">Каталог</a>
-<a href="comparison.html" class="nav-link">Сравнение<span class="comparison-counter">0</span></a>
-<a href="recommendations.html" class="nav-link">Рекомендации</a>
-<a href="learn.html" class="nav-link">Обучение</a>
-</nav>
-
-<div class="nav-search-container">
-<input type="text" class="nav-search" id="navSearch"
-placeholder="Поиск товаров..."
-oninput="showNavSearchSuggestions()"
-onkeypress="handleNavSearchEnter(event)">
-<button class="nav-search-btn" onclick="navSearchProducts()">🔍</button>
-<div id="navSearchSuggestions" class="nav-search-suggestions"></div>
-</div>
-<div class="auth-buttons">
-<a href="auth.html" class="btn btn-outline">Войти</a>
-<a href="auth.html?tab=register" class="btn btn-primary">Регистрация</a>
-</div>
-</div>
-</header>
+      <div class="container"></div>
+    </header>
 
     <main class="main">
-        <div class="container">
-            <div class="catalog-layout">
-                <!-- Боковая панель фильтров (на мобилке — выезжающая слева) -->
-                <aside class="filters-sidebar" id="catalogFiltersSidebar">
-                    <h3>Фильтры</h3>
-                    <!-- Баннер режима "Похожие товары" -->
-                    <div id="similarModeBanner" style="display: none; margin-bottom: 15px; padding: 10px 12px; background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 8px; font-size: 0.85rem; align-items: center; gap: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
-                        <span style="flex: 1; color: #0369a1;">🔍 Показано похожее на: <strong id="similarProductName" style="color: #0284c7;"></strong></span>
-                        <button onclick="exitSimilarMode()" title="Вернуться к полному каталогу" style="background: #e2e8f0; border: none; border-radius: 50%; width: 26px; height: 26px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 16px; color: #475569; transition: 0.2s;">&times;</button>
-                    </div>
-                    <div class="filter-group">
-                        <label>Категория</label>
-                        <select id="categorySelect" onchange="updateFilters()">
-                            <option value="">Все категории</option>
-                            <option value="smartphones">Смартфоны</option>
-                            <option value="laptops">Ноутбуки</option>
-                            <option value="tv">Телевизоры</option>
-                            <option value="headphones">Наушники</option>
-                            <option value="cameras">Фотоаппараты</option>
-                            <option value="tablets">Планшеты</option>
-                            <option value="smartwatches">Смарт-часы</option>
-                            <option value="ebooks">Электронные книги</option>
-                            <option value="drones">Дроны</option>
-                            <option value="pc_components">Комплектующие ПК</option>
-                            <option value="keyboards">Клавиатуры</option>
-                            <option value="mouses">Мыши</option>
-                            <option value="cases">Корпуса ПК</option>
-                            <option value="drivers">Накопители</option>
-                            <option value="fitness_trackers">Фитнес-трекеры</option>
-                            <option value="power_units">Блоки питания</option>
-                            <option value="microphones">Микрофоны</option>
-                            <option value="webcams">Веб-камеры</option>
-                            <option value="power_banks">Павербанки</option>
-                            <option value="portable_speakers">Портативные колонки</option>
-                            <option value="monitors">Мониторы</option>
-                            <option value="accessories">Аксессуары</option>
-                            <option value="gaming">Игровые консоли</option>
-                            <option value="networking">Сетевое оборудование</option>
-                            <option value="cpus">Процессоры</option>
-                            <option value="motherboards">Материнские платы</option>
-                            <option value="ram">Оперативная память</option>
-                            <option value="graphics_cards">Видеокарты</option>
-                            <option value="external_drives">Внешние накопители</option>
-                            <option value="audio">Аудиосистемы</option>
-                            <option value="smart_home">Умный дом</option>
-                            <option value="wearables">Носимые устройства</option>
-                            <option value="other">Другое</option>
-                        </select>
-                    </div>
-
-                    <div class="filter-group">
-                        <label>Цена, руб.</label>
-                        <div class="price-range">
-                            <input type="number" id="minPrice" placeholder="от" onchange="filterProducts()" min="0">
-                            <input type="number" id="maxPrice" placeholder="до" onchange="filterProducts()" min="0">
-                        </div>
-                    </div>
-
-                    <!-- Динамические фильтры -->
-                    <div id="dynamicFilters"></div>
-
-                    <div class="filter-actions">
-                        <button class="btn btn-secondary" onclick="resetFilters()">Сбросить все</button>
-                        <button class="btn btn-primary" onclick="filterProducts()">Применить</button>
-                    </div>
-                    
-                    <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid #e5e7eb;">
-                        <p style="font-size: 0.85rem; color: #6b7280; margin-bottom: 0.5rem;">
-                            <strong>Совет:</strong> Выберите категорию для отображения дополнительных фильтров
-                        </p>
-                        <button class="btn btn-outline btn-small" onclick="resetAllFilters()" 
-                                style="width: 100%; padding: 0.5rem; font-size: 0.85rem;">
-                            Сбросить всё и показать все товары
-                        </button>
-                    </div>
-                </aside>
-
-                <!-- Основной контент -->
-                <section class="products-section">
-                    <div class="catalog-mobile-drawer-triggers">
-                        <button type="button" class="btn btn-outline btn-small" id="btnOpenCatalogFilters">Фильтры</button>
-                        <button type="button" class="btn btn-outline btn-small" id="btnOpenCatalogSort">Сортировка</button>
-                    </div>
-                    <div class="catalog-drawer-backdrop" id="catalogDrawerBackdrop" hidden></div>
-                    <div class="section-header">
-                        <h2>Каталог техники</h2>
-                        <div class="sort-panel-drawer" id="catalogSortPanel">
-                        <div class="sort-options">
-                            <label>Сортировка:</label>
-                            
-                            <select id="sortSelect" onchange="filterProducts()">
-                                <option value="name">По названию</option>
-                                <option value="price_asc">По цене (возр.)</option>
-                                <option value="price_desc">По цене (убыв.)</option>
-                                <option value="rating">По рейтингу</option>
-                                <option value="brand">По бренду</option>
-                            </select>
-                            <button class="btn btn-primary" style="padding:10px" onclick="filterProducts()">Применить</button>
-                        </div>
-                        </div>
-                    </div>
-
-                    <div id="productsInfo" class="products-info">
-                        <span id="productsCount">Найдено товаров: 0</span>
-                        <span id="currentCategory"></span>
-                    </div>
-
-                    <div id="productsGrid" class="products-grid">
-                       
-                    </div>
-
-                    <div id="noResults" class="no-results" style="display: none;">
-                        <div style="text-align: center; padding: 3rem;">
-                            <h3 style="color: #374151; margin-bottom: 1rem;">😕 Товары не найдены</h3>
-                            <p style="color: #6b7280; margin-bottom: 2rem;">
-                                Попробуйте изменить критерии поиска или выбрать другую категорию
-                            </p>
-                            <button class="btn btn-primary" onclick="resetFilters()">Сбросить фильтры</button>
-                            <button class="btn btn-outline" onclick="resetAllFilters()" style="margin-left: 1rem;">
-                                Показать все товары
-                            </button>
-                        </div>
-                    </div>
-                </section>
+      <div class="container">
+        <div class="catalog-layout">
+          <!-- Боковая панель фильтров (на мобилке — выезжающая слева) -->
+          <aside class="filters-sidebar" id="catalogFiltersSidebar">
+            <h3>Фильтры</h3>
+            <!-- Баннер режима "Похожие товары" -->
+            <div
+              id="similarModeBanner"
+              style="
+                display: none;
+                margin-bottom: 15px;
+                padding: 10px 12px;
+                background: #f0f9ff;
+                border: 1px solid #bae6fd;
+                border-radius: 8px;
+                font-size: 0.85rem;
+                align-items: center;
+                gap: 10px;
+                box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+              "
+            >
+              <span style="flex: 1; color: #0369a1"
+                >🔍 Показано похожее на: <strong id="similarProductName" style="color: #0284c7"></strong
+              ></span>
+              <button
+                onclick="exitSimilarMode()"
+                title="Вернуться к полному каталогу"
+                style="
+                  background: #e2e8f0;
+                  border: none;
+                  border-radius: 50%;
+                  width: 26px;
+                  height: 26px;
+                  cursor: pointer;
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                  font-size: 16px;
+                  color: #475569;
+                  transition: 0.2s;
+                "
+              >
+                &times;
+              </button>
             </div>
+            <div class="filter-group">
+              <label>Категория</label>
+              <select id="categorySelect" onchange="updateFilters()">
+                <option value="">Все категории</option>
+                <option value="smartphones">Смартфоны</option>
+                <option value="laptops">Ноутбуки</option>
+                <option value="tv">Телевизоры</option>
+                <option value="headphones">Наушники</option>
+                <option value="cameras">Фотоаппараты</option>
+                <option value="tablets">Планшеты</option>
+                <option value="smartwatches">Смарт-часы</option>
+                <option value="ebooks">Электронные книги</option>
+                <option value="drones">Дроны</option>
+                <option value="pc_components">Комплектующие ПК</option>
+                <option value="keyboards">Клавиатуры</option>
+                <option value="mouses">Мыши</option>
+                <option value="cases">Корпуса ПК</option>
+                <option value="drivers">Накопители</option>
+                <option value="fitness_trackers">Фитнес-трекеры</option>
+                <option value="power_units">Блоки питания</option>
+                <option value="microphones">Микрофоны</option>
+                <option value="webcams">Веб-камеры</option>
+                <option value="power_banks">Павербанки</option>
+                <option value="portable_speakers">Портативные колонки</option>
+                <option value="monitors">Мониторы</option>
+                <option value="accessories">Аксессуары</option>
+                <option value="gaming">Игровые консоли</option>
+                <option value="networking">Сетевое оборудование</option>
+                <option value="cpus">Процессоры</option>
+                <option value="motherboards">Материнские платы</option>
+                <option value="ram">Оперативная память</option>
+                <option value="graphics_cards">Видеокарты</option>
+                <option value="external_drives">Внешние накопители</option>
+                <option value="audio">Аудиосистемы</option>
+                <option value="smart_home">Умный дом</option>
+                <option value="wearables">Носимые устройства</option>
+                <option value="other">Другое</option>
+              </select>
+            </div>
+
+            <div class="filter-group">
+              <label>Цена, руб.</label>
+              <div class="price-range">
+                <input type="number" id="minPrice" placeholder="от" onchange="filterProducts()" min="0" />
+                <input type="number" id="maxPrice" placeholder="до" onchange="filterProducts()" min="0" />
+              </div>
+            </div>
+
+            <!-- Динамические фильтры -->
+            <div id="dynamicFilters"></div>
+
+            <div class="filter-actions">
+              <button class="btn btn-secondary" onclick="resetFilters()">Сбросить все</button>
+              <button class="btn btn-primary" onclick="filterProducts()">Применить</button>
+            </div>
+
+            <div class="filters-sidebar__hint">
+              <button
+                type="button"
+                class="btn btn-outline btn-small"
+                onclick="resetAllFilters()"
+                style="width: 100%; padding: 0.5rem; font-size: 0.85rem"
+              >
+                Сбросить всё и показать все товары
+              </button>
+            </div>
+          </aside>
+
+          <!-- Основной контент -->
+          <section class="products-section">
+            <div class="catalog-mobile-drawer-triggers">
+              <button type="button" class="btn btn-outline btn-small" id="btnOpenCatalogFilters">Фильтры</button>
+              <button type="button" class="btn btn-outline btn-small" id="btnOpenCatalogSort">Сортировка</button>
+            </div>
+            <div class="catalog-drawer-backdrop" id="catalogDrawerBackdrop" hidden></div>
+            <div class="section-header">
+              <h2>Каталог техники</h2>
+              <div class="sort-panel-drawer" id="catalogSortPanel">
+                <div class="sort-options">
+                  <label>Сортировка:</label>
+
+                  <select id="sortSelect" onchange="filterProducts()">
+                    <option value="name">По названию</option>
+                    <option value="price_asc">По цене (возр.)</option>
+                    <option value="price_desc">По цене (убыв.)</option>
+                    <option value="rating">По рейтингу</option>
+                    <option value="brand">По бренду</option>
+                  </select>
+                  <button class="btn btn-primary" style="padding: 10px" onclick="filterProducts()">Применить</button>
+                </div>
+              </div>
+            </div>
+
+            <div id="productsInfo" class="products-info">
+              <span id="productsCount">Найдено товаров: 0</span>
+              <span id="currentCategory"></span>
+            </div>
+
+            <div id="productsGrid" class="products-grid"></div>
+
+            <div id="noResults" class="no-results" style="display: none">
+              <div style="text-align: center; padding: 3rem">
+                <h3 style="color: #374151; margin-bottom: 1rem">😕 Товары не найдены</h3>
+                <p style="color: #6b7280; margin-bottom: 2rem">
+                  Попробуйте изменить критерии поиска или выбрать другую категорию
+                </p>
+                <button class="btn btn-primary" onclick="resetFilters()">Сбросить фильтры</button>
+                <button class="btn btn-outline" onclick="resetAllFilters()" style="margin-left: 1rem">
+                  Показать все товары
+                </button>
+              </div>
+            </div>
+          </section>
         </div>
+      </div>
     </main>
 
     <footer class="footer">
-        <div class="container">
-            <p>&copy; 2025-2026 tech-nozone. Все права защищены.</p>
-        </div>
+      <div class="container">
+        <p>&copy; 2025-2026 tech-nozone. Все права защищены.</p>
+      </div>
     </footer>
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-    loadUserData();
-    updateComparisonCounter();
-    // Загружаем товары из API
-    loadProductsFromAPI().then(() => {
-        applyURLFilters();
-        updateSimilarModeBanner(); 
-    });
+    <script>
+      document.addEventListener('DOMContentLoaded', function () {
+        loadUserData();
+        updateComparisonCounter();
+        // Загружаем товары из API
+        loadProductsFromAPI().then(() => {
+          applyURLFilters();
+          updateSimilarModeBanner();
+        });
 
-    const bd = document.getElementById('catalogDrawerBackdrop');
-    const filt = document.getElementById('catalogFiltersSidebar');
-    const sortP = document.getElementById('catalogSortPanel');
-    function closeCatalogDrawers() {
-        if (bd) bd.hidden = true;
-        filt?.classList.remove('is-open');
-        sortP?.classList.remove('is-open');
-    }
-    window.__closeCatalogMobileDrawers = closeCatalogDrawers;
+        const bd = document.getElementById('catalogDrawerBackdrop');
+        const filt = document.getElementById('catalogFiltersSidebar');
+        const sortP = document.getElementById('catalogSortPanel');
+        function closeCatalogDrawers() {
+          if (bd) bd.hidden = true;
+          filt?.classList.remove('is-open');
+          sortP?.classList.remove('is-open');
+        }
+        window.__closeCatalogMobileDrawers = closeCatalogDrawers;
 
-    document.getElementById('btnOpenCatalogFilters')?.addEventListener('click', () => {
-        closeCatalogDrawers();
-        if (bd) bd.hidden = false;
-        filt?.classList.add('is-open');
-    });
-    document.getElementById('btnOpenCatalogSort')?.addEventListener('click', () => {
-        closeCatalogDrawers();
-        if (bd) bd.hidden = false;
-        sortP?.classList.add('is-open');
-    });
-    bd?.addEventListener('click', closeCatalogDrawers);
+        document.getElementById('btnOpenCatalogFilters')?.addEventListener('click', () => {
+          closeCatalogDrawers();
+          if (bd) bd.hidden = false;
+          filt?.classList.add('is-open');
+        });
+        document.getElementById('btnOpenCatalogSort')?.addEventListener('click', () => {
+          closeCatalogDrawers();
+          if (bd) bd.hidden = false;
+          sortP?.classList.add('is-open');
+        });
+        bd?.addEventListener('click', closeCatalogDrawers);
 
-    const filtSidebar = document.getElementById('catalogFiltersSidebar');
-    const filterActions = filtSidebar?.querySelector('.filter-actions');
-    filterActions?.querySelector('.btn-secondary')?.addEventListener('click', () => {
-      setTimeout(closeCatalogDrawers, 0);
-    });
-    filterActions?.querySelector('.btn-primary')?.addEventListener('click', () => {
-      setTimeout(closeCatalogDrawers, 0);
-    });
-    filtSidebar?.querySelector('button[onclick*="resetAllFilters"]')?.addEventListener('click', () => {
-      setTimeout(closeCatalogDrawers, 0);
-    });
-    document.querySelector('#catalogSortPanel .btn-primary')?.addEventListener('click', () => {
-      setTimeout(closeCatalogDrawers, 0);
-    });
-});
-// Функция выхода из режима "Похожие товары"
-window.exitSimilarMode = function() {
-    similarModeTargetId = null;
-    const url = new URL(window.location);
-    url.searchParams.delete('similarTo');
-    url.searchParams.delete('similarBrand');
-    url.searchParams.delete('similarPrice');
-    url.searchParams.delete('similarSpecs');
-    window.history.pushState({}, '', url);
-    updateSimilarModeBanner();
-    filterProducts(); // Перерисовываем каталог
-};
+        const filtSidebar = document.getElementById('catalogFiltersSidebar');
+        const filterActions = filtSidebar?.querySelector('.filter-actions');
+        filterActions?.querySelector('.btn-secondary')?.addEventListener('click', () => {
+          setTimeout(closeCatalogDrawers, 0);
+        });
+        filterActions?.querySelector('.btn-primary')?.addEventListener('click', () => {
+          setTimeout(closeCatalogDrawers, 0);
+        });
+        filtSidebar?.querySelector('button[onclick*="resetAllFilters"]')?.addEventListener('click', () => {
+          setTimeout(closeCatalogDrawers, 0);
+        });
+        document.querySelector('#catalogSortPanel .btn-primary')?.addEventListener('click', () => {
+          setTimeout(closeCatalogDrawers, 0);
+        });
+      });
+      // Функция выхода из режима "Похожие товары"
+      window.exitSimilarMode = function () {
+        similarModeTargetId = null;
+        const url = new URL(window.location);
+        url.searchParams.delete('similarTo');
+        url.searchParams.delete('similarBrand');
+        url.searchParams.delete('similarPrice');
+        url.searchParams.delete('similarSpecs');
+        window.history.pushState({}, '', url);
+        updateSimilarModeBanner();
+        filterProducts(); // Перерисовываем каталог
+      };
 
-// Обновление баннера в каталоге
-function updateSimilarModeBanner() {
-    const banner = document.getElementById('similarModeBanner');
-    const nameEl = document.getElementById('similarProductName');
-    if (!banner || !nameEl) return;
+      // Обновление баннера в каталоге
+      function updateSimilarModeBanner() {
+        const banner = document.getElementById('similarModeBanner');
+        const nameEl = document.getElementById('similarProductName');
+        if (!banner || !nameEl) return;
 
-    if (similarModeTargetId) {
-        const target = demoProducts.find(p => p.id === similarModeTargetId);
-        nameEl.textContent = target ? target.name : '...';
-        banner.style.display = 'flex';
-    } else {
-        banner.style.display = 'none';
-    }
-}
-</script>
-<script src="config.js"></script>
+        if (similarModeTargetId) {
+          const target = demoProducts.find((p) => p.id === similarModeTargetId);
+          nameEl.textContent = target ? target.name : '...';
+          banner.style.display = 'flex';
+        } else {
+          banner.style.display = 'none';
+        }
+      }
+    </script>
+    <script src="config.js"></script>
     <script src="script.js?v=import2"></script>
-    
-</body>
+    <script src="site-footer.js"></script>
+  </body>
 </html>

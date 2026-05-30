@@ -1,208 +1,178 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ru">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <script src="theme.js"></script>
-  <title>Сравнение товаров - tech-nozone</title>
-  <link rel="stylesheet" href="style.css">
-  <link rel="stylesheet" href="dark-theme.css">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="site-nav.js"></script>
+    <script src="theme.js"></script>
+    <title>Сравнение товаров - tech-nozone</title>
+    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="dark-theme.css" />
 
-  <link rel="icon" sizes="180x180" href="sources/logo.png">
-<style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
+    <link rel="icon" sizes="180x180" href="sources/logo.png" />
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
 
-    body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background-color: #f8fafc;
-      color: #1f2937;
-      line-height: 1.6;
-    }
+      body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background-color: #f8fafc;
+        color: #1f2937;
+        line-height: 1.6;
+      }
 
-    .container {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding:  20px;
-    }
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+      }
 
-    .comparison-section {
-      padding: 2rem 0;
-    }
+      .comparison-section {
+        padding: 2rem 0;
+      }
 
-    .comparison-header {
-      text-align: center;
-      margin-bottom: 2rem;
-    }
+      .comparison-header {
+        text-align: center;
+        margin-bottom: 2rem;
+      }
 
-    .comparison-header h1 {
-      font-size: 2rem;
-      color: #111827;
-      margin-bottom: 0.5rem;
-    }
+      .comparison-header h1 {
+        font-size: 2rem;
+        color: #111827;
+        margin-bottom: 0.5rem;
+      }
 
-    .comparison-header p {
-      color: #6b7280;
-    }
+      .comparison-header p {
+        color: #6b7280;
+      }
 
-    /* Таблица сравнения: внешний вид и прокрутка задаются в style.css (избегаем дублей и overflow-x у обёртки). */
+      /* Таблица сравнения: внешний вид и прокрутка задаются в style.css (избегаем дублей и overflow-x у обёртки). */
 
-    .empty-comparison-state {
-      text-align: center;
-      padding: 4rem 2rem;
-      background: white;
-      border-radius: 8px;
-      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-      color: #6b7280;
-      font-size: 1.1rem;
-    }
+      .empty-comparison-state {
+        text-align: center;
+        padding: 4rem 2rem;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        color: #6b7280;
+        font-size: 1.1rem;
+      }
 
-    .empty-comparison-state p {
-      margin-bottom: 1rem;
-    }
+      .empty-comparison-state p {
+        margin-bottom: 1rem;
+      }
+    </style>
+  </head>
+  <body>
+    <header class="header">
+      <div class="container"></div>
+    </header>
 
-  </style>
-</head>
-<body>
-<header class="header">
-  <div class="container">
-    <div class="logo">
-      <h1><a href="index.html" style="color: inherit; text-decoration: none;">tech-nozone</a></h1>
-    </div>
-    <nav class="nav">
-      <a href="index.html" class="nav-link">Главная</a>
-      <a href="catalog.html" class="nav-link">Каталог</a>
-      <a href="comparison.html" class="nav-link active">Сравнение<span class="comparison-counter">0</span></a>
-      <a href="recommendations.html" class="nav-link">Рекомендации</a>
-      <a href="learn.html" class="nav-link">Обучение</a>
-    </nav>
-    <!-- Поиск -->
-    <div class="nav-search-container">
-      <input type="text" class="nav-search" id="navSearch"
-        placeholder="Поиск товаров..."
-        oninput="showNavSearchSuggestions()"
-        onkeypress="handleNavSearchEnter(event)">
-      <button class="nav-search-btn" onclick="navSearchProducts()">🔍</button>
-      <div id="navSearchSuggestions" class="nav-search-suggestions"></div>
-    </div>
-    <div class="auth-buttons">
+    <main class="main">
+      <div class="comparison-container">
+        <!-- Заголовок -->
+        <div class="header-row" id="comparisonHeaderRow">
+          <div>
+            <h1 style="margin: 0 0 10px 0">Сравнение товаров</h1>
+            <p id="comparisonCategory" style="color: #6b7280; margin: 0">Выберите товары для сравнения</p>
+          </div>
+          <div style="display: flex; align-items: center; gap: 15px">
+            <button class="btn btn-secondary" onclick="clearComparison()">Очистить все</button>
+            <div style="font-weight: 600; color: #2563eb; font-size: 18px">
+              Товаров: <span id="comparisonCount">0</span>
+            </div>
+          </div>
+        </div>
 
-      <a href="auth.html" class="btn btn-outline">Войти</a>
-      <a href="auth.html?tab=register" class="btn btn-primary">Регистрация</a>
-    </div>
-  </div>
-</header>
+        <!-- Кнопки управления -->
+        <div class="controls" id="comparisonControls">
+          <button class="btn btn-outline" id="toggleBtn" disabled>Свернуть характеристики</button>
+          <button class="btn btn-outline" id="exportBtn" onclick="exportToCSV()">📥 Экспорт</button>
+          <button class="btn btn-outline" id="printBtn" onclick="window.print()">🖨️ Печать</button>
+        </div>
 
-<main class="main">
-  <div class="comparison-container">
-    <!-- Заголовок -->
-    <div class="header-row" id="comparisonHeaderRow">
-      <div>
-        <h1 style="margin: 0 0 10px 0;">Сравнение товаров</h1>
-        <p id="comparisonCategory" style="color: #6b7280; margin: 0;">Выберите товары для сравнения</p>
-      </div>
-      <div style="display: flex; align-items: center; gap: 15px;">
-        <button class="btn btn-secondary" onclick="clearComparison()">Очистить все</button>
-        <div style="font-weight: 600; color: #2563eb; font-size: 18px;">
-          Товаров: <span id="comparisonCount">0</span>
+        <!-- Пустое состояние -->
+        <div id="emptyState" class="empty-state hidden">
+          <h3 id="comparisonEmptyTitle" style="margin: 0 0 15px 0; color: #374151">Нет товаров в сравнении</h3>
+          <p
+            id="comparisonEmptyText"
+            style="color: #6b7280; margin: 0 0 25px 0; max-width: 400px; margin-left: auto; margin-right: auto"
+          ></p>
+          <a id="comparisonEmptyAction" href="catalog.html" class="btn btn-primary">Перейти в каталог</a>
+        </div>
+
+        <!-- Таблица сравнения -->
+        <div id="comparisonTable" class="hidden">
+          <div class="comparison-table-wrapper" id="tableContent"></div>
+
+          <!-- Примечания -->
+          <div class="comparison-notes">
+            <h4>Примечания:</h4>
+            <ul>
+              <li>Можно сравнивать до 4 товаров одновременно</li>
+              <li>Сравнивать можно только товары одной категории</li>
+              <li>Знак "—" означает, что характеристика отсутствует</li>
+              <li>Цены актуальны на текущий момент</li>
+            </ul>
+          </div>
         </div>
       </div>
-    </div>
+    </main>
 
-    <!-- Кнопки управления -->
-    <div class="controls" id="comparisonControls">
-      <button class="btn btn-outline" id="toggleBtn" disabled>Свернуть характеристики</button>
-      <button class="btn btn-outline" id="exportBtn" onclick="exportToCSV()">📥 Экспорт</button>
-      <button class="btn btn-outline" id="printBtn" onclick="window.print()">🖨️ Печать</button>
-    </div>
-
-    <!-- Пустое состояние -->
-    <div id="emptyState" class="empty-state hidden">
-      <h3 id="comparisonEmptyTitle" style="margin: 0 0 15px 0; color: #374151;">Нет товаров в сравнении</h3>
-      <p id="comparisonEmptyText" style="color: #6b7280; margin: 0 0 25px 0; max-width: 400px; margin-left: auto; margin-right: auto;"></p>
-      <a id="comparisonEmptyAction" href="catalog.html" class="btn btn-primary">Перейти в каталог</a>
-    </div>
-
-    <!-- Таблица сравнения -->
-    <div id="comparisonTable" class="hidden">
-      <div class="comparison-table-wrapper" id="tableContent">
-
+    <footer class="footer">
+      <div class="container">
+        <p>&copy; 2025-2026 tech-nozone. Все права защищены.</p>
       </div>
+    </footer>
 
-      <!-- Примечания -->
-      <div class="notes" style="background: #fef3c7; padding: 20px; border-radius: 8px; border: 1px solid #fbbf24; margin-top: 30px;">
-        <h4 style="margin: 0 0 15px 0; color: #92400e;">Примечания:</h4>
-        <ul style="margin: 0; padding-left: 20px; color: #92400e;">
-          <li>Можно сравнивать до 4 товаров одновременно</li>
-          <li>Сравнивать можно только товары одной категории</li>
-          <li>Знак "—" означает, что характеристика отсутствует</li>
-          <li>Цены актуальны на текущий момент</li>
-        </ul>
-      </div>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    <script src="config.js"></script>
+    <script src="script.js?v=import2"></script>
+    <script src="site-footer.js"></script>
 
-    </div>
-  </div>
-</main>
-
-<footer class="footer">
-  <div class="container">
-    <p>&copy; 2025-2026 tech-nozone. Все права защищены.</p>
-  </div>
-</footer>
-
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
-<script src="config.js"></script>
-<script src="script.js?v=import2"></script>
-
-<script>
-  function exportToCSV() {
-    const products = window.comparisonList || [];
-    if (products.length === 0) {
-      alert('Нет товаров для экспорта');
-      return;
-    }
-    const esc = (s) => `"${String(s ?? '').replace(/"/g, '""')}"`;
-    const allSpecs = new Set();
-    products.forEach((p) => {
-      if (p && p.specs) Object.keys(p.specs).forEach((k) => allSpecs.add(k));
-    });
-    const specKeys = Array.from(allSpecs);
-    const tr = window.specKeyTranslations || {};
-    let csv = '\uFEFF';
-    csv += 'Поле;' + products.map((p) => esc(p.name)).join(';') + '\n';
-    csv += 'Категория;' + products.map((p) => esc(p.category)).join(';') + '\n';
-    csv += 'Рейтинг;' + products.map((p) => esc(p.rating)).join(';') + '\n';
-    const minPrices = products.map((p) => {
-      const fn = window.getMinPrice;
-      const v = typeof fn === 'function' ? fn(p) : p.price;
-      return v != null ? v : '';
-    });
-    csv += 'Мин. цена;' + minPrices.map((v) => esc(v)).join(';') + '\n';
-    specKeys.forEach((key) => {
-      const label = tr[key] || key;
-      csv +=
-        esc(label) +
-        ';' +
-        products
-          .map((p) =>
-            esc(
-              p.specs && p.specs[key] !== undefined ? p.specs[key] : '—'
-            )
-          )
-          .join(';') +
-        '\n';
-    });
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = 'сравнение_товаров.csv';
-    link.click();
-    URL.revokeObjectURL(link.href);
-  }
-</script>
-</body>
+    <script>
+      function exportToCSV() {
+        const products = window.comparisonList || [];
+        if (products.length === 0) {
+          alert('Нет товаров для экспорта');
+          return;
+        }
+        const esc = (s) => `"${String(s ?? '').replace(/"/g, '""')}"`;
+        const allSpecs = new Set();
+        products.forEach((p) => {
+          if (p && p.specs) Object.keys(p.specs).forEach((k) => allSpecs.add(k));
+        });
+        const specKeys = Array.from(allSpecs);
+        const tr = window.specKeyTranslations || {};
+        let csv = '\uFEFF';
+        csv += 'Поле;' + products.map((p) => esc(p.name)).join(';') + '\n';
+        csv += 'Категория;' + products.map((p) => esc(p.category)).join(';') + '\n';
+        csv += 'Рейтинг;' + products.map((p) => esc(p.rating)).join(';') + '\n';
+        const minPrices = products.map((p) => {
+          const fn = window.getMinPrice;
+          const v = typeof fn === 'function' ? fn(p) : p.price;
+          return v != null ? v : '';
+        });
+        csv += 'Мин. цена;' + minPrices.map((v) => esc(v)).join(';') + '\n';
+        specKeys.forEach((key) => {
+          const label = tr[key] || key;
+          csv +=
+            esc(label) +
+            ';' +
+            products.map((p) => esc(p.specs && p.specs[key] !== undefined ? p.specs[key] : '—')).join(';') +
+            '\n';
+        });
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = 'сравнение_товаров.csv';
+        link.click();
+        URL.revokeObjectURL(link.href);
+      }
+    </script>
+  </body>
 </html>

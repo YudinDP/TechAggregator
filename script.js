@@ -1,5 +1,5 @@
 //Глобальные переменные
-let currentProductId = null; 
+let currentProductId = null;
 let currentUser = null;
 let comparisonList = [];
 const COMPARISON_STORAGE_KEY = 'techAggregatorComparisons';
@@ -10,6 +10,7 @@ let comparisonSpecsCollapsed = false;
 let favorites = [];
 let currentFilters = {};
 let selectedCheckboxes = {};
+let recommendationSelectedCheckboxes = {};
 const recommendationStore = {
   popular: [],
   trending: [],
@@ -58,685 +59,693 @@ function isUserVisibleSpecKey(specKey) {
 //Карта перевода ключей
 window.specKeyTranslations = {
   //Смартфоны
-  'screen_size': 'Экран',
-  'screen_resolution': 'Разрешение экрана',
-  'screen_technology': 'Технология экрана',
-  'screen_refresh_rate': 'Частота обновления',
-  'cpu_brand': 'Бренд процессора',
-  'cpu_model': 'Модель процессора',
-  'ram_size': 'Объём ОЗУ',
-  'ram_type': 'Тип ОЗУ',
-  'storage_capacity': 'Объём памяти',
-  'storage_type': 'Тип накопителя',
-  'rear_camera_count': 'Количество задних камер',
-  'rear_camera_primary_mp': 'Разрешение основной камеры',
-  'rear_camera_sensor_model': 'Модель сенсора камеры',
-  'rear_camera_sensor_size': 'Размер сенсора камеры',
-  'front_camera_mp': 'Разрешение фронтальной камеры',
-  'battery_capacity_mah': 'Ёмкость аккумулятора',
-  'battery_type': 'Тип аккумулятора',
-  'os': 'Операционная система',
-  'os_version': 'Версия ОС',
-  'weight_g': 'Вес',
-  'dimensions_mm': 'Размеры',
-  'sim_slots': 'Количество SIM',
-  'connectivity': 'Связь',
-  's_pen': 'Наличие S Pen',
-  'water_resistance': 'Водонепроницаемость',
-  'build_material': 'Материал корпуса',
-  'fingerprint_scanner': 'Сканер отпечатка',
-  'face_unlock': 'Разблокировка лицом',
+  screen_size: 'Экран',
+  screen_resolution: 'Разрешение экрана',
+  screen_technology: 'Технология экрана',
+  screen_refresh_rate: 'Частота обновления',
+  cpu_brand: 'Бренд процессора',
+  cpu_model: 'Модель процессора',
+  ram_size: 'Объём ОЗУ',
+  ram_type: 'Тип ОЗУ',
+  storage_capacity: 'Объём памяти',
+  storage_type: 'Тип накопителя',
+  rear_camera_count: 'Количество задних камер',
+  rear_camera_primary_mp: 'Разрешение основной камеры',
+  rear_camera_sensor_model: 'Модель сенсора камеры',
+  rear_camera_sensor_size: 'Размер сенсора камеры',
+  front_camera_mp: 'Разрешение фронтальной камеры',
+  battery_capacity_mah: 'Ёмкость аккумулятора',
+  battery_type: 'Тип аккумулятора',
+  os: 'Операционная система',
+  os_version: 'Версия ОС',
+  weight_g: 'Вес',
+  dimensions_mm: 'Размеры',
+  sim_slots: 'Количество SIM',
+  connectivity: 'Связь',
+  s_pen: 'Наличие S Pen',
+  water_resistance: 'Водонепроницаемость',
+  build_material: 'Материал корпуса',
+  fingerprint_scanner: 'Сканер отпечатка',
+  face_unlock: 'Разблокировка лицом',
 
   //Ноутбуки
-  'screen_type': 'Тип экрана',
-  'screen_aspect_ratio': 'Соотношение сторон',
-  'cpu_generation': 'Поколение процессора',
-  'cpu_cores': 'Количество ядер',
-  'cpu_threads': 'Количество потоков',
-  'cpu_base_freq': 'Базовая частота',
-  'cpu_boost_freq': 'Турбо-частота',
-  'gpu_model': 'Модель видеокарты',
-  'gpu_memory_mb': 'Память видеокарты',
-  'gpu_brand': 'Бренд видеокарты',
-  'ssd_type': 'Тип SSD',
-  'hdd_capacity_gb': 'Объём HDD',
-  'hdd_rpm': 'Обороты HDD',
-  'keyboard_backlight': 'Подсветка клавиатуры',
-  'keyboard_layout': 'Раскладка клавиатуры',
-  'ports_usb_a': 'Порты USB-A',
-  'ports_usb_c': 'Порты USB-C',
-  'ports_hdmi': 'Порты HDMI',
-  'ports_displayport': 'Порты DisplayPort',
-  'battery_life_hours': 'Время автономной работы',
-  'webcam_mp': 'Камера (МП)',
-  'webcam_features': 'Особенности камеры',
-  'audio_system': 'Аудиосистема',
-  'audio_features': 'Особенности звука',
-  'security_features': 'Функции безопасности',
+  screen_type: 'Тип экрана',
+  screen_aspect_ratio: 'Соотношение сторон',
+  cpu_generation: 'Поколение процессора',
+  cpu_cores: 'Количество ядер',
+  cpu_threads: 'Количество потоков',
+  cpu_base_freq: 'Базовая частота',
+  cpu_boost_freq: 'Турбо-частота',
+  gpu_model: 'Модель видеокарты',
+  gpu_memory_mb: 'Память видеокарты',
+  gpu_brand: 'Бренд видеокарты',
+  ssd_type: 'Тип SSD',
+  hdd_capacity_gb: 'Объём HDD',
+  hdd_rpm: 'Обороты HDD',
+  keyboard_backlight: 'Подсветка клавиатуры',
+  keyboard_layout: 'Раскладка клавиатуры',
+  ports_usb_a: 'Порты USB-A',
+  ports_usb_c: 'Порты USB-C',
+  ports_hdmi: 'Порты HDMI',
+  ports_displayport: 'Порты DisplayPort',
+  battery_life_hours: 'Время автономной работы',
+  webcam_mp: 'Камера (МП)',
+  webcam_features: 'Особенности камеры',
+  audio_system: 'Аудиосистема',
+  audio_features: 'Особенности звука',
+  security_features: 'Функции безопасности',
 
   //Телевизоры
-  'diagonal_in': 'Диагональ',
-  'screen_format': 'Формат экрана',
-  'hdr_support': 'Поддержка HDR',
-  'smart_platform': 'Платформа Smart TV',
-  'sound_power_w': 'Мощность звука',
-  'sound_channels': 'Количество каналов',
-  'mount_type': 'Тип крепления',
-  'wall_mount_kit': 'Комплект крепления',
-  'power_consumption_w': 'Потребление энергии',
-  'power_standby_w': 'Режим ожидания',
+  diagonal_in: 'Диагональ',
+  screen_format: 'Формат экрана',
+  hdr_support: 'Поддержка HDR',
+  smart_platform: 'Платформа Smart TV',
+  sound_power_w: 'Мощность звука',
+  sound_channels: 'Количество каналов',
+  mount_type: 'Тип крепления',
+  wall_mount_kit: 'Комплект крепления',
+  power_consumption_w: 'Потребление энергии',
+  power_standby_w: 'Режим ожидания',
 
   //Наушники
-  'driver_size_mm': 'Размер драйвера',
-  'driver_type': 'Тип драйвера',
-  'impedance_ohms': 'Сопротивление',
-  'frequency_response_hz': 'Частотный диапазон',
-  'sensitivity_db': 'Чувствительность',
-  'microphone_frequency_response': 'Частотный диапазон микрофона',
-  'microphone_noise_reduction': 'Шумоподавление микрофона',
-  'wireless_standard': 'Стандарт беспроводной связи',
-  'wireless_range_m': 'Дальность беспроводной связи',
-  'charging_port': 'Порт зарядки',
-  'charging_time_h': 'Время зарядки',
-  'anc_type': 'Тип шумоподавления',
-  'anc_level': 'Уровень шумоподавления',
-  'controls_type': 'Тип управления',
-  'controls_touch': 'Сенсорное управление',
-  'controls_voice': 'Управление голосом',
-  'foldable': 'Складывается',
-  'ear_pad_type': 'Тип амбушюр',
-  'ear_pad_material': 'Материал амбушюр',
-  'ear_pad_replaceable': 'Сменные амбушюры',
-  'carry_case_included': 'Чехол в комплекте',
-  'cable_length_m': 'Длина кабеля',
-  'cable_connector': 'Тип разъёма кабеля',
+  driver_size_mm: 'Размер драйвера',
+  driver_type: 'Тип драйвера',
+  impedance_ohms: 'Сопротивление',
+  frequency_response_hz: 'Частотный диапазон',
+  sensitivity_db: 'Чувствительность',
+  microphone_frequency_response: 'Частотный диапазон микрофона',
+  microphone_noise_reduction: 'Шумоподавление микрофона',
+  wireless_standard: 'Стандарт беспроводной связи',
+  wireless_range_m: 'Дальность беспроводной связи',
+  charging_port: 'Порт зарядки',
+  charging_time_h: 'Время зарядки',
+  anc_type: 'Тип шумоподавления',
+  anc_level: 'Уровень шумоподавления',
+  controls_type: 'Тип управления',
+  controls_touch: 'Сенсорное управление',
+  controls_voice: 'Управление голосом',
+  foldable: 'Складывается',
+  ear_pad_type: 'Тип амбушюр',
+  ear_pad_material: 'Материал амбушюр',
+  ear_pad_replaceable: 'Сменные амбушюры',
+  carry_case_included: 'Чехол в комплекте',
+  cable_length_m: 'Длина кабеля',
+  cable_connector: 'Тип разъёма кабеля',
 
   //Камеры
-  'sensor_model': 'Модель матрицы',
-  'sensor_size': 'Размер матрицы',
-  'sensor_resolution_mp': 'Разрешение матрицы',
-  'lens_mount': 'Байонет объектива',
-  'lens_aperture': 'Максимальная апертура',
-  'lens_zoom': 'Оптический зум',
-  'image_stabilization': 'Стабилизация изображения',
-  'video_resolution': 'Разрешение видео',
-  'video_fps': 'Частота кадров видео',
-  'iso_range': 'Диапазон ISO',
-  'shutter_speed': 'Скорость срабатывания затвора',
-  'viewfinder_type': 'Тип видоискателя',
-  'viewfinder_magnification': 'Увеличение видоискателя',
-  'lcd_type': 'Тип ЖК-дисплея',
-  'lcd_size_in': 'Размер ЖК-дисплея',
-  'lcd_touch': 'Сенсорный дисплей',
-  'lcd_articulating': 'Поворотный дисплей',
-  'battery_life_shots': 'Время работы (снимки)',
-  'battery_model': 'Модель аккумулятора',
-  'flash_type': 'Тип вспышки',
-  'flash_sync_speed': 'Скорость синхронизации вспышки',
-  'dimensions_w_h_d_mm': 'Размеры (ШxВxГ)',
-  'weight_g_body_only': 'Вес (только корпус)',
-  'weight_kg': 'Вес (кг)',
-  'ports': 'Порты',
-  'fingerprint_reader': 'Сканер отпечатка',
-  'tpm': 'TPM-чип',
-  'touch_bar': 'Touch Bar',
+  sensor_model: 'Модель матрицы',
+  sensor_size: 'Размер матрицы',
+  sensor_resolution_mp: 'Разрешение матрицы',
+  lens_mount: 'Байонет объектива',
+  lens_aperture: 'Максимальная апертура',
+  lens_zoom: 'Оптический зум',
+  image_stabilization: 'Стабилизация изображения',
+  video_resolution: 'Разрешение видео',
+  video_fps: 'Частота кадров видео',
+  iso_range: 'Диапазон ISO',
+  shutter_speed: 'Скорость срабатывания затвора',
+  viewfinder_type: 'Тип видоискателя',
+  viewfinder_magnification: 'Увеличение видоискателя',
+  lcd_type: 'Тип ЖК-дисплея',
+  lcd_size_in: 'Размер ЖК-дисплея',
+  lcd_touch: 'Сенсорный дисплей',
+  lcd_articulating: 'Поворотный дисплей',
+  battery_life_shots: 'Время работы (снимки)',
+  battery_model: 'Модель аккумулятора',
+  flash_type: 'Тип вспышки',
+  flash_sync_speed: 'Скорость синхронизации вспышки',
+  dimensions_w_h_d_mm: 'Размеры (ШxВxГ)',
+  weight_g_body_only: 'Вес (только корпус)',
+  weight_kg: 'Вес (кг)',
+  ports: 'Порты',
+  fingerprint_reader: 'Сканер отпечатка',
+  tpm: 'TPM-чип',
+  touch_bar: 'Touch Bar',
 
   //Планшеты
-  'screen_surface': 'Покрытие экрана',
-  'stylus_support': 'Поддержка стилуса',
-  'stylus_included': 'Стилус в комплекте',
-  'keyboard_support': 'Поддержка клавиатуры',
-  'keyboard_included': 'Клавиатура в комплекте',
-  'ram_form_factor': 'Форм-фактор ОЗУ',
-  'storage_expandable': 'Расширение памяти',
-  'storage_max_gb': 'Макс. объём расширения',
-  'battery_charging_type': 'Тип зарядки аккумулятора',
-  'battery_charging_speed': 'Скорость зарядки',
-  'accessory_ports': 'Порты для аксессуаров',
+  screen_surface: 'Покрытие экрана',
+  stylus_support: 'Поддержка стилуса',
+  stylus_included: 'Стилус в комплекте',
+  keyboard_support: 'Поддержка клавиатуры',
+  keyboard_included: 'Клавиатура в комплекте',
+  ram_form_factor: 'Форм-фактор ОЗУ',
+  storage_expandable: 'Расширение памяти',
+  storage_max_gb: 'Макс. объём расширения',
+  battery_charging_type: 'Тип зарядки аккумулятора',
+  battery_charging_speed: 'Скорость зарядки',
+  accessory_ports: 'Порты для аксессуаров',
 
   //Смарт-часы
-  'watch_band_material': 'Материал ремешка',
-  'watch_band_width_mm': 'Ширина ремешка',
-  'watch_band_replacement': 'Сменный ремешок',
-  'health_monitoring': 'Функции мониторинга здоровья',
-  'sports_modes_count': 'Количество спортивных режимов',
-  'gps_type': 'Тип GPS',
-  'nfc_support': 'Поддержка NFC',
-  'lte_support': 'Поддержка LTE',
-  'sleep_tracking': 'Отслеживание сна',
-  'stress_monitoring': 'Мониторинг стресса',
-  'spo2_monitoring': 'Мониторинг SpO2',
-  'ecg_support': 'Поддержка ЭКГ',
-  'water_resistance_rating': 'Класс водонепроницаемости',
-  'watch_face_customizable': 'Настройка циферблата',
+  watch_band_material: 'Материал ремешка',
+  watch_band_width_mm: 'Ширина ремешка',
+  watch_band_replacement: 'Сменный ремешок',
+  health_monitoring: 'Функции мониторинга здоровья',
+  sports_modes_count: 'Количество спортивных режимов',
+  gps_type: 'Тип GPS',
+  nfc_support: 'Поддержка NFC',
+  lte_support: 'Поддержка LTE',
+  sleep_tracking: 'Отслеживание сна',
+  stress_monitoring: 'Мониторинг стресса',
+  spo2_monitoring: 'Мониторинг SpO2',
+  ecg_support: 'Поддержка ЭКГ',
+  water_resistance_rating: 'Класс водонепроницаемости',
+  watch_face_customizable: 'Настройка циферблата',
 
   //Электронные книги
-  'screen_surface_type': 'Тип поверхности экрана',
-  'screen_frontlight': 'Подсветка экрана',
-  'screen_frontlight_color': 'Цвет подсветки',
-  'screen_page_turn_buttons': 'Кнопки перелистывания',
-  'storage_available_gb': 'Доступная память',
-  'file_formats_supported': 'Поддерживаемые форматы файлов',
-  'dictionary_included': 'Словарь в комплекте',
-  'bookstore_integration': 'Интеграция с книжными магазинами',
-  'battery_standby_days': 'Время в режиме ожидания',
-  'charging_method': 'Метод зарядки',
-  'accessories_included': 'Аксессуары в комплекте',
+  screen_surface_type: 'Тип поверхности экрана',
+  screen_frontlight: 'Подсветка экрана',
+  screen_frontlight_color: 'Цвет подсветки',
+  screen_page_turn_buttons: 'Кнопки перелистывания',
+  storage_available_gb: 'Доступная память',
+  file_formats_supported: 'Поддерживаемые форматы файлов',
+  dictionary_included: 'Словарь в комплекте',
+  bookstore_integration: 'Интеграция с книжными магазинами',
+  battery_standby_days: 'Время в режиме ожидания',
+  charging_method: 'Метод зарядки',
+  accessories_included: 'Аксессуары в комплекте',
 
   //Дроны
-  'motor_type': 'Тип двигателя',
-  'propeller_guard': 'Защита пропеллеров',
-  'camera_specs': 'Характеристики камеры',
-  'camera_gimbal': 'Подвес камеры',
-  'camera_recording_mode': 'Режим записи камеры',
-  'flight_modes': 'Режимы полёта',
-  'obstacle_avoidance': 'Избегание препятствий',
-  'return_to_home': 'Возврат домой',
-  'follow_me_mode': 'Режим "Следуй за мной"',
-  'orbit_mode': 'Режим "Орбита"',
-  'remote_control_range': 'Дальность пульта управления',
-  'remote_control_battery_life': 'Время работы пульта',
-  'transmission_latency_ms': 'Задержка передачи сигнала',
-  'wind_resistance_level': 'Уровень сопротивления ветру',
-  'indoor_outdoor_use': 'Использование в помещении/на улице',
-  'flight_time_minutes': 'Время полёта (мин)',
-  'max_range_km': 'Макс. дальность (км)',
-  'camera_resolution': 'Разрешение камеры',
-  'gimbal_type': 'Тип подвеса',
-  'max_speed_kmh': 'Макс. скорость (км/ч)',
-  'wind_resistance': 'Устойчивость к ветру',
-  'gps_support': 'Поддержка GPS',
+  motor_type: 'Тип двигателя',
+  propeller_guard: 'Защита пропеллеров',
+  camera_specs: 'Характеристики камеры',
+  camera_gimbal: 'Подвес камеры',
+  camera_recording_mode: 'Режим записи камеры',
+  flight_modes: 'Режимы полёта',
+  obstacle_avoidance: 'Избегание препятствий',
+  return_to_home: 'Возврат домой',
+  follow_me_mode: 'Режим "Следуй за мной"',
+  orbit_mode: 'Режим "Орбита"',
+  remote_control_range: 'Дальность пульта управления',
+  remote_control_battery_life: 'Время работы пульта',
+  transmission_latency_ms: 'Задержка передачи сигнала',
+  wind_resistance_level: 'Уровень сопротивления ветру',
+  indoor_outdoor_use: 'Использование в помещении/на улице',
+  flight_time_minutes: 'Время полёта (мин)',
+  max_range_km: 'Макс. дальность (км)',
+  camera_resolution: 'Разрешение камеры',
+  gimbal_type: 'Тип подвеса',
+  max_speed_kmh: 'Макс. скорость (км/ч)',
+  wind_resistance: 'Устойчивость к ветру',
+  gps_support: 'Поддержка GPS',
 
   //Общие / импорт
-  'brand': 'Бренд',
-  'model': 'Модель',
-  'model_line': 'Модель (линейка)',
-  'type': 'Тип',
-  'compatibility': 'Совместимость',
-  'note': 'Примечание',
+  brand: 'Бренд',
+  model: 'Модель',
+  model_line: 'Модель (линейка)',
+  type: 'Тип',
+  compatibility: 'Совместимость',
+  note: 'Примечание',
 
   //Смартфоны, планшеты
-  'cpu_speed': 'Частота процессора',
-  'wireless_charging': 'Беспроводная зарядка',
-  'rear_camera_mp': 'Разрешение задней камеры',
+  cpu_speed: 'Частота процессора',
+  wireless_charging: 'Беспроводная зарядка',
+  rear_camera_mp: 'Разрешение задней камеры',
 
   //Ноутбуки
-  'ram_slots': 'Слоты ОЗУ',
-  'storage_slots': 'Слоты накопителей',
+  ram_slots: 'Слоты ОЗУ',
+  storage_slots: 'Слоты накопителей',
 
   //Телевизоры и мониторы
-  'refresh_rate': 'Частота обновления',
-  'wifi_support': 'Поддержка Wi-Fi',
-  'bluetooth_support': 'Поддержка Bluetooth',
-  'energy_class': 'Класс энергопотребления',
-  'ports_usb': 'Порты USB',
-  'panel_type': 'Тип матрицы',
-  'response_time_ms': 'Время отклика (мс)',
-  'brightness_nits': 'Яркость (нит)',
-  'contrast_ratio': 'Контрастность',
-  'adjustable_stand': 'Регулируемая подставка',
-  'vesa_mount': 'Крепление VESA',
-  'adaptive_sync': 'Адаптивная синхронизация',
-  'curvature': 'Кривизна экрана',
+  refresh_rate: 'Частота обновления',
+  wifi_support: 'Поддержка Wi-Fi',
+  bluetooth_support: 'Поддержка Bluetooth',
+  energy_class: 'Класс энергопотребления',
+  ports_usb: 'Порты USB',
+  panel_type: 'Тип матрицы',
+  response_time_ms: 'Время отклика (мс)',
+  brightness_nits: 'Яркость (нит)',
+  contrast_ratio: 'Контрастность',
+  adjustable_stand: 'Регулируемая подставка',
+  vesa_mount: 'Крепление VESA',
+  adaptive_sync: 'Адаптивная синхронизация',
+  curvature: 'Кривизна экрана',
 
   //Наушники
-  'microphone': 'Микрофон',
-  'connector_type': 'Тип разъёма',
-  'battery_life': 'Время работы',
-  'frequency_response': 'Частотный диапазон',
+  microphone: 'Микрофон',
+  connector_type: 'Тип разъёма',
+  battery_life: 'Время работы',
+  frequency_response: 'Частотный диапазон',
 
   //Смарт-часы, планшеты (дисплей)
-  'display_size_in': 'Размер дисплея (дюйм)',
-  'display_type': 'Тип дисплея',
-  'strap_material': 'Материал ремешка',
+  display_size_in: 'Размер дисплея (дюйм)',
+  display_type: 'Тип дисплея',
+  strap_material: 'Материал ремешка',
 
   //Электронные книги
-  'battery_life_days': 'Время работы (дни)',
-  'waterproof': 'Защита от воды',
+  battery_life_days: 'Время работы (дни)',
+  waterproof: 'Защита от воды',
 
   //Комплектующие ПК
-  'component_type': 'Тип компонента',
-  'chipset': 'Чипсет',
-  'socket': 'Сокет',
-  'pcie_version': 'Версия PCIe',
-  'power_connector': 'Разъём питания',
-  'tdp_w': 'Тепловыделение (Вт)',
-  'warranty_years': 'Гарантия (лет)',
+  component_type: 'Тип компонента',
+  chipset: 'Чипсет',
+  socket: 'Сокет',
+  pcie_version: 'Версия PCIe',
+  power_connector: 'Разъём питания',
+  tdp_w: 'Тепловыделение (Вт)',
+  warranty_years: 'Гарантия (лет)',
 
   //Аксессуары
-  'accessory_type': 'Тип аксессуара',
-  'material': 'Материал',
-  'color': 'Цвет',
+  accessory_type: 'Тип аксессуара',
+  material: 'Материал',
+  color: 'Цвет',
 
   //Игровые консоли
-  'console_type': 'Тип консоли',
-  'resolution_output': 'Выходное разрешение',
-  'backwards_compatibility': 'Обратная совместимость',
-  'controller_included': 'Геймпад в комплекте',
-  'online_service': 'Онлайн-сервис',
-  'storage_capacity_gb': 'Объём хранилища',
-  'max_resolution': 'Макс. разрешение',
-  'max_fps': 'Макс. частота кадров (FPS)',
+  console_type: 'Тип консоли',
+  resolution_output: 'Выходное разрешение',
+  backwards_compatibility: 'Обратная совместимость',
+  controller_included: 'Геймпад в комплекте',
+  online_service: 'Онлайн-сервис',
+  storage_capacity_gb: 'Объём хранилища',
+  max_resolution: 'Макс. разрешение',
+  max_fps: 'Макс. частота кадров (FPS)',
 
   //Сеть
-  'wifi_standard': 'Стандарт Wi-Fi',
-  'max_speed_mbps': 'Макс. скорость (Мбит/с)',
-  'ethernet_ports': 'Порты Ethernet',
-  'antenna_count': 'Количество антенн',
-  'coverage_area_sqm': 'Площадь покрытия (м²)',
-  'vpn_support': 'Поддержка VPN',
-  'parental_controls': 'Родительский контроль',
+  wifi_standard: 'Стандарт Wi-Fi',
+  max_speed_mbps: 'Макс. скорость (Мбит/с)',
+  ethernet_ports: 'Порты Ethernet',
+  antenna_count: 'Количество антенн',
+  coverage_area_sqm: 'Площадь покрытия (м²)',
+  vpn_support: 'Поддержка VPN',
+  parental_controls: 'Родительский контроль',
 
   //Клавиатуры
-  'keyboard_type': 'Тип клавиатуры',
-  'switch_type': 'Тип переключателей',
-  'layout': 'Раскладка',
-  'backlight': 'Подсветка',
-  'anti_ghosting': 'Антипризракинг',
-  'key_rollover': 'Одновременных нажатий (rollover)',
+  keyboard_type: 'Тип клавиатуры',
+  switch_type: 'Тип переключателей',
+  layout: 'Раскладка',
+  backlight: 'Подсветка',
+  anti_ghosting: 'Антипризракинг',
+  key_rollover: 'Одновременных нажатий (rollover)',
 
   //Мыши
-  'sensor_type': 'Тип сенсора',
-  'sensor': 'Сенсор',
-  'dpi_max': 'Макс. DPI',
-  'buttons_count': 'Количество кнопок',
-  'polling_rate_hz': 'Частота опроса (Гц)',
-  'rgb_backlight': 'RGB-подсветка',
+  sensor_type: 'Тип сенсора',
+  sensor: 'Сенсор',
+  dpi_max: 'Макс. DPI',
+  buttons_count: 'Количество кнопок',
+  polling_rate_hz: 'Частота опроса (Гц)',
+  rgb_backlight: 'RGB-подсветка',
 
   //Корпуса
-  'case_type': 'Тип корпуса',
-  'supported_form_factors': 'Поддерживаемые форм-факторы',
-  'materials': 'Материалы',
-  'fan_support': 'Установка вентиляторов',
-  'radiator_support': 'Поддержка СЖО / радиаторов',
-  'gpu_max_length_mm': 'Макс. длина видеокарты (мм)',
-  'cpu_cooler_max_height_mm': 'Макс. высота кулера CPU (мм)',
+  case_type: 'Тип корпуса',
+  supported_form_factors: 'Поддерживаемые форм-факторы',
+  materials: 'Материалы',
+  fan_support: 'Установка вентиляторов',
+  radiator_support: 'Поддержка СЖО / радиаторов',
+  gpu_max_length_mm: 'Макс. длина видеокарты (мм)',
+  cpu_cooler_max_height_mm: 'Макс. высота кулера CPU (мм)',
 
   //Фитнес-браслеты / носимые
-  'sensors': 'Датчики',
-  'strap_size': 'Размер ремешка',
+  sensors: 'Датчики',
+  strap_size: 'Размер ремешка',
 
   //Блоки питания
-  'power_w': 'Мощность (Вт)',
-  'efficiency_rating': 'Класс КПД (80 Plus)',
-  'modular_type': 'Модульность',
-  'fan_size_mm': 'Размер вентилятора (мм)',
-  'protection_systems': 'Системы защиты',
-  'connectors': 'Разъёмы',
-  'form_factor': 'Форм-фактор',
+  power_w: 'Мощность (Вт)',
+  efficiency_rating: 'Класс КПД (80 Plus)',
+  modular_type: 'Модульность',
+  fan_size_mm: 'Размер вентилятора (мм)',
+  protection_systems: 'Системы защиты',
+  connectors: 'Разъёмы',
+  form_factor: 'Форм-фактор',
 
   //Микрофоны
-  'microphone_type': 'Тип микрофона',
-  'polar_pattern': 'Диаграмма направленности',
-  'sample_rate_khz': 'Частота дискретизации (кГц)',
-  'bit_depth': 'Разрядность (бит)',
+  microphone_type: 'Тип микрофона',
+  polar_pattern: 'Диаграмма направленности',
+  sample_rate_khz: 'Частота дискретизации (кГц)',
+  bit_depth: 'Разрядность (бит)',
 
   //Веб-камеры
-  'resolution': 'Разрешение',
-  'fps': 'Частота кадров (FPS)',
-  'focus_type': 'Тип фокусировки',
-  'field_of_view': 'Поле зрения',
+  resolution: 'Разрешение',
+  fps: 'Частота кадров (FPS)',
+  focus_type: 'Тип фокусировки',
+  field_of_view: 'Поле зрения',
 
   //Пауэрбанки
-  'max_output_w': 'Макс. выходная мощность (Вт)',
-  'fast_charging': 'Быстрая зарядка',
+  max_output_w: 'Макс. выходная мощность (Вт)',
+  fast_charging: 'Быстрая зарядка',
 
   //Портативная акустика
-  'bluetooth_version': 'Версия Bluetooth',
-  'voice_assistant': 'Голосовой помощник',
+  bluetooth_version: 'Версия Bluetooth',
+  voice_assistant: 'Голосовой помощник',
 
   //Процессоры
-  'process_tech_nm': 'Техпроцесс (нм)',
-  'integrated_graphics': 'Встроенная графика',
-  'cache_l3_mb': 'Кэш L3 (МБ)',
-  'cores': 'Количество ядер',
-  'tdp_watt': 'Тепловыделение (Вт)',
+  process_tech_nm: 'Техпроцесс (нм)',
+  integrated_graphics: 'Встроенная графика',
+  cache_l3_mb: 'Кэш L3 (МБ)',
+  cores: 'Количество ядер',
+  tdp_watt: 'Тепловыделение (Вт)',
 
   //Материнские платы
-  'max_ram': 'Макс. объём ОЗУ',
-  'm2_slots': 'Слоты M.2',
-  'ports_sata': 'Порты SATA',
+  max_ram: 'Макс. объём ОЗУ',
+  m2_slots: 'Слоты M.2',
+  ports_sata: 'Порты SATA',
 
   //ОЗУ
-  'capacity_gb': 'Объём (ГБ)',
-  'memory_speed_mhz': 'Частота памяти (МГц)',
-  'latency_cl': 'Тайминги (CL)',
-  'module_count': 'Количество модулей',
-  'voltage_v': 'Напряжение (В)',
-  'rgb_support': 'Поддержка RGB',
-  'ram_speed': 'Скорость памяти',
-  'ram_latency': 'Тайминги памяти',
+  capacity_gb: 'Объём (ГБ)',
+  memory_speed_mhz: 'Частота памяти (МГц)',
+  latency_cl: 'Тайминги (CL)',
+  module_count: 'Количество модулей',
+  voltage_v: 'Напряжение (В)',
+  rgb_support: 'Поддержка RGB',
+  ram_speed: 'Скорость памяти',
+  ram_latency: 'Тайминги памяти',
 
   //Видеокарты
-  'vram_size': 'Объём видеопамяти',
-  'memory_bus_width_bit': 'Шина памяти (бит)',
-  'boost_clock_mhz': 'Частота в турбо (МГц)',
-  'output_ports': 'Видеовыходы',
-  'ray_tracing_support': 'Трассировка лучей',
-  'tdp': 'TDP (тепловыделение)',
-  'cooling_type': 'Тип охлаждения',
+  vram_size: 'Объём видеопамяти',
+  memory_bus_width_bit: 'Шина памяти (бит)',
+  boost_clock_mhz: 'Частота в турбо (МГц)',
+  output_ports: 'Видеовыходы',
+  ray_tracing_support: 'Трассировка лучей',
+  tdp: 'TDP (тепловыделение)',
+  cooling_type: 'Тип охлаждения',
 
   //Накопители
-  'read_speed_mbs': 'Скорость чтения (МБ/с)',
-  'write_speed_mbs': 'Скорость записи (МБ/с)',
-  'interface': 'Интерфейс',
-  'drive_type': 'Тип диска',
-  'transfer_speed': 'Скорость передачи данных',
-  'durability': 'Защита / прочность',
+  read_speed_mbs: 'Скорость чтения (МБ/с)',
+  write_speed_mbs: 'Скорость записи (МБ/с)',
+  interface: 'Интерфейс',
+  drive_type: 'Тип диска',
+  transfer_speed: 'Скорость передачи данных',
+  durability: 'Защита / прочность',
 
   //Аудиосистемы
-  'speaker_count': 'Количество динамиков',
+  speaker_count: 'Количество динамиков',
 
   //Умный дом
-  'device_type': 'Тип устройства',
-  'protocol': 'Протокол',
-  'power_source': 'Источник питания',
-  'range_m': 'Дальность действия (м)',
-  'app_support': 'Поддержка приложения',
-  'voice_control': 'Голосовое управление',
+  device_type: 'Тип устройства',
+  protocol: 'Протокол',
+  power_source: 'Источник питания',
+  range_m: 'Дальность действия (м)',
+  app_support: 'Поддержка приложения',
+  voice_control: 'Голосовое управление',
 
   //Камеры
-  'weather_sealing': 'Защита от влаги и пыли'
+  weather_sealing: 'Защита от влаги и пыли'
   //Добавляйте новые ключи по мере необходимости
 };
 
 //Делаем переменную глобально доступной
 window.demoProducts = demoProducts;
-console.log('demoProducts доступна глобально, количество:', demoProducts.length);
-
 const VALUE_CALCULATOR_CONFIG = {
-    smartphones: {
-        baseScore: 60,
-        weights: {
-            ram_size: 1,
-            storage_capacity: 0.1,
-            battery_capacity_mah: 0.005,
-            screen_refresh_rate: 1.5,
-            rear_camera_primary_mp: 0.3,
-            weight_g: -0.05
-        },
-        bonuses: {
-            cpu_model: {
-                'apple a1': 25, 'snapdragon 8': 25, 'snapdragon 7': 15,
-                'dimensity 9': 25, 'dimensity 8': 15, 'exynos 2': 15,
-                'core i9': 25, 'core i7': 25
-            },
-            screen_technology: {
-                'oled': 25, 'amoled': 20, 'super amoled': 22,
-                'ips': 5, 'lcd': 2
-            },
-            water_resistance: { 'ip68': 15, 'ip67': 10 },
-            connectivity: { '5g': 15, 'nfc': 10 }
-        },
-        scale: 10000
+  smartphones: {
+    baseScore: 60,
+    weights: {
+      ram_size: 1,
+      storage_capacity: 0.1,
+      battery_capacity_mah: 0.005,
+      screen_refresh_rate: 1.5,
+      rear_camera_primary_mp: 0.3,
+      weight_g: -0.05
     },
-    laptops: {
-        baseScore: 30,
-        weights: {
-            ram_size: 5,
-            storage_capacity: 0.15,
-            battery_life_hours: 2,
-            weight_g: -0.02
-        },
-        bonuses: {
-            cpu_model: {
-                'core i9': 30, 'ryzen 9': 28, 'core i7': 20, 'ryzen 7': 18,
-                'apple m3': 35, 'apple m2': 25, 'apple m1': 20
-            },
-            gpu_model: { 'rtx 40': 30, 'rtx 30': 20, 'geforce': 10, 'radeon rx': 15 },
-            screen_type: { 'oled': 25, 'ips': 10 },
-            keyboard_backlight: { 'есть': 5 }
-        },
-        scale: 10000
+    bonuses: {
+      cpu_model: {
+        'apple a1': 25,
+        'snapdragon 8': 25,
+        'snapdragon 7': 15,
+        'dimensity 9': 25,
+        'dimensity 8': 15,
+        'exynos 2': 15,
+        'core i9': 25,
+        'core i7': 25
+      },
+      screen_technology: {
+        oled: 25,
+        amoled: 20,
+        'super amoled': 22,
+        ips: 5,
+        lcd: 2
+      },
+      water_resistance: { ip68: 15, ip67: 10 },
+      connectivity: { '5g': 15, nfc: 10 }
     },
-    tv: {
-        baseScore: 40,
-        weights: { diagonal_in: 8, sound_power_w: 1 },
-        bonuses: {
-            screen_resolution: { '8k': 50, '4k': 20, 'ultra hd': 20 },
-            screen_technology: { 'oled': 60, 'qled': 40, 'miniled': 30, 'led': 0 },
-            smart_platform: { 'google tv': 10, 'android tv': 10, 'webos': 8, 'tizen': 8 },
-            hdr_support: { 'dolby vision': 15, 'hdr10+': 10, 'hdr10': 5 }
-        },
-        scale: 10000
+    scale: 10000
+  },
+  laptops: {
+    baseScore: 30,
+    weights: {
+      ram_size: 5,
+      storage_capacity: 0.15,
+      battery_life_hours: 2,
+      weight_g: -0.02
     },
-    headphones: {
-        baseScore: 15,
-        weights: { battery_life_hours: 3, driver_size_mm: 0.5, weight_g: -0.05 },
-        bonuses: {
-            anc_type: { 'active': 25, 'гибридное': 20, 'адаптивное': 20 },
-            connectivity: { 'bluetooth 5.3': 10, 'bluetooth 5.2': 5 },
-            controls_touch: { 'есть': 5 }
-        },
-        scale: 10000
+    bonuses: {
+      cpu_model: {
+        'core i9': 30,
+        'ryzen 9': 28,
+        'core i7': 20,
+        'ryzen 7': 18,
+        'apple m3': 35,
+        'apple m2': 25,
+        'apple m1': 20
+      },
+      gpu_model: { 'rtx 40': 30, 'rtx 30': 20, geforce: 10, 'radeon rx': 15 },
+      screen_type: { oled: 25, ips: 10 },
+      keyboard_backlight: { есть: 5 }
     },
-    tablets: {
-        baseScore: 25,
-        weights: { screen_size: 10, ram_size: 5, storage_capacity: 0.15, battery_capacity_mah: 0.003 },
-        bonuses: {
-            screen_technology: { 'oled': 20, 'ips': 10 },
-            stylus_support: { 'есть': 15 }
-        },
-        scale: 10000
+    scale: 10000
+  },
+  tv: {
+    baseScore: 40,
+    weights: { diagonal_in: 8, sound_power_w: 1 },
+    bonuses: {
+      screen_resolution: { '8k': 50, '4k': 20, 'ultra hd': 20 },
+      screen_technology: { oled: 60, qled: 40, miniled: 30, led: 0 },
+      smart_platform: { 'google tv': 10, 'android tv': 10, webos: 8, tizen: 8 },
+      hdr_support: { 'dolby vision': 15, 'hdr10+': 10, hdr10: 5 }
     },
-    cameras: {
-        baseScore: 50,
-        weights: { sensor_resolution_mp: 1.5, iso_range: 0.05 },
-        bonuses: {
-            sensor_size: { 'full frame': 50, 'aps-c': 20, 'micro 4/3': 10 },
-            video_resolution: { '8k': 30, '4k': 15 },
-            image_stabilization: { 'есть': 15 }
-        },
-        scale: 10000
+    scale: 10000
+  },
+  headphones: {
+    baseScore: 15,
+    weights: { battery_life_hours: 3, driver_size_mm: 0.5, weight_g: -0.05 },
+    bonuses: {
+      anc_type: { active: 25, гибридное: 20, адаптивное: 20 },
+      connectivity: { 'bluetooth 5.3': 10, 'bluetooth 5.2': 5 },
+      controls_touch: { есть: 5 }
     },
-    smartwatches: {
-        baseScore: 15,
-        weights: { battery_life_hours: 2 },
-        bonuses: {
-            gps_type: { 'gps': 10, 'glonass': 10 },
-            nfc_support: { 'есть': 15 },
-            water_resistance_rating: { '5atm': 10, '10atm': 15, 'ip68': 5 },
-            ecg_support: { 'есть': 10 }
-        },
-        scale: 10000
+    scale: 10000
+  },
+  tablets: {
+    baseScore: 25,
+    weights: { screen_size: 10, ram_size: 5, storage_capacity: 0.15, battery_capacity_mah: 0.003 },
+    bonuses: {
+      screen_technology: { oled: 20, ips: 10 },
+      stylus_support: { есть: 15 }
     },
-    ebooks: {
-        baseScore: 10,
-        weights: { storage_available_gb: 2, battery_standby_days: 1 },
-        bonuses: {
-            screen_frontlight: { 'есть': 10 },
-            water_resistance: { 'есть': 10 }
-        },
-        scale: 10000
+    scale: 10000
+  },
+  cameras: {
+    baseScore: 50,
+    weights: { sensor_resolution_mp: 1.5, iso_range: 0.05 },
+    bonuses: {
+      sensor_size: { 'full frame': 50, 'aps-c': 20, 'micro 4/3': 10 },
+      video_resolution: { '8k': 30, '4k': 15 },
+      image_stabilization: { есть: 15 }
     },
-    drones: {
-        baseScore: 20,
-        weights: { range: 2, weight_g: -0.05 },
-        bonuses: {
-            camera_gimbal: { 'есть': 20 },
-            obstacle_avoidance: { 'есть': 15 },
-            video_resolution: { '4k': 15 }
-        },
-        scale: 10000
+    scale: 10000
+  },
+  smartwatches: {
+    baseScore: 15,
+    weights: { battery_life_hours: 2 },
+    bonuses: {
+      gps_type: { gps: 10, glonass: 10 },
+      nfc_support: { есть: 15 },
+      water_resistance_rating: { '5atm': 10, '10atm': 15, ip68: 5 },
+      ecg_support: { есть: 10 }
     },
-    monitors: {
-        baseScore: 28,
-        weights: { screen_size: 2.2, screen_refresh_rate: 0.4, brightness_cd_m2: 0.02 },
-        bonuses: {
-            screen_resolution: { '4k': 20, 'qhd': 14, '2k': 12, 'full hd': 5 },
-            screen_technology: { 'oled': 20, 'ips': 10, 'va': 8 },
-            hdr_support: { 'hdr': 6 }
-        },
-        scale: 10000
+    scale: 10000
+  },
+  ebooks: {
+    baseScore: 10,
+    weights: { storage_available_gb: 2, battery_standby_days: 1 },
+    bonuses: {
+      screen_frontlight: { есть: 10 },
+      water_resistance: { есть: 10 }
     },
-    graphics_cards: {
-        baseScore: 40,
-        weights: { vram_gb: 4, boost_clock_mhz: 0.01, tdp_w: -0.01 },
-        bonuses: {
-            gpu_model: { 'rtx 50': 35, 'rtx 40': 28, 'rtx 30': 18, 'rx 7': 25, 'rx 6': 16 },
-            ray_tracing: { 'есть': 10 }
-        },
-        scale: 10000
+    scale: 10000
+  },
+  drones: {
+    baseScore: 20,
+    weights: { range: 2, weight_g: -0.05 },
+    bonuses: {
+      camera_gimbal: { есть: 20 },
+      obstacle_avoidance: { есть: 15 },
+      video_resolution: { '4k': 15 }
     },
-    cpus: {
-        baseScore: 38,
-        weights: { cpu_cores: 2.5, cpu_threads: 1.2, cpu_speed: 3, cache_l3_mb: 0.5, tdp_w: -0.03 },
-        bonuses: {
-            cpu_model: { 'ryzen 9': 20, 'ryzen 7': 14, 'core i9': 20, 'core i7': 14, 'ultra 9': 20, 'ultra 7': 14 }
-        },
-        scale: 10000
+    scale: 10000
+  },
+  monitors: {
+    baseScore: 28,
+    weights: { screen_size: 2.2, screen_refresh_rate: 0.4, brightness_cd_m2: 0.02 },
+    bonuses: {
+      screen_resolution: { '4k': 20, qhd: 14, '2k': 12, 'full hd': 5 },
+      screen_technology: { oled: 20, ips: 10, va: 8 },
+      hdr_support: { hdr: 6 }
     },
-    motherboards: {
-        baseScore: 20,
-        weights: { memory_slots: 2, max_memory_gb: 0.1, m2_slots: 2, usb_ports: 0.4 },
-        bonuses: {
-            chipset: { 'x670': 14, 'z790': 14, 'b650': 10, 'b760': 10 },
-            wifi: { 'wi-fi': 6 }
-        },
-        scale: 10000
+    scale: 10000
+  },
+  graphics_cards: {
+    baseScore: 40,
+    weights: { vram_gb: 4, boost_clock_mhz: 0.01, tdp_w: -0.01 },
+    bonuses: {
+      gpu_model: { 'rtx 50': 35, 'rtx 40': 28, 'rtx 30': 18, 'rx 7': 25, 'rx 6': 16 },
+      ray_tracing: { есть: 10 }
     },
-    ram: {
-        baseScore: 18,
-        weights: { ram_size: 2.2, ram_frequency_mhz: 0.01, cl_latency: -0.4 },
-        bonuses: {
-            ram_type: { 'ddr5': 10, 'ddr4': 6 }
-        },
-        scale: 10000
+    scale: 10000
+  },
+  cpus: {
+    baseScore: 38,
+    weights: { cpu_cores: 2.5, cpu_threads: 1.2, cpu_speed: 3, cache_l3_mb: 0.5, tdp_w: -0.03 },
+    bonuses: {
+      cpu_model: { 'ryzen 9': 20, 'ryzen 7': 14, 'core i9': 20, 'core i7': 14, 'ultra 9': 20, 'ultra 7': 14 }
     },
-    drivers: {
-        baseScore: 15,
-        weights: { storage_capacity: 0.03, read_speed_mb_s: 0.01, write_speed_mb_s: 0.01 },
-        bonuses: {
-            storage_type: { 'nvme': 14, 'ssd': 10, 'hdd': 2 }
-        },
-        scale: 10000
+    scale: 10000
+  },
+  motherboards: {
+    baseScore: 20,
+    weights: { memory_slots: 2, max_memory_gb: 0.1, m2_slots: 2, usb_ports: 0.4 },
+    bonuses: {
+      chipset: { x670: 14, z790: 14, b650: 10, b760: 10 },
+      wifi: { 'wi-fi': 6 }
     },
-    default: { baseScore: 35, weights: {}, bonuses: {}, scale: 10000 }
+    scale: 10000
+  },
+  ram: {
+    baseScore: 18,
+    weights: { ram_size: 2.2, ram_frequency_mhz: 0.01, cl_latency: -0.4 },
+    bonuses: {
+      ram_type: { ddr5: 10, ddr4: 6 }
+    },
+    scale: 10000
+  },
+  drivers: {
+    baseScore: 15,
+    weights: { storage_capacity: 0.03, read_speed_mb_s: 0.01, write_speed_mb_s: 0.01 },
+    bonuses: {
+      storage_type: { nvme: 14, ssd: 10, hdd: 2 }
+    },
+    scale: 10000
+  },
+  default: { baseScore: 35, weights: {}, bonuses: {}, scale: 10000 }
 };
 
 //Извлекает первое числовое значение из строки характеристики
 function extractSpecNumber(value) {
-    if (!value) return 0;
-    const str = String(value).toLowerCase().replace(/,/g, '.');
-    const match = str.match(/(\d+\.?\d*)/);
-    return match ? parseFloat(match[1]) : 0;
+  if (!value) return 0;
+  const str = String(value).toLowerCase().replace(/,/g, '.');
+  const match = str.match(/(\d+\.?\d*)/);
+  return match ? parseFloat(match[1]) : 0;
 }
 
 //Ищет бонусы по ключевым словам в значении характеристики
 function getSpecBonuses(specKey, specValue, configBonuses) {
-    if (!configBonuses || !configBonuses[specKey]) return 0;
-    const valueLower = String(specValue).toLowerCase();
-    let bonus = 0;
-    for (const [keyword, score] of Object.entries(configBonuses[specKey])) {
-        if (valueLower.includes(keyword.toLowerCase())) {
-            bonus += score;
-            break;
-        }
+  if (!configBonuses || !configBonuses[specKey]) return 0;
+  const valueLower = String(specValue).toLowerCase();
+  let bonus = 0;
+  for (const [keyword, score] of Object.entries(configBonuses[specKey])) {
+    if (valueLower.includes(keyword.toLowerCase())) {
+      bonus += score;
+      break;
     }
-    return bonus;
+  }
+  return bonus;
 }
 
 async function getMarketPrice(productId) {
-    try {
-        //1. Пробуем получить актуальные цены из таблицы Price
-        const pricesRes = await fetch(`http://localhost:3000/api/products/${productId}/prices`);
-        if (pricesRes.ok) {
-            const prices = await pricesRes.json();
-            if (prices && prices.length > 0) {
-                const validPrices = prices.map(p => p.price).filter(p => p > 0);
-                if (validPrices.length > 0) {
-                    const sum = validPrices.reduce((acc, p) => acc + p, 0);
-                    return sum / validPrices.length;
-                }
-            }
+  try {
+    //1. Пробуем получить актуальные цены из таблицы Price
+    const pricesRes = await fetch(`http://localhost:3000/api/products/${productId}/prices`);
+    if (pricesRes.ok) {
+      const prices = await pricesRes.json();
+      if (prices && prices.length > 0) {
+        const validPrices = prices.map((p) => p.price).filter((p) => p > 0);
+        if (validPrices.length > 0) {
+          const sum = validPrices.reduce((acc, p) => acc + p, 0);
+          return sum / validPrices.length;
         }
-        
-        //2. Если актуальных цен нет, берём последние записи из истории
-        const historyRes = await fetch(`http://localhost:3000/api/products/${productId}/price-history`);
-        if (historyRes.ok) {
-            const history = await historyRes.json();
-            let latestPrices = [];
-            
-            for (const storeName in history) {
-                if (Array.isArray(history[storeName]) && history[storeName].length > 0) {
-                    //Сортируем по дате и берём последнюю запись для каждого магазина
-                    const sorted = [...history[storeName]].sort((a, b) => new Date(b.x) - new Date(a.x));
-                    if (sorted[0]?.y > 0) {
-                        latestPrices.push(sorted[0].y);
-                    }
-                }
-            }
-            
-            if (latestPrices.length > 0) {
-                const sum = latestPrices.reduce((acc, p) => acc + p, 0);
-                return sum / latestPrices.length;
-            }
-        }
-    } catch (e) {
-        console.warn(' Не удалось получить рыночную цену:', e);
+      }
     }
-    return null;
+
+    //2. Если актуальных цен нет, берём последние записи из истории
+    const historyRes = await fetch(`http://localhost:3000/api/products/${productId}/price-history`);
+    if (historyRes.ok) {
+      const history = await historyRes.json();
+      let latestPrices = [];
+
+      for (const storeName in history) {
+        if (Array.isArray(history[storeName]) && history[storeName].length > 0) {
+          //Сортируем по дате и берём последнюю запись для каждого магазина
+          const sorted = [...history[storeName]].sort((a, b) => new Date(b.x) - new Date(a.x));
+          if (sorted[0]?.y > 0) {
+            latestPrices.push(sorted[0].y);
+          }
+        }
+      }
+
+      if (latestPrices.length > 0) {
+        const sum = latestPrices.reduce((acc, p) => acc + p, 0);
+        return sum / latestPrices.length;
+      }
+    }
+  } catch (e) {}
+  return null;
 }
 
 function calculateValueScore(product, price, marketPrice = null) {
-    if (!price || price <= 0) return 0;
+  if (!price || price <= 0) return 0;
 
-    const config = VALUE_CALCULATOR_CONFIG[product.category] || VALUE_CALCULATOR_CONFIG.default;
-    let perfScore = config.baseScore;
-    const specs = product.specs || {};
+  const config = VALUE_CALCULATOR_CONFIG[product.category] || VALUE_CALCULATOR_CONFIG.default;
+  let perfScore = config.baseScore;
+  const specs = product.specs || {};
 
-    //1. Считаем числовые характеристики
-    for (const [key, weight] of Object.entries(config.weights)) {
-        if (specs[key]) {
-            const val = extractSpecNumber(specs[key]);
-            perfScore += val * weight;
-        }
+  //1. Считаем числовые характеристики
+  for (const [key, weight] of Object.entries(config.weights)) {
+    if (specs[key]) {
+      const val = extractSpecNumber(specs[key]);
+      perfScore += val * weight;
     }
+  }
 
-    //2. Считаем бонусы за "качество" (процессор, тип экрана и т.д.)
-    if (config.bonuses) {
-        for (const key of Object.keys(config.bonuses)) {
-            if (specs[key]) {
-                perfScore += getSpecBonuses(key, specs[key], config.bonuses);
-            }
-        }
+  //2. Считаем бонусы за "качество" (процессор, тип экрана и т.д.)
+  if (config.bonuses) {
+    for (const key of Object.keys(config.bonuses)) {
+      if (specs[key]) {
+        perfScore += getSpecBonuses(key, specs[key], config.bonuses);
+      }
     }
+  }
 
-    const boundedPerfScore = clamp(perfScore, 20, 220);
-    const specComponent = clamp((boundedPerfScore - 20) / 200, 0, 1);
+  const boundedPerfScore = clamp(perfScore, 20, 220);
+  const specComponent = clamp((boundedPerfScore - 20) / 200, 0, 1);
 
-    let marketComponent = 0.5;
-    if (marketPrice && marketPrice > 0 && price > 0) {
-        const ratio = marketPrice / price;
-        marketComponent = clamp((ratio - 0.85) / (1.25 - 0.85), 0, 1);
-    }
+  let marketComponent = 0.5;
+  if (marketPrice && marketPrice > 0 && price > 0) {
+    const ratio = marketPrice / price;
+    marketComponent = clamp((ratio - 0.85) / (1.25 - 0.85), 0, 1);
+  }
 
-    const blended = specComponent * 0.35 + marketComponent * 0.65;
-    return Math.round(clamp(blended * 100, 0, 100) * 10) / 10;
+  const blended = specComponent * 0.35 + marketComponent * 0.65;
+  return Math.round(clamp(blended * 100, 0, 100) * 10) / 10;
 }
 
 function getValueInterpretation(score) {
-    if (score >= 70) return { text: "Отличная цена! ", color: "#059669", width: "100%" };
-    if (score >= 55) return { text: "Хорошая цена ", color: "#10b981", width: "90%" };
-    if (score >= 40) return { text: "Выгодная цена ", color: "#3b82f6", width: "75%" };
-    if (score >= 25) return { text: "Средняя цена ", color: "#f59e0b", width: "60%" };
-    if (score >= 15) return { text: "Цена завышена ", color: "#ef4444", width: "40%" };
-    return { text: "Не рекомендуется ", color: "#991b1b", width: "20%" };
+  if (score >= 70) return { text: 'Отличная цена! ', color: '#059669', width: '100%' };
+  if (score >= 55) return { text: 'Хорошая цена ', color: '#10b981', width: '90%' };
+  if (score >= 40) return { text: 'Выгодная цена ', color: '#3b82f6', width: '75%' };
+  if (score >= 25) return { text: 'Средняя цена ', color: '#f59e0b', width: '60%' };
+  if (score >= 15) return { text: 'Цена завышена ', color: '#ef4444', width: '40%' };
+  return { text: 'Не рекомендуется ', color: '#991b1b', width: '20%' };
 }
 
 async function renderValueCalculator(product, container) {
-    console.log(' renderValueCalculator:', product?.name, 'Категория:', product?.category);
-    if (!container || !product) return;
+  if (!container || !product) return;
 
-    //Поиск минимальной цены из доступных в продукте
-    const priceValues = (product.prices || []).map(p => p.price).filter(p => p > 0);
-    const minPrice = priceValues.length > 0 ? Math.min(...priceValues) : 10000;
+  //Поиск минимальной цены из доступных в продукте
+  const priceValues = (product.prices || []).map((p) => p.price).filter((p) => p > 0);
+  const minPrice = priceValues.length > 0 ? Math.min(...priceValues) : 10000;
 
-    //Определяем, отрисовываем ли калькулятор внутри таблицы сравнения —
-    //в этом случае используем компактный интерфейс без лишних надписей
-    const inComparison = !!container.closest('.value-calc-cell');
-    if (inComparison) {
-        container.innerHTML = `
+  //Определяем, отрисовываем ли калькулятор внутри таблицы сравнения —
+  //в этом случае используем компактный интерфейс без лишних надписей
+  const inComparison = !!container.closest('.value-calc-cell');
+  if (inComparison) {
+    container.innerHTML = `
             <div class="value-calc-block value-calc-block--compact">
                 <div class="vc-input-row">
                     <input type="number" class="calc-price-input" value="${minPrice}" step="100" min="0" aria-label="Цена для расчёта индекса выгоды">
@@ -753,8 +762,8 @@ async function renderValueCalculator(product, container) {
                 <div class="market-price-display"></div>
             </div>
         `;
-    } else {
-        container.innerHTML = `
+  } else {
+    container.innerHTML = `
             <div class="value-calc-block">
                 <h3 style="margin: 0 0 10px; font-size: 1.1rem; color: #1e293b;">💡 Калькулятор выгоды</h3>
                 <p style="margin: 0 0 15px; color: #64748b; font-size: 0.9rem;">
@@ -778,83 +787,68 @@ async function renderValueCalculator(product, container) {
                 </div>
             </div>
         `;
-    }
+  }
 
-    const input = container.querySelector('.calc-price-input');
-    const barFill = container.querySelector('.calc-bar-fill');
-    const scoreVal = container.querySelector('.calc-score-value');
-    const interpVal = container.querySelector('.calc-interpretation');
-    const marketPriceDisplay = container.querySelector('.market-price-display');
+  const input = container.querySelector('.calc-price-input');
+  const barFill = container.querySelector('.calc-bar-fill');
+  const scoreVal = container.querySelector('.calc-score-value');
+  const interpVal = container.querySelector('.calc-interpretation');
+  const marketPriceDisplay = container.querySelector('.market-price-display');
 
-    if (!input || !barFill || !scoreVal || !interpVal || !marketPriceDisplay) {
-        console.error('renderValueCalculator: не удалось найти элементы калькулятора');
-        return;
-    }
+  if (!input || !barFill || !scoreVal || !interpVal || !marketPriceDisplay) {
+    console.error('renderValueCalculator: не удалось найти элементы калькулятора');
+    return;
+  }
 
-    //Загружаем рыночную цену асинхронно
-    let marketPrice = null;
-    if (product.id) {
+  //Загружаем рыночную цену асинхронно
+  let marketPrice = null;
+  if (product.id) {
+    marketPriceDisplay.textContent = inComparison ? '📊 Загрузка…' : '📊 Загрузка рыночной цены...';
+    try {
+      marketPrice = await getMarketPrice(product.id);
+      if (marketPrice && marketPriceDisplay) {
         marketPriceDisplay.textContent = inComparison
-            ? '📊 Загрузка…'
-            : '📊 Загрузка рыночной цены...';
-        try {
-            marketPrice = await getMarketPrice(product.id);
-            if (marketPrice && marketPriceDisplay) {
-                marketPriceDisplay.textContent = inComparison
-                    ? `📊 Рынок: ${Math.round(marketPrice).toLocaleString('ru-RU')} ₽`
-                    : `📊 Средняя рыночная цена: ${Math.round(marketPrice).toLocaleString('ru-RU')} ₽`;
-            } else if (marketPriceDisplay) {
-                marketPriceDisplay.textContent = inComparison
-                    ? '📊 Рынок: нет данных'
-                    : '📊 Рыночная цена: данные недоступны';
-            }
-        } catch (e) {
-            console.warn('⚠️ Ошибка загрузки рыночной цены:', e);
-            if (marketPriceDisplay) {
-                marketPriceDisplay.textContent = inComparison
-                    ? '📊 Ошибка загрузки'
-                    : '📊 Рыночная цена: ошибка загрузки';
-            }
-        }
+          ? `📊 Рынок: ${Math.round(marketPrice).toLocaleString('ru-RU')} ₽`
+          : `📊 Средняя рыночная цена: ${Math.round(marketPrice).toLocaleString('ru-RU')} ₽`;
+      } else if (marketPriceDisplay) {
+        marketPriceDisplay.textContent = inComparison ? '📊 Рынок: нет данных' : '📊 Рыночная цена: данные недоступны';
+      }
+    } catch (e) {
+      if (marketPriceDisplay) {
+        marketPriceDisplay.textContent = inComparison ? '📊 Ошибка загрузки' : '📊 Рыночная цена: ошибка загрузки';
+      }
     }
+  }
 
-    //Функция обновления расчёта
-    const updateCalc = () => {
-        try {
-            const price = parseFloat(input.value) || 0;
-            const score = calculateValueScore(product, price, marketPrice);
-            const interp = getValueInterpretation(score);
+  //Функция обновления расчёта
+  const updateCalc = () => {
+    try {
+      const price = parseFloat(input.value) || 0;
+      const score = calculateValueScore(product, price, marketPrice);
+      const interp = getValueInterpretation(score);
 
-            scoreVal.textContent = score.toFixed(1);
-            interpVal.textContent = interp.text;
-            interpVal.style.color = interp.color;
-            barFill.style.width = interp.width;
-            barFill.style.background = interp.color;
-        } catch (e) {
-            console.error('💥 Ошибка в updateCalc:', e);
-        }
-    };
+      scoreVal.textContent = score.toFixed(1);
+      interpVal.textContent = interp.text;
+      interpVal.style.color = interp.color;
+      barFill.style.width = interp.width;
+      barFill.style.background = interp.color;
+    } catch (e) {
+      console.error('💥 Ошибка в updateCalc:', e);
+    }
+  };
 
-    //Вешаем обработчики событий на поле ввода
-    ['input', 'change', 'keyup'].forEach(evt => {
-        input.addEventListener(evt, updateCalc);
-    });
+  //Вешаем обработчики событий на поле ввода
+  ['input', 'change', 'keyup'].forEach((evt) => {
+    input.addEventListener(evt, updateCalc);
+  });
 
-    //Первый запуск расчёта
-    updateCalc();
+  //Первый запуск расчёта
+  updateCalc();
 }
-
-
-//Инициализация
-document.addEventListener('DOMContentLoaded', function() {
-    initializeApp();
-});
 
 //Главная функция инициализации приложения
 async function initializeApp() {
   const path = window.location.pathname;
-  console.log('Инициализация приложения, страница:', path);
-
   //Сначала загружаем пользователя
   loadUserData();
 
@@ -875,9 +869,6 @@ async function initializeApp() {
     initializeRecommendationsPage();
   } else if (path.includes('admin.html')) {
     initializeAdminPage();
-  } else if (path.includes('profile.html')) {
-    //Для профиля — загружаем данные с сервера
-    loadProfileDataFromAPI();
   }
 
   if (typeof checkPriceDropNotificationsOnLogin === 'function') {
@@ -885,87 +876,214 @@ async function initializeApp() {
   }
 
   updateComparisonCounter();
+  initNavSearch();
 }
-
-
 
 //===================== КАТАЛОГ И ФИЛЬТРЫ =====================
 
+function loadCategories() {
+  const categorySelect = document.getElementById('categorySelect');
+  if (!categorySelect) return;
+
+  const categories = Array.from(new Set((demoProducts || []).map((p) => p.category).filter(Boolean))).sort();
+  if (!categories.length) return;
+
+  const current = categorySelect.value;
+  categorySelect.innerHTML = `<option value="">Все категории</option>${categories
+    .map((cat) => `<option value="${cat}">${getCategoryName(cat)}</option>`)
+    .join('')}`;
+  categorySelect.value = current || '';
+}
+
 function initializeCatalog() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const initialCategory = urlParams.get('category');
-    const similarTo = urlParams.get('similarTo'); //Читаем параметр режима "Похожее"
-    const similarBrand = (urlParams.get('similarBrand') || 'any').toLowerCase();
-    const similarPrice = urlParams.get('similarPrice') === '1';
-    const similarSpecs = (urlParams.get('similarSpecs') || '')
-      .split(',')
-      .map(v => v.trim())
-      .filter(Boolean);
+  const urlParams = new URLSearchParams(window.location.search);
+  const initialCategory = urlParams.get('category');
+  const similarTo = urlParams.get('similarTo'); //Читаем параметр режима "Похожее"
+  const similarBrand = (urlParams.get('similarBrand') || 'any').toLowerCase();
+  const similarPrice = urlParams.get('similarPrice') === '1';
+  const similarSpecs = (urlParams.get('similarSpecs') || '')
+    .split(',')
+    .map((v) => v.trim())
+    .filter(Boolean);
 
-    //Если есть режим "Похожее", сохраняем ID целевого товара
-    if (similarTo) {
-        similarModeTargetId = parseInt(similarTo, 10);
+  //Если есть режим "Похожее", сохраняем ID целевого товара
+  if (similarTo) {
+    similarModeTargetId = parseInt(similarTo, 10);
+  }
+
+  similarModeCriteria = {
+    brandMode: ['any', 'same', 'other'].includes(similarBrand) ? similarBrand : 'any',
+    usePriceRange: similarPrice,
+    specKeys: similarSpecs
+  };
+
+  //Загружаем список категорий
+  loadCategories();
+
+  //Если в URL есть параметр category, выбираем её в селекторе и фильтруем
+  if (initialCategory) {
+    const categorySelect = document.getElementById('categorySelect');
+    if (categorySelect) {
+      categorySelect.value = initialCategory;
+      updateFilters();
+      filterProducts();
     }
+  }
 
-    similarModeCriteria = {
-      brandMode: ['any', 'same', 'other'].includes(similarBrand) ? similarBrand : 'any',
-      usePriceRange: similarPrice,
-      specKeys: similarSpecs
-    };
-
-    //Загружаем список категорий
-    loadCategories();
-
-    //Если в URL есть параметр category, выбираем её в селекторе и фильтруем
-    if (initialCategory) {
-        const categorySelect = document.getElementById('categorySelect');
-        if (categorySelect) {
-            categorySelect.value = initialCategory;
-            updateFilters();
-            filterProducts();
-        }
-    }
-    
-    //Обновляем баннер похожести и загружаем товары
-    updateSimilarModeBanner();
-    loadProductsFromAPI();
+  //Обновляем баннер похожести и загружаем товары
+  updateSimilarModeBanner();
+  loadProductsFromAPI();
 }
 
 //Загрузка фильтров из url при переходе по ссылке
 function loadFiltersFromURL() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const category = urlParams.get('category');
-    const search = urlParams.get('search');
-    
-    if (category) {
-        document.getElementById('categorySelect').value = category;
-        updateFilters();
-    }
-    
-    if (search) {
-        document.getElementById('mainSearch').value = search;
-        currentFilters.search = search;
-    }
-    
-    filterProducts();
+  const urlParams = new URLSearchParams(window.location.search);
+  const category = urlParams.get('category');
+  const search = urlParams.get('search');
+
+  if (category) {
+    document.getElementById('categorySelect').value = category;
+    updateFilters();
+  }
+
+  if (search) {
+    document.getElementById('mainSearch').value = search;
+    currentFilters.search = search;
+  }
+
+  filterProducts();
 }
 
-//Обновлнеи фильтров
+function getCheckboxStore(scope) {
+  return scope === 'recommendations' ? recommendationSelectedCheckboxes : selectedCheckboxes;
+}
+
+function getDynamicFiltersContainer(scope) {
+  return document.getElementById(scope === 'recommendations' ? 'recommendationsDynamicFilters' : 'dynamicFilters');
+}
+
+function escapeFilterHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function escapeFilterAttr(value) {
+  return escapeFilterHtml(value).replace(/'/g, '&#39;');
+}
+
+function buildSpecFiltersForCategory(category) {
+  if (!category || !demoProducts?.length) return [];
+
+  const productsInCategory = demoProducts.filter((p) => p.category === category);
+  const uniqueSpecKeys = new Set();
+  productsInCategory.forEach((product) => {
+    if (product.specs) {
+      Object.keys(product.specs).forEach((key) => {
+        if (isUserVisibleSpecKey(key)) uniqueSpecKeys.add(key);
+      });
+    }
+  });
+
+  const filtersForCategory = [];
+  uniqueSpecKeys.forEach((key) => {
+    const valuesSet = new Set();
+    productsInCategory.forEach((product) => {
+      if (product.specs && product.specs[key]) {
+        valuesSet.add(normalizeFilterValue(product.specs[key]));
+      }
+    });
+    if (valuesSet.size > 0 && valuesSet.size <= 20) {
+      filtersForCategory.push({
+        name: key,
+        label: specKeyTranslations[key] || key,
+        options: [...valuesSet].sort()
+      });
+    }
+  });
+
+  return filtersForCategory;
+}
+
+function renderDynamicFiltersHtml(category, scope) {
+  const filtersForCategory = buildSpecFiltersForCategory(category);
+  if (!category) {
+    return `
+      
+    `;
+  }
+
+  if (!filtersForCategory.length) {
+    return `
+      <div class="dynamic-filters-empty">
+        <p>Нет товаров в выбранной категории или нет характеристик для фильтрации.</p>
+      </div>
+    `;
+  }
+
+  const scopeAttr = escapeFilterAttr(scope);
+  return `
+    <h4 class="dynamic-filters-title">Характеристики ${escapeFilterHtml(getCategoryName(category))}</h4>
+    ${filtersForCategory
+      .map((filter) => {
+        const filterNameAttr = escapeFilterAttr(filter.name);
+        return `
+        <div class="filter-group filter-group--spec">
+          <label class="filter-group--spec__label">${escapeFilterHtml(filter.label)}</label>
+          <div class="checkbox-options" id="${escapeFilterHtml(filter.name)}Options">
+            ${filter.options
+              .map((opt) => {
+                const optAttr = escapeFilterAttr(opt);
+                return `
+              <label class="checkbox-options__item">
+                <input type="checkbox"
+                       name="${filterNameAttr}"
+                       value="${optAttr}"
+                       onchange="handleCheckboxChange('${filterNameAttr}', '${optAttr}', this.checked, '${scopeAttr}')">
+                <span>${escapeFilterHtml(opt)}</span>
+              </label>
+            `;
+              })
+              .join('')}
+          </div>
+          <div class="filter-group--spec__actions">
+            <button type="button" class="btn btn-outline btn-small"
+                    onclick="selectAllCheckboxes('${filterNameAttr}', '${scopeAttr}')">
+              Выбрать все
+            </button>
+            <button type="button" class="btn btn-outline btn-small"
+                    onclick="clearCheckboxes('${filterNameAttr}', '${scopeAttr}')">
+              Сбросить
+            </button>
+          </div>
+        </div>
+      `;
+      })
+      .join('')}
+  `;
+}
+
+function renderDynamicFiltersPanel(category, scope) {
+  const container = getDynamicFiltersContainer(scope);
+  if (!container) return;
+  container.innerHTML = renderDynamicFiltersHtml(category, scope);
+}
+
+//Обновление фильтров каталога
 function updateFilters() {
   const categorySelect = document.getElementById('categorySelect');
   const category = categorySelect ? categorySelect.value : '';
   const dynamicFilters = document.getElementById('dynamicFilters');
 
-  //Сбрасываем выбранные чекбоксы для предыдущей категории
   selectedCheckboxes = {};
 
   if (category && demoProducts && demoProducts.length > 0) {
-    //1. Найдём все товары текущей категории
-    const productsInCategory = demoProducts.filter(p => p.category === category);
-
+    const productsInCategory = demoProducts.filter((p) => p.category === category);
     if (productsInCategory.length === 0) {
       dynamicFilters.innerHTML = `
-        <div style="text-align: center; padding: 2rem; color: #6b7280;">
+        <div class="dynamic-filters-empty">
           <p>Нет товаров в выбранной категории.</p>
         </div>
       `;
@@ -973,247 +1091,190 @@ function updateFilters() {
       displayProducts([]);
       return;
     }
-
-    //2. Соберём все уникальные ключи характеристик для этой категории
-    const uniqueSpecKeys = new Set();
-    productsInCategory.forEach(product => {
-      if (product.specs) {
-        Object.keys(product.specs).forEach(key => {
-          if (isUserVisibleSpecKey(key)) uniqueSpecKeys.add(key);
-        });
-      }
-    });
-
-    //3. Для каждого ключа соберём уникальные *значения*
-    const filtersForCategory = [];
-    uniqueSpecKeys.forEach(key => {
-      const valuesSet = new Set();
-      productsInCategory.forEach(product => {
-        if (product.specs && product.specs[key]) {
-          //Нормализуем значение перед добавлением в Set
-          const normalizedValue = normalizeFilterValue(product.specs[key]);
-          valuesSet.add(normalizedValue);
-        }
-      });
-      //Пропускаем ключи с очень большим количеством уникальных значений (например, цены)
-      if (valuesSet.size > 0 && valuesSet.size <= 20) { //Порог, можно изменить
-        filtersForCategory.push({
-          name: key, //Используем оригинальный ключ из specs
-          label: specKeyTranslations[key] || key, //Русское название или ключ
-          type: 'checkbox',
-          options: [...valuesSet].sort() //Сортируем значения
-        });
-      }
-    });
-
-    //4. Сгенерируем HTML для фильтров
-    dynamicFilters.innerHTML = `
-      <h4 style="margin: 1.5rem 0 1rem; color: #374151; font-size: 1.1rem;">
-        Характеристики ${getCategoryName(category)}
-      </h4>
-      ${filtersForCategory.map(filter => `
-        <div class="filter-group" style="margin-bottom: 1.5rem; padding: 1rem; background: #f8f9fa; border-radius: 8px;">
-          <label style="display: block; margin-bottom: 0.75rem; font-weight: 600; color: #374151;">
-            ${filter.label}
-          </label>
-          <div class="checkbox-options" id="${filter.name}Options"
-               style="display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 0.5rem;">
-            ${filter.options.map(opt => `
-              <label style="display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem;
-                           background: white; border-radius: 4px; cursor: pointer;
-                           transition: background 0.2s;"
-                     onmouseover="this.style.background='#f3f4f6'"
-                     onmouseout="this.style.background='white'">
-                <input type="checkbox"
-                       name="${filter.name}"
-                       value="${opt}"
-                       onchange="handleCheckboxChange('${filter.name}', '${opt}', this.checked)"
-                       style="width: 18px; height: 18px; cursor: pointer;">
-                <span style="font-size: 0.9rem;">${opt}</span>
-              </label>
-            `).join('')}
-          </div>
-          <div style="margin-top: 0.75rem; display: flex; gap: 0.5rem;">
-            <button type="button" class="btn btn-outline btn-small"
-                    onclick="selectAllCheckboxes('${filter.name}')"
-                    style="padding: 0.4rem 0.75rem; font-size: 0.85rem;">
-              Выбрать все
-            </button>
-            <button type="button" class="btn btn-outline btn-small"
-                    onclick="clearCheckboxes('${filter.name}')"
-                    style="padding: 0.4rem 0.75rem; font-size: 0.85rem;">
-              Сбросить
-            </button>
-          </div>
-        </div>
-      `).join('')}
-    `;
-
-  } else {
-    dynamicFilters.innerHTML = `
-      <div style="text-align: center; padding: 2rem; color: #6b7280;">
-        <p>Выберите категорию для отображения фильтров</p>
-      </div>
-    `;
+    renderDynamicFiltersPanel(category, 'catalog');
+  } else if (dynamicFilters) {
+    dynamicFilters.innerHTML = renderDynamicFiltersHtml('', 'catalog');
   }
 
-  //Обновляем счётчики и отображение
   filterProducts();
 }
 
-function handleCheckboxChange(filterName, value, isChecked) {
-    if (!selectedCheckboxes[filterName]) {
-        selectedCheckboxes[filterName] = [];
-    }
-    
-    if (isChecked) {
-        if (!selectedCheckboxes[filterName].includes(value)) {
-            selectedCheckboxes[filterName].push(value);
-        }
-    } else {
-        selectedCheckboxes[filterName] = selectedCheckboxes[filterName].filter(v => v !== value);
-    }
-    
-    filterProducts();
+function updateRecommendationsFiltersPanel() {
+  const categorySelect = document.getElementById('recommendationsCategory');
+  const category = categorySelect ? categorySelect.value : '';
+  recommendationSelectedCheckboxes = {};
+  renderDynamicFiltersPanel(category, 'recommendations');
 }
 
-function selectAllCheckboxes(filterName) {
-    const checkboxes = document.querySelectorAll(`input[name="${filterName}"]`);
-    checkboxes.forEach(cb => {
-        cb.checked = true;
-        handleCheckboxChange(filterName, cb.value, true);
-    });
+function handleCheckboxChange(filterName, value, isChecked, scope = 'catalog') {
+  const store = getCheckboxStore(scope);
+  if (!store[filterName]) {
+    store[filterName] = [];
+  }
+
+  if (isChecked) {
+    if (!store[filterName].includes(value)) {
+      store[filterName].push(value);
+    }
+  } else {
+    store[filterName] = store[filterName].filter((v) => v !== value);
+  }
+
+  if (scope === 'recommendations') {
+    applyRecommendationsFilters();
+  } else {
+    filterProducts();
+  }
 }
 
-function clearCheckboxes(filterName) {
-    const checkboxes = document.querySelectorAll(`input[name="${filterName}"]`);
-    checkboxes.forEach(cb => {
-        cb.checked = false;
-    });
-    selectedCheckboxes[filterName] = [];
+function selectAllCheckboxes(filterName, scope = 'catalog') {
+  const container = getDynamicFiltersContainer(scope);
+  if (!container) return;
+  const checkboxes = container.querySelectorAll(`input[name="${CSS.escape(filterName)}"]`);
+  checkboxes.forEach((cb) => {
+    cb.checked = true;
+    handleCheckboxChange(filterName, cb.value, true, scope);
+  });
+}
+
+function clearCheckboxes(filterName, scope = 'catalog') {
+  const container = getDynamicFiltersContainer(scope);
+  if (!container) return;
+  const checkboxes = container.querySelectorAll(`input[name="${CSS.escape(filterName)}"]`);
+  checkboxes.forEach((cb) => {
+    cb.checked = false;
+  });
+  getCheckboxStore(scope)[filterName] = [];
+  if (scope === 'recommendations') {
+    applyRecommendationsFilters();
+  } else {
     filterProducts();
+  }
 }
 
 //Фильтры
 function filterProducts() {
-    const categorySelect = document.getElementById('categorySelect');
-    const category = categorySelect ? categorySelect.value : '';
-    const minPriceInput = document.getElementById('minPrice');
-    const minPrice = minPriceInput && minPriceInput.value ? parseFloat(minPriceInput.value) : 0;
-    const maxPriceInput = document.getElementById('maxPrice');
-    const maxPrice = maxPriceInput && maxPriceInput.value ? parseFloat(maxPriceInput.value) : Infinity;
-    const sortSelect = document.getElementById('sortSelect');
-    const sortBy = sortSelect ? sortSelect.value : 'name';
+  const categorySelect = document.getElementById('categorySelect');
+  const category = categorySelect ? categorySelect.value : '';
+  const minPriceInput = document.getElementById('minPrice');
+  const minPrice = minPriceInput && minPriceInput.value ? parseFloat(minPriceInput.value) : 0;
+  const maxPriceInput = document.getElementById('maxPrice');
+  const maxPrice = maxPriceInput && maxPriceInput.value ? parseFloat(maxPriceInput.value) : Infinity;
+  const sortSelect = document.getElementById('sortSelect');
+  const sortBy = sortSelect ? sortSelect.value : 'name';
 
-    //1. Создаём массив товаров с вычисленной minPrice (это важно для корректной работы)
-    let filtered = demoProducts.map(p => ({
-        ...p,
-        minPrice: p.prices && p.prices.length > 0 ? Math.min(...p.prices.map(pr => pr.price)) : null,
-        brand: p.name.split(' ')[0] || ''
-    }));
+  //1. Создаём массив товаров с вычисленной minPrice (это важно для корректной работы)
+  let filtered = demoProducts.map((p) => ({
+    ...p,
+    minPrice: p.prices && p.prices.length > 0 ? Math.min(...p.prices.map((pr) => pr.price)) : null,
+    brand: p.name.split(' ')[0] || ''
+  }));
 
-    //Проверяем, включен ли режим и есть ли товары
-    if (similarModeTargetId && filtered.length > 0) {
-        //Ищем целевой товар В ОБНОВЛЕННОМ массиве (где уже есть minPrice)
-        const target = filtered.find(p => p.id === similarModeTargetId);
-        
-        if (target) {
-            console.log(`🔍 Поиск похожего для: ${target.name} (Цена: ${target.minPrice})`);
-            const targetPrice = target.minPrice || 0;
-            const minRange = targetPrice * 0.5; 
-            const maxRange = targetPrice * 1.5; 
-            const hasCustomCriteria = Boolean(
-              similarModeCriteria.usePriceRange ||
-              similarModeCriteria.brandMode !== 'any' ||
-              (similarModeCriteria.specKeys && similarModeCriteria.specKeys.length > 0)
-            );
+  //Проверяем, включен ли режим и есть ли товары
+  if (similarModeTargetId && filtered.length > 0) {
+    //Ищем целевой товар В ОБНОВЛЕННОМ массиве (где уже есть minPrice)
+    const target = filtered.find((p) => p.id === similarModeTargetId);
 
-            const targetBrand = normalizeFilterValue(target.brand || target.name?.split(' ')[0] || '');
-            const effectiveSpecKeys = (similarModeCriteria.specKeys || []).filter(specKey => {
-              if (!isUserVisibleSpecKey(specKey)) return false;
-              const targetSpecValue = target.specs?.[specKey];
-              return targetSpecValue !== undefined && targetSpecValue !== null && String(targetSpecValue).trim() !== '';
-            });
+    if (target) {
+      const targetPrice = target.minPrice || 0;
+      const minRange = targetPrice * 0.5;
+      const maxRange = targetPrice * 1.5;
+      const hasCustomCriteria = Boolean(
+        similarModeCriteria.usePriceRange ||
+          similarModeCriteria.brandMode !== 'any' ||
+          (similarModeCriteria.specKeys && similarModeCriteria.specKeys.length > 0)
+      );
 
-            filtered = filtered.filter(p => {
-                //Исключаем сам исходный товар
-                if (p.id === target.id) return false;
-                
-                //Базовое ограничение для "похожего" — категория исходного товара
-                if (p.category !== target.category) return false;
+      const targetBrand = normalizeFilterValue(target.brand || target.name?.split(' ')[0] || '');
+      const effectiveSpecKeys = (similarModeCriteria.specKeys || []).filter((specKey) => {
+        if (!isUserVisibleSpecKey(specKey)) return false;
+        const targetSpecValue = target.specs?.[specKey];
+        return targetSpecValue !== undefined && targetSpecValue !== null && String(targetSpecValue).trim() !== '';
+      });
 
-                //Если пользователь ничего не выбрал — используем старый алгоритм
-                if (!hasCustomCriteria) {
-                  if (p.minPrice !== null) {
-                      if (p.minPrice < minRange || p.minPrice > maxRange) return false;
-                  }
-                  return true;
-                }
+      filtered = filtered.filter((p) => {
+        //Исключаем сам исходный товар
+        if (p.id === target.id) return false;
 
-                //Фильтр по бренду
-                if (similarModeCriteria.brandMode === 'same') {
-                  const candidateBrand = normalizeFilterValue(p.brand || p.name?.split(' ')[0] || '');
-                  if (!targetBrand || candidateBrand !== targetBrand) return false;
-                } else if (similarModeCriteria.brandMode === 'other') {
-                  const candidateBrand = normalizeFilterValue(p.brand || p.name?.split(' ')[0] || '');
-                  if (targetBrand && candidateBrand === targetBrand) return false;
-                }
+        //Базовое ограничение для "похожего" — категория исходного товара
+        if (p.category !== target.category) return false;
 
-                //Фильтр по цене (если выбрали соответствующий критерий)
-                if (similarModeCriteria.usePriceRange && p.minPrice !== null) {
-                  if (p.minPrice < minRange || p.minPrice > maxRange) return false;
-                }
-
-                //Фильтр по выбранным характеристикам
-                for (const specKey of effectiveSpecKeys) {
-                  const targetSpecValue = normalizeFilterValue(target.specs?.[specKey] ?? '');
-                  const candidateSpecValue = normalizeFilterValue(p.specs?.[specKey] ?? '');
-                  if (!targetSpecValue || candidateSpecValue !== targetSpecValue) {
-                    return false;
-                  }
-                }
-
-                return true;
-            });
-            console.log(`✅ Найдено похожих товаров: ${filtered.length}`);
-        } else {
-            console.warn('⚠️ Целевой товар не найден в базе, показываем всё');
-            //Если товар вдруг удалили из базы, сбрасываем режим
-            exitSimilarMode();
+        //Если пользователь ничего не выбрал — используем старый алгоритм
+        if (!hasCustomCriteria) {
+          if (p.minPrice !== null) {
+            if (p.minPrice < minRange || p.minPrice > maxRange) return false;
+          }
+          return true;
         }
-    }
-    //=== КОНЕЦ РЕЖИМА ===
 
-    //3. Фильтрация по категории (Только если мы НЕ в режиме "Похожее")
-    //В режиме "Похожее" категория уже отфильтрована выше
-    if (category && !similarModeTargetId) {
-        filtered = filtered.filter(p => p.category === category);
-    }
-
-    //4. Фильтрация по цене (слайдеры/поля ввода)
-    filtered = filtered.filter(p => {
-        const price = p.minPrice || 0;
-        return price >= minPrice && price <= maxPrice;
-    });
-
-    //5. Фильтрация по чекбоксам (характеристики)
-    Object.keys(selectedCheckboxes).forEach(specKey => {
-        const selectedValues = selectedCheckboxes[specKey];
-        if (selectedValues.length > 0) {
-            filtered = filtered.filter(product =>
-                selectedValues.some(value => matchFilter(product, specKey, value))
-            );
+        //Фильтр по бренду
+        if (similarModeCriteria.brandMode === 'same') {
+          const candidateBrand = normalizeFilterValue(p.brand || p.name?.split(' ')[0] || '');
+          if (!targetBrand || candidateBrand !== targetBrand) return false;
+        } else if (similarModeCriteria.brandMode === 'other') {
+          const candidateBrand = normalizeFilterValue(p.brand || p.name?.split(' ')[0] || '');
+          if (targetBrand && candidateBrand === targetBrand) return false;
         }
-    });
 
-    //6. Сортировка
-    if (sortBy) {
-        filtered = sortProductsList(filtered, sortBy);
+        //Фильтр по цене (если выбрали соответствующий критерий)
+        if (similarModeCriteria.usePriceRange && p.minPrice !== null) {
+          if (p.minPrice < minRange || p.minPrice > maxRange) return false;
+        }
+
+        //Фильтр по выбранным характеристикам
+        for (const specKey of effectiveSpecKeys) {
+          const targetSpecValue = normalizeFilterValue(target.specs?.[specKey] ?? '');
+          const candidateSpecValue = normalizeFilterValue(p.specs?.[specKey] ?? '');
+          if (!targetSpecValue || candidateSpecValue !== targetSpecValue) {
+            return false;
+          }
+        }
+
+        return true;
+      });
+    } else {
+      //Если товар вдруг удалили из базы, сбрасываем режим
+      exitSimilarMode();
     }
+  }
+  //=== КОНЕЦ РЕЖИМА ===
 
-    //7. Обновляем UI
-    updateProductsInfo(filtered.length, category);
-    displayProducts(filtered);
+  //3. Фильтрация по категории (Только если мы НЕ в режиме "Похожее")
+  //В режиме "Похожее" категория уже отфильтрована выше
+  if (category && !similarModeTargetId) {
+    filtered = filtered.filter((p) => p.category === category);
+  }
+
+  //3.1 Поисковый запрос (поле каталога или URL)
+  const mainSearchEl = document.getElementById('mainSearch');
+  const searchQuery = (mainSearchEl?.value || currentFilters.search || '').trim();
+  if (searchQuery && !similarModeTargetId) {
+    const searchIds = new Set(resolveProductsForSearchQuery(searchQuery).map((p) => p.id));
+    filtered = filtered.filter((p) => searchIds.has(p.id));
+  }
+
+  //4. Фильтрация по цене (слайдеры/поля ввода)
+  filtered = filtered.filter((p) => {
+    const price = p.minPrice || 0;
+    return price >= minPrice && price <= maxPrice;
+  });
+
+  //5. Фильтрация по чекбоксам (характеристики)
+  Object.keys(selectedCheckboxes).forEach((specKey) => {
+    const selectedValues = selectedCheckboxes[specKey];
+    if (selectedValues.length > 0) {
+      filtered = filtered.filter((product) => selectedValues.some((value) => matchFilter(product, specKey, value)));
+    }
+  });
+
+  //6. Сортировка
+  if (sortBy) {
+    filtered = sortProductsList(filtered, sortBy);
+  }
+
+  //7. Обновляем UI
+  updateProductsInfo(filtered.length, category);
+  displayProducts(filtered);
 }
 
 //Сопоставление фильтров
@@ -1237,7 +1298,7 @@ function matchFilter(product, specKey, filterValue) {
 
   //Дополнительно: проверим, является ли specValue списком/массивом (если хранится как строка через запятую или точку с запятой)
   if (typeof specValue === 'string') {
-    const possibleValues = specValue.split(/[,;]/).map(v => normalizeFilterValue(v.trim()));
+    const possibleValues = specValue.split(/[,;]/).map((v) => normalizeFilterValue(v.trim()));
     if (possibleValues.includes(normFilterValue)) {
       return true;
     }
@@ -1270,8 +1331,6 @@ function matchFilter(product, specKey, filterValue) {
   return false;
 }
 
-
-
 //Нормализует значение характеристики для сравнения
 function normalizeFilterValue(str) {
   if (typeof str !== 'string') {
@@ -1289,31 +1348,29 @@ function normalizeFilterValue(str) {
     .replace(/дюйм|дюймы|inch/i, 'inch')
     .replace(/вт|w/i, 'w')
     .replace(/мач|mac/i, 'mac') //Пример для процессоров
-    .replace(/core\s*i(\d)/i, 'corei$1') 
-    
-    ;
+    .replace(/core\s*i(\d)/i, 'corei$1');
 }
 
 //Функция для обновления информации о товарах
 function updateProductsInfo(count, category) {
-    const productsCount = document.getElementById('productsCount');
-    const currentCategory = document.getElementById('currentCategory');
-    
-    if (productsCount) {
-        productsCount.textContent = `Найдено товаров: ${count}`;
-    }
-    
-    if (currentCategory && category) {
-        currentCategory.textContent = `Категория: ${getCategoryName(category)}`;
-    } else if (currentCategory) {
-        currentCategory.textContent = '';
-    }
+  const productsCount = document.getElementById('productsCount');
+  const currentCategory = document.getElementById('currentCategory');
+
+  if (productsCount) {
+    productsCount.textContent = `Найдено товаров: ${count}`;
+  }
+
+  if (currentCategory && category) {
+    currentCategory.textContent = `Категория: ${getCategoryName(category)}`;
+  } else if (currentCategory) {
+    currentCategory.textContent = '';
+  }
 }
 
 //Сортировка
 function sortProductsList(products, sortBy) {
   return [...products].sort((a, b) => {
-    switch(sortBy) {
+    switch (sortBy) {
       case 'price_asc':
         return (getMinPrice(a) || 0) - (getMinPrice(b) || 0);
       case 'price_desc':
@@ -1332,6 +1389,232 @@ function sortProductsList(products, sortBy) {
   });
 }
 
+// ——— Изображения товаров: fallback на эмодзи категории ———
+const CATEGORY_EMOJI = {
+  smartphones: '📱',
+  laptops: '💻',
+  tv: '📺',
+  headphones: '🎧',
+  cameras: '📷',
+  tablets: '📲',
+  smartwatches: '⌚',
+  ebooks: '📖',
+  drones: '🚁',
+  pc_components: '🔧',
+  keyboards: '⌨️',
+  mouses: '🖱️',
+  cases: '🗃️',
+  drivers: '💾',
+  fitness_trackers: '🏃',
+  power_units: '⚡',
+  microphones: '🎤',
+  webcams: '📹',
+  power_banks: '🔋',
+  portable_speakers: '🔊',
+  monitors: '🖥️',
+  accessories: '🔌',
+  gaming: '🎮',
+  networking: '📡',
+  cpus: '⚙️',
+  motherboards: '🧩',
+  ram: '🧠',
+  graphics_cards: '🖼️',
+  external_drives: '💽',
+  audio: '🎵',
+  smart_home: '🏡',
+  wearables: '👓',
+  other: '📦'
+};
+
+const RU_CATEGORY_TO_KEY = {
+  смартфоны: 'smartphones',
+  ноутбуки: 'laptops',
+  телевизоры: 'tv',
+  наушники: 'headphones',
+  камеры: 'cameras',
+  фотоаппараты: 'cameras',
+  планшеты: 'tablets',
+  'смарт-часы': 'smartwatches',
+  смартчасы: 'smartwatches',
+  'электронные книги': 'ebooks',
+  дроны: 'drones',
+  'комплектующие пк': 'pc_components',
+  клавиатуры: 'keyboards',
+  клавиатура: 'keyboards',
+  мыши: 'mouses',
+  'корпуса пк': 'cases',
+  накопители: 'drivers',
+  'фитнес-трекеры': 'fitness_trackers',
+  'блоки питания': 'power_units',
+  микрофоны: 'microphones',
+  'веб-камеры': 'webcams',
+  павербанки: 'power_banks',
+  'портативные колонки': 'portable_speakers',
+  мониторы: 'monitors',
+  аксессуары: 'accessories',
+  'игровые консоли': 'gaming',
+  'сетевое оборудование': 'networking',
+  процессоры: 'cpus',
+  'материнские платы': 'motherboards',
+  'оперативная память': 'ram',
+  видеокарты: 'graphics_cards',
+  'внешние накопители': 'external_drives',
+  аудиосистемы: 'audio',
+  'умный дом': 'smart_home',
+  'носимые устройства': 'wearables',
+  другое: 'other'
+};
+
+function normalizeCategoryKey(category) {
+  if (!category) return '';
+  const raw = String(category).toLowerCase().trim();
+  if (CATEGORY_EMOJI[raw]) return raw;
+  return RU_CATEGORY_TO_KEY[raw] || raw;
+}
+
+function getCategoryEmoji(category) {
+  const key = normalizeCategoryKey(category);
+  return CATEGORY_EMOJI[key] || '📦';
+}
+
+function getProductImageUrl(product) {
+  if (!product) return '';
+  const url = product.image || product.imageUrl || product.image_url || '';
+  return typeof url === 'string' ? url.trim() : '';
+}
+
+function isBrokenProductImageUrl(url) {
+  if (!url) return true;
+  return /via\.placeholder\.com|placeholder\.com\/\d/i.test(url);
+}
+
+function getProductImageAriaLabel(category) {
+  return typeof getCategoryName === 'function'
+    ? getCategoryName(normalizeCategoryKey(category) || category)
+    : category || 'Товар';
+}
+
+function renderProductImageFallback(category, options = {}) {
+  const size = options.size || 'card';
+  const className = options.className || '';
+  const extraAttrs = options.nested ? '' : options.extraAttrs || '';
+  const emoji = getCategoryEmoji(category);
+  const classes = ['product-image-fallback', `product-image-fallback--${size}`, className].filter(Boolean).join(' ');
+  return `<div class="${classes}" role="img" aria-label="${escapeHtml(getProductImageAriaLabel(category))}" ${extraAttrs}>${emoji}</div>`;
+}
+
+function renderProductImage(product, options = {}) {
+  const size = options.size || 'card';
+  const className = options.className || '';
+  const extraAttrs = options.extraAttrs || '';
+  const loadingAttr = options.loading === false ? '' : ' loading="lazy"';
+  const category = product?.category || '';
+  const alt = escapeHtml(product?.name || '');
+  const url = getProductImageUrl(product);
+
+  if (isBrokenProductImageUrl(url)) {
+    return renderProductImageFallback(category, { size, className, extraAttrs });
+  }
+
+  const wrapClasses = ['product-image-wrap', `product-image-wrap--${size}`, className].filter(Boolean).join(' ');
+
+  return `<div class="${wrapClasses}" ${extraAttrs}>
+    ${renderProductImageFallback(category, { size, nested: true })}
+    <img src="${escapeHtml(url)}" alt="${alt}" class="product-image-photo" decoding="async"${loadingAttr} onload="handleProductImageLoad(this)" onerror="handleProductImageError(this)">
+  </div>`;
+}
+
+function handleProductImageLoad(img) {
+  const wrap = img?.closest('.product-image-wrap');
+  if (!wrap || wrap.classList.contains('product-image-wrap--failed')) return;
+  wrap.classList.add('product-image-wrap--loaded');
+}
+
+function refreshProductImages(root) {
+  const scope = root && root.querySelectorAll ? root : document;
+  scope.querySelectorAll('.product-image-wrap .product-image-photo').forEach((img) => {
+    if (img.complete && img.naturalWidth > 0) {
+      handleProductImageLoad(img);
+    } else if (img.complete) {
+      handleProductImageError(img);
+    }
+  });
+}
+
+function handleProductImageError(img) {
+  const wrap = img?.closest('.product-image-wrap');
+  if (!wrap) return;
+  wrap.classList.add('product-image-wrap--failed');
+  wrap.classList.remove('product-image-wrap--loaded');
+  img.remove();
+}
+
+function setMainProductImage(imgEl, product) {
+  if (!imgEl) return;
+  const gallery = imgEl.closest('.main-image');
+  if (!gallery) return;
+
+  const category = product?.category || '';
+  const url = getProductImageUrl(product);
+
+  let fallback = gallery.querySelector('.product-image-fallback');
+  if (!fallback) {
+    fallback = document.createElement('div');
+    fallback.className = 'product-image-fallback product-image-fallback--detail';
+    fallback.setAttribute('role', 'img');
+    gallery.insertBefore(fallback, imgEl);
+  }
+  fallback.setAttribute('aria-label', getProductImageAriaLabel(category));
+  fallback.textContent = getCategoryEmoji(category);
+  fallback.hidden = false;
+  gallery.classList.remove('main-image--loaded');
+
+  imgEl.classList.add('product-image-photo');
+
+  const keepFallback = () => {
+    gallery.classList.remove('main-image--loaded');
+    imgEl.hidden = true;
+    imgEl.removeAttribute('src');
+    fallback.hidden = false;
+  };
+
+  const revealImage = () => {
+    gallery.classList.add('main-image--loaded');
+    imgEl.hidden = false;
+    fallback.hidden = true;
+  };
+
+  if (isBrokenProductImageUrl(url)) {
+    keepFallback();
+    return;
+  }
+
+  imgEl.hidden = true;
+  fallback.hidden = false;
+  imgEl.onload = () => {
+    imgEl.onload = null;
+    imgEl.onerror = null;
+    revealImage();
+  };
+  imgEl.onerror = () => {
+    imgEl.onload = null;
+    imgEl.onerror = null;
+    keepFallback();
+  };
+  imgEl.alt = product?.name || '';
+  imgEl.src = url;
+  if (imgEl.complete && imgEl.naturalWidth > 0) {
+    revealImage();
+  }
+}
+
+window.getCategoryEmoji = getCategoryEmoji;
+window.refreshProductImages = refreshProductImages;
+window.renderProductImage = renderProductImage;
+window.handleProductImageLoad = handleProductImageLoad;
+window.handleProductImageError = handleProductImageError;
+window.setMainProductImage = setMainProductImage;
+
 //Вывод множества товаров в каталоге
 function displayProducts(products) {
   const grid = document.getElementById('productsGrid');
@@ -1348,11 +1631,10 @@ function displayProducts(products) {
   if (noResults) noResults.style.display = 'none';
 
   //Добавляем minPrice и brand в каждый товар для удобства фильтрации
-  const productsWithMeta = products.map(product => {
+  const productsWithMeta = products.map((product) => {
     //Минимальная цена
-    const minPrice = product.prices && product.prices.length > 0
-      ? Math.min(...product.prices.map(p => p.price))
-      : null;
+    const minPrice =
+      product.prices && product.prices.length > 0 ? Math.min(...product.prices.map((p) => p.price)) : null;
 
     //Бренд — извлекаем из названия (до первого пробела)
     const brand = product.name.split(' ')[0] || '';
@@ -1364,10 +1646,11 @@ function displayProducts(products) {
     };
   });
 
-  grid.innerHTML = productsWithMeta.map(product => `
+  grid.innerHTML = productsWithMeta
+    .map(
+      (product) => `
     <div class="product-card" onclick="openProduct(${product.id})">
-      <img src="${product.image}" alt="${product.name}" 
-           style="width: 100%; height: 200px; object-fit: contain; background: #f8f9fa; border-radius: 8px;">
+      ${renderProductImage(product, { size: 'card' })}
       <h3>${product.name}</h3>
       <div class="product-rating">
         <span class="rating-stars">${getStarRating(product.rating)}</span>
@@ -1379,16 +1662,19 @@ function displayProducts(products) {
         <button class="btn btn-primary" onclick="event.stopPropagation(); openProduct(${product.id})">Подробнее</button>
       </div>
     </div>
-  `).join('');
+  `
+    )
+    .join('');
+  refreshProductImages(grid);
 }
 
 function resetFilters() {
-    document.getElementById('categorySelect').value = '';
-    document.getElementById('minPrice').value = '';
-    document.getElementById('maxPrice').value = '';
-    document.getElementById('dynamicFilters').innerHTML = '';
-    selectedCheckboxes = {};
-    displayProducts(demoProducts);
+  document.getElementById('categorySelect').value = '';
+  document.getElementById('minPrice').value = '';
+  document.getElementById('maxPrice').value = '';
+  document.getElementById('dynamicFilters').innerHTML = '';
+  selectedCheckboxes = {};
+  displayProducts(demoProducts);
 }
 
 //===================== КАРТОЧКА ТОВАРА =====================
@@ -1408,7 +1694,6 @@ function initializeProductPage() {
   //Устанавливаем глобальную переменную для кнопок
   currentProductId = productId;
   initializeProductSpecsToggle();
-  initializeHeaderRevealOnScrollUp();
 
   //Ждём, пока demoProducts загрузится из API
   let attempts = 0;
@@ -1418,7 +1703,7 @@ function initializeProductPage() {
       clearInterval(checkInterval);
 
       //Находим товар по ID
-      const product = demoProducts.find(p => p.id === productId);
+      const product = demoProducts.find((p) => p.id === productId);
       if (!product) {
         showCustomNotification('Товар не найден', 'info');
         window.location.href = 'catalog.html';
@@ -1434,7 +1719,6 @@ function initializeProductPage() {
       //Проверяем, находится ли товар в избранном
       const isFavorite = checkIfFavorite();
       updateFavoriteButton(isFavorite);
-
     } else {
       attempts++;
       if (attempts >= maxAttempts) {
@@ -1478,32 +1762,11 @@ function initializeProductSpecsToggle() {
   setExpanded(true);
 }
 
-function initializeHeaderRevealOnScrollUp() {
-  if (window.__headerRevealInitialized) return;
-  const header = document.querySelector('.header');
-  if (!header) return;
-  window.__headerRevealInitialized = true;
-
-  let lastScrollY = window.scrollY || 0;
-  window.addEventListener('scroll', () => {
-    const currentY = window.scrollY || 0;
-
-    if (currentY <= 0 || currentY < lastScrollY) {
-      header.classList.remove('header--hidden');
-    } else if (currentY > lastScrollY + 6) {
-      header.classList.add('header--hidden');
-    }
-
-    lastScrollY = currentY;
-  }, { passive: true });
-}
-
 //Вывод данных по устройству в product.html
 async function displayProduct(product) {
   document.getElementById('loading').style.display = 'none';
   document.getElementById('productContent').style.display = 'block';
 
- 
   document.getElementById('productTitle').textContent = product.name;
   document.getElementById('productCategory').textContent = getCategoryName(product.category);
   document.getElementById('productName').textContent = product.name;
@@ -1516,8 +1779,7 @@ async function displayProduct(product) {
   //Изображение
   const mainImage = document.getElementById('mainProductImage');
   if (mainImage) {
-    mainImage.src = product.image || 'https://via.placeholder.com/400?text=Нет+изображения';
-    mainImage.alt = product.name;
+    setMainProductImage(mainImage, product);
   }
 
   const specsList = document.getElementById('productSpecs');
@@ -1554,20 +1816,19 @@ async function displayProduct(product) {
       const sigRes = await fetch(`http://localhost:3000/api/products/${product.id}/store-signals`);
       if (sigRes.ok) storeSignals = await sigRes.json();
     } catch (_) {}
-    const signalsMap = new Map(
-      (storeSignals || []).map((s) => [getStoreSellerKey(s.storeName, s.sellerName), s])
-    );
+    const signalsMap = new Map((storeSignals || []).map((s) => [getStoreSellerKey(s.storeName, s.sellerName), s]));
 
-    priceList.innerHTML = sortedPrices.map(price => {
-      const storeName = price.store || price.storeName || 'Магазин';
-      const sellerName = price.sellerName || null;
-      const displayStoreName = buildStoreDisplayName(storeName, sellerName);
-      const sig = signalsMap.get(getStoreSellerKey(storeName, sellerName)) || null;
-      const ratingText = sig?.rating != null ? `⭐ ${Number(sig.rating).toFixed(1)}` : '⭐ —';
-      const reviewsText = sig?.reviewsCount != null ? `(${sig.reviewsCount} отзывов)` : '(нет данных)';
-      const stockLow = sig?.stock != null && Number(sig.stock) < 10;
-      const stockText = sig?.stock != null ? `Осталось товара: ${sig.stock}` : 'Осталось товара: —';
-      return `
+    priceList.innerHTML = sortedPrices
+      .map((price) => {
+        const storeName = price.store || price.storeName || 'Магазин';
+        const sellerName = price.sellerName || null;
+        const displayStoreName = buildStoreDisplayName(storeName, sellerName);
+        const sig = signalsMap.get(getStoreSellerKey(storeName, sellerName)) || null;
+        const ratingText = sig?.rating != null ? `⭐ ${Number(sig.rating).toFixed(1)}` : '⭐ —';
+        const reviewsText = sig?.reviewsCount != null ? `(${sig.reviewsCount} отзывов)` : '(нет данных)';
+        const stockLow = sig?.stock != null && Number(sig.stock) < 10;
+        const stockText = sig?.stock != null ? `Осталось товара: ${sig.stock}` : 'Осталось товара: —';
+        return `
       <div class="price-item">
         <div class="store-info">${displayStoreName}</div>
         <div>${formatPrice(price.price)} ₽</div>
@@ -1576,15 +1837,13 @@ async function displayProduct(product) {
         <div style="font-size:0.82rem;color:${stockLow ? '#b91c1c' : '#475569'};font-weight:${stockLow ? '700' : '500'};">${stockText}${stockLow ? ' ⚠️ мало' : ''}</div>
       </div>
     `;
-    }).join('');
+      })
+      .join('');
   }
 
-  const historySection = document.getElementById('priceChartContainer'); 
+  const historySection = document.getElementById('priceChartContainer');
   if (historySection) {
-
-    
   } else {
-     console.warn('Контейнер для графика истории цен (#priceChartContainer) не найден на странице.');
   }
 
   //Отзывы
@@ -1596,13 +1855,10 @@ async function displayProduct(product) {
   if (window.LearnMode && typeof LearnMode.onProductDisplayed === 'function') {
     LearnMode.onProductDisplayed(product);
   }
-  
 }
 
 //Загрузка и формат данных по истории цен
 async function loadAndRenderPriceHistory(productId, currentPrices = [], storeSignals = []) {
-  console.log(`Requesting price history for product ID: ${productId}`);
-
   //Показываем индикатор загрузки, скрываем canvas (если он был)
   const loadingDiv = document.getElementById('priceChartLoading');
   const container = document.getElementById('priceChartContainer');
@@ -1619,8 +1875,6 @@ async function loadAndRenderPriceHistory(productId, currentPrices = [], storeSig
 
     //Получаем JSON-данные
     const priceHistoryData = await response.json();
-    console.log('Received price history data:', priceHistoryData);
-
     //Скрываем индикатор загрузки
     if (loadingDiv) loadingDiv.style.display = 'none';
 
@@ -1628,7 +1882,6 @@ async function loadAndRenderPriceHistory(productId, currentPrices = [], storeSig
     renderPriceChart(container, priceHistoryData);
     renderGeneralPriceInsights(currentPrices, priceHistoryData);
     renderStorePriceInsights(currentPrices, priceHistoryData, storeSignals);
-
   } catch (error) {
     console.error('Error loading price history:', error);
     //Скрываем индикатор загрузки
@@ -1641,10 +1894,9 @@ async function loadAndRenderPriceHistory(productId, currentPrices = [], storeSig
 }
 
 function renderPriceChart(container, data) {
-  console.log("renderPriceChart вызвана с данными:", data); //Отладка
+  //Отладка
 
   if (!data || Object.keys(data).length === 0) {
-    console.log('No price history data available to render.');
     container.innerHTML = '<p style="text-align: center; color: #666;">История цен отсутствует</p>';
     return;
   }
@@ -1661,9 +1913,9 @@ function renderPriceChart(container, data) {
     const color = getDistinctSeriesColorForLabel(storeName, seriesIndex);
     return {
       label: storeName,
-     
-      data: storeData.map(point => ({
-        x: new Date(point.x).getTime(), 
+
+      data: storeData.map((point) => ({
+        x: new Date(point.x).getTime(),
         y: point.y
       })),
       borderColor: color,
@@ -1678,7 +1930,7 @@ function renderPriceChart(container, data) {
 
   const config = {
     type: 'line',
-    data: { 
+    data: {
       datasets: datasets
     },
     options: {
@@ -1693,19 +1945,21 @@ function renderPriceChart(container, data) {
           mode: 'index',
           intersect: false,
           callbacks: {
-            label: function(context) {
+            label: function (context) {
               let label = context.dataset.label || '';
               if (label) label += ': ';
-              return label + new Intl.NumberFormat('ru-RU', {
-                style: 'currency',
-                currency: 'RUB',
-                minimumFractionDigits: 0
-              }).format(context.parsed.y);
+              return (
+                label +
+                new Intl.NumberFormat('ru-RU', {
+                  style: 'currency',
+                  currency: 'RUB',
+                  minimumFractionDigits: 0
+                }).format(context.parsed.y)
+              );
             },
-            title: function(tooltipItems) {
-              
+            title: function (tooltipItems) {
               const rawDate = tooltipItems[0].parsed.x;
-             
+
               const date = new Date(rawDate);
               return date.toLocaleDateString('ru-RU', {
                 day: '2-digit',
@@ -1718,15 +1972,15 @@ function renderPriceChart(container, data) {
       },
       scales: {
         x: {
-          type: 'time', 
+          type: 'time',
           time: {
             unit: 'day',
-            tooltipFormat: 'dd.MM.yyyy', 
+            tooltipFormat: 'dd.MM.yyyy',
             displayFormats: {
-              day: 'dd.MM' 
+              day: 'dd.MM'
             }
           },
-         
+
           title: {
             display: true,
             text: 'Дата'
@@ -1749,9 +2003,8 @@ function renderPriceChart(container, data) {
   }
   try {
     window.priceChartInstance = new Chart(canvas, config);
-    console.log("График успешно создан.");
   } catch (error) {
-    console.error("Ошибка при создании основного графика:", error);
+    console.error('Ошибка при создании основного графика:', error);
   }
 }
 
@@ -1846,7 +2099,8 @@ function renderStorePriceInsights(currentPrices, priceHistoryData, storeSignals 
     const hasStock = Number.isFinite(stock);
 
     if (hasRating && rating >= 4.5) {
-      if (hasStock && stock < 10) return 'Хороший рейтинг и осталось мало товара. Проверенный товар. Стоит поторопиться с решением.';
+      if (hasStock && stock < 10)
+        return 'Хороший рейтинг и осталось мало товара. Проверенный товар. Стоит поторопиться с решением.';
       return 'Хороший рейтинг: проверенный товар по отзывам покупателей.';
     }
     if (hasStock && stock < 10) return 'Осталось мало: если цена подходит, лучше не откладывать покупку.';
@@ -1854,36 +2108,36 @@ function renderStorePriceInsights(currentPrices, priceHistoryData, storeSignals 
     return null;
   };
 
-  listEl.innerHTML = sortedByPrice.map((storeEntry, idx) => {
-    const storeColor =
-      getColorForHistorySeriesLabel(priceHistoryData, storeEntry.store) ||
-      getDistinctSeriesColorForLabel(storeEntry.store, idx);
-    const cardBg = hexToRgba(storeColor, 0.16);
-    const historyStoreKey = findHistoryStoreKey(priceHistoryData, storeEntry.store);
-    const storeHistory = normalizeStoreHistory((historyStoreKey && priceHistoryData?.[historyStoreKey]) || []);
-    const storeTrend = calculateRecentTrend(storeHistory);
-    const storeForecast = forecastPrice(storeHistory, storeEntry.price);
-    const evaluation = evaluatePriceSituation(storeEntry.price, avgMarketPrice, storeTrend);
-    const diffPct = ((storeEntry.price - avgMarketPrice) / avgMarketPrice) * 100;
-    const signal = signalsMap.get(storeEntry.signalKey) || null;
-    const hasRating = signal?.rating != null && Number.isFinite(Number(signal.rating));
-    const hasReviews = signal?.reviewsCount != null && Number.isFinite(Number(signal.reviewsCount));
-    const hasStock = signal?.stock != null && Number.isFinite(Number(signal.stock));
-    const ratingText = hasRating ? `⭐ ${Number(signal.rating).toFixed(1)}` : null;
-    const reviewsText = hasReviews ? `${signal.reviewsCount} отзывов` : null;
-    const stockText = hasStock ? `${signal.stock} шт.` : null;
-    const signalTakeaway = describeSignalTakeaway(signal);
-    const ratingLine = (ratingText || reviewsText)
-      ? `<p><strong>Рейтинг/отзывы:</strong> ${[ratingText, reviewsText].filter(Boolean).join(', ')}</p>`
-      : '';
-    const stockLine = stockText
-      ? `<p><strong>Осталось товара:</strong> ${stockText}${Number(signal.stock) < 10 ? ' ⚠️ мало' : ''}</p>`
-      : '';
-    const signalLine = signalTakeaway
-      ? `<p><strong>Вывод по отзывам и остатку:</strong> ${signalTakeaway}</p>`
-      : '';
+  listEl.innerHTML = sortedByPrice
+    .map((storeEntry, idx) => {
+      const storeColor =
+        getColorForHistorySeriesLabel(priceHistoryData, storeEntry.store) ||
+        getDistinctSeriesColorForLabel(storeEntry.store, idx);
+      const cardBg = hexToRgba(storeColor, 0.16);
+      const historyStoreKey = findHistoryStoreKey(priceHistoryData, storeEntry.store);
+      const storeHistory = normalizeStoreHistory((historyStoreKey && priceHistoryData?.[historyStoreKey]) || []);
+      const storeTrend = calculateRecentTrend(storeHistory);
+      const storeForecast = forecastPrice(storeHistory, storeEntry.price);
+      const evaluation = evaluatePriceSituation(storeEntry.price, avgMarketPrice, storeTrend);
+      const diffPct = ((storeEntry.price - avgMarketPrice) / avgMarketPrice) * 100;
+      const signal = signalsMap.get(storeEntry.signalKey) || null;
+      const hasRating = signal?.rating != null && Number.isFinite(Number(signal.rating));
+      const hasReviews = signal?.reviewsCount != null && Number.isFinite(Number(signal.reviewsCount));
+      const hasStock = signal?.stock != null && Number.isFinite(Number(signal.stock));
+      const ratingText = hasRating ? `⭐ ${Number(signal.rating).toFixed(1)}` : null;
+      const reviewsText = hasReviews ? `${signal.reviewsCount} отзывов` : null;
+      const stockText = hasStock ? `${signal.stock} шт.` : null;
+      const signalTakeaway = describeSignalTakeaway(signal);
+      const ratingLine =
+        ratingText || reviewsText
+          ? `<p><strong>Рейтинг/отзывы:</strong> ${[ratingText, reviewsText].filter(Boolean).join(', ')}</p>`
+          : '';
+      const stockLine = stockText
+        ? `<p><strong>Осталось товара:</strong> ${stockText}${Number(signal.stock) < 10 ? ' ⚠️ мало' : ''}</p>`
+        : '';
+      const signalLine = signalTakeaway ? `<p><strong>Вывод по отзывам и остатку:</strong> ${signalTakeaway}</p>` : '';
 
-    return `
+      return `
       <div class="store-insight-card price-insights--${evaluation.status}" style="background: ${cardBg}; border-color: ${storeColor}; color: #111111;">
         <h4 style="color: #111111;">${storeEntry.store}</h4>
         <p><strong>Цена:</strong> ${formatPrice(storeEntry.price)} ₽ (${diffPct >= 0 ? '+' : ''}${diffPct.toFixed(1)}% к рынку)</p>
@@ -1895,7 +2149,8 @@ function renderStorePriceInsights(currentPrices, priceHistoryData, storeSignals 
         ${signalLine}
       </div>
     `;
-  }).join('');
+    })
+    .join('');
 }
 
 function evaluatePriceSituation(price, avgMarketPrice, trend) {
@@ -1907,7 +2162,8 @@ function evaluatePriceSituation(price, avgMarketPrice, trend) {
   if (isBelowMarket && isStoreDeclining) {
     return {
       status: 'buy',
-      decisionText: 'Сейчас выгодная цена: предложение ниже среднерыночного уровня, и у этого магазина цена снижалась в последнее время. Покупать разумно сейчас.',
+      decisionText:
+        'Сейчас выгодная цена: предложение ниже среднерыночного уровня, и у этого магазина цена снижалась в последнее время. Покупать разумно сейчас.',
       shortDecision: 'Можно покупать сейчас.'
     };
   }
@@ -1915,7 +2171,8 @@ function evaluatePriceSituation(price, avgMarketPrice, trend) {
   if (isAboveMarket || isStoreGrowing) {
     return {
       status: 'wait',
-      decisionText: 'Сейчас покупать не стоит: цена выше среднерыночной или у этого магазина заметен рост цены за последнее время.',
+      decisionText:
+        'Сейчас покупать не стоит: цена выше среднерыночной или у этого магазина заметен рост цены за последнее время.',
       shortDecision: 'Лучше подождать.'
     };
   }
@@ -1926,7 +2183,6 @@ function evaluatePriceSituation(price, avgMarketPrice, trend) {
     shortDecision: 'Нейтрально: решать по срочности.'
   };
 }
-
 
 function evaluateStoreFromForecast(price, avgMarketPrice, forecast) {
   const isBelowMarket = price <= avgMarketPrice * 0.98;
@@ -1988,10 +2244,11 @@ function normalizeStoreHistory(historyArray) {
 function findHistoryStoreKey(priceHistoryData, storeName) {
   if (!priceHistoryData || typeof priceHistoryData !== 'object') return null;
   if (priceHistoryData[storeName]) return storeName;
-  const normalizedTarget = String(storeName || '').trim().toLowerCase();
+  const normalizedTarget = String(storeName || '')
+    .trim()
+    .toLowerCase();
   return Object.keys(priceHistoryData).find((key) => key.trim().toLowerCase() === normalizedTarget) || null;
 }
-
 
 function buildPriceHistorySeriesColorMap(priceHistoryData) {
   const map = new Map();
@@ -2017,9 +2274,13 @@ function hexToRgba(hexColor, alpha = 1) {
 
   if (![3, 6].includes(hex.length)) return fallback;
 
-  const normalizedHex = hex.length === 3
-    ? hex.split('').map((ch) => ch + ch).join('')
-    : hex;
+  const normalizedHex =
+    hex.length === 3
+      ? hex
+          .split('')
+          .map((ch) => ch + ch)
+          .join('')
+      : hex;
 
   const r = parseInt(normalizedHex.slice(0, 2), 16);
   const g = parseInt(normalizedHex.slice(2, 4), 16);
@@ -2099,9 +2360,7 @@ function forecastPrice(seriesPoints, fallbackPrice) {
   const predLinear = extrapolatePrice(weightedLinear, xTarget, xLast);
   const predQuadratic = extrapolatePrice(weightedQuadratic, xTarget, xLast);
   const useQuadratic =
-    Number.isFinite(weightedQuadratic.r2) &&
-    weightedQuadratic.r2 > weightedLinear.r2 + 0.025 &&
-    recent.length >= 8;
+    Number.isFinite(weightedQuadratic.r2) && weightedQuadratic.r2 > weightedLinear.r2 + 0.025 && recent.length >= 8;
   const rawPredictedPrice = Math.max(1, useQuadratic ? predQuadratic : predLinear);
 
   const regRmse = computeRegressionRmse(yValues, xValues, useQuadratic ? weightedQuadratic : weightedLinear);
@@ -2127,8 +2386,10 @@ function forecastPrice(seriesPoints, fallbackPrice) {
   const predictedPrice = clamp(predictedByDelta, volatilityFloor, volatilityCeil);
   const deltaPct = lastKnown > 0 ? ((predictedPrice - lastKnown) / lastKnown) * 100 : 0;
 
-  if (deltaPct > 1.5) return { direction: 'up', predictedPrice, deltaPct, model: useQuadratic ? 'quadratic+exp' : 'linear+exp' };
-  if (deltaPct < -1.5) return { direction: 'down', predictedPrice, deltaPct, model: useQuadratic ? 'quadratic+exp' : 'linear+exp' };
+  if (deltaPct > 1.5)
+    return { direction: 'up', predictedPrice, deltaPct, model: useQuadratic ? 'quadratic+exp' : 'linear+exp' };
+  if (deltaPct < -1.5)
+    return { direction: 'down', predictedPrice, deltaPct, model: useQuadratic ? 'quadratic+exp' : 'linear+exp' };
   return { direction: 'flat', predictedPrice, deltaPct, model: useQuadratic ? 'quadratic+exp' : 'linear+exp' };
 }
 
@@ -2169,7 +2430,14 @@ function weightedLinearRegression(xValues, yValues) {
 function weightedQuadraticRegression(xValues, yValues) {
   const n = xValues.length;
   const weights = xValues.map((_, i) => 1 + i / Math.max(1, n - 1));
-  let s0 = 0, s1 = 0, s2 = 0, s3 = 0, s4 = 0, t0 = 0, t1 = 0, t2 = 0;
+  let s0 = 0,
+    s1 = 0,
+    s2 = 0,
+    s3 = 0,
+    s4 = 0,
+    t0 = 0,
+    t1 = 0,
+    t2 = 0;
   for (let i = 0; i < n; i += 1) {
     const w = weights[i];
     const x = xValues[i];
@@ -2184,12 +2452,7 @@ function weightedQuadraticRegression(xValues, yValues) {
     t1 += w * x * y;
     t2 += w * x2 * y;
   }
-  const [a, b, c] = solve3x3(
-    [s4, s3, s2],
-    [s3, s2, s1],
-    [s2, s1, s0],
-    [t2, t1, t0]
-  );
+  const [a, b, c] = solve3x3([s4, s3, s2], [s3, s2, s1], [s2, s1, s0], [t2, t1, t0]);
   const predict = (x) => a * x * x + b * x + c;
   return { a, b, c, predict, r2: computeR2(yValues, xValues.map(predict)) };
 }
@@ -2219,7 +2482,8 @@ function solve3x3(r1, r2, r3, b) {
 }
 
 function computeR2(actual, predicted) {
-  if (!Array.isArray(actual) || !Array.isArray(predicted) || actual.length !== predicted.length || !actual.length) return 0;
+  if (!Array.isArray(actual) || !Array.isArray(predicted) || actual.length !== predicted.length || !actual.length)
+    return 0;
   const mean = actual.reduce((s, v) => s + v, 0) / actual.length;
   let ssTot = 0;
   let ssRes = 0;
@@ -2315,10 +2579,7 @@ function describeForecast(forecast, scopeLabel) {
   if (!forecast || !Number.isFinite(forecast.predictedPrice)) {
     return `Прогноз ${scopeLabel} пока недоступен.`;
   }
-  const algorithmLabel =
-    forecast.model === 'quadratic+exp'
-      ? 'прогнозирования'
-      : 'прогнозирования';
+  const algorithmLabel = forecast.model === 'quadratic+exp' ? 'прогнозирования' : 'прогнозирования';
   if (forecast.direction === 'up') {
     return `По алгоритму (${algorithmLabel}) ${scopeLabel} цена может вырасти до ${formatPrice(forecast.predictedPrice)} ₽ в ближайшую неделю.`;
   }
@@ -2367,14 +2628,14 @@ async function renderMiniPriceChartInComparison(containerId, productId) {
       const color = getDistinctSeriesColorForLabel(storeName, seriesIndex);
       return {
         label: storeName,
-        data: storeData.map(point => ({
-          x: new Date(point.x).getTime(), 
+        data: storeData.map((point) => ({
+          x: new Date(point.x).getTime(),
           y: point.y
         })),
         borderColor: color,
         backgroundColor: hexToRgbaString(color, 0.2),
-        borderWidth: 1, 
-        pointRadius: 2, 
+        borderWidth: 1,
+        pointRadius: 2,
         pointHoverRadius: 3,
         fill: false,
         tension: 0.1
@@ -2415,7 +2676,7 @@ async function renderMiniPriceChartInComparison(containerId, productId) {
               padding: 4,
               usePointStyle: true,
               //Усечение длинных названий магазинов/продавцов, чтобы помещались
-              generateLabels: function(chart) {
+              generateLabels: function (chart) {
                 const defaultLabels = Chart.defaults.plugins.legend.labels.generateLabels(chart);
                 return defaultLabels.map((label) => {
                   if (typeof label.text === 'string' && label.text.length > 22) {
@@ -2433,16 +2694,19 @@ async function renderMiniPriceChartInComparison(containerId, productId) {
             bodyFont: { size: 11 },
             titleFont: { size: 12 },
             callbacks: {
-              label: function(context) {
+              label: function (context) {
                 let label = context.dataset.label || '';
                 if (label) label += ': ';
-                return label + new Intl.NumberFormat('ru-RU', {
-                  style: 'currency',
-                  currency: 'RUB',
-                  minimumFractionDigits: 0
-                }).format(context.parsed.y);
+                return (
+                  label +
+                  new Intl.NumberFormat('ru-RU', {
+                    style: 'currency',
+                    currency: 'RUB',
+                    minimumFractionDigits: 0
+                  }).format(context.parsed.y)
+                );
               },
-              title: function(tooltipItems) {
+              title: function (tooltipItems) {
                 const rawDate = tooltipItems[0].parsed.x;
                 const date = new Date(rawDate);
                 return date.toLocaleDateString('ru-RU', {
@@ -2480,7 +2744,7 @@ async function renderMiniPriceChartInComparison(containerId, productId) {
               maxTicksLimit: 3,
               font: { size: 9 },
               //Компактный формат: 89к вместо 89 000 — экономит место по горизонтали
-              callback: function(value) {
+              callback: function (value) {
                 return formatCompactPrice(value);
               }
             }
@@ -2496,7 +2760,6 @@ async function renderMiniPriceChartInComparison(containerId, productId) {
 
     //Создаём и сохраняем экземпляр
     window[`miniChartInstance_${productId}`] = new Chart(canvas, config);
-
   } catch (error) {
     console.error(`Ошибка при отрисовке мини-графика для товара ${productId}:`, error);
     chartContainer.innerHTML = `<p style="color: red;">Ошибка: ${error.message}</p>`;
@@ -2504,8 +2767,12 @@ async function renderMiniPriceChartInComparison(containerId, productId) {
 }
 
 function getStoreSellerKey(storeName, sellerName = null) {
-  const store = String(storeName || '').trim().toLowerCase();
-  const seller = String(sellerName || '').trim().toLowerCase();
+  const store = String(storeName || '')
+    .trim()
+    .toLowerCase();
+  const seller = String(sellerName || '')
+    .trim()
+    .toLowerCase();
   return `${store}::${seller}`;
 }
 
@@ -2514,7 +2781,6 @@ function buildStoreDisplayName(storeName, sellerName = null) {
   const cleanSeller = String(sellerName || '').trim();
   return cleanSeller ? `${cleanStore} (${cleanSeller})` : cleanStore;
 }
-
 
 function formatLocalDateYMD(d = new Date()) {
   const z = (n) => String(n).padStart(2, '0');
@@ -2555,7 +2821,6 @@ function hslToHex(h, s, l) {
   return `#${[r, g, b].map((v) => v.toString(16).padStart(2, '0')).join('')}`;
 }
 
-
 function getDistinctSeriesColorForLabel(label, index = 0) {
   const str = `${String(label || '')}|${index}`;
   let hash = 2166136261;
@@ -2570,7 +2835,9 @@ function getDistinctSeriesColorForLabel(label, index = 0) {
 }
 
 function hexToRgbaString(hex, alpha = 0.2) {
-  const h = String(hex || '').trim().replace('#', '');
+  const h = String(hex || '')
+    .trim()
+    .replace('#', '');
   if (!/^[0-9a-fA-F]{6}$/.test(h)) return `rgba(148, 163, 184, ${alpha})`;
   const r = parseInt(h.slice(0, 2), 16);
   const g = parseInt(h.slice(2, 4), 16);
@@ -2680,41 +2947,38 @@ function ensureAdminPriceUrlAutofillWired() {
 }
 
 function trackPurchase(productId, store) {
-    console.log(`Покупка товара ${productId} в магазине ${store}`);
-    if (!productId) return;
-    const token = localStorage.getItem('techAggregatorToken');
-    fetch('http://localhost:3000/api/analytics/track-purchase', {
-      method: 'POST',
-      keepalive: true,
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-      },
-      body: JSON.stringify({
-        productId: parseInt(productId, 10),
-        storeName: store || null
-      })
-    }).catch((error) => {
-      console.warn('Не удалось записать переход к покупке:', error);
-    });
+  if (!productId) return;
+  const token = localStorage.getItem('techAggregatorToken');
+  fetch('http://localhost:3000/api/analytics/track-purchase', {
+    method: 'POST',
+    keepalive: true,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {})
+    },
+    body: JSON.stringify({
+      productId: parseInt(productId, 10),
+      storeName: store || null
+    })
+  }).catch((error) => {});
 }
 
 //===================== ОТЗЫВЫ И ЗАПРОСЫ =====================
 
 function showReviewModal() {
-    if (!checkAuth()) {
-        showAuthModal();
-        return;
-    }
-    document.getElementById('reviewModal').style.display = 'block';
+  if (!checkAuth()) {
+    showAuthModal();
+    return;
+  }
+  document.getElementById('reviewModal').style.display = 'block';
 }
 
 function showRequestModal() {
-    if (!checkAuth()) {
-        showAuthModal();
-        return;
-    }
-    document.getElementById('requestModal').style.display = 'block';
+  if (!checkAuth()) {
+    showAuthModal();
+    return;
+  }
+  document.getElementById('requestModal').style.display = 'block';
 }
 
 async function loadProductReviews(productId) {
@@ -2733,33 +2997,31 @@ async function loadProductReviews(productId) {
     }
 
     const reviews = await response.json();
-    console.log(`Загружено ${reviews.length} отзывов для товара ID ${productId}`);
-
     if (reviews.length === 0) {
       reviewsList.innerHTML = '<p>Пока нет отзывов об этом товаре.</p>';
       return;
     }
 
     //Формируем HTML для отзывов
-    reviewsList.innerHTML = reviews.map(review => {
-      const date = new Date(review.createdAt); //Используем правильное имя поля даты
-      const formattedDate = date.toLocaleDateString('ru-RU', {
-        day: '2-digit',
-        month: 'long',
-        year: 'numeric'
-      });
+    reviewsList.innerHTML = reviews
+      .map((review) => {
+        const date = new Date(review.createdAt); //Используем правильное имя поля даты
+        const formattedDate = date.toLocaleDateString('ru-RU', {
+          day: '2-digit',
+          month: 'long',
+          year: 'numeric'
+        });
 
-      //Используем userName из отзыва (или fullName из связанного user, если доступен)
-      const displayName = review.user?.fullName || review.userName || 'Аноним';
-      const displayNameSafe = escapeHtml(displayName);
-      const avatarUrl = getDefaultUserAvatarUrl();
+        //Используем userName из отзыва (или fullName из связанного user, если доступен)
+        const displayName = review.user?.fullName || review.userName || 'Аноним';
+        const displayNameSafe = escapeHtml(displayName);
+        const avatarUrl = getDefaultUserAvatarUrl();
 
-      
-      //Если поле null или undefined или пустая строка, показываем "Без комментария"
-      const commentText = review.comment || review.text; 
-      const displayText = commentText ? commentText : '<em>Без комментария</em>';
+        //Если поле null или undefined или пустая строка, показываем "Без комментария"
+        const commentText = review.comment || review.text;
+        const displayText = commentText ? commentText : '<em>Без комментария</em>';
 
-      return `
+        return `
         <div class="review-item">
           <div class="review-header">
             <div class="review-author">
@@ -2779,8 +3041,8 @@ async function loadProductReviews(productId) {
           <p class="review-text">${displayText}</p> 
         </div>
       `;
-    }).join('');
-
+      })
+      .join('');
   } catch (error) {
     console.error('Ошибка загрузки отзывов:', error);
     reviewsList.innerHTML = `<p style="color: red;">Ошибка загрузки отзывов: ${error.message}</p>`;
@@ -2790,45 +3052,45 @@ async function loadProductReviews(productId) {
 //===================== АВТОРИЗАЦИЯ =====================
 
 function checkAuth() {
-    return currentUser !== null;
+  return currentUser !== null;
 }
 
 function showAuthModal() {
-    //Если на странице есть модальное окно авторизации
-    const authModal = document.getElementById('authModal');
-    if (authModal) {
-        authModal.style.display = 'block';
-    } else {
-        //Иначе перенаправляем на страницу авторизации
-        //window.location.href = 'auth.html';
-    }
+  //Если на странице есть модальное окно авторизации
+  const authModal = document.getElementById('authModal');
+  if (authModal) {
+    authModal.style.display = 'block';
+  } else {
+    //Иначе перенаправляем на страницу авторизации
+    //window.location.href = 'auth.html';
+  }
 }
 
 function showRegModal() {
-    const regModal = document.getElementById('regModal');
-    if (regModal) {
-        regModal.style.display = 'block';
-    } else {
-        window.location.href = 'auth.html?tab=register';
-    }
+  const regModal = document.getElementById('regModal');
+  if (regModal) {
+    regModal.style.display = 'block';
+  } else {
+    window.location.href = 'auth.html?tab=register';
+  }
 }
 
 function logout() {
-    currentUser = null;
-    localStorage.removeItem('techAggregatorUser');
-    updateAuthButtons();
-    showCustomNotification('Вы успешно вышли из системы', 'info');
-    window.location.href = 'index.html';
+  currentUser = null;
+  localStorage.removeItem('techAggregatorUser');
+  updateAuthButtons();
+  showCustomNotification('Вы успешно вышли из системы', 'info');
+  window.location.href = 'index.html';
 }
 
 //===================== УТИЛИТЫ =====================
 
 function getStarRating(rating) {
-    const fullStars = Math.floor(rating);
-    const halfStar = rating % 1 >= 0.5;
-    const emptyStars = 5 - fullStars - (halfStar ? 1 : 0);
-    
-    return '★'.repeat(fullStars) + (halfStar ? '½' : '') + '☆'.repeat(emptyStars);
+  const fullStars = Math.floor(rating);
+  const halfStar = rating % 1 >= 0.5;
+  const emptyStars = 5 - fullStars - (halfStar ? 1 : 0);
+
+  return '★'.repeat(fullStars) + (halfStar ? '½' : '') + '☆'.repeat(emptyStars);
 }
 
 function formatPrice(price) {
@@ -2841,47 +3103,46 @@ function formatPrice(price) {
 
 function getMinPrice(product) {
   if (!product.prices || product.prices.length === 0) return null;
-  return Math.min(...product.prices.map(p => p.price));
+  return Math.min(...product.prices.map((p) => p.price));
 }
 window.getMinPrice = getMinPrice;
 
 function getCategoryName(category) {
-    const names = {
-        smartphones: 'Смартфоны',
-        laptops: 'Ноутбуки',
-        tv: 'Телевизоры',
-        headphones: 'Наушники'
-    };
-    return names[category] || category;
+  const names = {
+    smartphones: 'Смартфоны',
+    laptops: 'Ноутбуки',
+    tv: 'Телевизоры',
+    headphones: 'Наушники'
+  };
+  return names[category] || category;
 }
 
 //Открытие странички товара
 function openProduct(productId) {
-    window.location.href = `product.html?id=${productId}`;
+  window.location.href = `product.html?id=${productId}`;
 }
 
 //Загрузка данных пользователя
 function loadUserData() {
-  const token = localStorage.getItem('techAggregatorToken'); 
+  const token = localStorage.getItem('techAggregatorToken');
   if (token) {
     try {
       const payload = JSON.parse(atob(token.split('.')[1]));
       //Проверяем срок действия (в миллисекундах)
       if (payload.exp * 1000 > Date.now()) {
         currentUser = {
-          id: payload.id,        
-          email: payload.email,  
-          name: payload.fullName || payload.email.split('@')[0], 
-          role: payload.role || 'user' 
+          id: payload.id,
+          email: payload.email,
+          name: payload.fullName || payload.email.split('@')[0],
+          role: payload.role || 'user'
         };
         updateAuthButtons();
-        return; 
+        return;
       } else {
         //Токен просрочен — удаляем
         localStorage.removeItem('techAggregatorToken');
       }
     } catch (e) {
-      console.warn('Невалидный токен:', e);
       localStorage.removeItem('techAggregatorToken');
     }
   }
@@ -2904,8 +3165,12 @@ function updateAuthButtons() {
   } else {
     authButtons.innerHTML = `
       <a class="btn btn-outline" href="auth.html">Войти</a>
-      <a class="btn btn-primary" href="auth.html"">Регистрация</a>
+      <a class="btn btn-primary" href="auth.html?tab=register">Регистрация</a>
     `;
+  }
+
+  if (typeof window.refreshMobileNavAuth === 'function') {
+    window.refreshMobileNavAuth();
   }
 }
 
@@ -2913,7 +3178,7 @@ function updateAuthButtons() {
 async function updateComparisonCounter() {
   const token = localStorage.getItem('techAggregatorToken');
   const applyCounterValue = (count) => {
-    document.querySelectorAll('.comparison-counter').forEach(counter => {
+    document.querySelectorAll('.comparison-counter').forEach((counter) => {
       counter.textContent = count;
       if (count > 0) {
         counter.style.background = '#ef4444';
@@ -2958,7 +3223,7 @@ async function addToComparison(productId) {
   const token = localStorage.getItem('techAggregatorToken');
 
   //Находим товар
-  const product = demoProducts.find(p => p.id === productId);
+  const product = demoProducts.find((p) => p.id === productId);
   if (!product) {
     showCustomNotification('Товар не найден', 'error');
     return;
@@ -2966,9 +3231,7 @@ async function addToComparison(productId) {
 
   try {
     const guestComparisons = JSON.parse(localStorage.getItem(COMPARISON_STORAGE_KEY) || '[]');
-    const currentComparisons = !token
-      ? (Array.isArray(guestComparisons) ? guestComparisons : [])
-      : [];
+    const currentComparisons = !token ? (Array.isArray(guestComparisons) ? guestComparisons : []) : [];
 
     //Сначала получаем текущие товары в сравнении
     if (token) {
@@ -3062,13 +3325,13 @@ async function addToFavorites(productId) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
+        Authorization: `Bearer ${token}`
       },
       body: JSON.stringify({ productId })
     });
 
     if (res.ok) {
-      const product = demoProducts.find(p => p.id === productId);
+      const product = demoProducts.find((p) => p.id === productId);
       showCustomNotification(`${product?.name || 'Товар'} добавлен в избранное`, 'success');
       //Обновляем кнопку
       updateFavoriteButton(true);
@@ -3088,28 +3351,28 @@ async function addToFavorites(productId) {
 
 //Функция для добавления текущего товара в сравнение (со страницы товара)
 function addCurrentProductToComparison() {
-    //Получаем ID товара из URL
-    const urlParams = new URLSearchParams(window.location.search);
-    const productId = urlParams.get('id');
-    
-    if (!productId) {
-        showCustomNotification('Не удалось определить товар', 'error');
-        console.error('Product ID not found in URL');
-        return;
-    }
-    
-    //Преобразуем в число и вызываем основную функцию
-    addToComparison(parseInt(productId));
-}
+  //Получаем ID товара из URL
+  const urlParams = new URLSearchParams(window.location.search);
+  const productId = urlParams.get('id');
 
+  if (!productId) {
+    showCustomNotification('Не удалось определить товар', 'error');
+    console.error('Product ID not found in URL');
+    return;
+  }
+
+  //Преобразуем в число и вызываем основную функцию
+  addToComparison(parseInt(productId));
+}
 
 //Удаления из сравнения 1 товара
 async function removeFromComparison(productId) {
   const token = localStorage.getItem('techAggregatorToken');
   if (!token) {
     const guestComparisons = JSON.parse(localStorage.getItem(COMPARISON_STORAGE_KEY) || '[]');
-    const nextComparisons = (Array.isArray(guestComparisons) ? guestComparisons : [])
-      .filter(item => Number(item.id) !== Number(productId));
+    const nextComparisons = (Array.isArray(guestComparisons) ? guestComparisons : []).filter(
+      (item) => Number(item.id) !== Number(productId)
+    );
     localStorage.setItem(COMPARISON_STORAGE_KEY, JSON.stringify(nextComparisons));
     comparisonList = nextComparisons;
     updateComparisonDisplay();
@@ -3180,15 +3443,15 @@ async function clearComparison() {
 
 //Уведомления
 function showNotification(message, type = 'info', action = null) {
-    //Создаем уведомление
-    const notification = document.createElement('div');
-    notification.style.cssText = `
+  //Создаем уведомление
+  const notification = document.createElement('div');
+  notification.style.cssText = `
         position: fixed;
         bottom: 20px;
         right: 20px;
-        background: ${type === 'success' ? '#10b981' : 
-                     type === 'warning' ? '#f59e0b' : 
-                     type === 'error' ? '#ef4444' : '#3b82f6'};
+        background: ${
+          type === 'success' ? '#10b981' : type === 'warning' ? '#f59e0b' : type === 'error' ? '#ef4444' : '#3b82f6'
+        };
         color: white;
         padding: 12px 20px;
         border-radius: 8px;
@@ -3199,10 +3462,10 @@ function showNotification(message, type = 'info', action = null) {
         gap: 15px;
         animation: slideIn 0.3s ease;
     `;
-    
-    let actionButton = '';
-    if (action && action.type === 'comparison' && comparisonList.length > 0) {
-        actionButton = `
+
+  let actionButton = '';
+  if (action && action.type === 'comparison' && comparisonList.length > 0) {
+    actionButton = `
             <button onclick="window.location.href='comparison.html'" 
                     style="padding: 4px 12px; background: rgba(255,255,255,0.2); 
                            border: 1px solid rgba(255,255,255,0.3); border-radius: 4px; 
@@ -3210,9 +3473,9 @@ function showNotification(message, type = 'info', action = null) {
                 Перейти к сравнению
             </button>
         `;
-    }
-    
-    notification.innerHTML = `
+  }
+
+  notification.innerHTML = `
         <span>${message}</span>
         ${actionButton}
         <button onclick="this.parentElement.remove()" 
@@ -3221,93 +3484,87 @@ function showNotification(message, type = 'info', action = null) {
             &times;
         </button>
     `;
-    
-    document.body.appendChild(notification);
-    
-    setTimeout(() => {
-        if (notification.parentNode) {
-            notification.remove();
-        }
-    }, 5000);
+
+  document.body.appendChild(notification);
+
+  setTimeout(() => {
+    if (notification.parentNode) {
+      notification.remove();
+    }
+  }, 5000);
 }
 
 //Форма запросов на добавление, отзывов
-document.addEventListener('DOMContentLoaded', function() {
-    //Обработчики для модальных окон
-    const reviewForm = document.getElementById('reviewForm');
-    const requestForm = document.getElementById('requestForm');
-    const addProductForm = document.getElementById('addProductForm');
-    
-    if (reviewForm) {
-        reviewForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            submitReview(e);
-        });
+document.addEventListener('DOMContentLoaded', function () {
+  //Обработчики для модальных окон
+  const reviewForm = document.getElementById('reviewForm');
+  const requestForm = document.getElementById('requestForm');
+  const addProductForm = document.getElementById('addProductForm');
+
+  if (reviewForm) {
+    reviewForm.addEventListener('submit', function (e) {
+      e.preventDefault();
+      submitReview(e);
+    });
+  }
+
+  if (requestForm) {
+    requestForm.addEventListener('submit', function (e) {
+      e.preventDefault();
+      submitRequest();
+    });
+  }
+
+  if (addProductForm) {
+    addProductForm.addEventListener('submit', function (e) {
+      e.preventDefault();
+
+      showCustomNotification('Товар добавлен в каталог - будет реализовано в бэкенде', 'info');
+      closeAddProductModal();
+    });
+  }
+
+  //Закрытие модальных окон при клике вне их
+  window.onclick = function (event) {
+    const modals = document.getElementsByClassName('modal');
+    for (let modal of modals) {
+      if (event.target === modal) {
+        modal.style.display = 'none';
+      }
     }
-    
-    if (requestForm) {
-        requestForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            submitRequest();
-        });
-    }
-    
-    if (addProductForm) {
-        addProductForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-    
-            showCustomNotification('Товар добавлен в каталог - будет реализовано в бэкенде', 'info');
-            closeAddProductModal();
-        });
-    }
-    
-    //Закрытие модальных окон при клике вне их
-    window.onclick = function(event) {
-        const modals = document.getElementsByClassName('modal');
-        for (let modal of modals) {
-            if (event.target === modal) {
-                modal.style.display = "none";
-            }
-        }
-    };
+  };
 });
 
 function searchProductsGlobal() {
-    const mainSearch = document.getElementById('mainSearch');
-const query = mainSearch && mainSearch.value ? mainSearch.value.toLowerCase() : '';
-    if (query) {
-        
-        window.location.href = `catalog.html?search=${encodeURIComponent(query)}`;
-    }
+  const mainSearch = document.getElementById('mainSearch');
+  const query = mainSearch && mainSearch.value ? mainSearch.value.toLowerCase() : '';
+  if (query) {
+    window.location.href = `catalog.html?search=${encodeURIComponent(query)}`;
+  }
 }
 //Переход к категории
 function navigateToCategory(category) {
-    window.location.href = `catalog.html?category=${category}`;
+  window.location.href = `catalog.html?category=${category}`;
 }
 
 //Функции для работы с модальными окнами
 function closeReviewModal() {
-    document.getElementById('reviewModal').style.display = 'none';
+  document.getElementById('reviewModal').style.display = 'none';
 }
 
 function closeRequestModal() {
-    document.getElementById('requestModal').style.display = 'none';
+  document.getElementById('requestModal').style.display = 'none';
 }
 
 function closeAddProductModal() {
-    document.getElementById('addProductModal').style.display = 'none';
+  document.getElementById('addProductModal').style.display = 'none';
 }
 
 function getComparisonProductsForView() {
   if (!comparisonList || !comparisonList.length) return [];
-  const mobile =
-    typeof window.matchMedia === 'function' &&
-    window.matchMedia('(max-width: 768px)').matches;
+  const mobile = typeof window.matchMedia === 'function' && window.matchMedia('(max-width: 768px)').matches;
   if (mobile && comparisonList.length > 2) {
-    const start = Math.min(
-      comparisonMobileStart,
-      Math.max(0, comparisonList.length - 2)
-    );
+    const start = Math.min(comparisonMobileStart, Math.max(0, comparisonList.length - 2));
     return comparisonList.slice(start, start + 2);
   }
   return comparisonList.slice();
@@ -3315,16 +3572,13 @@ function getComparisonProductsForView() {
 
 function comparisonNormalizeSpecText(val) {
   if (val === undefined || val === null) return '—';
-  return String(val)
-    .trim()
-    .replace(/\s+/g, ' ');
+  return String(val).trim().replace(/\s+/g, ' ');
 }
 
 function comparisonSpecRowIsUniform(products, specKey) {
   if (products.length < 2) return true;
   const vals = products.map((p) => {
-    const v =
-      p.specs && p.specs[specKey] !== undefined ? p.specs[specKey] : '—';
+    const v = p.specs && p.specs[specKey] !== undefined ? p.specs[specKey] : '—';
     return comparisonNormalizeSpecText(v);
   });
   return vals.every((v) => v === vals[0]);
@@ -3333,23 +3587,15 @@ function comparisonSpecRowIsUniform(products, specKey) {
 function comparisonShiftPair(delta) {
   const n = comparisonList.length;
   if (n <= 2) return;
-  comparisonMobileStart = Math.max(
-    0,
-    Math.min(comparisonMobileStart + delta, n - 2)
-  );
+  comparisonMobileStart = Math.max(0, Math.min(comparisonMobileStart + delta, n - 2));
   const tableContent = document.getElementById('tableContent');
   if (tableContent) renderComparisonTable(tableContent);
 }
 
 function comparisonSwapVisiblePair() {
-  const mobile =
-    typeof window.matchMedia === 'function' &&
-    window.matchMedia('(max-width: 768px)').matches;
+  const mobile = typeof window.matchMedia === 'function' && window.matchMedia('(max-width: 768px)').matches;
   if (!mobile || comparisonList.length < 2) return;
-  const idx = Math.min(
-    comparisonMobileStart,
-    Math.max(0, comparisonList.length - 2)
-  );
+  const idx = Math.min(comparisonMobileStart, Math.max(0, comparisonList.length - 2));
   const tmp = comparisonList[idx];
   comparisonList[idx] = comparisonList[idx + 1];
   comparisonList[idx + 1] = tmp;
@@ -3376,9 +3622,7 @@ function comparisonToggleSpecsCollapsed() {
   if (wrap) {
     wrap.classList.toggle('comparison-specs-collapsed', comparisonSpecsCollapsed);
   }
-  const label = comparisonSpecsCollapsed
-    ? 'Развернуть характеристики'
-    : 'Свернуть характеристики';
+  const label = comparisonSpecsCollapsed ? 'Развернуть характеристики' : 'Свернуть характеристики';
   ['toggleBtn'].forEach((id) => {
     const el = document.getElementById(id);
     if (el) el.textContent = label;
@@ -3386,9 +3630,7 @@ function comparisonToggleSpecsCollapsed() {
 }
 
 function wireComparisonControlsToggle() {
-  const label = comparisonSpecsCollapsed
-    ? 'Развернуть характеристики'
-    : 'Свернуть характеристики';
+  const label = comparisonSpecsCollapsed ? 'Развернуть характеристики' : 'Свернуть характеристики';
   ['toggleBtn'].forEach((id) => {
     const el = document.getElementById(id);
     if (!el) return;
@@ -3434,9 +3676,7 @@ function updateComparisonDisplay() {
     }
     if (comparisonEmptyTitle && comparisonEmptyText && comparisonEmptyAction) {
       comparisonEmptyTitle.textContent = 'Товаров в сравнении нет';
-      comparisonEmptyText.textContent = isAuthorized
-        ? ''
-        : 'Сравнение доступно без авторизации.';
+      comparisonEmptyText.textContent = isAuthorized ? '' : 'Сравнение доступно без авторизации.';
       comparisonEmptyAction.href = 'catalog.html';
       comparisonEmptyAction.textContent = 'Перейти в каталог';
     }
@@ -3471,19 +3711,18 @@ function updateComparisonDisplay() {
   updateComparisonCounter();
 }
 
-
-
 //Инициализация админ-панели (если на странице)
 function initializeAdminPage() {
-    //Проверка прав доступа
-    if (!currentUser || currentUser.role !== 'admin') {
-        showCustomNotification('Доступ запрещён', 'info');
-        window.location.href = 'index.html';
-        return;
-    }
-    updateMainStats();
-    setInterval(updateMainStats, 60000);
-    loadAnalyticsData();
+  //Проверка прав доступа
+  if (!currentUser || currentUser.role !== 'admin') {
+    showCustomNotification('Доступ запрещён', 'info');
+    window.location.href = 'index.html';
+    return;
+  }
+  updateMainStats();
+  setInterval(updateMainStats, 60000);
+  loadModerationData(currentModerationTab);
+  loadAnalyticsData();
   loadPopularSearches();
   initializeAdminProductSearch();
   initializeAdminPriceSyncControls();
@@ -3492,105 +3731,107 @@ function initializeAdminPage() {
 
 //Функции для поиска с подсказками
 function showSearchSuggestions() {
-    const searchInput = document.getElementById('mainSearch');
-    const suggestionsContainer = document.getElementById('searchSuggestions');
-    
-    if (!searchInput || !suggestionsContainer) return;
-    
-    const query = searchInput.value.toLowerCase().trim();
-    
-    if (query.length < 2) {
-        suggestionsContainer.style.display = 'none';
-        return;
-    }
-    
-    //Фильтруем товары по запросу
-    const filteredProducts = demoProducts.filter(product => 
+  const searchInput = document.getElementById('mainSearch');
+  const suggestionsContainer = document.getElementById('searchSuggestions');
+
+  if (!searchInput || !suggestionsContainer) return;
+
+  const query = searchInput.value.toLowerCase().trim();
+
+  if (query.length < 2) {
+    suggestionsContainer.style.display = 'none';
+    return;
+  }
+
+  //Фильтруем товары по запросу
+  const filteredProducts = demoProducts
+    .filter(
+      (product) =>
         product.name.toLowerCase().includes(query) ||
         product.brand.toLowerCase().includes(query) ||
-        Object.values(product.specs).some(value => 
-            value.toString().toLowerCase().includes(query)
-        )
-    ).slice(0, 5); //Ограничиваем 5 подсказками
-    
-    if (filteredProducts.length === 0) {
-        suggestionsContainer.style.display = 'none';
-        return;
-    }
-    
-    //Показываем подсказки
-    suggestionsContainer.innerHTML = filteredProducts.map(product => `
+        Object.values(product.specs).some((value) => value.toString().toLowerCase().includes(query))
+    )
+    .slice(0, 5); //Ограничиваем 5 подсказками
+
+  if (filteredProducts.length === 0) {
+    suggestionsContainer.style.display = 'none';
+    return;
+  }
+
+  //Показываем подсказки
+  suggestionsContainer.innerHTML = filteredProducts
+    .map(
+      (product) => `
         <div class="search-suggestion-item" onclick="selectSearchSuggestion(${product.id})">
-            <img src="${product.image}" alt="${product.name}">
+            ${renderProductImage(product, { size: 'suggestion', loading: false })}
             <div class="search-suggestion-info">
                 <div class="search-suggestion-name">${product.name}</div>
                 <div class="search-suggestion-category">${getCategoryName(product.category)} • ${formatPrice(product.price)} ₽</div>
             </div>
         </div>
-    `).join('');
-    
-    suggestionsContainer.style.display = 'block';
+    `
+    )
+    .join('');
+  refreshProductImages(suggestionsContainer);
+  suggestionsContainer.style.display = 'block';
 }
 
 function selectSearchSuggestion(productId) {
-    const product = demoProducts.find(p => p.id === productId);
-    if (product) {
-        document.getElementById('mainSearch').value = product.name;
-        document.getElementById('searchSuggestions').style.display = 'none';
-        openProduct(productId);
-    }
+  const product = demoProducts.find((p) => p.id === productId);
+  if (product) {
+    document.getElementById('mainSearch').value = product.name;
+    document.getElementById('searchSuggestions').style.display = 'none';
+    openProduct(productId);
+  }
 }
 
 //Нажатие на энтер в поиске
 function handleSearchEnter(event) {
-    if (event.key === 'Enter') {
-        searchProducts();
-        document.getElementById('searchSuggestions').style.display = 'none';
-    }
+  if (event.key === 'Enter') {
+    searchProducts();
+    document.getElementById('searchSuggestions').style.display = 'none';
+  }
 }
 
 //Поиск
 function searchProducts() {
-    const query = document.getElementById('mainSearch').value.trim();
-    if (query) {
-      trackSearchQuery(query);
-        document.getElementById('searchSuggestions').style.display = 'none';
-        window.location.href = `catalog.html?search=${encodeURIComponent(query)}`;
-    }
+  const query = document.getElementById('mainSearch').value.trim();
+  if (query) {
+    trackSearchQuery(query);
+    document.getElementById('searchSuggestions').style.display = 'none';
+    window.location.href = `catalog.html?search=${encodeURIComponent(query)}`;
+  }
 }
 
 //Закрытие подсказок при клике вне области
-document.addEventListener('click', function(event) {
-    const searchContainer = document.querySelector('.search-wrapper');
-    const suggestions = document.getElementById('searchSuggestions');
-    
-    if (searchContainer && suggestions && 
-        !searchContainer.contains(event.target) && 
-        suggestions.style.display === 'block') {
-        suggestions.style.display = 'none';
-    }
+document.addEventListener('click', function (event) {
+  const searchContainer = document.querySelector('.search-wrapper');
+  const suggestions = document.getElementById('searchSuggestions');
+
+  if (
+    searchContainer &&
+    suggestions &&
+    !searchContainer.contains(event.target) &&
+    suggestions.style.display === 'block'
+  ) {
+    suggestions.style.display = 'none';
+  }
 });
 
 //Инициализация страницы сравнения
 async function initializeComparisonPage() {
-  console.log('--- Начало инициализации сравнения ---');
   const token = localStorage.getItem('techAggregatorToken');
 
   try {
     //Убедиться, что demoProducts загружены
-    console.log('Проверка demoProducts...');
     if (!window.demoProducts || window.demoProducts.length === 0) {
-      console.log('demoProducts пусты, загружаем из API...');
       await loadProductsFromAPI(); //Ждём завершения загрузки
-      console.log('Загрузка demoProducts завершена, длина:', window.demoProducts.length);
     } else {
-      console.log('demoProducts уже загружены, длина: ' + window.demoProducts.length);
     }
 
     const apiComparisons = [];
     if (token) {
       //Загрузить сравнения с сервера
-      console.log('Загрузка сравнений из API...');
       const res = await fetch('http://localhost:3000/api/comparisons', {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -3602,71 +3843,55 @@ async function initializeComparisonPage() {
       const serverComparisons = await res.json();
       apiComparisons.push(...serverComparisons);
       localStorage.setItem(COMPARISON_STORAGE_KEY, JSON.stringify(serverComparisons));
-      console.log('Получено сравнений из API:', apiComparisons.length);
-      console.log('Пример данных из API (первый элемент):', apiComparisons.length > 0 ? apiComparisons[0] : 'Нет данных');
     } else {
       const storedComparisons = JSON.parse(localStorage.getItem(COMPARISON_STORAGE_KEY) || '[]');
       if (Array.isArray(storedComparisons)) {
         apiComparisons.push(...storedComparisons);
       }
-      console.log('Получено сравнений из localStorage:', apiComparisons.length);
     }
 
     //Преобразовать apiComparisons в формат, совместимый с demoProducts
-    const products = window.demoProducts; 
+    const products = window.demoProducts;
 
     comparisonList = apiComparisons
-      .filter(item => {
-         console.log('DEBUG FILTER: item =', item);
-         const hasValidId = item && item.id !== undefined && item.id !== null;
-         console.log('DEBUG FILTER: item.id (используем как product id) =', item.id, ', hasValidId =', hasValidId);
-         return hasValidId;
+      .filter((item) => {
+        const hasValidId = item && item.id !== undefined && item.id !== null;
+        return hasValidId;
       })
-      .map(item => {
-        
-        console.log('DEBUG MAP: item.id (как product id, до Number):', item.id, '(type:', typeof item.id, ')');
+      .map((item) => {
         const targetId = Number(item.id); //Явно приводим ID из item к числу
 
         //Попробуем найти товар в demoProducts по id (для актуальных спецификаций и цен)
-        const existingProductInDemo = products.find(p => Number(p.id) === targetId);
+        const existingProductInDemo = products.find((p) => Number(p.id) === targetId);
 
         if (existingProductInDemo) {
-          console.log(`DEBUG MAP: Найден товар в demoProducts для ID ${targetId} через item.id: ${existingProductInDemo.name}`);
           //Возвращаем данные из demoProducts (они уже в нужном формате)
           return existingProductInDemo;
         } else {
-          console.warn(`DEBUG MAP: Товар ID ${targetId} не найден в demoProducts, используем данные из API.`);
-          console.log('DEBUG MAP: Структура item из API:', item);
-
-         
           //Преобразуем specs
           let specsObj = {};
           if (Array.isArray(item.specs)) {
-              item.specs.forEach(spec => {
-                  specsObj[spec.specKey] = spec.specValue;
-              });
+            item.specs.forEach((spec) => {
+              specsObj[spec.specKey] = spec.specValue;
+            });
           } else {
-             
-              specsObj = item.specs || {};
+            specsObj = item.specs || {};
           }
 
           const pricesArr = Array.isArray(item.prices) ? item.prices : [];
 
           //Возвращаем объект в формате demoProducts
           return {
-            id: targetId, 
+            id: targetId,
             name: item.name,
             image: item.imageUrl,
             category: item.category,
             rating: item.rating,
-            specs: specsObj, 
-            prices: pricesArr 
+            specs: specsObj,
+            prices: pricesArr
           };
         }
       });
-
-    console.log('--- Сформирован comparisonList (итоговый):', comparisonList);
-    console.log('--- Длина comparisonList:', comparisonList.length);
 
     const maxStart = Math.max(0, comparisonList.length - 2);
     if (comparisonMobileStart > maxStart) {
@@ -3691,197 +3916,174 @@ function showEmptyState() {
 
 //Добавляем функцию загрузки предложенных товаров:
 function loadSuggestedProducts() {
-    const suggestedGrid = document.getElementById('suggestedProducts');
-    if (!suggestedGrid) return;
-    
-    if (comparisonList.length === 0) {
-        //Показываем популярные товары
-        const popular = [...demoProducts]
-            .sort((a, b) => b.rating - a.rating)
-            .slice(0, 4);
-        
-        suggestedGrid.innerHTML = popular.map(product => `
-            <div class="product-card">
-                <img src="${product.image}" alt="${product.name}" 
-                     onclick="openProduct(${product.id})"
-                     style="width: 100%; height: 200px; object-fit: contain; background: #f8f9fa; border-radius: 8px; cursor: pointer;">
-                <h3 onclick="openProduct(${product.id})" style="cursor: pointer;">${product.name}</h3>
-                <div class="product-rating">
-                    <span class="rating-stars">${getStarRating(product.rating)}</span>
-                    <span class="rating-value">${product.rating}</span>
-                </div>
-                <div class="product-price">${formatPrice(product.price)} ₽</div>
-                <div class="product-actions">
-                    <button class="btn btn-outline" onclick="event.stopPropagation(); addToComparison(${product.id})">
-                        Сравнить
-                    </button>
-                    <button class="btn btn-primary" onclick="event.stopPropagation(); openProduct(${product.id})">
-                        Подробнее
-                    </button>
-                </div>
-            </div>
-        `).join('');
-    } else {
-        //Показываем товары той же категории
-        const currentCategory = comparisonList[0].category;
-        const suggested = demoProducts
-            .filter(p => p.category === currentCategory && 
-                         !comparisonList.some(cp => cp.id === p.id))
-            .slice(0, 4);
-        
-        suggestedGrid.innerHTML = suggested.map(product => `
-            <div class="product-card">
-                <img src="${product.image}" alt="${product.name}" 
-                     onclick="openProduct(${product.id})"
-                     style="width: 100%; height: 200px; object-fit: contain; background: #f8f9fa; border-radius: 8px; cursor: pointer;">
-                <h3 onclick="openProduct(${product.id})" style="cursor: pointer;">${product.name}</h3>
-                <div class="product-rating">
-                    <span class="rating-stars">${getStarRating(product.rating)}</span>
-                    <span class="rating-value">${product.rating}</span>
-                </div>
-                <div class="product-price">${formatPrice(product.price)} ₽</div>
-                <div class="product-actions">
-                    <button class="btn btn-outline" onclick="event.stopPropagation(); addToComparison(${product.id})">
-                        Сравнить
-                    </button>
-                    <button class="btn btn-primary" onclick="event.stopPropagation(); openProduct(${product.id})">
-                        Подробнее
-                    </button>
-                </div>
-            </div>
-        `).join('');
-    }
-}
+  const suggestedGrid = document.getElementById('suggestedProducts');
+  if (!suggestedGrid) return;
 
-document.addEventListener('DOMContentLoaded', function() {
-    //Загружаем пользователя
-    loadUserData();
-    updateComparisonCounter();
-    
-    //Инициализируем страницу в зависимости от URL
-    const path = window.location.pathname;
-    
-    if (path.includes('catalog.html')) {
-        initializeCatalog();
-    } else if (path.includes('product.html')) {
-        initializeProductPage();
-    } else if (path.includes('comparison.html')) {
-        initializeComparisonPage();
-    } else if (path.includes('recommendations.html')) {
-        initializeRecommendationsPage();
-    } else if (path.includes('admin.html')) {
-        initializeAdminPage();
-    } else if (path.includes('auth.html')) {
-        //Проверяем, авторизован ли пользователь
-        const user = JSON.parse(localStorage.getItem('techAggregatorUser') || 'null');
-        if (user) {
-            window.location.href = 'index.html';
-        }
-    }
-    
-    //Инициализируем поиск на главной странице
-    if (document.getElementById('mainSearch')) {
-       //setupSearch();
-    }
-});
+  if (comparisonList.length === 0) {
+    //Показываем популярные товары
+    const popular = [...demoProducts].sort((a, b) => b.rating - a.rating).slice(0, 4);
+
+    suggestedGrid.innerHTML = popular
+      .map(
+        (product) => `
+            <div class="product-card">
+                ${renderProductImage(product, {
+                  size: 'card',
+                  extraAttrs: `onclick="openProduct(${product.id})" style="cursor: pointer;"`
+                })}
+                <h3 onclick="openProduct(${product.id})" style="cursor: pointer;">${product.name}</h3>
+                <div class="product-rating">
+                    <span class="rating-stars">${getStarRating(product.rating)}</span>
+                    <span class="rating-value">${product.rating}</span>
+                </div>
+                <div class="product-price">${formatPrice(product.price)} ₽</div>
+                <div class="product-actions">
+                    <button class="btn btn-outline" onclick="event.stopPropagation(); addToComparison(${product.id})">
+                        Сравнить
+                    </button>
+                    <button class="btn btn-primary" onclick="event.stopPropagation(); openProduct(${product.id})">
+                        Подробнее
+                    </button>
+                </div>
+            </div>
+        `
+      )
+      .join('');
+    refreshProductImages(suggestedGrid);
+  } else {
+    //Показываем товары той же категории
+    const currentCategory = comparisonList[0].category;
+    const suggested = demoProducts
+      .filter((p) => p.category === currentCategory && !comparisonList.some((cp) => cp.id === p.id))
+      .slice(0, 4);
+
+    suggestedGrid.innerHTML = suggested
+      .map(
+        (product) => `
+            <div class="product-card">
+                ${renderProductImage(product, {
+                  size: 'card',
+                  extraAttrs: `onclick="openProduct(${product.id})" style="cursor: pointer;"`
+                })}
+                <h3 onclick="openProduct(${product.id})" style="cursor: pointer;">${product.name}</h3>
+                <div class="product-rating">
+                    <span class="rating-stars">${getStarRating(product.rating)}</span>
+                    <span class="rating-value">${product.rating}</span>
+                </div>
+                <div class="product-price">${formatPrice(product.price)} ₽</div>
+                <div class="product-actions">
+                    <button class="btn btn-outline" onclick="event.stopPropagation(); addToComparison(${product.id})">
+                        Сравнить
+                    </button>
+                    <button class="btn btn-primary" onclick="event.stopPropagation(); openProduct(${product.id})">
+                        Подробнее
+                    </button>
+                </div>
+            </div>
+        `
+      )
+      .join('');
+    refreshProductImages(suggestedGrid);
+  }
+}
 
 //Инициализация звёздного рейтинга для отзывов
 function initializeStarRating() {
-    const starContainer = document.getElementById('starRating');
-    if (!starContainer) return;
-    
-    const stars = starContainer.querySelectorAll('.star');
-    const ratingInput = document.getElementById('reviewRating');
-    const ratingDisplay = document.getElementById('ratingValueDisplay');
-    
-    //Функция для установки рейтинга
-    function setRating(value) {
-        ratingInput.value = value;
-        if (ratingDisplay) {
-            ratingDisplay.textContent = value;
-        }
-        
-        //Обновляем отображение звёзд
-        stars.forEach((star, index) => {
-            const starValue = parseInt(star.getAttribute('data-value'));
-            if (starValue <= value) {
-                star.classList.add('active');
-                star.style.color = '#fbbf24';
-            } else {
-                star.classList.remove('active');
-                star.style.color = '#e5e7eb';
-            }
-        });
+  const starContainer = document.getElementById('starRating');
+  if (!starContainer) return;
+
+  const stars = starContainer.querySelectorAll('.star');
+  const ratingInput = document.getElementById('reviewRating');
+  const ratingDisplay = document.getElementById('ratingValueDisplay');
+
+  //Функция для установки рейтинга
+  function setRating(value) {
+    ratingInput.value = value;
+    if (ratingDisplay) {
+      ratingDisplay.textContent = value;
     }
-    
-    //Добавляем обработчики для каждой звезды
-    stars.forEach(star => {
-        star.addEventListener('click', function() {
-            const value = parseInt(this.getAttribute('data-value'));
-            setRating(value);
-        });
-        
-        star.addEventListener('mouseover', function() {
-            const value = parseInt(this.getAttribute('data-value'));
-            stars.forEach((s, index) => {
-                const starValue = parseInt(s.getAttribute('data-value'));
-                if (starValue <= value) {
-                    s.style.color = '#fbbf24';
-                } else {
-                    s.style.color = '#e5e7eb';
-                }
-            });
-        });
-        
-        star.addEventListener('mouseout', function() {
-            const currentRating = parseInt(ratingInput.value);
-            stars.forEach((s, index) => {
-                const starValue = parseInt(s.getAttribute('data-value'));
-                if (starValue <= currentRating) {
-                    s.style.color = '#fbbf24';
-                } else {
-                    s.style.color = '#e5e7eb';
-                }
-            });
-        });
+
+    //Обновляем отображение звёзд
+    stars.forEach((star, index) => {
+      const starValue = parseInt(star.getAttribute('data-value'));
+      if (starValue <= value) {
+        star.classList.add('active');
+        star.style.color = '#fbbf24';
+      } else {
+        star.classList.remove('active');
+        star.style.color = '#e5e7eb';
+      }
     });
-    
-    //Устанавливаем начальное значение
-    setRating(parseInt(ratingInput.value));
+  }
+
+  //Добавляем обработчики для каждой звезды
+  stars.forEach((star) => {
+    star.addEventListener('click', function () {
+      const value = parseInt(this.getAttribute('data-value'));
+      setRating(value);
+    });
+
+    star.addEventListener('mouseover', function () {
+      const value = parseInt(this.getAttribute('data-value'));
+      stars.forEach((s, index) => {
+        const starValue = parseInt(s.getAttribute('data-value'));
+        if (starValue <= value) {
+          s.style.color = '#fbbf24';
+        } else {
+          s.style.color = '#e5e7eb';
+        }
+      });
+    });
+
+    star.addEventListener('mouseout', function () {
+      const currentRating = parseInt(ratingInput.value);
+      stars.forEach((s, index) => {
+        const starValue = parseInt(s.getAttribute('data-value'));
+        if (starValue <= currentRating) {
+          s.style.color = '#fbbf24';
+        } else {
+          s.style.color = '#e5e7eb';
+        }
+      });
+    });
+  });
+
+  //Устанавливаем начальное значение
+  setRating(parseInt(ratingInput.value));
 }
 
 //Функция для открытия модального окна отзыва
 function showReviewModal() {
-    if (!checkAuth()) {
-        showAuthModal();
-        showCustomNotification('Для оставления отзыва необходимо авторизоваться', 'warning');
-        return;
-    }
-    
-    const modal = document.getElementById('reviewModal');
-    if (modal) {
-        modal.style.display = 'block';
-        initializeStarRating(); //Инициализируем звёзды при открытии модалки
-    }
+  if (!checkAuth()) {
+    showAuthModal();
+    showCustomNotification('Для оставления отзыва необходимо авторизоваться', 'warning');
+    return;
+  }
+
+  const modal = document.getElementById('reviewModal');
+  if (modal) {
+    modal.style.display = 'block';
+    initializeStarRating(); //Инициализируем звёзды при открытии модалки
+  }
 }
 
 //Функция для закрытия модального окна отзыва
 function closeReviewModal() {
-    const modal = document.getElementById('reviewModal');
-    if (modal) {
-        modal.style.display = 'none';
-        //Сбрасываем форму при закрытии
-        document.getElementById('reviewForm').reset();
-        
-        //Восстанавливаем рейтинг по умолчанию
-        const ratingInput = document.getElementById('reviewRating');
-        const ratingDisplay = document.getElementById('ratingValueDisplay');
-        if (ratingInput) ratingInput.value = '5';
-        if (ratingDisplay) ratingDisplay.textContent = '5';
-        
-        //Обновляем звёзды
-        initializeStarRating();
-    }
+  const modal = document.getElementById('reviewModal');
+  if (modal) {
+    modal.style.display = 'none';
+    //Сбрасываем форму при закрытии
+    document.getElementById('reviewForm').reset();
+
+    //Восстанавливаем рейтинг по умолчанию
+    const ratingInput = document.getElementById('reviewRating');
+    const ratingDisplay = document.getElementById('ratingValueDisplay');
+    if (ratingInput) ratingInput.value = '5';
+    if (ratingDisplay) ratingDisplay.textContent = '5';
+
+    //Обновляем звёзды
+    initializeStarRating();
+  }
 }
 
 function getCurrentProductId() {
@@ -3891,7 +4093,7 @@ function getCurrentProductId() {
   if (productId) {
     return parseInt(productId, 10);
   }
- 
+
   return null;
 }
 
@@ -3905,10 +4107,10 @@ async function submitReview(event) {
   }
 
   const ratingInput = document.getElementById('reviewRating');
-  const textArea = document.getElementById('reviewText'); 
+  const textArea = document.getElementById('reviewText');
 
   const rating = parseInt(ratingInput.value, 10);
-  const text = textArea ? textArea.value.trim() : ''; 
+  const text = textArea ? textArea.value.trim() : '';
 
   if (!rating || rating < 1 || rating > 5) {
     showCustomNotification('Пожалуйста, укажите оценку (1-5)', 'info');
@@ -3916,13 +4118,14 @@ async function submitReview(event) {
   }
 
   //Комментарий может быть пустым, но если он есть, проверим длину
-  if (text && text.length < 10) { //Проверяем длину только если текст не пустой
+  if (text && text.length < 10) {
+    //Проверяем длину только если текст не пустой
     showCustomNotification('Отзыв должен содержать минимум 10 символов', 'info');
     return;
   }
 
   const token = localStorage.getItem('techAggregatorToken');
-  const productId = getCurrentProductId(); 
+  const productId = getCurrentProductId();
 
   if (!token || !productId) {
     showCustomNotification('Ошибка: токен или ID товара отсутствует.', 'error');
@@ -3934,12 +4137,12 @@ async function submitReview(event) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
+        Authorization: `Bearer ${token}`
       },
       body: JSON.stringify({
         productId: productId,
         rating: rating,
-        text: text 
+        text: text
         //userName не нужно, сервер берёт из токена
       })
     });
@@ -3958,7 +4161,6 @@ async function submitReview(event) {
     }
 
     const result = await response.json();
-    console.log('Отзыв отправлен на модерацию:', result);
     showCustomNotification('Ваш отзыв отправлен на модерацию.', 'success');
 
     //Очистим форму
@@ -3967,39 +4169,36 @@ async function submitReview(event) {
 
     //Перезагрузим отзывы для обновления списка (опционально)
     await loadProductReviews(productId);
-
-
   } catch (error) {
     console.error('Ошибка отправки отзыва:', error);
     showCustomNotification(`Ошибка отправки отзыва: ${error.message}`, 'error');
   }
 }
 
-
-async function submitRequest() { 
+async function submitRequest() {
   if (!checkAuth()) {
     showAuthModal();
     return;
   }
 
   //Получаем элементы формы (включая новые поля)
-  const productNameInput = document.getElementById('requestProductName'); 
-  const categorySelect = document.getElementById('requestCategory');     
-  const urlInput = document.getElementById('requestUrl');              
-  const commentTextarea = document.getElementById('requestComment');    
+  const productNameInput = document.getElementById('requestProductName');
+  const categorySelect = document.getElementById('requestCategory');
+  const urlInput = document.getElementById('requestUrl');
+  const commentTextarea = document.getElementById('requestComment');
 
   //Проверяем существование обязательных элементов
   if (!productNameInput) {
-      console.error("Элемент #requestProductName не найден в DOM.");
-      showCustomNotification('Ошибка: форма запроса не найдена', 'error');
-      return;
+    console.error('Элемент #requestProductName не найден в DOM.');
+    showCustomNotification('Ошибка: форма запроса не найдена', 'error');
+    return;
   }
 
   //Собираем значения
   const productName = productNameInput.value?.trim() || '';
   const category = categorySelect?.value?.trim() || '';
-  const url = urlInput?.value?.trim() || ''; 
-  const comment = commentTextarea?.value?.trim() || ''; 
+  const url = urlInput?.value?.trim() || '';
+  const comment = commentTextarea?.value?.trim() || '';
 
   //Валидация
   if (!productName) {
@@ -4009,8 +4208,8 @@ async function submitRequest() {
 
   const token = localStorage.getItem('techAggregatorToken');
   if (!token) {
-     showCustomNotification('Требуется авторизация', 'info');
-     return;
+    showCustomNotification('Требуется авторизация', 'info');
+    return;
   }
 
   try {
@@ -4018,14 +4217,14 @@ async function submitRequest() {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
+        Authorization: `Bearer ${token}`
       },
       //Отправляем ВСЕ данные, включая url и comment
       body: JSON.stringify({
         productName: productName,
         category: category,
-        url: url,      
-        comment: comment 
+        url: url,
+        comment: comment
       })
     });
 
@@ -4035,24 +4234,21 @@ async function submitRequest() {
     }
 
     const createdRequest = await response.json();
-    console.log('Запрос успешно отправлен на сервер:', createdRequest);
     showCustomNotification('Запрос отправлен администратору. Мы уведомим вас, когда товар будет добавлен.', 'info');
 
     //Закрываем модальное окно
-    closeRequestModal(); 
+    closeRequestModal();
 
     //Очищаем форму (если нужно)
     if (productNameInput) productNameInput.value = '';
     if (categorySelect) categorySelect.value = '';
-    if (urlInput) urlInput.value = ''; 
-    if (commentTextarea) commentTextarea.value = ''; 
-
+    if (urlInput) urlInput.value = '';
+    if (commentTextarea) commentTextarea.value = '';
   } catch (error) {
     console.error('Ошибка при отправке запроса:', error);
     showCustomNotification(`Ошибка: ${error.message}`, 'error');
   }
 }
-
 
 function getStarRating(rating) {
   const fullStars = Math.floor(rating);
@@ -4063,16 +4259,16 @@ function getStarRating(rating) {
 
 //Функция для создания HTML отзыва
 function createReviewHTML(review) {
-    const date = new Date(review.date);
-    const formattedDate = date.toLocaleDateString('ru-RU', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-    });
-    const nameSafe = escapeHtml(review.userName || '');
-    const avatarUrl = getDefaultUserAvatarUrl();
+  const date = new Date(review.date);
+  const formattedDate = date.toLocaleDateString('ru-RU', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
+  const nameSafe = escapeHtml(review.userName || '');
+  const avatarUrl = getDefaultUserAvatarUrl();
 
-    return `
+  return `
         <div class="review-item">
             <div class="review-header">
                 <div class="review-author">
@@ -4092,105 +4288,198 @@ function createReviewHTML(review) {
     `;
 }
 
-
 //Настройка формы отзыва
 function setupReviewForm() {
-    const reviewForm = document.getElementById('reviewForm');
-    if (!reviewForm) return;
-    
-    reviewForm.addEventListener('submit', function(e) {
-        e.preventDefault();
-        submitReview(e);
-    });
+  const reviewForm = document.getElementById('reviewForm');
+  if (!reviewForm) return;
+
+  reviewForm.addEventListener('submit', function (e) {
+    e.preventDefault();
+    submitReview(e);
+  });
 }
 
 function closeReviewModal() {
-    const modal = document.getElementById('reviewModal');
-    if (modal) modal.style.display = 'none';
+  const modal = document.getElementById('reviewModal');
+  if (modal) modal.style.display = 'none';
 }
 
 //Настройка формы запроса
 function setupRequestForm() {
-    const requestForm = document.getElementById('requestForm');
-    if (!requestForm) return;
-    
-    requestForm.addEventListener('submit', function(e) {
-        e.preventDefault();
-        submitRequest();
-    });
+  const requestForm = document.getElementById('requestForm');
+  if (!requestForm) return;
+
+  requestForm.addEventListener('submit', function (e) {
+    e.preventDefault();
+    submitRequest();
+  });
 }
 
 function closeRequestModal() {
-    const modal = document.getElementById('requestModal');
-    if (modal) modal.style.display = 'none';
+  const modal = document.getElementById('requestModal');
+  if (modal) modal.style.display = 'none';
 }
 
-//Карта соответствия английских категорий на русские
-const categoryTranslations = {
-    'smartphones': 'Смартфоны',
-    'laptops': 'Ноутбуки',
-    'tv': 'Телевизоры',
-    'headphones': 'Наушники',
-    'cameras': 'Камеры',
-    'tablets': 'Планшеты'
-};
-
-//Обратная карта для поиска по русским названиям категорий
-const reverseCategoryMap = {};
-Object.entries(categoryTranslations).forEach(([en, ru]) => {
-    reverseCategoryMap[ru.toLowerCase()] = en;
+//Русские названия категорий для навигационного поиска (из RU_CATEGORY_TO_KEY)
+const NAV_CATEGORY_DISPLAY_NAMES = {};
+Object.entries(RU_CATEGORY_TO_KEY).forEach(([ru, key]) => {
+  const label = ru.charAt(0).toUpperCase() + ru.slice(1);
+  if (!NAV_CATEGORY_DISPLAY_NAMES[key] || NAV_CATEGORY_DISPLAY_NAMES[key].length < label.length) {
+    NAV_CATEGORY_DISPLAY_NAMES[key] = label;
+  }
 });
 
-//Функция для получения русского названия категории
-function getCategoryName(categoryKey) {
-    return categoryTranslations[categoryKey] || categoryKey;
+function getNavCategoryLabel(categoryKey) {
+  const key = normalizeCategoryKey(categoryKey);
+  return NAV_CATEGORY_DISPLAY_NAMES[key] || (typeof getCategoryName === 'function' ? getCategoryName(key) : key);
 }
 
-//Функция для поиска по категории (по русскому названию)
-function findProductsByCategoryQuery(query) {
-    const lowerQuery = query.toLowerCase();
-    const matchedCategoryKey = reverseCategoryMap[lowerQuery];
-    if (matchedCategoryKey) {
-        return demoProducts.filter(product => product.category === matchedCategoryKey);
+/** Категории, подходящие под запрос (частичное совпадение, ключевые слова). */
+function findMatchingCategories(query) {
+  const q = String(query || '')
+    .toLowerCase()
+    .trim();
+  if (!q) return [];
+
+  const scored = new Map();
+
+  const add = (key, score) => {
+    const norm = normalizeCategoryKey(key);
+    if (!norm || !CATEGORY_EMOJI[norm]) return;
+    const prev = scored.get(norm) || 0;
+    if (score > prev) scored.set(norm, score);
+  };
+
+  if (RU_CATEGORY_TO_KEY[q]) add(RU_CATEGORY_TO_KEY[q], 100);
+
+  for (const [ruName, key] of Object.entries(RU_CATEGORY_TO_KEY)) {
+    if (ruName === q) add(key, 100);
+    else if (ruName.startsWith(q)) add(key, 80);
+    else if (ruName.includes(q)) add(key, 60);
+    else if (q.length >= 2 && q.includes(ruName)) add(key, 50);
+  }
+
+  for (const [cat, keywords] of Object.entries(CATEGORY_KEYWORDS)) {
+    for (const kw of keywords) {
+      if (kw === q) add(cat, 90);
+      else if (kw.startsWith(q)) add(cat, 70);
+      else if (kw.includes(q)) add(cat, 55);
+      else if (q.length >= 2 && q.includes(kw)) add(cat, 45);
     }
-    return [];
+  }
+
+  return Array.from(scored.entries())
+    .sort((a, b) => b[1] - a[1])
+    .map(([key]) => key);
+}
+
+function filterProductsByNavQuery(query, limit = 5) {
+  const q = String(query || '')
+    .toLowerCase()
+    .trim();
+  if (!q) return [];
+  const results = demoProducts.filter(
+    (product) =>
+      product.name.toLowerCase().includes(q) ||
+      (product.brand && String(product.brand).toLowerCase().includes(q)) ||
+      (product.specs &&
+        Object.values(product.specs).some((value) => value != null && value.toString().toLowerCase().includes(q)))
+  );
+  return limit == null ? results : results.slice(0, limit);
+}
+
+/** Поиск для каталога: по названию, затем по подходящим категориям. */
+function resolveProductsForSearchQuery(query) {
+  const direct = filterProductsByNavQuery(query, null);
+  if (direct.length > 0) return direct;
+  const categories = findMatchingCategories(query);
+  if (!categories.length) return [];
+  const catSet = new Set(categories.map(normalizeCategoryKey));
+  return demoProducts.filter((p) => catSet.has(normalizeCategoryKey(p.category)));
+}
+window.resolveProductsForSearchQuery = resolveProductsForSearchQuery;
+
+function buildCatalogSearchUrl(query, categoryKey) {
+  const params = new URLSearchParams();
+  if (query) params.set('search', query);
+  if (categoryKey) params.set('category', categoryKey);
+  const qs = params.toString();
+  return `catalog.html${qs ? `?${qs}` : ''}`;
+}
+
+function initNavSearch() {
+  const container = document.querySelector('.nav-search-container');
+  const input = document.getElementById('navSearch');
+  if (!container || !input || container.dataset.navSearchInit === '1') return;
+  container.dataset.navSearchInit = '1';
+
+  let form = container.closest('form.nav-search-form');
+  if (!form) {
+    form = document.createElement('form');
+    form.className = 'nav-search-form';
+    form.setAttribute('role', 'search');
+    form.setAttribute('action', 'catalog.html');
+    form.noValidate = true;
+    while (container.firstChild) form.appendChild(container.firstChild);
+    container.appendChild(form);
+  }
+
+  const btn = form.querySelector('.nav-search-btn');
+  if (btn) {
+    btn.type = 'submit';
+    btn.removeAttribute('onclick');
+  }
+
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    navSearchProducts();
+  });
+
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      navSearchProducts();
+    }
+  });
+
+  input.addEventListener('input', () => showNavSearchSuggestions());
 }
 
 //Ключевые слова для категорий поиска
 const CATEGORY_KEYWORDS = {
   smartphones: ['смартфон', 'телефон', 'айфон', 'iphone', 'samsung', 'pixel', 'xiaomi'],
-    laptops: ['ноутбук', 'лэптоп', 'macbook', 'lenovo', 'asus', 'hp', 'dell'],
-    tv: ['телевизор', 'тв', 'oled', 'qled', 'lg', 'sony'],
-    headphones: ['наушники', 'bluetooth', 'tws', 'airpods', 'sony', 'bose', 'гарнитура'],
-    cameras: ['фотоаппарат', 'камера', 'canon', 'nikon', 'зеркалка'],
-    tablets: ['планшет', 'ipad', 'galaxy tab', 'xiaomi pad'],
-    smartwatches: ['часы', 'смартчасы', 'watch', 'apple watch', 'garmin'],
-    ebooks: ['электронная книга', 'kindle', 'pocketbook', 'читалка'],
-    drones: ['дрон', 'dji', 'квадрокоптер', 'квадрик'],
-    pc_components: ['комплектующие', 'комплектующие пк', 'железо'],
-    keyboards: ['клавиатура', 'клавиатуры', 'клава'],
-    mouses: ['мышь', 'мыши', 'компьютерная мышь'],
-    cases: ['корпус', 'корпуса', 'case'],
-    drivers: ['накопитель', 'накопители', 'диск', 'ssd', 'hdd'],
-    fitness_trackers: ['фитнес-трекер', 'фитнес браслет', 'трекер'],
-    power_units: ['блок питания', 'блоки питания', 'бп'],
-    microphones: ['микрофон', 'микрофоны', 'микро'],
-    webcams: ['веб-камера', 'веб-камеры', 'вебка'],
-    power_banks: ['павербанк', 'внешний аккумулятор', 'powerbank'],
-    portable_speakers: ['колонка', 'колонки', 'портативная колонка'],
-    monitors: ['монитор', 'мониторы', 'дисплей'],
-    accessories: ['аксессуар', 'чехол', 'зарядка', 'кабель'],
-    gaming: ['консоль', 'консоли', 'playstation', 'xbox', 'nintendo', 'приставка'],
-    networking: ['роутер', 'маршрутизатор', 'wifi', 'wi-fi', 'switch'],
-    cpus: ['процессор', 'процессоры', 'cpu', 'intel', 'amd'],
-    motherboards: ['материнская плата', 'материнки', 'материнская'],
-    ram: ['оперативная память', 'оперативка', 'ram', 'dram'],
-    graphics_cards: ['видеокарта', 'видеокарты', 'gpu', 'rtx'],
-    external_drives: ['внешний накопитель', 'внешний диск', 'portable ssd'],
-    audio: ['аудиосистема', 'акустика', 'саундбар'],
-    smart_home: ['умный дом', 'smart home', 'умная розетка', 'умная лампа'],
-    wearables: ['носимые устройства', 'wearable', 'гаджет', 'умные очки'],
-    other: ['другое', 'прочее']
+  laptops: ['ноутбук', 'лэптоп', 'macbook', 'lenovo', 'asus', 'hp', 'dell'],
+  tv: ['телевизор', 'тв', 'oled', 'qled', 'lg', 'sony'],
+  headphones: ['наушники', 'bluetooth', 'tws', 'airpods', 'sony', 'bose', 'гарнитура'],
+  cameras: ['фотоаппарат', 'камера', 'canon', 'nikon', 'зеркалка'],
+  tablets: ['планшет', 'ipad', 'galaxy tab', 'xiaomi pad'],
+  smartwatches: ['часы', 'смартчасы', 'watch', 'apple watch', 'garmin'],
+  ebooks: ['электронная книга', 'kindle', 'pocketbook', 'читалка'],
+  drones: ['дрон', 'dji', 'квадрокоптер', 'квадрик'],
+  pc_components: ['комплектующие', 'комплектующие пк', 'железо'],
+  keyboards: ['клавиатура', 'клавиатуры', 'клава'],
+  mouses: ['мышь', 'мыши', 'компьютерная мышь'],
+  cases: ['корпус', 'корпуса', 'case'],
+  drivers: ['накопитель', 'накопители', 'диск', 'ssd', 'hdd'],
+  fitness_trackers: ['фитнес-трекер', 'фитнес браслет', 'трекер'],
+  power_units: ['блок питания', 'блоки питания', 'бп'],
+  microphones: ['микрофон', 'микрофоны', 'микро'],
+  webcams: ['веб-камера', 'веб-камеры', 'вебка'],
+  power_banks: ['павербанк', 'внешний аккумулятор', 'powerbank'],
+  portable_speakers: ['колонка', 'колонки', 'портативная колонка'],
+  monitors: ['монитор', 'мониторы', 'дисплей'],
+  accessories: ['аксессуар', 'чехол', 'зарядка', 'кабель'],
+  gaming: ['консоль', 'консоли', 'playstation', 'xbox', 'nintendo', 'приставка'],
+  networking: ['роутер', 'маршрутизатор', 'wifi', 'wi-fi', 'switch'],
+  cpus: ['процессор', 'процессоры', 'cpu', 'intel', 'amd'],
+  motherboards: ['материнская плата', 'материнки', 'материнская'],
+  ram: ['оперативная память', 'оперативка', 'ram', 'dram'],
+  graphics_cards: ['видеокарта', 'видеокарты', 'gpu', 'rtx'],
+  external_drives: ['внешний накопитель', 'внешний диск', 'portable ssd'],
+  audio: ['аудиосистема', 'акустика', 'саундбар'],
+  smart_home: ['умный дом', 'smart home', 'умная розетка', 'умная лампа'],
+  wearables: ['носимые устройства', 'wearable', 'гаджет', 'умные очки'],
+  other: ['другое', 'прочее']
 };
 
 function showNavSearchSuggestions() {
@@ -4198,88 +4487,83 @@ function showNavSearchSuggestions() {
   const suggestionsContainer = document.getElementById('navSearchSuggestions');
   if (!searchInput || !suggestionsContainer) return;
 
-  const query = searchInput.value.trim().toLowerCase();
-  if (query.length < 2) {
+  const query = searchInput.value.trim();
+  const lowerQuery = query.toLowerCase();
+  if (lowerQuery.length < 2) {
     suggestionsContainer.style.display = 'none';
+    suggestionsContainer.innerHTML = '';
     return;
   }
 
-  //1. Поиск по названию и характеристикам
-  let results = demoProducts.filter(product =>
-    product.name.toLowerCase().includes(query) ||
-    (product.specs && Object.values(product.specs).some(
-      value => value.toString().toLowerCase().includes(query)
-    ))
-  );
+  const categories = findMatchingCategories(query).slice(0, 4);
+  const products = filterProductsByNavQuery(query, 5);
+  const categoryKeysInProducts = new Set(products.map((p) => normalizeCategoryKey(p.category)));
+  const extraCategories = categories.filter((c) => !categoryKeysInProducts.has(c));
 
-  //2. Если нет результатов — ищем по категориям
-  if (results.length === 0) {
-    const matchingCategories = new Set();
-
-    //Прямое совпадение с русскими названиями
-    const RU_CATEGORY_MAP = {
-    'смартфоны': 'smartphones',
-    'ноутбуки': 'laptops',
-    'телевизоры': 'tv',
-    'наушники': 'headphones',
-    'фотоаппараты': 'cameras',
-    'планшеты': 'tablets',
-    'смарт-часы': 'smartwatches',
-    'электронные книги': 'ebooks',
-    'дроны': 'drones',
-    'комплектующие пк': 'pc_components',
-    'мониторы': 'monitors',
-    'аксессуары': 'accessories',
-    'игровые консоли': 'gaming',
-    'сетевое оборудование': 'networking',
-    'накопители': 'storage',
-    'аудиосистемы': 'audio',
-    'умный дом': 'smart_home',
-    'носимые устройства': 'wearables',
-    'другое': 'other'
-};
-
-    if (RU_CATEGORY_MAP[query]) {
-      matchingCategories.add(RU_CATEGORY_MAP[query]);
-    } else {
-      //Поиск по ключевым словам
-      for (const [category, keywords] of Object.entries(CATEGORY_KEYWORDS)) {
-        if (keywords.some(kw => query.includes(kw) || kw.includes(query))) {
-          matchingCategories.add(category);
-        }
-      }
-    }
-
-    if (matchingCategories.size > 0) {
-      results = demoProducts.filter(p => matchingCategories.has(p.category));
-    }
-  }
-
-  //Ограничиваем до 5 товаров
-  results = results.slice(0, 5);
-
-  if (results.length === 0) {
+  if (extraCategories.length === 0 && products.length === 0) {
     suggestionsContainer.style.display = 'none';
+    suggestionsContainer.innerHTML = '';
     return;
   }
 
-  //Рендерим подсказки
-  suggestionsContainer.innerHTML = results.map(product => `
-    <div class="search-suggestion-item" onclick="selectNavSearchSuggestion(${product.id})">
-      <img src="${product.image}" alt="${product.name}" loading="lazy">
+  const categoryHtml = extraCategories
+    .map(
+      (cat) => `
+    <div class="search-suggestion-item nav-search-suggestion--category"
+         role="option"
+         onclick="selectNavSearchCategory('${cat}')">
+      <span class="nav-search-suggestion-icon" aria-hidden="true">${getCategoryEmoji(cat)}</span>
       <div class="search-suggestion-info">
-        <div class="search-suggestion-name">${product.name}</div>
-        <div class="search-suggestion-category">${getCategoryName(product.category)} • ${formatPrice(getMinPrice(product))} ₽</div>
+        <div class="search-suggestion-name">${getNavCategoryLabel(cat)}</div>
+        <div class="search-suggestion-category">Категория</div>
       </div>
     </div>
-  `).join('');
+  `
+    )
+    .join('');
 
+  const productHtml = products
+    .map(
+      (product) => `
+    <div class="search-suggestion-item" role="option" onclick="selectNavSearchSuggestion(${product.id})">
+      ${renderProductImage(product, { size: 'suggestion' })}
+      <div class="search-suggestion-info">
+        <div class="search-suggestion-name">${product.name}</div>
+        <div class="search-suggestion-category">${getNavCategoryLabel(product.category)} • ${formatPrice(getMinPrice(product))} ₽</div>
+      </div>
+    </div>
+  `
+    )
+    .join('');
+
+  const searchAllHtml = `
+    <div class="search-suggestion-item nav-search-suggestion--action"
+         role="option"
+         onclick="navSearchProducts()">
+      <span class="nav-search-suggestion-icon" aria-hidden="true">🔍</span>
+      <div class="search-suggestion-info">
+        <div class="search-suggestion-name">Искать «${query.replace(/</g, '&lt;')}»</div>
+        <div class="search-suggestion-category">Все совпадения в каталоге</div>
+      </div>
+    </div>
+  `;
+
+  suggestionsContainer.innerHTML = categoryHtml + productHtml + searchAllHtml;
+  refreshProductImages(suggestionsContainer);
   suggestionsContainer.style.display = 'block';
 }
 
-//Выбор подсказки
+function selectNavSearchCategory(categoryKey) {
+  const input = document.getElementById('navSearch');
+  const query = input?.value?.trim() || '';
+  const suggestions = document.getElementById('navSearchSuggestions');
+  if (suggestions) suggestions.style.display = 'none';
+  if (query) trackSearchQuery(query);
+  window.location.href = buildCatalogSearchUrl(query, categoryKey);
+}
+
 function selectNavSearchSuggestion(productId) {
-  const product = demoProducts.find(p => p.id === productId);
+  const product = demoProducts.find((p) => p.id === productId);
   if (product) {
     document.getElementById('navSearch').value = product.name;
     document.getElementById('navSearchSuggestions').style.display = 'none';
@@ -4287,48 +4571,28 @@ function selectNavSearchSuggestion(productId) {
   }
 }
 
-//Поиск по Enter
 function navSearchProducts() {
   const query = document.getElementById('navSearch')?.value?.trim();
-  if (query) {
-    trackSearchQuery(query);
-    document.getElementById('navSearchSuggestions').style.display = 'none';
-    
-    //Находим категории по запросу
-    const lowerQuery = query.toLowerCase();
-    const categories = new Set();
-    
-    
-    if (RU_CATEGORY_MAP[lowerQuery]) {
-      categories.add(RU_CATEGORY_MAP[lowerQuery]);
-    } else {
-      //По ключевым словам
-      for (const [cat, keywords] of Object.entries(CATEGORY_KEYWORDS)) {
-        if (keywords.some(kw => lowerQuery.includes(kw) || kw.includes(lowerQuery))) {
-          categories.add(cat);
-        }
-      }
-    }
-    
-    //Переход в каталог
-    if (categories.size > 0) {
-      const firstCat = Array.from(categories)[0];
-      window.location.href = `catalog.html?category=${firstCat}&search=${encodeURIComponent(query)}`;
-    } else {
-      window.location.href = `catalog.html?search=${encodeURIComponent(query)}`;
-    }
-  }
+  if (!query) return;
+
+  trackSearchQuery(query);
+  const suggestions = document.getElementById('navSearchSuggestions');
+  if (suggestions) suggestions.style.display = 'none';
+
+  const categories = findMatchingCategories(query);
+  const categoryKey = categories.length === 1 ? categories[0] : '';
+  window.location.href = buildCatalogSearchUrl(query, categoryKey);
 }
 
-//Обработка Enter в поиске
 function handleNavSearchEnter(event) {
   if (event.key === 'Enter') {
+    event.preventDefault();
     navSearchProducts();
   }
 }
 
 //Закрытие подсказок
-document.addEventListener('click', function(event) {
+document.addEventListener('click', function (event) {
   const container = document.querySelector('.nav-search-container');
   const suggestions = document.getElementById('navSearchSuggestions');
   if (container && suggestions && !container.contains(event.target)) {
@@ -4336,22 +4600,19 @@ document.addEventListener('click', function(event) {
   }
 });
 
-
-
-
 //Функция для запроса добавления товара
 function requestProductAddition() {
-    if (!currentUser) {
-        showAuthModal();
-        showNotification('Для отправки запроса необходимо авторизоваться', 'warning');
-        return;
-    }
-    
-    //Создаем модальное окно для запроса
-    const modal = document.createElement('div');
-    modal.className = 'modal';
-    modal.style.display = 'block';
-    modal.innerHTML = `
+  if (!currentUser) {
+    showAuthModal();
+    showNotification('Для отправки запроса необходимо авторизоваться', 'warning');
+    return;
+  }
+
+  //Создаем модальное окно для запроса
+  const modal = document.createElement('div');
+  modal.className = 'modal';
+  modal.style.display = 'block';
+  modal.innerHTML = `
         <div class="modal-content">
             <span class="close" onclick="this.parentElement.parentElement.remove()">&times;</span>
             <h3>Запрос на добавление товара</h3>
@@ -4418,14 +4679,14 @@ function requestProductAddition() {
             </form>
         </div>
     `;
-    
-    document.body.appendChild(modal);
-    
-    //Добавляем стили для модального окна, если их нет
-    if (!document.querySelector('style#request-modal-styles')) {
-        const style = document.createElement('style');
-        style.id = 'request-modal-styles';
-        style.textContent = `
+
+  document.body.appendChild(modal);
+
+  //Добавляем стили для модального окна, если их нет
+  if (!document.querySelector('style#request-modal-styles')) {
+    const style = document.createElement('style');
+    style.id = 'request-modal-styles';
+    style.textContent = `
             .form-group {
                 margin-bottom: 1rem;
             }
@@ -4453,19 +4714,19 @@ function requestProductAddition() {
                 justify-content: flex-end;
             }
         `;
-        document.head.appendChild(style);
+    document.head.appendChild(style);
+  }
+
+  //Закрытие при клике вне модального окна
+  modal.onclick = function (event) {
+    if (event.target === modal) {
+      modal.remove();
     }
-    
-    //Закрытие при клике вне модального окна
-    modal.onclick = function(event) {
-        if (event.target === modal) {
-            modal.remove();
-        }
-    };
+  };
 }
 
-async function submitRequest(event) { 
-  event.preventDefault(); 
+async function submitRequest(event) {
+  event.preventDefault();
 
   if (!checkAuth()) {
     showAuthModal();
@@ -4473,23 +4734,23 @@ async function submitRequest(event) {
   }
 
   //Получаем данные из формы (предположим, у вас есть поля с этими id)
-  const productNameInput = document.getElementById('requestProductName'); 
-  const categorySelect = document.getElementById('requestCategory');     
-  const urlInput = document.getElementById('requestUrl');              
-  const commentTextarea = document.getElementById('requestComment');     
+  const productNameInput = document.getElementById('requestProductName');
+  const categorySelect = document.getElementById('requestCategory');
+  const urlInput = document.getElementById('requestUrl');
+  const commentTextarea = document.getElementById('requestComment');
 
   //Проверяем существование обязательных элементов
   if (!productNameInput) {
-      console.error("Элемент #requestProductName не найден в DOM.");
-      showCustomNotification('Ошибка: форма запроса не найдена', 'error');
-      return;
+    console.error('Элемент #requestProductName не найден в DOM.');
+    showCustomNotification('Ошибка: форма запроса не найдена', 'error');
+    return;
   }
 
   //Собираем значения
   const productName = productNameInput.value?.trim() || '';
   const category = categorySelect?.value?.trim() || '';
-  const url = urlInput?.value?.trim() || ''; 
-  const comment = commentTextarea?.value?.trim() || ''; 
+  const url = urlInput?.value?.trim() || '';
+  const comment = commentTextarea?.value?.trim() || '';
 
   //Валидация
   if (!productName) {
@@ -4499,8 +4760,8 @@ async function submitRequest(event) {
 
   const token = localStorage.getItem('techAggregatorToken');
   if (!token) {
-     showCustomNotification('Требуется авторизация', 'info');
-     return;
+    showCustomNotification('Требуется авторизация', 'info');
+    return;
   }
 
   try {
@@ -4508,14 +4769,14 @@ async function submitRequest(event) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
+        Authorization: `Bearer ${token}`
       },
       //Отправляем ВСЕ данные, включая url и comment
       body: JSON.stringify({
         productName: productName,
         category: category,
-        url: url,      
-        comment: comment 
+        url: url,
+        comment: comment
       })
     });
 
@@ -4525,18 +4786,16 @@ async function submitRequest(event) {
     }
 
     const createdRequest = await response.json();
-    console.log('Запрос успешно отправлен на сервер:', createdRequest);
     showCustomNotification('Запрос отправлен администратору. Мы уведомим вас, когда товар будет добавлен.', 'info');
 
     //Закрываем модальное окно
-    closeRequestModal(); 
+    closeRequestModal();
 
     //Очищаем форму (если нужно)
     if (productNameInput) productNameInput.value = '';
     if (categorySelect) categorySelect.value = '';
     if (urlInput) urlInput.value = '';
-    if (commentTextarea) commentTextarea.value = ''; 
-
+    if (commentTextarea) commentTextarea.value = '';
   } catch (error) {
     console.error('Ошибка при отправке запроса:', error);
     showCustomNotification(`Ошибка: ${error.message}`, 'error');
@@ -4555,35 +4814,37 @@ function isValidUrl(string) {
 
 //Функция для добавления отзыва
 function addReview() {
-    if (!currentUser) {
-        showAuthModal();
-        showNotification('Для оставления отзыва необходимо авторизоваться', 'warning');
-        return;
-    }
-    
-    //Показываем модальное окно для отзыва
-    showReviewModal();
+  if (!currentUser) {
+    showAuthModal();
+    showNotification('Для оставления отзыва необходимо авторизоваться', 'warning');
+    return;
+  }
+
+  //Показываем модальное окно для отзыва
+  showReviewModal();
 }
 
 //Функция для обновления состояния кнопки избранного
 function updateFavoriteButton(isFavorite) {
-    const favoriteBtn = document.getElementById('favoriteBtn');
-    if (!favoriteBtn) return;
-    
-    if (isFavorite) {
-        favoriteBtn.innerHTML = '<span>✓ В избранном</span>';
-        favoriteBtn.classList.remove('btn-outline');
-        favoriteBtn.classList.add('btn-success');
-        favoriteBtn.onclick = function() { removeFromFavorites(); };
-    } else {
-        favoriteBtn.innerHTML = '<span>В избранное</span>';
-        favoriteBtn.classList.remove('btn-success');
-        favoriteBtn.classList.add('btn-outline');
-        favoriteBtn.onclick = function() { addToFavorites(); };
-    }
+  const favoriteBtn = document.getElementById('favoriteBtn');
+  if (!favoriteBtn) return;
+
+  if (isFavorite) {
+    favoriteBtn.innerHTML = '<span>✓ В избранном</span>';
+    favoriteBtn.classList.remove('btn-outline');
+    favoriteBtn.classList.add('btn-success');
+    favoriteBtn.onclick = function () {
+      removeFromFavorites();
+    };
+  } else {
+    favoriteBtn.innerHTML = '<span>В избранное</span>';
+    favoriteBtn.classList.remove('btn-success');
+    favoriteBtn.classList.add('btn-outline');
+    favoriteBtn.onclick = function () {
+      addToFavorites();
+    };
+  }
 }
-
-
 
 //Функция проверки, находится ли товар в избранном
 async function checkIfFavorite() {
@@ -4608,27 +4869,25 @@ async function checkIfFavorite() {
   }
 }
 
-
-
 function showNotification(message, type = 'info') {
-    const existingNotifications = document.querySelectorAll('.notification');
-    existingNotifications.forEach(notification => {
-        if (notification.parentNode) {
-            notification.remove();
-        }
-    });
-    
-    const notification = document.createElement('div');
-    notification.className = `notification ${type}`;
-    
-    const typeIcons = {
-        'success': '✅',
-        'warning': '⚠️',
-        'error': '❌',
-        'info': 'ℹ️'
-    };
-    
-    notification.innerHTML = `
+  const existingNotifications = document.querySelectorAll('.notification');
+  existingNotifications.forEach((notification) => {
+    if (notification.parentNode) {
+      notification.remove();
+    }
+  });
+
+  const notification = document.createElement('div');
+  notification.className = `notification ${type}`;
+
+  const typeIcons = {
+    success: '✅',
+    warning: '⚠️',
+    error: '❌',
+    info: 'ℹ️'
+  };
+
+  notification.innerHTML = `
         <div class="notification-content">
             <span>${typeIcons[type] || ''} ${message}</span>
             <button class="notification-close" onclick="this.parentElement.parentElement.remove()">
@@ -4636,9 +4895,9 @@ function showNotification(message, type = 'info') {
             </button>
         </div>
     `;
-    
-    //Стили для уведомления
-    notification.style.cssText = `
+
+  //Стили для уведомления
+  notification.style.cssText = `
         position: fixed;
         bottom: 20px;
         right: 20px;
@@ -4651,10 +4910,10 @@ function showNotification(message, type = 'info') {
         border-left: 4px solid ${getNotificationColor(type)};
         animation: slideIn 0.3s ease-out;
     `;
-    
-    //Стиль для кнопки закрытия
-    const closeBtn = notification.querySelector('.notification-close');
-    closeBtn.style.cssText = `
+
+  //Стиль для кнопки закрытия
+  const closeBtn = notification.querySelector('.notification-close');
+  closeBtn.style.cssText = `
         position: absolute;
         right: 10px;
         top: 10px;
@@ -4671,134 +4930,124 @@ function showNotification(message, type = 'info') {
         justify-content: center;
         border-radius: 50%;
     `;
-    
-    closeBtn.onmouseover = function() {
-        this.style.backgroundColor = '#f3f4f6';
-    };
-    
-    closeBtn.onmouseout = function() {
-        this.style.backgroundColor = 'transparent';
-    };
-    
-    document.body.appendChild(notification);
-    
-    //Автоматическое скрытие через 5 секунд
-    setTimeout(() => {
-        if (notification.parentNode) {
-            notification.remove();
-        }
-    }, 5000);
+
+  closeBtn.onmouseover = function () {
+    this.style.backgroundColor = '#f3f4f6';
+  };
+
+  closeBtn.onmouseout = function () {
+    this.style.backgroundColor = 'transparent';
+  };
+
+  document.body.appendChild(notification);
+
+  //Автоматическое скрытие через 5 секунд
+  setTimeout(() => {
+    if (notification.parentNode) {
+      notification.remove();
+    }
+  }, 5000);
 }
 
 function getNotificationColor(type) {
-    const colors = {
-        'success': '#10b981',
-        'warning': '#f59e0b',
-        'error': '#ef4444',
-        'info': '#3b82f6'
-    };
-    return colors[type] || '#3b82f6';
+  const colors = {
+    success: '#10b981',
+    warning: '#f59e0b',
+    error: '#ef4444',
+    info: '#3b82f6'
+  };
+  return colors[type] || '#3b82f6';
 }
 
 //Функция для быстрого сброса всех фильтров
 function resetAllFilters() {
-    //Сбрасываем селекты
-    document.getElementById('categorySelect').value = '';
-    document.getElementById('minPrice').value = '';
-    document.getElementById('maxPrice').value = '';
-    document.getElementById('sortSelect').value = 'name';
-    
-    //Сбрасываем динамические фильтры
-    document.getElementById('dynamicFilters').innerHTML = `
-        <div style="text-align: center; padding: 2rem; color: #6b7280;">
-            <p>Выберите категорию для отображения фильтров</p>
-        </div>
-    `;
-    
-    //Сбрасываем выбранные чекбоксы
-    selectedCheckboxes = {};
-    
-    //Отображаем все товары
-    displayProducts(demoProducts);
-    updateProductsInfo(demoProducts.length, '');
+  //Сбрасываем селекты
+  document.getElementById('categorySelect').value = '';
+  document.getElementById('minPrice').value = '';
+  document.getElementById('maxPrice').value = '';
+  document.getElementById('sortSelect').value = 'name';
+
+  //Сбрасываем динамические фильтры
+  const dynamicFilters = document.getElementById('dynamicFilters');
+  if (dynamicFilters) {
+    dynamicFilters.innerHTML = renderDynamicFiltersHtml('', 'catalog');
+  }
+
+  //Сбрасываем выбранные чекбоксы
+  selectedCheckboxes = {};
+
+  //Отображаем все товары
+  displayProducts(demoProducts);
+  updateProductsInfo(demoProducts.length, '');
 }
 
 //Функция для применения фильтров по URL параметрам
 function applyURLFilters() {
-    const urlParams = new URLSearchParams(window.location.search);
-    
-    //Категория из URL
-    const category = urlParams.get('category');
-    if (category && document.getElementById('categorySelect')) {
-        document.getElementById('categorySelect').value = category;
-        updateFilters();
-    }
-    
-    //Поисковый запрос из URL
-    const search = urlParams.get('search');
-    if (search) {
-        performSearch(search);
-    }
-    
-    //Цены из URL
-    const minPrice = urlParams.get('minPrice');
-    const maxPrice = urlParams.get('maxPrice');
-    if (minPrice && document.getElementById('minPrice')) {
-        document.getElementById('minPrice').value = minPrice;
-    }
-    if (maxPrice && document.getElementById('maxPrice')) {
-        document.getElementById('maxPrice').value = maxPrice;
-    }
-    
-    //Применяем фильтры
-    filterProducts();
+  const urlParams = new URLSearchParams(window.location.search);
+
+  //Категория из URL
+  const category = urlParams.get('category');
+  if (category && document.getElementById('categorySelect')) {
+    document.getElementById('categorySelect').value = category;
+    updateFilters();
+  }
+
+  //Поисковый запрос из URL
+  const search = urlParams.get('search');
+  if (search) {
+    const searchInput = document.getElementById('mainSearch');
+    if (searchInput) searchInput.value = search;
+    currentFilters.search = search;
+  }
+
+  //Цены из URL
+  const minPrice = urlParams.get('minPrice');
+  const maxPrice = urlParams.get('maxPrice');
+  if (minPrice && document.getElementById('minPrice')) {
+    document.getElementById('minPrice').value = minPrice;
+  }
+  if (maxPrice && document.getElementById('maxPrice')) {
+    document.getElementById('maxPrice').value = maxPrice;
+  }
+
+  //Применяем фильтры
+  filterProducts();
 }
 
 //Функция для поиска товаров
 function performSearch(query) {
-    const searchInput = document.getElementById('mainSearch');
-    if (searchInput) {
-        searchInput.value = query;
-    }
-    
-    const searchResults = demoProducts.filter(product => 
-        product.name.toLowerCase().includes(query.toLowerCase()) ||
-        product.brand.toLowerCase().includes(query.toLowerCase()) ||
-        Object.values(product.specs).some(value => 
-            value.toString().toLowerCase().includes(query.toLowerCase())
-        )
-    );
-    
-    displayProducts(searchResults);
-    updateProductsInfo(searchResults.length, '');
+  const searchInput = document.getElementById('mainSearch');
+  if (searchInput) searchInput.value = query;
+  currentFilters.search = query;
+  filterProducts();
 }
 
 //Функция для сохранения фильтров в URL
 function saveFiltersToURL() {
-    const urlParams = new URLSearchParams();
-    const categorySelect = document.getElementById('categorySelect');
-const category = categorySelect ? categorySelect.value : '';
-    const minPriceInput = document.getElementById('minPrice');
-const minPrice = minPriceInput && minPriceInput.value ? parseFloat(minPriceInput.value) : 0;
-    const maxPriceInput = document.getElementById('maxPrice');
-const maxPrice = maxPriceInput && maxPriceInput.value ? parseFloat(maxPriceInput.value) : Infinity;
-const mainSearch = document.getElementById('mainSearch');
-const search = mainSearch ? mainSearch.value : '';
-    
-    if (category) urlParams.set('category', category);
-    if (minPrice) urlParams.set('minPrice', minPrice);
-    if (maxPrice) urlParams.set('maxPrice', maxPrice);
-    if (search) urlParams.set('search', search);
-    
-    //Сохраняем выбранные чекбоксы
-    Object.keys(selectedCheckboxes).forEach(filterName => {
-        if (selectedCheckboxes[filterName].length > 0) {
-            urlParams.set(filterName, selectedCheckboxes[filterName].join(','));
-        }
-    });
-    
-    const newURL = window.location.pathname + '?' + urlParams.toString();
-    window.history.pushState({}, '', newURL);
+  const urlParams = new URLSearchParams();
+  const categorySelect = document.getElementById('categorySelect');
+  const category = categorySelect ? categorySelect.value : '';
+  const minPriceInput = document.getElementById('minPrice');
+  const minPrice = minPriceInput && minPriceInput.value ? parseFloat(minPriceInput.value) : 0;
+  const maxPriceInput = document.getElementById('maxPrice');
+  const maxPrice = maxPriceInput && maxPriceInput.value ? parseFloat(maxPriceInput.value) : Infinity;
+  const mainSearch = document.getElementById('mainSearch');
+  const search = mainSearch ? mainSearch.value : '';
+
+  if (category) urlParams.set('category', category);
+  if (minPrice) urlParams.set('minPrice', minPrice);
+  if (maxPrice) urlParams.set('maxPrice', maxPrice);
+  if (search) urlParams.set('search', search);
+
+  //Сохраняем выбранные чекбоксы
+  Object.keys(selectedCheckboxes).forEach((filterName) => {
+    if (selectedCheckboxes[filterName].length > 0) {
+      urlParams.set(filterName, selectedCheckboxes[filterName].join(','));
+    }
+  });
+
+  const newURL = window.location.pathname + '?' + urlParams.toString();
+  window.history.pushState({}, '', newURL);
 }
 /*
 //Фильтры по категориям
@@ -4868,9 +5117,7 @@ function renderComparisonTable(container) {
   }
 
   const products = getComparisonProductsForView();
-  const mobile =
-    typeof window.matchMedia === 'function' &&
-    window.matchMedia('(max-width: 768px)').matches;
+  const mobile = typeof window.matchMedia === 'function' && window.matchMedia('(max-width: 768px)').matches;
   const showPairNav = mobile && comparisonList.length > 2;
 
   const allSpecs = new Set();
@@ -4883,14 +5130,10 @@ function renderComparisonTable(container) {
   });
   let specsArray = Array.from(allSpecs);
   if (comparisonHideIdentical && products.length > 1) {
-    specsArray = specsArray.filter(
-      (sk) => !comparisonSpecRowIsUniform(products, sk)
-    );
+    specsArray = specsArray.filter((sk) => !comparisonSpecRowIsUniform(products, sk));
   }
 
-  const innerCollapsed = comparisonSpecsCollapsed
-    ? ' comparison-specs-collapsed'
-    : '';
+  const innerCollapsed = comparisonSpecsCollapsed ? ' comparison-specs-collapsed' : '';
 
   const mobileStrip = showPairNav
     ? `
@@ -4925,14 +5168,8 @@ function renderComparisonTable(container) {
               <td class="spec-label fixed-col">${russianName}</td>
               ${products
                 .map((product) => {
-                  const raw =
-                    product.specs && product.specs[specKey] !== undefined
-                      ? product.specs[specKey]
-                      : '—';
-                  const cellClass =
-                    !uniform && products.length > 1
-                      ? 'spec-value spec-value-diff'
-                      : 'spec-value';
+                  const raw = product.specs && product.specs[specKey] !== undefined ? product.specs[specKey] : '—';
+                  const cellClass = !uniform && products.length > 1 ? 'spec-value spec-value-diff' : 'spec-value';
                   return `<td class="${cellClass}">${raw}</td>`;
                 })
                 .join('')}
@@ -4978,7 +5215,7 @@ function renderComparisonTable(container) {
             <th class="product-header-cell">
               <div class="product-header-inner">
                 <button type="button" class="remove-comparison-btn" onclick="removeFromComparison(${product.id})" title="Убрать из сравнения" aria-label="Убрать ${product.name} из сравнения">×</button>
-                <img src="${product.image || 'https://via.placeholder.com/60?text=Нет'}" alt="${product.name}" class="product-img">
+                ${renderProductImage(product, { size: 'comparison', className: 'product-img', loading: false })}
                 <div class="product-name">${product.name}</div>
                 <div class="product-price">${formatPrice(getMinPrice(product))} ₽</div>
               </div>
@@ -4998,14 +5235,8 @@ function renderComparisonTable(container) {
                 product.prices && product.prices.length > 0
                   ? product.prices
                       .map((p) => {
-                        const displayName = buildStoreDisplayName(
-                          p.store || p.storeName,
-                          p.sellerName
-                        );
-                        const priceText =
-                          p.price != null
-                            ? `${formatPrice(p.price)} ₽`
-                            : '—';
+                        const displayName = buildStoreDisplayName(p.store || p.storeName, p.sellerName);
+                        const priceText = p.price != null ? `${formatPrice(p.price)} ₽` : '—';
                         return `<div class="store-price-row">
                           <a href="${p.url}" target="_blank" class="store-link" title="${displayName}">${displayName}</a>
                           <span class="store-price-value">${priceText}</span>
@@ -5013,10 +5244,7 @@ function renderComparisonTable(container) {
                       })
                       .join('')
                   : '<div class="store-price-empty">—</div>';
-              const cellClass =
-                !priceUniform && products.length > 1
-                  ? 'price-cell price-cell-diff'
-                  : 'price-cell';
+              const cellClass = !priceUniform && products.length > 1 ? 'price-cell price-cell-diff' : 'price-cell';
               return `<td class="${cellClass}">
               <div class="store-links">${storeLinks}</div>
             </td>`;
@@ -5054,12 +5282,11 @@ function renderComparisonTable(container) {
   `;
 
   container.innerHTML = tableHTML;
+  refreshProductImages(container);
 
   setTimeout(() => {
     products.forEach((product) => {
-      const valueCalcContainer = document.getElementById(
-        `valueCalcContainer-${product.id}`
-      );
+      const valueCalcContainer = document.getElementById(`valueCalcContainer-${product.id}`);
       if (valueCalcContainer) {
         renderValueCalculator(product, valueCalcContainer);
       }
@@ -5068,12 +5295,8 @@ function renderComparisonTable(container) {
       const chartContainer = document.getElementById(containerId);
       if (chartContainer) {
         if (typeof Chart === 'undefined') {
-          console.error(
-            'Chart.js не загружен для мини-графика товара ID:',
-            product.id
-          );
-          chartContainer.innerHTML =
-            '<p style="color: red;">Chart.js не загружен</p>';
+          console.error('Chart.js не загружен для мини-графика товара ID:', product.id);
+          chartContainer.innerHTML = '<p style="color: red;">Chart.js не загружен</p>';
           return;
         }
         renderMiniPriceChartInComparison(containerId, product.id);
@@ -5082,29 +5305,28 @@ function renderComparisonTable(container) {
   }, 100);
 }
 
-
 function showCustomNotification(message, type = 'info', duration = 5000) {
-    //Создаем контейнер для уведомлений, если его нет
-    let container = document.querySelector('.notification-container');
-    if (!container) {
-        container = document.createElement('div');
-        container.className = 'notification-container';
-        document.body.appendChild(container);
-    }
-    
-    //Создаем уведомление
-    const notification = document.createElement('div');
-    notification.className = `notification ${type}`;
-    
-    //Иконки для разных типов
-    const icons = {
-        'success': '✅',
-        'warning': '⚠️',
-        'error': '❌',
-        'info': 'ℹ️'
-    };
-    
-    notification.innerHTML = `
+  //Создаем контейнер для уведомлений, если его нет
+  let container = document.querySelector('.notification-container');
+  if (!container) {
+    container = document.createElement('div');
+    container.className = 'notification-container';
+    document.body.appendChild(container);
+  }
+
+  //Создаем уведомление
+  const notification = document.createElement('div');
+  notification.className = `notification ${type}`;
+
+  //Иконки для разных типов
+  const icons = {
+    success: '✅',
+    warning: '⚠️',
+    error: '❌',
+    info: 'ℹ️'
+  };
+
+  notification.innerHTML = `
         <div class="notification-content">
             <span class="notification-icon">${icons[type] || 'ℹ️'}</span>
             <span class="notification-text">${message}</span>
@@ -5116,54 +5338,46 @@ function showCustomNotification(message, type = 'info', duration = 5000) {
             <div class="notification-progress-bar"></div>
         </div>
     `;
-    
-    //Добавляем в контейнер
-    container.appendChild(notification);
-    const maxNotes = 4;
-    while (container.children.length > maxNotes) {
-      container.firstElementChild?.remove();
-    }
-    
-    //Автоматическое закрытие через указанное время
-    const closeTimeout = setTimeout(() => {
-        closeNotification(notification);
-    }, duration);
-    
-    //Обработчик для закрытия при клике
-    notification.querySelector('.notification-close').addEventListener('click', () => {
-        clearTimeout(closeTimeout);
-        closeNotification(notification);
-    });
-    
-    //Закрытие при клике на само уведомление (кроме кнопки закрытия)
-    notification.addEventListener('click', (e) => {
-        if (!e.target.closest('.notification-close')) {
-            clearTimeout(closeTimeout);
-            closeNotification(notification);
-        }
-    });
-    
-    //Функция плавного закрытия
-    function closeNotification(notification) {
-        notification.classList.add('hiding');
-        setTimeout(() => {
-            if (notification.parentNode) {
-                notification.remove();
-            }
-            //Удаляем контейнер если он пустой
-            if (container && container.children.length === 0) {
-                container.remove();
-            }
-        }, 300);
-    }
-    
-    //Логирование для отладки
-    console.log(`Notification [${type}]: ${message}`);
-}
 
-//Удаляем старую функцию showNotification если она есть
-if (typeof showNotification === 'function') {
-    console.warn('Старая функция showNotification');
+  //Добавляем в контейнер
+  container.appendChild(notification);
+  const maxNotes = 4;
+  while (container.children.length > maxNotes) {
+    container.firstElementChild?.remove();
+  }
+
+  //Автоматическое закрытие через указанное время
+  const closeTimeout = setTimeout(() => {
+    closeNotification(notification);
+  }, duration);
+
+  //Обработчик для закрытия при клике
+  notification.querySelector('.notification-close').addEventListener('click', () => {
+    clearTimeout(closeTimeout);
+    closeNotification(notification);
+  });
+
+  //Закрытие при клике на само уведомление (кроме кнопки закрытия)
+  notification.addEventListener('click', (e) => {
+    if (!e.target.closest('.notification-close')) {
+      clearTimeout(closeTimeout);
+      closeNotification(notification);
+    }
+  });
+
+  //Функция плавного закрытия
+  function closeNotification(notification) {
+    notification.classList.add('hiding');
+    setTimeout(() => {
+      if (notification.parentNode) {
+        notification.remove();
+      }
+      //Удаляем контейнер если он пустой
+      if (container && container.children.length === 0) {
+        container.remove();
+      }
+    }, 300);
+  }
 }
 
 //Навигация по категориям
@@ -5171,12 +5385,13 @@ function navigateToCategory(category) {
   window.location.href = `catalog.html?category=${category}`;
 }
 
-//Витрина главной страницы (новая логика: постраничная лента)
+//Витрина главной страницы: сетка из N товаров, кольцевая прокрутка, плавная смена
 const homeCarouselState = {
   products: [],
-  page: 0,
+  offset: 0,
   timer: null,
-  inited: false
+  inited: false,
+  animating: false
 };
 
 function getCategoryNameForCarousel(categoryKey) {
@@ -5204,6 +5419,78 @@ function getHomeShowcasePageSize() {
   return 3;
 }
 
+function buildHomeCarouselItemHtml(product) {
+  const minPrice =
+    product.prices && product.prices.length > 0
+      ? Math.min(...product.prices.map((p) => Number(p.price) || Infinity))
+      : null;
+  const safePrice = Number.isFinite(minPrice) ? `${Math.round(minPrice).toLocaleString('ru-RU')} ₽` : '—';
+  const safeRating = Number.isFinite(Number(product?.rating)) ? Number(product.rating).toFixed(1) : '—';
+  return `
+    <article class="carousel-item" data-product-id="${product.id}">
+      ${renderProductImage(product, { size: 'carousel' })}
+      <div class="carousel-item-info">
+        <div class="carousel-item-name">${product.name}</div>
+        <div class="carousel-item-category">${getCategoryNameForCarousel(product.category)}</div>
+        <div class="carousel-item-price">${safePrice}</div>
+        <div class="carousel-item-meta">Рейтинг: ${safeRating}</div>
+      </div>
+    </article>
+  `;
+}
+
+function attachHomeCarouselItemClicks() {
+  const track = document.getElementById('PopularProductsCarousel');
+  if (!track) return;
+  track.querySelectorAll('.carousel-item').forEach((item) => {
+    item.onclick = () => {
+      const id = item.getAttribute('data-product-id');
+      if (id) window.location.href = `product.html?id=${id}`;
+    };
+  });
+}
+
+function renderHomeShowcaseView() {
+  const track = document.getElementById('PopularProductsCarousel');
+  if (!track) return;
+
+  const products = homeCarouselState.products;
+  if (!products.length) {
+    track.innerHTML =
+      '<div style="padding: 40px; text-align: center; color: #6b7280; grid-column: 1 / -1;">Популярные товары не найдены.</div>';
+    return;
+  }
+
+  const pageSize = getHomeShowcasePageSize();
+  const n = products.length;
+  const slice = [];
+  for (let i = 0; i < pageSize; i += 1) {
+    slice.push(products[(homeCarouselState.offset + i) % n]);
+  }
+
+  track.innerHTML = slice.map((product) => buildHomeCarouselItemHtml(product)).join('');
+  track.style.gridTemplateColumns = `repeat(${pageSize}, minmax(0, 1fr))`;
+  refreshProductImages(track);
+  attachHomeCarouselItemClicks();
+}
+
+function shiftHomeCarousel(delta) {
+  const track = document.getElementById('PopularProductsCarousel');
+  if (!track || homeCarouselState.animating || !homeCarouselState.products.length) return;
+
+  homeCarouselState.animating = true;
+  track.classList.toggle('is-transitioning--back', delta < 0);
+  track.classList.add('is-transitioning');
+
+  window.setTimeout(() => {
+    const n = homeCarouselState.products.length;
+    homeCarouselState.offset = (homeCarouselState.offset + delta + n * 1000) % n;
+    renderHomeShowcaseView();
+    track.classList.remove('is-transitioning', 'is-transitioning--back');
+    homeCarouselState.animating = false;
+  }, 380);
+}
+
 function stopHomeCarouselAutoplay() {
   if (homeCarouselState.timer) {
     clearInterval(homeCarouselState.timer);
@@ -5211,82 +5498,31 @@ function stopHomeCarouselAutoplay() {
   }
 }
 
-function renderHomeShowcasePage() {
-  const track = document.getElementById('PopularProductsCarousel');
-  if (!track) return;
-
-  const pageSize = getHomeShowcasePageSize();
-  const pages = Math.max(1, Math.ceil(homeCarouselState.products.length / pageSize));
-  if (homeCarouselState.page >= pages) homeCarouselState.page = pages - 1;
-  if (homeCarouselState.page < 0) homeCarouselState.page = 0;
-  const from = homeCarouselState.page * pageSize;
-  const slice = homeCarouselState.products.slice(from, from + pageSize);
-
-  track.innerHTML = slice.map((product) => {
-    const minPrice = product.prices && product.prices.length > 0
-      ? Math.min(...product.prices.map((p) => Number(p.price) || Infinity))
-      : null;
-    const safePrice = Number.isFinite(minPrice) ? `${Math.round(minPrice).toLocaleString('ru-RU')} ₽` : '—';
-    const safeRating = Number.isFinite(Number(product?.rating)) ? Number(product.rating).toFixed(1) : '—';
-    return `
-      <article class="carousel-item" data-product-id="${product.id}">
-        <img src="${product.image || 'https://via.placeholder.com/250x180?text=Нет+изображения'}" alt="${product.name}" loading="lazy">
-        <div class="carousel-item-info">
-          <div class="carousel-item-name">${product.name}</div>
-          <div class="carousel-item-category">${getCategoryNameForCarousel(product.category)}</div>
-          <div class="carousel-item-price">${safePrice}</div>
-          <div class="carousel-item-meta">Рейтинг: ${safeRating}</div>
-        </div>
-      </article>
-    `;
-  }).join('');
-  track.querySelectorAll('.carousel-item').forEach((item) => {
-    item.addEventListener('click', () => {
-      const id = item.getAttribute('data-product-id');
-      if (id) window.location.href = `product.html?id=${id}`;
-    });
-  });
-
-  const prev = document.getElementById('prevBtn');
-  const next = document.getElementById('nextBtn');
-  if (prev) prev.disabled = homeCarouselState.page === 0;
-  if (next) next.disabled = homeCarouselState.page >= pages - 1;
-}
-
 function startHomeCarouselAutoplay() {
   stopHomeCarouselAutoplay();
-  const pageSize = getHomeShowcasePageSize();
-  const pages = Math.max(1, Math.ceil(homeCarouselState.products.length / pageSize));
-  if (pages <= 1) return;
+  if (!homeCarouselState.products.length) return;
 
   homeCarouselState.timer = setInterval(() => {
-    homeCarouselState.page = homeCarouselState.page < pages - 1 ? homeCarouselState.page + 1 : 0;
-    renderHomeShowcasePage();
+    if (!homeCarouselState.animating) {
+      shiftHomeCarousel(1);
+    }
   }, 5000);
 }
 
 function renderHomeCarousel() {
-  const track = document.getElementById('PopularProductsCarousel');
-  if (!track) return;
-
-  if (!homeCarouselState.products.length) {
-    track.innerHTML = '<div style="padding: 40px; text-align: center; color: #6b7280;">Популярные товары не найдены.</div>';
-    return;
-  }
-  renderHomeShowcasePage();
+  renderHomeShowcaseView();
 }
 
 async function initHomeCarousel() {
   if (homeCarouselState.inited) return;
   const track = document.getElementById('PopularProductsCarousel');
-  if (!track) return; 
+  if (!track) return;
   homeCarouselState.inited = true;
 
   try {
     const products = await loadProductsFromAPI();
-    homeCarouselState.products = [...products]
-      .sort((a, b) => getPopularityScoreForCarousel(b) - getPopularityScoreForCarousel(a))
-      .slice(0, 10);
+    const sorted = [...products].sort((a, b) => getPopularityScoreForCarousel(b) - getPopularityScoreForCarousel(a));
+    homeCarouselState.products = sorted.slice(0, 15);
   } catch (e) {
     console.error('Не удалось загрузить популярные товары:', e);
     homeCarouselState.products = [];
@@ -5298,22 +5534,24 @@ async function initHomeCarousel() {
   const prev = document.getElementById('prevBtn');
   const next = document.getElementById('nextBtn');
   prev?.addEventListener('click', () => {
-    homeCarouselState.page -= 1;
-    renderHomeShowcasePage();
+    shiftHomeCarousel(-1);
     startHomeCarouselAutoplay();
   });
   next?.addEventListener('click', () => {
-    homeCarouselState.page += 1;
-    renderHomeShowcasePage();
+    shiftHomeCarousel(1);
     startHomeCarouselAutoplay();
   });
 
   track.addEventListener('mouseenter', stopHomeCarouselAutoplay);
   track.addEventListener('mouseleave', startHomeCarouselAutoplay);
 
+  let resizeTimer;
   window.addEventListener('resize', () => {
-    renderHomeShowcasePage();
-    startHomeCarouselAutoplay();
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+      renderHomeShowcaseView();
+      startHomeCarouselAutoplay();
+    }, 150);
   });
   window.addEventListener('beforeunload', stopHomeCarouselAutoplay);
 }
@@ -5323,7 +5561,6 @@ document.addEventListener('DOMContentLoaded', initHomeCarousel);
 window.addToComparison = addToComparison;
 window.updateComparisonCounter = updateComparisonCounter;
 window.showCustomNotification = showCustomNotification;
-
 
 window.DEFAULT_USER_AVATAR_URL = window.DEFAULT_USER_AVATAR_URL || 'sources/default-user-avatar.png';
 function getDefaultUserAvatarUrl() {
@@ -5358,7 +5595,6 @@ async function loadProfileDataFromAPI() {
   }
 
   try {
-    console.log('loadProfileDataFromAPI: Отправка запроса на /api/profile...');
     const profileRes = await fetch('http://localhost:3000/api/profile', {
       headers: { Authorization: `Bearer ${token}` }
     });
@@ -5377,9 +5613,6 @@ async function loadProfileDataFromAPI() {
     }
 
     const { user, stats } = await profileRes.json();
-    console.log('loadProfileDataFromAPI: Данные профиля загружены:', user);
-
-  
     const userNameElement = document.getElementById('userName');
     const userEmailElement = document.getElementById('userEmail');
     const userJoinDateElement = document.getElementById('userJoinDate');
@@ -5411,11 +5644,9 @@ async function loadProfileDataFromAPI() {
         adminButton.style.display = 'none';
       }
     } else {
-      console.warn('loadProfileDataFromAPI: Кнопка админ-панели (#adminPanelButton) не найдена в DOM.');
     }
 
     try {
-      console.log('loadProfileDataFromAPI: Загрузка избранного...');
       const favoritesRes = await fetch('http://localhost:3000/api/favorites', {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -5432,7 +5663,6 @@ async function loadProfileDataFromAPI() {
         throw new Error(`HTTP ${favoritesRes.status}: ${favoritesRes.statusText}`);
       }
       const favoriteProducts = await favoritesRes.json();
-      console.log(`loadProfileDataFromAPI: Загружено ${favoriteProducts.length} избранных товаров.`);
       //Сохраняем в глобальную переменную для renderFavoritesPreview
       window.favorites = favoriteProducts; //Или просто favorites, если она объявлена глобально
       //Вызываем функцию отрисовки
@@ -5442,13 +5672,13 @@ async function loadProfileDataFromAPI() {
       console.error('loadProfileDataFromAPI: Ошибка загрузки избранного:', favError);
       //Очищаем контейнер или показываем ошибку
       const container = document.getElementById('favoritesPreview');
-      if (container) container.innerHTML = `<p class="error-message">Ошибка загрузки избранного: ${favError.message}</p>`;
+      if (container)
+        container.innerHTML = `<p class="error-message">Ошибка загрузки избранного: ${favError.message}</p>`;
       //Очищаем глобальную переменную
       window.favorites = [];
     }
-  
+
     try {
-      console.log('loadProfileDataFromAPI: Загрузка сравнений...');
       const comparisonsRes = await fetch('http://localhost:3000/api/comparisons', {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -5465,7 +5695,6 @@ async function loadProfileDataFromAPI() {
         throw new Error(`HTTP ${comparisonsRes.status}: ${comparisonsRes.statusText}`);
       }
       const comparisonProducts = await comparisonsRes.json();
-      console.log(`loadProfileDataFromAPI: Загружено ${comparisonProducts.length} товаров в сравнении.`);
       //Сохраняем в глобальную переменную для renderComparisonsPreview
       window.comparisons = comparisonProducts; //Или просто comparisons
       //Вызываем функцию отрисовки
@@ -5475,7 +5704,8 @@ async function loadProfileDataFromAPI() {
       console.error('loadProfileDataFromAPI: Ошибка загрузки сравнений:', compError);
       //Очищаем контейнер или показываем ошибку
       const container = document.getElementById('comparisonsPreview');
-      if (container) container.innerHTML = `<p class="error-message">Ошибка загрузки сравнений: ${compError.message}</p>`;
+      if (container)
+        container.innerHTML = `<p class="error-message">Ошибка загрузки сравнений: ${compError.message}</p>`;
       //Очищаем глобальную переменную
       window.comparisons = [];
     }
@@ -5493,7 +5723,6 @@ async function loadProfileDataFromAPI() {
     } catch (_) {
       renderAlertsPreview([]);
     }
-
   } catch (error) {
     console.error('loadProfileDataFromAPI: Ошибка загрузки профиля:', error);
     showCustomNotification('Ошибка загрузки данных профиля', 'error');
@@ -5535,9 +5764,7 @@ function showUnreadAlertsAsToasts(alerts) {
   } catch (_) {
     seen = {};
   }
-  const fresh = list
-    .slice(0, 10)
-    .filter((a) => a?.id && !seen[a.id]);
+  const fresh = list.slice(0, 10).filter((a) => a?.id && !seen[a.id]);
   fresh.forEach((a, idx) => {
     setTimeout(() => {
       showCustomNotification(a.message || 'Новое уведомление', a.type === 'low_stock' ? 'warning' : 'info', 6500);
@@ -5548,50 +5775,50 @@ function showUnreadAlertsAsToasts(alerts) {
     localStorage.setItem(seenKey, JSON.stringify(seen));
   }
 }
-        //Функция для получения русского названия категории
-        function getCategoryName(categoryKey) {
-            const categoryTranslations = {
-                'smartphones': 'Смартфоны',
-                'laptops': 'Ноутбуки',
-                'tv': 'Телевизоры',
-                'headphones': 'Наушники',
-                'cameras': 'Фотоаппараты',
-                'tablets': 'Планшеты',
-                'smartwatches': 'Смарт-часы',
-                'ebooks': 'Электронные книги',
-                'drones': 'Дроны',
-                'pc_components': 'Комплектующие ПК',
-                'keyboards': 'Клавиатуры',
-                'mouses': 'Мыши',
-                'cases': 'Корпуса ПК',
-                'drivers': 'Накопители',
-                'fitness_trackers': 'Фитнес-трекеры',
-                'power_units': 'Блоки питания',
-                'microphones': 'Микрофоны',
-                'webcams': 'Веб-камеры',
-                'power_banks': 'Павербанки',
-                'portable_speakers': 'Портативные колонки',
-                'monitors': 'Мониторы',
-                'accessories': 'Аксессуары',
-                'gaming': 'Игровые консоли',
-                'networking': 'Сетевое оборудование',
-                'cpus': 'Процессоры',
-                'motherboards': 'Материнские платы',
-                'ram': 'Оперативная память',
-                'graphics_cards': 'Видеокарты',
-                'external_drives': 'Внешние накопители',
-                'audio': 'Аудиосистемы',
-                'smart_home': 'Умный дом',
-                'wearables': 'Носимые устройства',
-                'other': 'Другое'
-            };
-            return categoryTranslations[categoryKey] || categoryKey;
-        }
+//Функция для получения русского названия категории
+function getCategoryName(categoryKey) {
+  const categoryTranslations = {
+    smartphones: 'Смартфоны',
+    laptops: 'Ноутбуки',
+    tv: 'Телевизоры',
+    headphones: 'Наушники',
+    cameras: 'Фотоаппараты',
+    tablets: 'Планшеты',
+    smartwatches: 'Смарт-часы',
+    ebooks: 'Электронные книги',
+    drones: 'Дроны',
+    pc_components: 'Комплектующие ПК',
+    keyboards: 'Клавиатуры',
+    mouses: 'Мыши',
+    cases: 'Корпуса ПК',
+    drivers: 'Накопители',
+    fitness_trackers: 'Фитнес-трекеры',
+    power_units: 'Блоки питания',
+    microphones: 'Микрофоны',
+    webcams: 'Веб-камеры',
+    power_banks: 'Павербанки',
+    portable_speakers: 'Портативные колонки',
+    monitors: 'Мониторы',
+    accessories: 'Аксессуары',
+    gaming: 'Игровые консоли',
+    networking: 'Сетевое оборудование',
+    cpus: 'Процессоры',
+    motherboards: 'Материнские платы',
+    ram: 'Оперативная память',
+    graphics_cards: 'Видеокарты',
+    external_drives: 'Внешние накопители',
+    audio: 'Аудиосистемы',
+    smart_home: 'Умный дом',
+    wearables: 'Носимые устройства',
+    other: 'Другое'
+  };
+  return categoryTranslations[categoryKey] || categoryKey;
+}
 
-        //Функция для форматирования цены
-        function formatPrice(price) {
-            return price.toLocaleString('ru-RU');
-        }
+//Функция для форматирования цены
+function formatPrice(price) {
+  return price.toLocaleString('ru-RU');
+}
 
 //Рендер избранных товаров на странице профиля
 function renderFavoritesPreview(favorites) {
@@ -5609,18 +5836,19 @@ function renderFavoritesPreview(favorites) {
   if (noMsg) noMsg.style.display = 'none'; //Скрываем сообщение "Нет избранного"
 
   //Отображаем только первые 3 товара (или сколько есть)
-  favorites.slice(0, 3).forEach(fav => {
+  favorites.slice(0, 3).forEach((fav) => {
     const el = document.createElement('div');
-    el.className = 'favorite-item'; 
+    el.className = 'favorite-item';
 
     //Получаем минимальную цену из доступных цен товара (если есть)
-    const minPrice = fav.prices && fav.prices.length > 0
-                     ? Math.min(...fav.prices.map(p => p.price))
-                     : null;
+    const minPrice = fav.prices && fav.prices.length > 0 ? Math.min(...fav.prices.map((p) => p.price)) : null;
 
     el.innerHTML = `
       <button class="remove-favorite-btn" onclick="removeFromFavorites(${fav.id})">×</button>
-      <img src="${fav.image || fav.imageUrl || 'https://via.placeholder.com/50?text=?'}" alt="${fav.name}" onclick="window.location.href='product.html?id=${fav.id}'">
+      ${renderProductImage(fav, {
+        size: 'favorite-preview',
+        extraAttrs: `onclick="window.location.href='product.html?id=${fav.id}'"`
+      })}
       <div class="favorite-item-info">
         <div class="favorite-item-name">${fav.name}</div>
         <div class="favorite-item-price">${formatPrice(minPrice)} ₽</div>
@@ -5628,6 +5856,7 @@ function renderFavoritesPreview(favorites) {
     `;
     container.appendChild(el);
   });
+  refreshProductImages(container);
 }
 
 //Рендер сравнений на странице профиля
@@ -5645,7 +5874,7 @@ function renderComparisonsPreview(comparisons) {
 
   //Группируем по категориям
   const grouped = {};
-  comparisons.forEach(item => {
+  comparisons.forEach((item) => {
     const cat = item.category;
     if (!grouped[cat]) grouped[cat] = [];
     grouped[cat].push(item);
@@ -5658,7 +5887,7 @@ function renderComparisonsPreview(comparisons) {
       <button class="remove-comparison-btn" onclick="clearComparisonByCategory('${category}')">×</button>
       <div class="comparison-title">${getCategoryName(category)}</div>
       <div class="comparison-items">
-        ${items.map(p => `<div class="comparison-item">${p.name}</div>`).join('')}
+        ${items.map((p) => `<div class="comparison-item">${p.name}</div>`).join('')}
       </div>
     `;
     container.appendChild(groupEl);
@@ -5726,21 +5955,19 @@ async function clearComparisonByCategory(category) {
   updateComparisonCounter();
 }
 
-        //Функция для получения продукта по ID (предполагается, что данные доступны)
-        function getProductById(id) {
-            //Проверяем, есть ли глобальная переменная demoProducts (из script.js)
-            if (typeof demoProducts !== 'undefined') {
-                return demoProducts.find(p => p.id === id);
-            }
-            //Заглушка, если данные недоступны
-            console.warn(`Данные для товара ID ${id} недоступны.`);
-            return null;
-        }       
-        
+//Функция для получения продукта по ID (предполагается, что данные доступны)
+function getProductById(id) {
+  //Проверяем, есть ли глобальная переменная demoProducts (из script.js)
+  if (typeof demoProducts !== 'undefined') {
+    return demoProducts.find((p) => p.id === id);
+  }
+  //Заглушка, если данные недоступны
+  return null;
+}
 
-        function logout() {
+function logout() {
   currentUser = null;
-  localStorage.removeItem('techAggregatorToken'); 
+  localStorage.removeItem('techAggregatorToken');
   updateAuthButtons();
   showCustomNotification('Вы успешно вышли из системы', 'info');
   window.location.href = 'index.html';
@@ -5771,51 +5998,44 @@ document.addEventListener('DOMContentLoaded', function () {
   loadProfileDataFromAPI();
 });
 
-
-
 //Избранное
 //Функция для получения списка избранного из localStorage
-        function getFavorites() {
-            const favorites = localStorage.getItem('techAggregatorFavorites');
-            return favorites ? JSON.parse(favorites) : [];
-        }
+function getFavorites() {
+  const favorites = localStorage.getItem('techAggregatorFavorites');
+  return favorites ? JSON.parse(favorites) : [];
+}
 
-        //Функция для сохранения списка избранного в localStorage
-        function saveFavorites(favorites) {
-            localStorage.setItem('techAggregatorFavorites', JSON.stringify(favorites));
-        }
+//Функция для сохранения списка избранного в localStorage
+function saveFavorites(favorites) {
+  localStorage.setItem('techAggregatorFavorites', JSON.stringify(favorites));
+}
 
-        //Функция для перехода на страницу товара
-        function goToProduct(productId) {
-            window.location.href = `product.html?id=${productId}`;
-        }      
+//Функция для перехода на страницу товара
+function goToProduct(productId) {
+  window.location.href = `product.html?id=${productId}`;
+}
 
-        //Функция для обновления счетчика избранного в хедере и других местах
-        function updateFavoritesCounter() {
-            const favoriteCount = getFavorites().length;
-            //Обновляем счетчик в хедере, если он есть
-            const headerCounter = document.querySelector('.header .comparison-counter'); //Используем существующий класс или создаем новый
-            if (headerCounter) {
-                headerCounter.textContent = favoriteCount;
-            }
-            //Обновляем счетчик на странице профиля, если она открыта (можно вызывать при навигации)
-            //document.getElementById('favoritesCountStat').textContent = favoriteCount; //Это делается в updateStats
-        }
+//Функция для обновления счетчика избранного в хедере и других местах
+function updateFavoritesCounter() {
+  const favoriteCount = getFavorites().length;
+  //Обновляем счетчик в хедере, если он есть
+  const headerCounter = document.querySelector('.header .comparison-counter'); //Используем существующий класс или создаем новый
+  if (headerCounter) {
+    headerCounter.textContent = favoriteCount;
+  }
+  //Обновляем счетчик на странице профиля, если она открыта (можно вызывать при навигации)
+  //document.getElementById('favoritesCountStat').textContent = favoriteCount; //Это делается в updateStats
+}
 
-        
-
-        //Функция для форматирования цены (если еще не определена в основном script.js)
-        function formatPrice(price) {
-            return price.toLocaleString('ru-RU');
-        }
+//Функция для форматирования цены (если еще не определена в основном script.js)
+function formatPrice(price) {
+  return price.toLocaleString('ru-RU');
+}
 
 //Функция для загрузки и отображения избранных товаров
 async function loadFavorites() {
   const favoritesList = document.getElementById('favoritesList');
-  if (!favoritesList) {
-     console.error('Контейнер избранного (#favoritesList) не найден.');
-     return;
-  }
+  if (!favoritesList) return;
 
   try {
     const token = localStorage.getItem('techAggregatorToken');
@@ -5826,7 +6046,7 @@ async function loadFavorites() {
     }
 
     const response = await fetch('http://localhost:3000/api/favorites', {
-      headers: { 'Authorization': `Bearer ${token}` }
+      headers: { Authorization: `Bearer ${token}` }
     });
 
     if (!response.ok) {
@@ -5842,8 +6062,6 @@ async function loadFavorites() {
     }
 
     const favoriteProducts = await response.json();
-    console.log('Загружены избранные товары для favorites.html:', favoriteProducts);
-
     //Сохраняем в глобальную переменную (если нужно для других функций)
     window.favorites = favoriteProducts;
 
@@ -5854,7 +6072,7 @@ async function loadFavorites() {
       //Показываем сообщение "Нет избранных товаров" (если есть такой элемент)
       const noFavoritesMessage = document.getElementById('noFavoritesMessage');
       if (noFavoritesMessage) {
-          noFavoritesMessage.style.display = 'block';
+        noFavoritesMessage.style.display = 'block';
       }
       return;
     }
@@ -5862,7 +6080,7 @@ async function loadFavorites() {
     //Показываем список (скрываем сообщение, если оно было)
     const noFavoritesMessage = document.getElementById('noFavoritesMessage');
     if (noFavoritesMessage) {
-        noFavoritesMessage.style.display = 'none';
+      noFavoritesMessage.style.display = 'none';
     }
 
     //Загружаем текущие цены и историю цен для всех избранных товаров
@@ -5873,7 +6091,7 @@ async function loadFavorites() {
       try {
         //Загружаем текущие цены
         const pricesResponse = await fetch(`http://localhost:3000/api/products/${fav.id}/prices`, {
-            headers: { 'Authorization': `Bearer ${token}` } //Добавляем токен для получения цен
+          headers: { Authorization: `Bearer ${token}` } //Добавляем токен для получения цен
         });
         if (pricesResponse.ok) {
           const prices = await pricesResponse.json();
@@ -5889,7 +6107,7 @@ async function loadFavorites() {
       try {
         //Загружаем историю цен
         const historyResponse = await fetch(`http://localhost:3000/api/products/${fav.id}/price-history`, {
-            headers: { 'Authorization': `Bearer ${token}` } //Добавляем токен для получения истории
+          headers: { Authorization: `Bearer ${token}` } //Добавляем токен для получения истории
         });
         if (historyResponse.ok) {
           const history = await historyResponse.json();
@@ -5915,7 +6133,7 @@ async function loadFavorites() {
 
       let currentMinPrice = null;
       if (currentPrices.length > 0) {
-        currentMinPrice = Math.min(...currentPrices.map(p => p.price));
+        currentMinPrice = Math.min(...currentPrices.map((p) => p.price));
       }
 
       let previousMinPrice = null;
@@ -5925,7 +6143,10 @@ async function loadFavorites() {
           if (Array.isArray(priceHistory[storeName])) {
             const sortedForStore = priceHistory[storeName].sort((a, b) => new Date(b.x) - new Date(a.x));
             const latestForStore = sortedForStore[0];
-            if (latestForStore && (!overallLatestEntry || new Date(latestForStore.x) > new Date(overallLatestEntry.x))) {
+            if (
+              latestForStore &&
+              (!overallLatestEntry || new Date(latestForStore.x) > new Date(overallLatestEntry.x))
+            ) {
               overallLatestEntry = latestForStore;
             }
           }
@@ -5963,7 +6184,10 @@ async function loadFavorites() {
       //Используем fav.image или fav.imageUrl, добавляем onClick для перехода к товару
       productCard.innerHTML = `
         <button class="remove-favorite-btn" onclick="removeFromFavorites(${fav.id})">×</button>
-        <img src="${fav.image || fav.imageUrl || 'https://via.placeholder.com/100?text=?'}" alt="${fav.name}" onclick="window.location.href='product.html?id=${fav.id}'">
+        ${renderProductImage(fav, {
+          size: 'favorite',
+          extraAttrs: `onclick="window.location.href='product.html?id=${fav.id}'"`
+        })}
         <h3>${fav.name}</h3>
         <div class="product-meta">
           <div class="product-category">${getCategoryName(fav.category)}</div>
@@ -5977,24 +6201,22 @@ async function loadFavorites() {
       `;
       favoritesList.appendChild(productCard);
     }
-
+    refreshProductImages(favoritesList);
   } catch (error) {
     console.error('Ошибка загрузки избранного для favorites.html:', error);
     favoritesList.innerHTML = `<p class="error-message">Ошибка загрузки избранного: ${error.message}</p>`;
   }
+}
 
-
-  async function checkPriceDropNotificationsOnLogin() {
+async function checkPriceDropNotificationsOnLogin() {
   const token = localStorage.getItem('techAggregatorToken');
   if (!token) {
-    //Не показываем уведомления, если не авторизованы
     return;
   }
 
   try {
-    //Загружаем избранные товары
     const favoritesRes = await fetch('http://localhost:3000/api/favorites', {
-      headers: { 'Authorization': `Bearer ${token}` }
+      headers: { Authorization: `Bearer ${token}` }
     });
 
     if (!favoritesRes.ok) {
@@ -6002,20 +6224,18 @@ async function loadFavorites() {
         localStorage.removeItem('techAggregatorToken');
         currentUser = null;
         updateAuthButtons();
-        console.log('Сессия истекла при проверке уведомлений.');
-        return; //Не показываем уведомление, так как сессия истекла
+        return;
       }
       throw new Error(`HTTP ${favoritesRes.status}: ${favoritesRes.statusText}`);
     }
 
     const favoriteProducts = await favoritesRes.json();
     if (favoriteProducts.length === 0) {
-      return; //Нечего проверять
+      return;
     }
 
     let hasPriceDrops = false;
 
-    //Загружаем текущие цены и историю для каждого товара
     for (const fav of favoriteProducts) {
       const pricesResponse = await fetch(`http://localhost:3000/api/products/${fav.id}/prices`);
       const historyResponse = await fetch(`http://localhost:3000/api/products/${fav.id}/price-history`);
@@ -6027,7 +6247,7 @@ async function loadFavorites() {
 
       let currentMinPrice = null;
       if (currentPrices.length > 0) {
-        currentMinPrice = Math.min(...currentPrices.map(p => p.price));
+        currentMinPrice = Math.min(...currentPrices.map((p) => p.price));
       }
 
       let previousMinPrice = null;
@@ -6037,7 +6257,10 @@ async function loadFavorites() {
           if (Array.isArray(priceHistory[storeName])) {
             const sortedForStore = priceHistory[storeName].sort((a, b) => new Date(b.x) - new Date(a.x));
             const latestForStore = sortedForStore[0];
-            if (latestForStore && (!overallLatestEntry || new Date(latestForStore.x) > new Date(overallLatestEntry.x))) {
+            if (
+              latestForStore &&
+              (!overallLatestEntry || new Date(latestForStore.x) > new Date(overallLatestEntry.x))
+            ) {
               overallLatestEntry = latestForStore;
             }
           }
@@ -6049,43 +6272,23 @@ async function loadFavorites() {
 
       if (previousMinPrice !== null && currentMinPrice !== null && currentMinPrice < previousMinPrice) {
         const dropPercentage = ((previousMinPrice - currentMinPrice) / previousMinPrice) * 100;
-        if (dropPercentage >= 5) { //Порог падения цены (5%)
+        if (dropPercentage >= 5) {
           hasPriceDrops = true;
-          break; //Нашли хотя бы одно падение, можно прервать
+          break;
         }
       }
     }
 
     if (hasPriceDrops) {
-      //Показываем уведомление
       showCustomNotification('Цены на некоторые товары в вашем избранном упали!', 'info');
     }
-
   } catch (error) {
     console.error('Ошибка проверки уведомлений о падении цен при входе:', error);
-    
   }
 }
 
-  loadProfileDataFromAPI(); 
-}
-
-
-        //Загружаем избранное при загрузке страницы
-        document.addEventListener('DOMContentLoaded', function() {
-            renderfavorites();
-            updateFavoritesCounter(); 
-        });
-
 //Логика для страницы рекомендаций
-        let currentUserPreferences = null;
-        
-        
-        //Инициализация страницы
-        document.addEventListener('DOMContentLoaded', function() {
-            initializeRecommendationsPage();
-        });
-
+let currentUserPreferences = null;
 
 //Загрузка товаров с БД
 async function loadProductsFromAPI() {
@@ -6095,11 +6298,11 @@ async function loadProductsFromAPI() {
     const rawProducts = await res.json();
 
     //Преобразуем структуру под фронтенд
-    const products = rawProducts.map(p => ({
+    const products = rawProducts.map((p) => ({
       id: p.id,
       name: p.name,
       category: p.category,
-      image: p.imageUrl || 'https://via.placeholder.com/300?text=Нет+изображения',
+      image: p.imageUrl || '',
       rating: p.rating,
       specs: Array.isArray(p.specs)
         ? p.specs.reduce((acc, spec) => {
@@ -6109,8 +6312,8 @@ async function loadProductsFromAPI() {
         : p.specs && typeof p.specs === 'object'
           ? p.specs
           : {},
-      prices: p.prices.map(price => ({
-        store: price.storeName, 
+      prices: p.prices.map((price) => ({
+        store: price.storeName,
         sellerName: price.sellerName || null,
         price: price.price,
         url: price.url.trim()
@@ -6119,7 +6322,6 @@ async function loadProductsFromAPI() {
 
     demoProducts = products;
     window.demoProducts = products;
-    console.log(' Товары загружены из API:', products.length);
     return products;
   } catch (err) {
     console.error(' Ошибка загрузки товаров:', err);
@@ -6132,281 +6334,290 @@ async function loadProductsFromAPI() {
 
 //Проверка роли админа
 function isAdmin() {
-    const user = JSON.parse(localStorage.getItem('techAggregatorUser') || 'null');
-    return user && user.role === 'admin';
+  const user = JSON.parse(localStorage.getItem('techAggregatorUser') || 'null');
+  return user && user.role === 'admin';
 }
 
 //Обновление счётчиков модерации
 async function updateModerationStats() {
-    const token = localStorage.getItem('techAggregatorToken');
-    if (!token) return;
+  const token = localStorage.getItem('techAggregatorToken');
+  if (!token) return;
 
-    try {
-        //Получаем все *отзывы* на модерации (со статусом 'pending' или 'isApproved: false')
-        const reviewsRes = await fetch('http://localhost:3000/api/admin/reviews', {
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
-        let allReviews = [];
-        let pendingReviewsCount = 0;
-        if (reviewsRes.ok) {
-            allReviews = await reviewsRes.json();
-            //Считаем только те, которые ожидают модерации
-            //Используем поле status, если оно есть и хранит 'pending'
-            pendingReviewsCount = allReviews.filter(r => r.status === 'pending').length;
-            //Или используем isApproved, если статус не используется для модерации
-            //pendingReviewsCount = allReviews.filter(r => !r.isApproved).length;
-        }
-
-        //Получаем все *запросы* на добавление товара на модерации (со статусом 'pending')
-        const requestsRes = await fetch('http://localhost:3000/api/admin/requests', {
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
-        let allRequests = [];
-        let pendingRequestsCount = 0;
-        if (requestsRes.ok) {
-            allRequests = await requestsRes.json();
-            pendingRequestsCount = allRequests.filter(r => r.status === 'pending').length;
-        }
-
-        //Обновляем отображение на странице
-        document.getElementById('newReviews').textContent = allReviews.length; //Общее количество отзывов
-        document.getElementById('addRequests').textContent = allRequests.length; //Общее количество запросов
-        document.getElementById('pendingItems').textContent = pendingReviewsCount + pendingRequestsCount; //На модерации
-    } catch (error) {
-        console.error('Ошибка обновления статистики модерации:', error);
+  try {
+    //Получаем все *отзывы* на модерации (со статусом 'pending' или 'isApproved: false')
+    const reviewsRes = await fetch('http://localhost:3000/api/admin/reviews', {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    let allReviews = [];
+    let pendingReviewsCount = 0;
+    if (reviewsRes.ok) {
+      allReviews = await reviewsRes.json();
+      //Считаем только те, которые ожидают модерации
+      //Используем поле status, если оно есть и хранит 'pending'
+      pendingReviewsCount = allReviews.filter((r) => r.status === 'pending').length;
+      //Или используем isApproved, если статус не используется для модерации
+      //pendingReviewsCount = allReviews.filter(r => !r.isApproved).length;
     }
+
+    //Получаем все *запросы* на добавление товара на модерации (со статусом 'pending')
+    const requestsRes = await fetch('http://localhost:3000/api/admin/requests', {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    let allRequests = [];
+    let pendingRequestsCount = 0;
+    if (requestsRes.ok) {
+      allRequests = await requestsRes.json();
+      pendingRequestsCount = allRequests.filter((r) => r.status === 'pending').length;
+    }
+
+    //Обновляем отображение на странице
+    document.getElementById('newReviews').textContent = allReviews.length; //Общее количество отзывов
+    document.getElementById('addRequests').textContent = allRequests.length; //Общее количество запросов
+    document.getElementById('pendingItems').textContent = pendingReviewsCount + pendingRequestsCount; //На модерации
+  } catch (error) {
+    console.error('Ошибка обновления статистики модерации:', error);
+  }
 }
 
 //Вспомогательная функция для получения количества на модерации (можно оптимизировать в один запрос)
 async function getPendingReviewsCount() {
-    const token = localStorage.getItem('techAggregatorToken');
-    if (!token) return 0;
-    try {
-        const res = await fetch('http://localhost:3000/api/admin/reviews', {
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
-        if (!res.ok) return 0;
-        const reviews = await res.json();
-        //Считаем только те, которые ожидают модерации
-        return reviews.filter(r => r.status === 'pending').length;
-    } catch (e) {
-        return 0;
-    }
+  const token = localStorage.getItem('techAggregatorToken');
+  if (!token) return 0;
+  try {
+    const res = await fetch('http://localhost:3000/api/admin/reviews', {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    if (!res.ok) return 0;
+    const reviews = await res.json();
+    //Считаем только те, которые ожидают модерации
+    return reviews.filter((r) => r.status === 'pending').length;
+  } catch (e) {
+    return 0;
+  }
 }
 
 async function getPendingRequestsCount() {
-    const token = localStorage.getItem('techAggregatorToken');
-    if (!token) return 0;
-    try {
-        const res = await fetch('http://localhost:3000/api/admin/requests', {
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
-        if (!res.ok) return 0;
-        const requests = await res.json();
-        return requests.filter(r => r.status === 'pending').length;
-    } catch (e) {
-        return 0;
-    }
+  const token = localStorage.getItem('techAggregatorToken');
+  if (!token) return 0;
+  try {
+    const res = await fetch('http://localhost:3000/api/admin/requests', {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    if (!res.ok) return 0;
+    const requests = await res.json();
+    return requests.filter((r) => r.status === 'pending').length;
+  } catch (e) {
+    return 0;
+  }
 }
 
 //Обновление основных счётчиков
+function adminApiUrl(path) {
+  const base = typeof window !== 'undefined' && window.API_BASE ? window.API_BASE : 'http://localhost:3000';
+  return base + path;
+}
+
 async function updateMainStats() {
-    const token = localStorage.getItem('techAggregatorToken');
-    if (!token) return;
+  const token = localStorage.getItem('techAggregatorToken');
+  if (!token) return;
 
-    try {
-        //Загрузка статистики
-        const statsRes = await fetch('http://localhost:3000/api/admin/dashboard-stats', {
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
+  try {
+    const statsRes = await fetch(adminApiUrl('/api/admin/dashboard-stats'), {
+      headers: { Authorization: `Bearer ${token}` }
+    });
 
-        if (statsRes.ok) {
-            const stats = await statsRes.json();
+    if (statsRes.ok) {
+      const stats = await statsRes.json();
 
-            //Обновляем отображение
-            document.getElementById('totalProducts').textContent = stats.totalProducts || 0;
+      //Обновляем отображение
+      document.getElementById('totalProducts').textContent = stats.totalProducts || 0;
 
-            //pendingItems = pendingReviews + pendingRequests
-            const pendingReviews = stats.pendingReviews || 0;
-            const pendingRequests = stats.pendingRequests || 0;
-            document.getElementById('pendingItems').textContent = pendingReviews + pendingRequests;
+      //pendingItems = pendingReviews + pendingRequests
+      const pendingReviews = stats.pendingReviews || 0;
+      const pendingRequests = stats.pendingRequests || 0;
+      document.getElementById('pendingItems').textContent = pendingReviews + pendingRequests;
 
-            //Опционально: отдельные счётчики для новых элементов
-            document.getElementById('newReviews').textContent = pendingReviews; //Или общее количество новых
-            document.getElementById('addRequests').textContent = pendingRequests; //Или общее количество новых
-        }
-    } catch (error) {
-        console.error('Ошибка обновления статистики:', error);
-        //Показать ошибку в соответствующих блоках
-        document.querySelectorAll('.stat-card-enhanced .stat-value').forEach(el => el.textContent = 'Err');
+      //Опционально: отдельные счётчики для новых элементов
+      document.getElementById('newReviews').textContent = pendingReviews; //Или общее количество новых
+      document.getElementById('addRequests').textContent = pendingRequests; //Или общее количество новых
     }
+  } catch (error) {
+    console.error('Ошибка обновления статистики:', error);
+    //Показать ошибку в соответствующих блоках
+    document.querySelectorAll('.stat-card-enhanced .stat-value').forEach((el) => (el.textContent = 'Err'));
+  }
 }
 
 async function loadTableList() {
-    const selector = document.getElementById('crudTableSelector');
-    if (!selector) return;
+  const selector = document.getElementById('crudTableSelector');
+  if (!selector) return;
 
-    try {
-        const token = localStorage.getItem('techAggregatorToken');
-        const response = await fetch('http://localhost:3000/api/admin/tables', { 
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
+  try {
+    const token = localStorage.getItem('techAggregatorToken');
+    const response = await fetch('http://localhost:3000/api/admin/tables', {
+      headers: { Authorization: `Bearer ${token}` }
+    });
 
-        if (!response.ok) throw new Error(await response.text());
+    if (!response.ok) throw new Error(await response.text());
 
-        const tableNames = await response.json();
-        console.log('Загружен список таблиц:', tableNames);
-
-        selector.innerHTML = '<option value="">Выберите таблицу</option>';
-        tableNames.forEach(name => {
-            const option = document.createElement('option');
-            option.value = name;
-            option.textContent = name;
-            selector.appendChild(option);
-        });
-    } catch (error) {
-        console.error('Ошибка загрузки списка таблиц:', error);
-        selector.innerHTML = '<option value="">Ошибка загрузки</option>';
-    }
+    const tableNames = await response.json();
+    selector.innerHTML = '<option value="">Выберите таблицу</option>';
+    tableNames.forEach((name) => {
+      const option = document.createElement('option');
+      option.value = name;
+      option.textContent = name;
+      selector.appendChild(option);
+    });
+  } catch (error) {
+    console.error('Ошибка загрузки списка таблиц:', error);
+    selector.innerHTML = '<option value="">Ошибка загрузки</option>';
+  }
 }
 
-
 function closeMessageForm() {
-    const container = document.getElementById('usersTable').parentElement;
-    const messageFormContainer = container.querySelector('.message-form-container');
-    if (messageFormContainer) {
-        messageFormContainer.remove();
-    }
-    currentMessageUserId = null;
+  const container = document.getElementById('usersTable').parentElement;
+  const messageFormContainer = container.querySelector('.message-form-container');
+  if (messageFormContainer) {
+    messageFormContainer.remove();
+  }
+  currentMessageUserId = null;
 }
 
 async function sendMessageToUser(event) {
-    event.preventDefault();
-    if (!currentMessageUserId) {
-        showCustomNotification('Ошибка: не выбран пользователь', 'error');
-        return;
-    }
+  event.preventDefault();
+  if (!currentMessageUserId) {
+    showCustomNotification('Ошибка: не выбран пользователь', 'error');
+    return;
+  }
 
-    const messageText = document.getElementById('messageText').value.trim();
-    if (!messageText) {
-        showCustomNotification('Пожалуйста, введите текст сообщения', 'info');
-        return;
-    }
+  const messageText = document.getElementById('messageText').value.trim();
+  if (!messageText) {
+    showCustomNotification('Пожалуйста, введите текст сообщения', 'info');
+    return;
+  }
 
-    const token = localStorage.getItem('techAggregatorToken');
-    try {
-        const response = await fetch(`http://localhost:3000/api/admin/users/${currentMessageUserId}/send-message`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify({ message: messageText })
-        });
+  const token = localStorage.getItem('techAggregatorToken');
+  try {
+    const response = await fetch(`http://localhost:3000/api/admin/users/${currentMessageUserId}/send-message`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify({ message: messageText })
+    });
 
-        if (!response.ok) throw new Error(await response.text());
+    if (!response.ok) throw new Error(await response.text());
 
-        const result = await response.json();
-        console.log('Сообщение отправлено:', result);
-        showCustomNotification('Сообщение отправлено пользователю.', 'success');
-        closeMessageForm(); //Закрываем форму после отправки
-    } catch (error) {
-        console.error('Ошибка отправки сообщения:', error);
-        showCustomNotification(`Ошибка: ${error.message}`, 'error');
-    }
+    const result = await response.json();
+    showCustomNotification('Сообщение отправлено пользователю.', 'success');
+    closeMessageForm(); //Закрываем форму после отправки
+  } catch (error) {
+    console.error('Ошибка отправки сообщения:', error);
+    showCustomNotification(`Ошибка: ${error.message}`, 'error');
+  }
 }
 
-
 function openAdminTab(tabName) {
-    document.querySelectorAll('.admin-tab-content').forEach(tab => tab.classList.remove('active'));
-    //Сброс активности у кнопок в основной навигации админки
-    document.querySelectorAll('#moderation ~ .admin-tabs-container .admin-tabs-header .admin-tab-btn, .admin-tabs-header .admin-tab-btn').forEach(btn => btn.classList.remove('active'));
+  document.querySelectorAll('.admin-tab-content').forEach((tab) => tab.classList.remove('active'));
+  //Сброс активности у кнопок в основной навигации админки
+  document
+    .querySelectorAll(
+      '#moderation ~ .admin-tabs-container .admin-tabs-header .admin-tab-btn, .admin-tabs-header .admin-tab-btn'
+    )
+    .forEach((btn) => btn.classList.remove('active'));
 
-    const tabElement = document.getElementById(tabName);
-    if (tabElement) {
-        tabElement.classList.add('active');
-        const allTabButtons = document.querySelectorAll('.admin-tabs-header .admin-tab-btn');
-        for (let btn of allTabButtons) {
-            if (btn.textContent.trim().toLowerCase().includes(tabName.toLowerCase())) {
-                btn.classList.add('active');
-                break;
-            }
-        }
+  const tabElement = document.getElementById(tabName);
+  if (tabElement) {
+    tabElement.classList.add('active');
+    const allTabButtons = document.querySelectorAll('.admin-tabs-header .admin-tab-btn');
+    for (let btn of allTabButtons) {
+      if (btn.textContent.trim().toLowerCase().includes(tabName.toLowerCase())) {
+        btn.classList.add('active');
+        break;
+      }
     }
+  }
 
-    //Загрузка данных для вкладки при её открытии
-    if (tabName === 'moderation') {
-        loadModerationData(currentModerationTab); //Загружаем текущую подвкладку модерации
-    } else if (tabName === 'editor') {
-        loadTableList();
-    } else if (tabName === 'analytics') {
-        loadAnalyticsData();
-    } else if (tabName === 'users') {
-        loadUsersTable();
-    }
+  //Загрузка данных для вкладки при её открытии
+  if (tabName === 'moderation') {
+    loadModerationData(currentModerationTab); //Загружаем текущую подвкладку модерации
+  } else if (tabName === 'editor') {
+    loadTableList();
+  } else if (tabName === 'analytics') {
+    loadAnalyticsData();
+  } else if (tabName === 'users') {
+    loadUsersTable();
+  }
 }
 
 //Открытие подвкладки модерации (отзывы/запросы)
 function openModerationSubTab(subTabName) {
-    currentModerationTab = subTabName;
-    //Обновим активные кнопки подвкладок
-    document.querySelectorAll('#moderation .admin-tabs-header .admin-tab-btn').forEach(btn => btn.classList.remove('active'));
-    event.target.classList.add('active');
-    //Загрузим данные для выбранной подвкладки
-    loadModerationData(subTabName);
+  currentModerationTab = subTabName;
+  //Обновим активные кнопки подвкладок
+  document
+    .querySelectorAll('#moderation .admin-tabs-header .admin-tab-btn')
+    .forEach((btn) => btn.classList.remove('active'));
+  event.target.classList.add('active');
+  //Загрузим данные для выбранной подвкладки
+  loadModerationData(subTabName);
 }
 
-//Загрузка данных для модерации (отзывы или запросы)
+//Загрузка данных для модерации (отзывы, запросы, уроки, поддержка)
 async function loadModerationData(type) {
-    const container = document.getElementById('moderationContent');
-    if (!container) return;
+  const container = document.getElementById('moderationContent');
+  if (!container) return;
 
-    try {
-        const token = localStorage.getItem('techAggregatorToken');
-        let endpoint = '';
-        let title = '';
-        if (type === 'reviews') {
-            endpoint = 'http://localhost:3000/api/admin/reviews';
-            title = 'Отзывы на модерации';
-        } else if (type === 'requests') {
-            endpoint = 'http://localhost:3000/api/admin/requests';
-            title = 'Запросы на добавление';
-        } else {
-            console.error('Неизвестный тип модерации:', type);
-            return;
-        }
+  try {
+    const token = localStorage.getItem('techAggregatorToken');
+    let endpoint = '';
+    let title = '';
+    if (type === 'reviews') {
+      endpoint = '/api/admin/reviews';
+      title = 'Отзывы на модерации';
+    } else if (type === 'requests') {
+      endpoint = '/api/admin/requests';
+      title = 'Запросы на добавление';
+    } else if (type === 'lessonSuggestions') {
+      endpoint = '/api/admin/lesson-suggestions';
+      title = 'Темы уроков (предложения)';
+    } else if (type === 'supportTickets') {
+      endpoint = '/api/admin/support-tickets';
+      title = 'Обращения в поддержку';
+    } else {
+      console.error('Неизвестный тип модерации:', type);
+      return;
+    }
 
-        container.innerHTML = `<h3>${title}</h3><div class="moderation-list"><p class="loading">Загрузка...</p></div>`;
-        const listContainer = container.querySelector('.moderation-list');
+    container.innerHTML = `<h3>${title}</h3><div class="moderation-list"><p class="loading">Загрузка...</p></div>`;
+    const listContainer = container.querySelector('.moderation-list');
 
-        const response = await fetch(endpoint, {
-            headers: { 'Authorization': `Bearer ${token}` }
+    const response = await fetch(adminApiUrl(endpoint), {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+
+    if (!response.ok) throw new Error(await response.text());
+
+    const items = await response.json();
+    if (items.length === 0) {
+      listContainer.innerHTML = '<p>Нет элементов на модерации</p>';
+      return;
+    }
+
+    const sortedItems = items.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+    listContainer.innerHTML = sortedItems
+      .map((item) => {
+        const date = new Date(item.createdAt);
+        const formattedDate = date.toLocaleDateString('ru-RU', {
+          day: '2-digit',
+          month: 'long',
+          year: 'numeric'
         });
 
-        if (!response.ok) throw new Error(await response.text());
-
-        const items = await response.json();
-        console.log(`Загружены ${type} для модерации:`, items);
-
-        if (items.length === 0) {
-            listContainer.innerHTML = '<p>Нет элементов на модерации</p>';
-            return;
-        }
-
-        //Сортировка по дате создания, новые сверху
-        const sortedItems = items.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-
-        listContainer.innerHTML = sortedItems.map(item => {
-            const date = new Date(item.createdAt);
-            const formattedDate = date.toLocaleDateString('ru-RU', {
-                day: '2-digit',
-                month: 'long',
-                year: 'numeric'
-            });
-
-            if (type === 'reviews') {
-                const userName = item.user?.fullName || item.userName || 'Аноним';
-                return `
+        if (type === 'reviews') {
+          const userName = item.user?.fullName || item.userName || 'Аноним';
+          return `
                     <div class="moderation-item" data-id="${item.id}" data-type="review">
                         <div class="moderation-header">
                             <div class="moderation-info">
@@ -6428,9 +6639,9 @@ async function loadModerationData(type) {
                         <button class="btn-action btn-view" style="margin-top: 0.5rem;" onclick="viewReviewDetails(${item.id})">Посмотреть</button>
                     </div>
                 `;
-            } else if (type === 'requests') {
-                const requesterName = item.user?.fullName || 'Аноним';
-                return `
+        } else if (type === 'requests') {
+          const requesterName = item.user?.fullName || 'Аноним';
+          return `
                     <div class="moderation-item" data-id="${item.id}" data-type="request">
                         <div class="moderation-header">
                             <div class="moderation-info">
@@ -6442,7 +6653,7 @@ async function loadModerationData(type) {
                             <span class="status-badge status-${item.status}">${item.status}</span>
                         </div>
                         <div>
-                            <strong>Ссылка:</strong> ${item.url ? `<a href="${item.url}" target="_blank">${item.url}</a>` : 'Не указана'}<br>
+                            <strong>Ссылка:</strong> ${item.url ? `<a href="${item.url}" target="_blank" rel="noopener noreferrer" class="admin-moderation-link">${item.url}</a>` : 'Не указана'}<br>
                             <strong>Комментарий:</strong> ${item.comment || '<em>Нет</em>'}
                         </div>
                         <div class="moderation-actions">
@@ -6453,13 +6664,95 @@ async function loadModerationData(type) {
                         <button class="btn-action btn-view" style="margin-top: 0.5rem;" onclick="viewRequestDetails(${item.id})">Посмотреть</button>
                     </div>
                 `;
-            }
-            return '';
-        }).join('');
-    } catch (error) {
-        console.error(`Ошибка загрузки ${type}:`, error);
-        container.innerHTML = `<h3>${type === 'reviews' ? 'Отзывы на модерации' : 'Запросы на добавление'}</h3><div class="moderation-list"><p class="error-message">Ошибка: ${error.message}</p></div>`;
-    }
+        } else if (type === 'lessonSuggestions') {
+          const safeText = (s) =>
+            String(s == null ? '' : s)
+              .replace(/&/g, '&amp;')
+              .replace(/</g, '&lt;')
+              .replace(/>/g, '&gt;');
+          const requesterName = item.user?.fullName || item.userName || 'Аноним';
+          const userEmail =
+            item.user?.email || item.userEmail ? ` (${safeText(item.user?.email || item.userEmail)})` : '';
+          return `
+                    <div class="moderation-item" data-id="${item.id}" data-type="lessonSuggestion">
+                        <div class="moderation-header">
+                            <div class="moderation-info">
+                                <h4>${safeText(item.topic)}</h4>
+                                <p>Категория: ${safeText(item.category) || 'Не указана'}</p>
+                                <p>Пользователь: ${safeText(requesterName)}${userEmail} (ID: ${item.userId || 'N/A'})</p>
+                                <p>Дата: ${formattedDate}</p>
+                            </div>
+                            <span class="status-badge status-${item.status || 'pending'}">${item.status || 'pending'}</span>
+                        </div>
+                        <div>
+                            <strong>Описание от пользователя:</strong><br>
+                            ${item.message ? safeText(item.message).replace(/\n/g, '<br>') : '<em>Не указано</em>'}
+                        </div>
+                        <div class="moderation-actions">
+                            <button class="btn-action btn-approve" onclick="updateLessonSuggestionStatus(${item.id}, 'approved')">Одобрить</button>
+                            <button class="btn-action btn-reject" onclick="updateLessonSuggestionStatus(${item.id}, 'rejected')">Отклонить</button>
+                            <button class="btn-action" style="background: #e2e8f0; color: #1f2937;" onclick="deleteLessonSuggestion(${item.id})">Удалить</button>
+                        </div>
+                        <textarea class="admin-notes" id="notesLessonSuggestion${item.id}" placeholder="Примечания администратора...">${safeText(item.adminNotes || '')}</textarea>
+                    </div>
+                `;
+        } else if (type === 'supportTickets') {
+          const safeText = (s) =>
+            String(s == null ? '' : s)
+              .replace(/&/g, '&amp;')
+              .replace(/</g, '&lt;')
+              .replace(/>/g, '&gt;');
+          const issueLabels = {
+            bug: 'Ошибка на сайте',
+            account: 'Проблема с аккаунтом',
+            data: 'Неточные данные / цены',
+            other: 'Другое'
+          };
+          const issueLabel = issueLabels[item.issueType] || safeText(item.issueType);
+          const requesterName = item.user?.fullName || item.userName || 'Гость';
+          const userEmail = item.user?.email || item.userEmail || '—';
+          const pageLink = item.pageUrl
+            ? `<a href="${safeText(item.pageUrl)}" target="_blank" rel="noopener noreferrer" class="admin-moderation-link">${safeText(item.pageUrl)}</a>`
+            : 'Не указана';
+          return `
+                    <div class="moderation-item" data-id="${item.id}" data-type="supportTicket">
+                        <div class="moderation-header">
+                            <div class="moderation-info">
+                                <h4>${issueLabel} · #${item.id}</h4>
+                                <p>От: ${safeText(requesterName)} · ${safeText(String(userEmail))} (ID: ${item.userId || '—'})</p>
+                                <p>Дата: ${formattedDate}</p>
+                            </div>
+                            <span class="status-badge status-${item.status || 'pending'}">${item.status || 'pending'}</span>
+                        </div>
+                        <div>
+                            <strong>Страница:</strong> ${pageLink}<br>
+                            <strong>Сообщение:</strong><br>
+                            ${item.message ? safeText(item.message).replace(/\n/g, '<br>') : '<em>Нет текста</em>'}
+                        </div>
+                        <div class="moderation-actions">
+                            <button class="btn-action btn-approve" onclick="updateSupportTicketStatus(${item.id}, 'approved')">Обработано</button>
+                            <button class="btn-action btn-reject" onclick="updateSupportTicketStatus(${item.id}, 'rejected')">Отклонить</button>
+                            <button class="btn-action" style="background: #e2e8f0; color: #1f2937;" onclick="deleteSupportTicket(${item.id})">Удалить</button>
+                        </div>
+                        <textarea class="admin-notes" id="notesSupportTicket${item.id}" placeholder="Примечания администратора...">${safeText(item.adminNotes || '')}</textarea>
+                    </div>
+                `;
+        }
+        return '';
+      })
+      .join('');
+  } catch (error) {
+    console.error(`Ошибка загрузки ${type}:`, error);
+    const errTitle =
+      type === 'reviews'
+        ? 'Отзывы на модерации'
+        : type === 'requests'
+          ? 'Запросы на добавление'
+          : type === 'supportTickets'
+            ? 'Обращения в поддержку'
+            : 'Темы уроков (предложения)';
+    container.innerHTML = `<h3>${errTitle}</h3><div class="moderation-list"><p class="error-message">Ошибка: ${error.message}</p></div>`;
+  }
 }
 
 //Обновление статуса отзыва
@@ -6469,24 +6762,24 @@ async function updateReviewStatus(reviewId, newStatus) {
 
   const token = localStorage.getItem('techAggregatorToken');
   try {
-    const response = await fetch(`http://localhost:3000/api/admin/reviews/${reviewId}`, {
+    const response = await fetch(adminApiUrl(`/api/admin/reviews/${reviewId}`), {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
+        Authorization: `Bearer ${token}`
       },
       //Тело запроса
       body: JSON.stringify({
-        status: newStatus, 
-        adminNotes: adminNotes, 
+        status: newStatus,
+        adminNotes: adminNotes
       })
     });
 
     if (!response.ok) throw new Error(await response.text());
 
     const updatedReview = await response.json();
-    console.log(`Отзыв ID ${reviewId} обновлён до статуса ${newStatus}`, updatedReview);
     showCustomNotification(`Отзыв ID ${reviewId} ${newStatus === 'approved' ? 'одобрен' : 'отклонён'}.`, 'success');
+    loadModerationData(currentModerationTab);
   } catch (error) {
     console.error(`Ошибка обновления статуса отзыва ${reviewId}:`, error);
     showCustomNotification(`Ошибка: ${error.message}`, 'error');
@@ -6495,56 +6788,138 @@ async function updateReviewStatus(reviewId, newStatus) {
 
 //Обновление статуса запроса
 async function updateRequestStatus(requestId, newStatus) {
-    const notesInput = document.getElementById(`notesRequest${requestId}`);
-    const adminNotes = notesInput ? notesInput.value.trim() : '';
+  const notesInput = document.getElementById(`notesRequest${requestId}`);
+  const adminNotes = notesInput ? notesInput.value.trim() : '';
 
-    const token = localStorage.getItem('techAggregatorToken');
-    try {
-        const response = await fetch(`http://localhost:3000/api/admin/requests/${requestId}`, {
-            method: 'PATCH',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify({
-                status: newStatus,
-                adminNotes: adminNotes
-            })
-        });
+  const token = localStorage.getItem('techAggregatorToken');
+  try {
+    const response = await fetch(adminApiUrl(`/api/admin/requests/${requestId}`), {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        status: newStatus,
+        adminNotes: adminNotes
+      })
+    });
 
-        if (!response.ok) throw new Error(await response.text());
+    if (!response.ok) throw new Error(await response.text());
 
-        const updatedRequest = await response.json();
-        console.log(`Запрос ID ${requestId} обновлён до статуса ${newStatus}`, updatedRequest);
-        showCustomNotification(`Запрос ID ${requestId} ${newStatus === 'approved' ? 'одобрен' : 'отклонён'}.`, 'success');
-        //Перезагружаем список
-        loadModerationData(currentModerationTab);
-    } catch (error) {
-        console.error(`Ошибка обновления статуса запроса ${requestId}:`, error);
-        showCustomNotification(`Ошибка: ${error.message}`, 'error');
-    }
+    const updatedRequest = await response.json();
+    showCustomNotification(`Запрос ID ${requestId} ${newStatus === 'approved' ? 'одобрен' : 'отклонён'}.`, 'success');
+    //Перезагружаем список
+    loadModerationData(currentModerationTab);
+  } catch (error) {
+    console.error(`Ошибка обновления статуса запроса ${requestId}:`, error);
+    showCustomNotification(`Ошибка: ${error.message}`, 'error');
+  }
 }
 
 //Просмотр деталей (заглушка)
 function viewReviewDetails(reviewId) {
-    alert(`Детали отзыва ID: ${reviewId} - будет реализовано позже`);
+  alert(`Детали отзыва ID: ${reviewId} - будет реализовано позже`);
 }
 function viewRequestDetails(requestId) {
-    alert(`Детали запроса ID: ${requestId} - будет реализовано позже`);
+  alert(`Детали запроса ID: ${requestId} - будет реализовано позже`);
+}
+
+async function updateLessonSuggestionStatus(suggestionId, newStatus) {
+  const notesInput = document.getElementById(`notesLessonSuggestion${suggestionId}`);
+  const adminNotes = notesInput ? notesInput.value.trim() : '';
+  const token = localStorage.getItem('techAggregatorToken');
+  try {
+    const response = await fetch(adminApiUrl(`/api/admin/lesson-suggestions/${suggestionId}`), {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify({ status: newStatus, adminNotes })
+    });
+    if (!response.ok) throw new Error(await response.text());
+    showCustomNotification(
+      `Предложение ID ${suggestionId} ${newStatus === 'approved' ? 'одобрено' : 'отклонено'}.`,
+      'success'
+    );
+    loadModerationData(currentModerationTab);
+  } catch (error) {
+    console.error('Ошибка обновления предложения темы:', error);
+    showCustomNotification(`Ошибка: ${error.message}`, 'error');
+  }
+}
+
+async function deleteLessonSuggestion(suggestionId) {
+  if (!confirm('Удалить это предложение темы безвозвратно?')) return;
+  const token = localStorage.getItem('techAggregatorToken');
+  try {
+    const response = await fetch(adminApiUrl(`/api/admin/lesson-suggestions/${suggestionId}`), {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    if (!response.ok) throw new Error(await response.text());
+    showCustomNotification('Предложение удалено.', 'success');
+    loadModerationData(currentModerationTab);
+  } catch (error) {
+    console.error('Ошибка удаления предложения темы:', error);
+    showCustomNotification(`Ошибка: ${error.message}`, 'error');
+  }
+}
+
+async function updateSupportTicketStatus(ticketId, newStatus) {
+  const notesInput = document.getElementById(`notesSupportTicket${ticketId}`);
+  const adminNotes = notesInput ? notesInput.value.trim() : '';
+  const token = localStorage.getItem('techAggregatorToken');
+  try {
+    const response = await fetch(adminApiUrl(`/api/admin/support-tickets/${ticketId}`), {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify({ status: newStatus, adminNotes })
+    });
+    if (!response.ok) throw new Error(await response.text());
+    showCustomNotification(
+      `Обращение #${ticketId} ${newStatus === 'approved' ? 'отмечено обработанным' : 'отклонено'}.`,
+      'success'
+    );
+    loadModerationData(currentModerationTab);
+  } catch (error) {
+    console.error('Ошибка обновления обращения:', error);
+    showCustomNotification(`Ошибка: ${error.message}`, 'error');
+  }
+}
+
+async function deleteSupportTicket(ticketId) {
+  if (!confirm('Удалить это обращение безвозвратно?')) return;
+  const token = localStorage.getItem('techAggregatorToken');
+  try {
+    const response = await fetch(adminApiUrl(`/api/admin/support-tickets/${ticketId}`), {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    if (!response.ok) throw new Error(await response.text());
+    showCustomNotification('Обращение удалено.', 'success');
+    loadModerationData(currentModerationTab);
+  } catch (error) {
+    console.error('Ошибка удаления обращения:', error);
+    showCustomNotification(`Ошибка: ${error.message}`, 'error');
+  }
 }
 
 //Вкладка редактора БД
 
-
 //Загрузка данных из выбранной таблицы
-async function loadTableData(searchField = '', searchValue = '') { 
+async function loadTableData(searchField = '', searchValue = '') {
   const selector = document.getElementById('crudTableSelector');
   const tableName = selector.value;
   const container = document.getElementById('crudTableContainer');
 
   //Сохраняем параметры поиска (если они переданы)
-  //currentTableSearchField = searchField; 
-  //currentTableSearchValue = searchValue; 
+  //currentTableSearchField = searchField;
+  //currentTableSearchValue = searchValue;
 
   if (!tableName) {
     showCustomNotification('Пожалуйста, выберите таблицу', 'info');
@@ -6570,15 +6945,12 @@ async function loadTableData(searchField = '', searchValue = '') {
       endpoint += '?' + params.toString();
     }
 
-
-    const response = await fetch(endpoint, { 
-      headers: { 'Authorization': `Bearer ${token}` }
+    const response = await fetch(endpoint, {
+      headers: { Authorization: `Bearer ${token}` }
     });
 
     if (!response.ok) throw new Error(await response.text());
     const data = await response.json();
-    console.log(`Загружены данные из таблицы ${tableName} (с учётом поиска):`, data);
-
     currentAdminTableName = tableName;
     if (searchField && searchValue) {
       currentTableSearchField = searchField;
@@ -6591,8 +6963,7 @@ async function loadTableData(searchField = '', searchValue = '') {
       currentAdminTableColumns = Object.keys(data[0]);
     }
 
-    renderCrudTable(container, data, tableName, currentTableSearchField, currentTableSearchValue); 
-
+    renderCrudTable(container, data, tableName, currentTableSearchField, currentTableSearchValue);
   } catch (error) {
     console.error(`Ошибка загрузки данных из таблицы ${tableName}:`, error);
     container.innerHTML = `<p class="error-message">Ошибка: ${error.message}</p>`;
@@ -6653,9 +7024,7 @@ function setupCrudHorizontalScroll() {
 
 //Отрисовка таблицы данных
 function renderCrudTable(container, data, tableName, searchField = '', searchValue = '') {
-  const fields = data.length > 0
-    ? Object.keys(data[0])
-    : currentAdminTableColumns;
+  const fields = data.length > 0 ? Object.keys(data[0]) : currentAdminTableColumns;
 
   if (!fields || fields.length === 0) {
     container.innerHTML = '<p>Нет данных для отображения. Нажмите «Загрузить».</p>';
@@ -6673,11 +7042,15 @@ function renderCrudTable(container, data, tableName, searchField = '', searchVal
         <label for="tableSearchField">Поиск по столбцу:</label>
         <select id="tableSearchField" class="table-search-field-select" onchange="onCrudSearchFieldChange()">
           <option value="">(Все столбцы)</option>
-          ${fields.map(field => `
+          ${fields
+            .map(
+              (field) => `
             <option value="${field}" ${field === searchField ? 'selected' : ''}>
               ${field}
             </option>
-          `).join('')}
+          `
+            )
+            .join('')}
         </select>
       </div>
       <div class="form-group admin-table-search-field">
@@ -6704,7 +7077,9 @@ function renderCrudTable(container, data, tableName, searchField = '', searchVal
 
   const tbodyHTML = isEmptyResult
     ? `<tr class="crud-empty-row"><td colspan="${colSpan}">Нет совпадений по поиску. Измените запрос или нажмите «Сброс».</td></tr>`
-    : data.map((row, index) => `
+    : data
+        .map(
+          (row, index) => `
           <tr data-row-index="${index}">
             <td class="crud-checkbox-col">
               <input type="checkbox" class="crud-row-checkbox" data-record-id="${row[primaryKey]}" onchange="updateCrudBulkBar()">
@@ -6713,14 +7088,20 @@ function renderCrudTable(container, data, tableName, searchField = '', searchVal
               <button class="btn-crud btn-edit-crud" onclick="editRow(${index})">Изм.</button>
               <button class="btn-crud btn-delete-crud" onclick="deleteRow(${row[primaryKey]}, ${index})">Удл.</button>
             </td>
-            ${fields.map(field => `
+            ${fields
+              .map(
+                (field) => `
               <td>
                 <span class="field-display" data-field="${field}">${escapeHtml(row[field])}</span>
                 <input type="text" class="field-input" data-field="${field}" value="${escapeHtml(row[field] ?? '')}" style="display: none;">
               </td>
-            `).join('')}
+            `
+              )
+              .join('')}
           </tr>
-        `).join('');
+        `
+        )
+        .join('');
 
   const tableHTML = `
     <div class="crud-editor-root">
@@ -6738,7 +7119,7 @@ function renderCrudTable(container, data, tableName, searchField = '', searchVal
                 ${isEmptyResult ? '' : '<input type="checkbox" id="crudSelectAll" title="Выделить все на странице" onchange="toggleCrudSelectAll(this)">'}
               </th>
               <th>Действия</th>
-              ${fields.map(field => `<th>${field}</th>`).join('')}
+              ${fields.map((field) => `<th>${field}</th>`).join('')}
             </tr>
           </thead>
           <tbody>
@@ -6811,9 +7192,7 @@ function updateCrudBulkBar() {
   }
   if (deleteBtn) {
     deleteBtn.disabled = selected.length === 0;
-    deleteBtn.textContent = selected.length > 0
-      ? `Удалить выбранные (${selected.length})`
-      : 'Удалить выбранные';
+    deleteBtn.textContent = selected.length > 0 ? `Удалить выбранные (${selected.length})` : 'Удалить выбранные';
   }
   if (selectAll && allCheckboxes.length > 0) {
     selectAll.checked = selected.length === allCheckboxes.length;
@@ -6871,17 +7250,14 @@ async function deleteSelectedRows() {
   if (deleteBtn) deleteBtn.disabled = true;
 
   try {
-    const response = await fetch(
-      `http://localhost:3000/api/admin/table/${currentAdminTableName}/bulk`,
-      {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ ids })
-      }
-    );
+    const response = await fetch(`http://localhost:3000/api/admin/table/${currentAdminTableName}/bulk`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify({ ids })
+    });
 
     if (!response.ok) throw new Error(await response.text());
 
@@ -6903,8 +7279,7 @@ function debounce(func, delay) {
   };
 }
 
-
-const searchTableDataDebounced = debounce(function() {
+const searchTableDataDebounced = debounce(function () {
   const searchFieldSelect = document.getElementById('tableSearchField');
   const searchValueInput = document.getElementById('tableSearchValue');
 
@@ -6975,7 +7350,6 @@ function searchTableData() {
   //Если указано значение, но не указано поле - ищем по всем полям (пока не реализовано на сервере для этого случая)
   //или выбираем первое доступное поле
   if (value && !field) {
-    
     showCustomNotification('Пожалуйста, выберите столбец для поиска.', 'info');
     return;
   }
@@ -6986,18 +7360,18 @@ function searchTableData() {
 
 //Редактирование строки
 function editRow(rowIndex) {
-    const row = document.querySelector(`tr[data-row-index="${rowIndex}"]`);
-    if (!row) return;
+  const row = document.querySelector(`tr[data-row-index="${rowIndex}"]`);
+  if (!row) return;
 
-    row.querySelectorAll('.field-display').forEach(span => {
-        span.style.display = 'none';
-    });
-    row.querySelectorAll('.field-input').forEach(input => {
-        input.style.display = 'inline-block';
-    });
+  row.querySelectorAll('.field-display').forEach((span) => {
+    span.style.display = 'none';
+  });
+  row.querySelectorAll('.field-input').forEach((input) => {
+    input.style.display = 'inline-block';
+  });
 
-    const actionsCell = row.querySelector('.crud-actions-cell');
-    actionsCell.innerHTML = `
+  const actionsCell = row.querySelector('.crud-actions-cell');
+  actionsCell.innerHTML = `
         <button class="btn-crud btn-save-crud" onclick="saveRow(${rowIndex})">Сохр.</button>
         <button class="btn-crud btn-cancel-crud" onclick="cancelEditRow(${rowIndex})">Отм.</button>
     `;
@@ -7005,99 +7379,97 @@ function editRow(rowIndex) {
 
 //Отмена редактирования строки
 function cancelEditRow(rowIndex) {
-    reloadCrudTablePreservingSearch();
+  reloadCrudTablePreservingSearch();
 }
 
 //Сохранение строки
 async function saveRow(rowIndex) {
-    const row = document.querySelector(`tr[data-row-index="${rowIndex}"]`);
-    if (!row) return;
+  const row = document.querySelector(`tr[data-row-index="${rowIndex}"]`);
+  if (!row) return;
 
-    const inputs = row.querySelectorAll('.field-input');
-    const newRowData = {};
-    let primaryKeyValue = null;
+  const inputs = row.querySelectorAll('.field-input');
+  const newRowData = {};
+  let primaryKeyValue = null;
 
-    inputs.forEach(input => {
-        const fieldName = input.getAttribute('data-field');
-        if (fieldName === 'id') {
-            primaryKeyValue = parseInt(input.value);
-        }
-        newRowData[fieldName] = input.value;
+  inputs.forEach((input) => {
+    const fieldName = input.getAttribute('data-field');
+    if (fieldName === 'id') {
+      primaryKeyValue = parseInt(input.value);
+    }
+    newRowData[fieldName] = input.value;
+  });
+
+  if (!primaryKeyValue) {
+    showCustomNotification('Невозможно обновить запись: отсутствует ID', 'error');
+    return;
+  }
+
+  const token = localStorage.getItem('techAggregatorToken');
+  try {
+    const response = await fetch(`http://localhost:3000/api/admin/table/${currentAdminTableName}/${primaryKeyValue}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify(newRowData)
     });
 
-    if (!primaryKeyValue) {
-        showCustomNotification('Невозможно обновить запись: отсутствует ID', 'error');
-        return;
+    if (!response.ok) throw new Error(await response.text());
+
+    const updatedRow = await response.json();
+    showCustomNotification(`Запись ID ${primaryKeyValue} обновлена.`, 'success');
+    currentAdminTableData[rowIndex] = updatedRow;
+    const container = document.getElementById('crudTableContainer');
+    if (container) {
+      renderCrudTable(
+        container,
+        currentAdminTableData,
+        currentAdminTableName,
+        currentTableSearchField,
+        currentTableSearchValue
+      );
     }
-
-    const token = localStorage.getItem('techAggregatorToken');
-    try {
-        const response = await fetch(`http://localhost:3000/api/admin/table/${currentAdminTableName}/${primaryKeyValue}`, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify(newRowData)
-        });
-
-        if (!response.ok) throw new Error(await response.text());
-
-        const updatedRow = await response.json();
-        console.log(`Запись ID ${primaryKeyValue} обновлена`, updatedRow);
-        showCustomNotification(`Запись ID ${primaryKeyValue} обновлена.`, 'success');
-        currentAdminTableData[rowIndex] = updatedRow;
-        const container = document.getElementById('crudTableContainer');
-        if (container) {
-          renderCrudTable(
-            container,
-            currentAdminTableData,
-            currentAdminTableName,
-            currentTableSearchField,
-            currentTableSearchValue
-          );
-        }
-    } catch (error) {
-        console.error(`Ошибка обновления записи ID ${primaryKeyValue}:`, error);
-        showCustomNotification(`Ошибка: ${error.message}`, 'error');
-    }
+  } catch (error) {
+    console.error(`Ошибка обновления записи ID ${primaryKeyValue}:`, error);
+    showCustomNotification(`Ошибка: ${error.message}`, 'error');
+  }
 }
 
 //Удаление строки
 async function deleteRow(recordId, rowIndex) {
-    if (!confirm(`Вы уверены, что хотите удалить запись с ID ${recordId}?`)) return;
+  if (!confirm(`Вы уверены, что хотите удалить запись с ID ${recordId}?`)) return;
 
-    const token = localStorage.getItem('techAggregatorToken');
-    try {
-        const response = await fetch(`http://localhost:3000/api/admin/table/${currentAdminTableName}/${recordId}`, {
-            method: 'DELETE',
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
+  const token = localStorage.getItem('techAggregatorToken');
+  try {
+    const response = await fetch(`http://localhost:3000/api/admin/table/${currentAdminTableName}/${recordId}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${token}` }
+    });
 
-        if (!response.ok) throw new Error(await response.text());
+    if (!response.ok) throw new Error(await response.text());
 
-        const result = await response.json();
-        console.log(result.message);
-        showCustomNotification(result.message, 'success');
-        currentAdminTableData.splice(rowIndex, 1);
-        const container = document.getElementById('crudTableContainer');
-        if (container) {
-          if (currentAdminTableData.length === 0) {
-            reloadCrudTablePreservingSearch();
-          } else {
-            renderCrudTable(
-              container,
-              currentAdminTableData,
-              currentAdminTableName,
-              currentTableSearchField,
-              currentTableSearchValue
-            );
-          }
-        }
-    } catch (error) {
-        console.error(`Ошибка удаления записи ID ${recordId}:`, error);
-        showCustomNotification(`Ошибка: ${error.message}`, 'error');
+    const result = await response.json();
+    showCustomNotification(result.message, 'success');
+    currentAdminTableData.splice(rowIndex, 1);
+    const container = document.getElementById('crudTableContainer');
+    if (container) {
+      if (currentAdminTableData.length === 0) {
+        reloadCrudTablePreservingSearch();
+      } else {
+        renderCrudTable(
+          container,
+          currentAdminTableData,
+          currentAdminTableName,
+          currentTableSearchField,
+          currentTableSearchValue
+        );
+      }
     }
+  } catch (error) {
+    console.error(`Ошибка удаления записи ID ${recordId}:`, error);
+    showCustomNotification(`Ошибка: ${error.message}`, 'error');
+  }
 }
 
 //Вкладка с аналитикой
@@ -7105,9 +7477,8 @@ async function loadAnalyticsData() {
   const token = localStorage.getItem('techAggregatorToken');
 
   try {
-   
     const statsRes = await fetch('http://localhost:3000/api/admin/analytics/stats', {
-      headers: { 'Authorization': `Bearer ${token}` }
+      headers: { Authorization: `Bearer ${token}` }
     });
 
     if (!statsRes.ok) {
@@ -7123,41 +7494,38 @@ async function loadAnalyticsData() {
     }
 
     const stats = await statsRes.json();
-    console.log('Загружена аналитика:', stats);
-
-    const dailyViewsEl = document.getElementById('dailyViews'); 
+    const dailyViewsEl = document.getElementById('dailyViews');
     if (dailyViewsEl) dailyViewsEl.textContent = stats.dailyViews;
 
-    const purchaseClicksEl = document.getElementById('purchaseClicks'); 
+    const purchaseClicksEl = document.getElementById('purchaseClicks');
     if (purchaseClicksEl) purchaseClicksEl.textContent = stats.purchaseClicks;
 
-    const totalProductsEl = document.getElementById('totalProductsStat'); 
+    const totalProductsEl = document.getElementById('totalProductsStat');
     if (totalProductsEl) totalProductsEl.textContent = stats.totalProducts;
 
-    const totalReviewsEl = document.getElementById('totalReviewsStat'); 
+    const totalReviewsEl = document.getElementById('totalReviewsStat');
     if (totalReviewsEl) totalReviewsEl.textContent = stats.totalReviews;
 
-    const totalRequestsEl = document.getElementById('totalRequestsStat'); 
+    const totalRequestsEl = document.getElementById('totalRequestsStat');
     if (totalRequestsEl) totalRequestsEl.textContent = stats.totalRequests;
 
-    const totalUsersEl = document.getElementById('totalUsersStat'); 
+    const totalUsersEl = document.getElementById('totalUsersStat');
     if (totalUsersEl) totalUsersEl.textContent = stats.totalUsers;
 
-    const serverLoadEl = document.getElementById('serverLoad'); 
+    const serverLoadEl = document.getElementById('serverLoad');
     if (serverLoadEl) serverLoadEl.textContent = `${stats.serverLoad}%`;
 
-    const responseTimeEl = document.getElementById('responseTime'); 
+    const responseTimeEl = document.getElementById('responseTime');
     if (responseTimeEl) responseTimeEl.textContent = `${stats.responseTime} ms`;
 
     //Обновление изменений (если отображаются)
     const dailyViewsChangeEl = document.getElementById('dailyViewsChange');
-    if (dailyViewsChangeEl) dailyViewsChangeEl.textContent = `${stats.dailyViewsChange > 0 ? '+' : ''}${stats.dailyViewsChange.toFixed(1)}%`;
+    if (dailyViewsChangeEl)
+      dailyViewsChangeEl.textContent = `${stats.dailyViewsChange > 0 ? '+' : ''}${stats.dailyViewsChange.toFixed(1)}%`;
 
     const purchaseClicksChangeEl = document.getElementById('purchaseClicksChange');
-    if (purchaseClicksChangeEl) purchaseClicksChangeEl.textContent = `${stats.purchaseClicksChange > 0 ? '+' : ''}${stats.purchaseClicksChange.toFixed(1)}%`;
-
-
-
+    if (purchaseClicksChangeEl)
+      purchaseClicksChangeEl.textContent = `${stats.purchaseClicksChange > 0 ? '+' : ''}${stats.purchaseClicksChange.toFixed(1)}%`;
   } catch (error) {
     console.error('Ошибка загрузки аналитики:', error);
 
@@ -7171,7 +7539,7 @@ async function loadPopularSearches() {
 
   try {
     const searchesRes = await fetch('http://localhost:3000/api/admin/analytics/popular-searches', {
-      headers: { 'Authorization': `Bearer ${token}` }
+      headers: { Authorization: `Bearer ${token}` }
     });
 
     if (!searchesRes.ok) {
@@ -7187,18 +7555,17 @@ async function loadPopularSearches() {
     }
 
     const searches = await searchesRes.json();
-    const searchesContainer = document.getElementById('popularSearches'); 
+    const searchesContainer = document.getElementById('popularSearches');
 
     if (!searchesContainer) {
-        console.warn('Контейнер популярных поисков (#popularSearches) не найден.');
-        return;
+      return;
     }
 
     if (searches.length > 0) {
       //Очищаем предыдущий список
       searchesContainer.innerHTML = '';
       //Создаём HTML для каждого поиска
-      searches.forEach(search => {
+      searches.forEach((search) => {
         const div = document.createElement('div');
         div.className = 'popular-search-item'; //Добавим класс для стилизации
         div.textContent = `${search.term} (${search.count} раз)`;
@@ -7207,7 +7574,6 @@ async function loadPopularSearches() {
     } else {
       searchesContainer.innerHTML = '<div class="no-data">Нет данных</div>';
     }
-
   } catch (error) {
     console.error('Ошибка загрузки популярных поисков:', error);
     const searchesContainer = document.getElementById('popularSearches');
@@ -7221,29 +7587,28 @@ async function loadPopularSearches() {
 
 //Загрузка таблицы пользователей
 async function loadUsersTable() {
-    const tbody = document.getElementById('usersTableBody');
-    if (!tbody) return;
+  const tbody = document.getElementById('usersTableBody');
+  if (!tbody) return;
 
-    try {
-        const token = localStorage.getItem('techAggregatorToken');
-        const response = await fetch('http://localhost:3000/api/admin/users', {
-            headers: { 'Authorization': `Bearer ${token}` }
+  try {
+    const token = localStorage.getItem('techAggregatorToken');
+    const response = await fetch('http://localhost:3000/api/admin/users', {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+
+    if (!response.ok) throw new Error(await response.text());
+
+    const users = await response.json();
+    tbody.innerHTML = users
+      .map((user) => {
+        const joinDate = new Date(user.createdAt);
+        const formattedDate = joinDate.toLocaleDateString('ru-RU', {
+          day: '2-digit',
+          month: 'long',
+          year: 'numeric'
         });
 
-        if (!response.ok) throw new Error(await response.text());
-
-        const users = await response.json();
-        console.log('Загружены пользователи:', users);
-
-        tbody.innerHTML = users.map(user => {
-            const joinDate = new Date(user.createdAt);
-            const formattedDate = joinDate.toLocaleDateString('ru-RU', {
-                day: '2-digit',
-                month: 'long',
-                year: 'numeric'
-            });
-
-return `
+        return `
     <tr>
         <td>${user.id}</td>
         <td>${user.email}</td>
@@ -7258,33 +7623,37 @@ return `
         </td>
     </tr>
 `;
-        }).join('');
-
-    } catch (error) {
-        console.error('Ошибка загрузки пользователей:', error);
-        tbody.innerHTML = `<tr><td colspan="6"><p class="error-message">Ошибка: ${error.message}</p></td></tr>`;
-    }
+      })
+      .join('');
+  } catch (error) {
+    console.error('Ошибка загрузки пользователей:', error);
+    tbody.innerHTML = `<tr><td colspan="6"><p class="error-message">Ошибка: ${error.message}</p></td></tr>`;
+  }
 }
 
 //Вспомогательные функции пользователей (заглушки)
-function viewUser(userId) { alert(`Просмотр пользователя ID: ${userId}`); }
-function editUser(userId) { alert(`Редактирование пользователя ID: ${userId}`); }
+function viewUser(userId) {
+  alert(`Просмотр пользователя ID: ${userId}`);
+}
+function editUser(userId) {
+  alert(`Редактирование пользователя ID: ${userId}`);
+}
 async function deleteUser(userId) {
-    if (confirm(`Вы уверены, что хотите удалить пользователя ID ${userId}?`)) {
-        const token = localStorage.getItem('techAggregatorToken');
-        try {
-            const response = await fetch(`http://localhost:3000/api/admin/users/${userId}`, {
-                method: 'DELETE',
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            if (!response.ok) throw new Error(await response.text());
-            showCustomNotification('Пользователь удалён.', 'success');
-            loadUsersTable();
-        } catch (error) {
-            console.error('Ошибка удаления пользователя:', error);
-            showCustomNotification(`Ошибка: ${error.message}`, 'error');
-        }
+  if (confirm(`Вы уверены, что хотите удалить пользователя ID ${userId}?`)) {
+    const token = localStorage.getItem('techAggregatorToken');
+    try {
+      const response = await fetch(`http://localhost:3000/api/admin/users/${userId}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!response.ok) throw new Error(await response.text());
+      showCustomNotification('Пользователь удалён.', 'success');
+      loadUsersTable();
+    } catch (error) {
+      console.error('Ошибка удаления пользователя:', error);
+      showCustomNotification(`Ошибка: ${error.message}`, 'error');
     }
+  }
 }
 
 //Отправка сообщений пользователям
@@ -7292,16 +7661,16 @@ async function deleteUser(userId) {
 //Форма отправки сообщения пользователю
 let currentMessageUserId = null;
 function openMessageForm(userId, userEmail) {
-    currentMessageUserId = userId;
-    const container = document.getElementById('usersTable').parentElement;
-    let messageFormContainer = container.querySelector('.message-form-container');
-    if (!messageFormContainer) {
-        messageFormContainer = document.createElement('div');
-        messageFormContainer.className = 'message-form-container';
-        container.appendChild(messageFormContainer);
-    }
+  currentMessageUserId = userId;
+  const container = document.getElementById('usersTable').parentElement;
+  let messageFormContainer = container.querySelector('.message-form-container');
+  if (!messageFormContainer) {
+    messageFormContainer = document.createElement('div');
+    messageFormContainer.className = 'message-form-container';
+    container.appendChild(messageFormContainer);
+  }
 
-    messageFormContainer.innerHTML = `
+  messageFormContainer.innerHTML = `
         <h4>Отправить сообщение пользователю: ${userEmail}</h4>
         <form id="messageForm">
             <div class="message-input-group">
@@ -7315,225 +7684,477 @@ function openMessageForm(userId, userEmail) {
         </form>
     `;
 
-    document.getElementById('messageForm').addEventListener('submit', sendMessageToUser);
+  document.getElementById('messageForm').addEventListener('submit', sendMessageToUser);
 }
-
-
-
-
 
 //Добавление
 document.addEventListener('DOMContentLoaded', () => {
-    const parseForm = document.getElementById('parseProductForm');
-    if (parseForm) {
-        parseForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const url = document.getElementById('parseUrl')?.value.trim();
-            const query = document.getElementById('parseName')?.value.trim() || null;
-            const category = document.getElementById('parseCategory')?.value.trim() || null;
-            const proxy = document.getElementById('parseProxy')?.value.trim() || null;
+  const parseForm = document.getElementById('parseProductForm');
+  if (parseForm) {
+    parseForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
 
-            if (!url && !query) {
-                showCustomNotification('Укажите URL или название устройства.', 'info');
-                return;
-            }
+      const url = document.getElementById('parseUrl')?.value.trim();
+      const query = document.getElementById('parseName')?.value.trim() || null;
+      const category = document.getElementById('parseCategory')?.value.trim() || null;
+      const proxy = document.getElementById('parseProxy')?.value.trim() || null;
 
-            const submitBtn = e.target.querySelector('button[type="submit"]');
-            const originalText = submitBtn.innerText;
-            submitBtn.disabled = true;
-            submitBtn.innerText = '⏳ Загрузка...';
+      if (!url && !query) {
+        showCustomNotification('Укажите URL или название устройства.', 'info');
+        return;
+      }
 
-            try {
-                await sendParseRequest(url || null, category, proxy, query);
-            } finally {
-                submitBtn.disabled = false;
-                submitBtn.innerText = originalText;
-            }
-        });
-    }
-    if (document.getElementById('manualAddForm')) {
-      initDefaultManualPriceEntries();
-    }
-    const defaultHistoryDate = document.getElementById('newDate');
-    if (defaultHistoryDate && !defaultHistoryDate.value) {
-      defaultHistoryDate.value = formatLocalDateYMD();
-    }
-    ensureAdminPriceUrlAutofillWired();
-    initAdminImportTab();
+      const submitBtn = e.target.querySelector('button[type="submit"]');
+      const originalText = submitBtn.innerText;
+      submitBtn.disabled = true;
+      submitBtn.innerText = '⏳ Загрузка...';
+
+      try {
+        await sendParseRequest(url || null, category, proxy, query);
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerText = originalText;
+      }
+    });
+  }
+  if (document.getElementById('manualAddForm')) {
+    initDefaultManualPriceEntries();
+  }
+  const defaultHistoryDate = document.getElementById('newDate');
+  if (defaultHistoryDate && !defaultHistoryDate.value) {
+    defaultHistoryDate.value = formatLocalDateYMD();
+  }
+  ensureAdminPriceUrlAutofillWired();
+  initAdminImportTab();
 });
 
-
-let currentManualCategory = ''; 
+let currentManualCategory = '';
 const DEFAULT_PRICE_STORE_SEQUENCE = ['Wildberries', 'Wildberries', 'Yandex Market', 'Yandex Market'];
 
-
 const CATEGORY_TO_SPECS_MAP = {
-    smartphones: [
-        'screen_size', 'screen_resolution', 'screen_technology', 'screen_refresh_rate',
-        'cpu_brand', 'cpu_model', 'cpu_cores', 'cpu_speed',
-        'ram_size', 'ram_type',
-        'storage_capacity', 'storage_type',
-        'rear_camera_count', 'rear_camera_primary_mp', 'rear_camera_sensor_model',
-        'front_camera_mp', 'battery_capacity_mah', 'battery_type',
-        'os', 'os_version', 'weight_g', 'dimensions_mm',
-        'sim_slots', 'connectivity', 'water_resistance', 'build_material',
-        'fingerprint_scanner', 'face_unlock', 'nfc_support', 'wireless_charging'
-    ],
-    laptops: [
-        'screen_size', 'screen_resolution', 'screen_type', 'screen_refresh_rate',
-        'cpu_brand', 'cpu_model', 'cpu_cores', 'cpu_speed',
-        'ram_size', 'ram_type', 'ram_slots',
-        'storage_capacity', 'storage_type', 'storage_slots',
-        'gpu_model', 'gpu_brand', 'gpu_memory_mb',
-        'os', 'keyboard_backlight', 'keyboard_layout',
-        'ports_usb_a', 'ports_usb_c', 'ports_hdmi', 'ports_displayport',
-        'battery_capacity_mah', 'battery_life_hours', 'weight_g', 'dimensions_mm',
-        'webcam_mp', 'audio_system', 'fingerprint_scanner', 'tpm'
-    ],
-    tv: [
-        'diagonal_in', 'screen_resolution', 'screen_technology', 'hdr_support',
-        'smart_platform', 'refresh_rate', 'sound_power_w', 'sound_channels',
-        'ports_hdmi', 'ports_usb', 'wifi_support', 'bluetooth_support',
-        'weight_g', 'dimensions_mm', 'mount_type', 'energy_class'
-    ],
-    headphones: [
-        'driver_size_mm', 'driver_type', 'impedance_ohms', 'frequency_response_hz',
-        'sensitivity_db', 'wireless_standard', 'battery_life_hours', 'charging_port',
-        'anc_type', 'microphone', 'foldable', 'weight_g',
-        'cable_length_m', 'connector_type', 'controls_type'
-    ],
-    cameras: [
-        'sensor_size', 'sensor_resolution_mp', 'lens_mount', 'video_resolution',
-        'video_fps', 'iso_range', 'image_stabilization', 'viewfinder_type',
-        'lcd_size_in', 'lcd_touch', 'battery_life_shots', 'weight_g',
-        'dimensions_mm', 'weather_sealing', 'flash_type'
-    ],
-    tablets: [
-        'screen_size', 'screen_resolution', 'screen_technology',
-        'cpu_brand', 'cpu_model', 'ram_size', 'storage_capacity',
-        'os', 'battery_capacity_mah', 'rear_camera_mp', 'front_camera_mp',
-        'weight_g', 'dimensions_mm', 'stylus_support', 'keyboard_support',
-        'sim_slots', 'connectivity'
-    ],
-    smartwatches: [
-        'display_size_in', 'display_type', 'battery_life_hours', 'water_resistance_rating',
-        'gps_type', 'nfc_support', 'lte_support', 'health_monitoring',
-        'sports_modes_count', 'compatibility', 'weight_g', 'strap_material'
-    ],
-    ebooks: [
-        'screen_size', 'screen_resolution', 'screen_technology', 'screen_frontlight',
-        'storage_capacity', 'battery_life_days', 'weight_g', 'dimensions_mm',
-        'file_formats_supported', 'dictionary_included', 'waterproof'
-    ],
-    drones: [
-        'flight_time_minutes', 'max_range_km', 'camera_resolution', 'video_resolution',
-        'gimbal_type', 'obstacle_avoidance', 'max_speed_kmh', 'weight_g',
-        'wind_resistance', 'gps_support', 'return_to_home'
-    ],
-    pc_components: [
-        'component_type', 'brand', 'model', 'socket', 'chipset',
-        'ram_type', 'ram_speed', 'pcie_version', 'power_connector',
-        'tdp_w', 'dimensions_mm', 'warranty_years'
-    ],
-    monitors: [
-        'screen_size', 'screen_resolution', 'panel_type', 'refresh_rate',
-        'response_time_ms', 'brightness_nits', 'contrast_ratio', 'hdr_support',
-        'ports_hdmi', 'ports_displayport', 'adjustable_stand', 'vesa_mount',
-        'weight_g', 'dimensions_mm'
-    ],
-    accessories: [
-        'accessory_type', 'compatibility', 'material', 'color',
-        'weight_g', 'dimensions_mm', 'warranty_years'
-    ],
-    gaming: [
-        'console_type', 'storage_capacity', 'resolution_output', 'backwards_compatibility',
-        'controller_included', 'online_service', 'weight_g', 'dimensions_mm'
-    ],
-    networking: [
-        'wifi_standard', 'max_speed_mbps', 'ethernet_ports', 'antenna_count',
-        'coverage_area_sqm', 'vpn_support', 'parental_controls', 'weight_g'
-    ],
-    keyboards: [
-        'keyboard_type', 'switch_type', 'layout', 'connectivity',
-        'backlight', 'anti_ghosting', 'key_rollover', 'weight_g'
-    ],
-    mouses: [
-        'sensor_type', 'dpi_max', 'buttons_count', 'connectivity',
-        'polling_rate_hz', 'weight_g', 'battery_life_hours', 'rgb_backlight'
-    ],
-    cases: [
-        'case_type', 'supported_form_factors', 'materials', 'fan_support',
-        'radiator_support', 'gpu_max_length_mm', 'cpu_cooler_max_height_mm', 'weight_g'
-    ],
-    fitness_trackers: [
-        'display_type', 'battery_life_days', 'water_resistance', 'sensors',
-        'connectivity', 'compatibility', 'weight_g', 'strap_size'
-    ],
-    power_units: [
-        'power_w', 'efficiency_rating', 'modular_type', 'fan_size_mm',
-        'protection_systems', 'connectors', 'form_factor', 'warranty_years'
-    ],
-    microphones: [
-        'microphone_type', 'polar_pattern', 'frequency_response_hz', 'sensitivity_db',
-        'connectivity', 'sample_rate_khz', 'bit_depth', 'weight_g'
-    ],
-    webcams: [
-        'resolution', 'fps', 'focus_type', 'field_of_view',
-        'microphone', 'mount_type', 'connectivity', 'cable_length_m'
-    ],
-    power_banks: [
-        'battery_capacity_mah', 'battery_type', 'ports_usb_a', 'ports_usb_c',
-        'max_output_w', 'fast_charging', 'weight_g', 'dimensions_mm'
-    ],
-    portable_speakers: [
-        'power_w', 'frequency_response_hz', 'bluetooth_version', 'battery_life_hours',
-        'water_resistance', 'voice_assistant', 'weight_g', 'dimensions_mm'
-    ],
-    cpus: [
-        'cpu_brand', 'cpu_model', 'cpu_cores', 'cpu_threads',
-        'cpu_base_freq', 'cpu_boost_freq', 'socket', 'tdp_w',
-        'process_tech_nm', 'integrated_graphics', 'cache_l3_mb'
-    ],
-    motherboards: [
-        'socket', 'chipset', 'form_factor', 'ram_type',
-        'ram_slots', 'max_ram', 'pcie_version', 'm2_slots',
-        'ports_sata', 'ports_usb', 'wifi_support'
-    ],
-    ram: [
-        'ram_type', 'capacity_gb', 'memory_speed_mhz', 'latency_cl',
-        'module_count', 'voltage_v', 'rgb_support', 'warranty_years'
-    ],
-    graphics_cards: [
-        'gpu_brand', 'gpu_model', 'vram_size', 'memory_bus_width_bit',
-        'boost_clock_mhz', 'tdp_w', 'power_connector', 'output_ports',
-        'ray_tracing_support'
-    ],
-    external_drives: [
-        'storage_type', 'capacity_gb', 'interface', 'read_speed_mbs',
-        'write_speed_mbs', 'form_factor', 'water_resistance', 'warranty_years'
-    ],
-    storage: [
-        'storage_type', 'capacity_gb', 'interface', 'read_speed_mbs',
-        'write_speed_mbs', 'form_factor', 'warranty_years'
-    ],
-    drivers: [
-        'storage_type', 'capacity_gb', 'interface', 'read_speed_mbs',
-        'write_speed_mbs', 'form_factor', 'warranty_years'
-    ],
-    audio: [
-        'speaker_count', 'power_w', 'frequency_response_hz', 'connectivity',
-        'voice_assistant', 'weight_g', 'dimensions_mm'
-    ],
-    smart_home: [
-        'device_type', 'protocol', 'compatibility', 'power_source',
-        'range_m', 'app_support', 'voice_control', 'weight_g'
-    ],
-    wearables: [
-        'display_type', 'battery_life_days', 'water_resistance', 'sensors',
-        'connectivity', 'compatibility', 'weight_g', 'strap_size'
-    ],
-    other: [] //Пустой массив для категории "Другое"
+  smartphones: [
+    'screen_size',
+    'screen_resolution',
+    'screen_technology',
+    'screen_refresh_rate',
+    'cpu_brand',
+    'cpu_model',
+    'cpu_cores',
+    'cpu_speed',
+    'ram_size',
+    'ram_type',
+    'storage_capacity',
+    'storage_type',
+    'rear_camera_count',
+    'rear_camera_primary_mp',
+    'rear_camera_sensor_model',
+    'front_camera_mp',
+    'battery_capacity_mah',
+    'battery_type',
+    'os',
+    'os_version',
+    'weight_g',
+    'dimensions_mm',
+    'sim_slots',
+    'connectivity',
+    'water_resistance',
+    'build_material',
+    'fingerprint_scanner',
+    'face_unlock',
+    'nfc_support',
+    'wireless_charging'
+  ],
+  laptops: [
+    'screen_size',
+    'screen_resolution',
+    'screen_type',
+    'screen_refresh_rate',
+    'cpu_brand',
+    'cpu_model',
+    'cpu_cores',
+    'cpu_speed',
+    'ram_size',
+    'ram_type',
+    'ram_slots',
+    'storage_capacity',
+    'storage_type',
+    'storage_slots',
+    'gpu_model',
+    'gpu_brand',
+    'gpu_memory_mb',
+    'os',
+    'keyboard_backlight',
+    'keyboard_layout',
+    'ports_usb_a',
+    'ports_usb_c',
+    'ports_hdmi',
+    'ports_displayport',
+    'battery_capacity_mah',
+    'battery_life_hours',
+    'weight_g',
+    'dimensions_mm',
+    'webcam_mp',
+    'audio_system',
+    'fingerprint_scanner',
+    'tpm'
+  ],
+  tv: [
+    'diagonal_in',
+    'screen_resolution',
+    'screen_technology',
+    'hdr_support',
+    'smart_platform',
+    'refresh_rate',
+    'sound_power_w',
+    'sound_channels',
+    'ports_hdmi',
+    'ports_usb',
+    'wifi_support',
+    'bluetooth_support',
+    'weight_g',
+    'dimensions_mm',
+    'mount_type',
+    'energy_class'
+  ],
+  headphones: [
+    'driver_size_mm',
+    'driver_type',
+    'impedance_ohms',
+    'frequency_response_hz',
+    'sensitivity_db',
+    'wireless_standard',
+    'battery_life_hours',
+    'charging_port',
+    'anc_type',
+    'microphone',
+    'foldable',
+    'weight_g',
+    'cable_length_m',
+    'connector_type',
+    'controls_type'
+  ],
+  cameras: [
+    'sensor_size',
+    'sensor_resolution_mp',
+    'lens_mount',
+    'video_resolution',
+    'video_fps',
+    'iso_range',
+    'image_stabilization',
+    'viewfinder_type',
+    'lcd_size_in',
+    'lcd_touch',
+    'battery_life_shots',
+    'weight_g',
+    'dimensions_mm',
+    'weather_sealing',
+    'flash_type'
+  ],
+  tablets: [
+    'screen_size',
+    'screen_resolution',
+    'screen_technology',
+    'cpu_brand',
+    'cpu_model',
+    'ram_size',
+    'storage_capacity',
+    'os',
+    'battery_capacity_mah',
+    'rear_camera_mp',
+    'front_camera_mp',
+    'weight_g',
+    'dimensions_mm',
+    'stylus_support',
+    'keyboard_support',
+    'sim_slots',
+    'connectivity'
+  ],
+  smartwatches: [
+    'display_size_in',
+    'display_type',
+    'battery_life_hours',
+    'water_resistance_rating',
+    'gps_type',
+    'nfc_support',
+    'lte_support',
+    'health_monitoring',
+    'sports_modes_count',
+    'compatibility',
+    'weight_g',
+    'strap_material'
+  ],
+  ebooks: [
+    'screen_size',
+    'screen_resolution',
+    'screen_technology',
+    'screen_frontlight',
+    'storage_capacity',
+    'battery_life_days',
+    'weight_g',
+    'dimensions_mm',
+    'file_formats_supported',
+    'dictionary_included',
+    'waterproof'
+  ],
+  drones: [
+    'flight_time_minutes',
+    'max_range_km',
+    'camera_resolution',
+    'video_resolution',
+    'gimbal_type',
+    'obstacle_avoidance',
+    'max_speed_kmh',
+    'weight_g',
+    'wind_resistance',
+    'gps_support',
+    'return_to_home'
+  ],
+  pc_components: [
+    'component_type',
+    'brand',
+    'model',
+    'socket',
+    'chipset',
+    'ram_type',
+    'ram_speed',
+    'pcie_version',
+    'power_connector',
+    'tdp_w',
+    'dimensions_mm',
+    'warranty_years'
+  ],
+  monitors: [
+    'screen_size',
+    'screen_resolution',
+    'panel_type',
+    'refresh_rate',
+    'response_time_ms',
+    'brightness_nits',
+    'contrast_ratio',
+    'hdr_support',
+    'ports_hdmi',
+    'ports_displayport',
+    'adjustable_stand',
+    'vesa_mount',
+    'weight_g',
+    'dimensions_mm'
+  ],
+  accessories: ['accessory_type', 'compatibility', 'material', 'color', 'weight_g', 'dimensions_mm', 'warranty_years'],
+  gaming: [
+    'console_type',
+    'storage_capacity',
+    'resolution_output',
+    'backwards_compatibility',
+    'controller_included',
+    'online_service',
+    'weight_g',
+    'dimensions_mm'
+  ],
+  networking: [
+    'wifi_standard',
+    'max_speed_mbps',
+    'ethernet_ports',
+    'antenna_count',
+    'coverage_area_sqm',
+    'vpn_support',
+    'parental_controls',
+    'weight_g'
+  ],
+  keyboards: [
+    'keyboard_type',
+    'switch_type',
+    'layout',
+    'connectivity',
+    'backlight',
+    'anti_ghosting',
+    'key_rollover',
+    'weight_g'
+  ],
+  mouses: [
+    'sensor_type',
+    'dpi_max',
+    'buttons_count',
+    'connectivity',
+    'polling_rate_hz',
+    'weight_g',
+    'battery_life_hours',
+    'rgb_backlight'
+  ],
+  cases: [
+    'case_type',
+    'supported_form_factors',
+    'materials',
+    'fan_support',
+    'radiator_support',
+    'gpu_max_length_mm',
+    'cpu_cooler_max_height_mm',
+    'weight_g'
+  ],
+  fitness_trackers: [
+    'display_type',
+    'battery_life_days',
+    'water_resistance',
+    'sensors',
+    'connectivity',
+    'compatibility',
+    'weight_g',
+    'strap_size'
+  ],
+  power_units: [
+    'power_w',
+    'efficiency_rating',
+    'modular_type',
+    'fan_size_mm',
+    'protection_systems',
+    'connectors',
+    'form_factor',
+    'warranty_years'
+  ],
+  microphones: [
+    'microphone_type',
+    'polar_pattern',
+    'frequency_response_hz',
+    'sensitivity_db',
+    'connectivity',
+    'sample_rate_khz',
+    'bit_depth',
+    'weight_g'
+  ],
+  webcams: [
+    'resolution',
+    'fps',
+    'focus_type',
+    'field_of_view',
+    'microphone',
+    'mount_type',
+    'connectivity',
+    'cable_length_m'
+  ],
+  power_banks: [
+    'battery_capacity_mah',
+    'battery_type',
+    'ports_usb_a',
+    'ports_usb_c',
+    'max_output_w',
+    'fast_charging',
+    'weight_g',
+    'dimensions_mm'
+  ],
+  portable_speakers: [
+    'power_w',
+    'frequency_response_hz',
+    'bluetooth_version',
+    'battery_life_hours',
+    'water_resistance',
+    'voice_assistant',
+    'weight_g',
+    'dimensions_mm'
+  ],
+  cpus: [
+    'cpu_brand',
+    'cpu_model',
+    'cpu_cores',
+    'cpu_threads',
+    'cpu_base_freq',
+    'cpu_boost_freq',
+    'socket',
+    'tdp_w',
+    'process_tech_nm',
+    'integrated_graphics',
+    'cache_l3_mb'
+  ],
+  motherboards: [
+    'socket',
+    'chipset',
+    'form_factor',
+    'ram_type',
+    'ram_slots',
+    'max_ram',
+    'pcie_version',
+    'm2_slots',
+    'ports_sata',
+    'ports_usb',
+    'wifi_support'
+  ],
+  ram: [
+    'ram_type',
+    'capacity_gb',
+    'memory_speed_mhz',
+    'latency_cl',
+    'module_count',
+    'voltage_v',
+    'rgb_support',
+    'warranty_years'
+  ],
+  graphics_cards: [
+    'gpu_brand',
+    'gpu_model',
+    'vram_size',
+    'memory_bus_width_bit',
+    'boost_clock_mhz',
+    'tdp_w',
+    'power_connector',
+    'output_ports',
+    'ray_tracing_support'
+  ],
+  external_drives: [
+    'storage_type',
+    'capacity_gb',
+    'interface',
+    'read_speed_mbs',
+    'write_speed_mbs',
+    'form_factor',
+    'water_resistance',
+    'warranty_years'
+  ],
+  storage: [
+    'storage_type',
+    'capacity_gb',
+    'interface',
+    'read_speed_mbs',
+    'write_speed_mbs',
+    'form_factor',
+    'warranty_years'
+  ],
+  drivers: [
+    'storage_type',
+    'capacity_gb',
+    'interface',
+    'read_speed_mbs',
+    'write_speed_mbs',
+    'form_factor',
+    'warranty_years'
+  ],
+  audio: [
+    'speaker_count',
+    'power_w',
+    'frequency_response_hz',
+    'connectivity',
+    'voice_assistant',
+    'weight_g',
+    'dimensions_mm'
+  ],
+  smart_home: [
+    'device_type',
+    'protocol',
+    'compatibility',
+    'power_source',
+    'range_m',
+    'app_support',
+    'voice_control',
+    'weight_g'
+  ],
+  wearables: [
+    'display_type',
+    'battery_life_days',
+    'water_resistance',
+    'sensors',
+    'connectivity',
+    'compatibility',
+    'weight_g',
+    'strap_size'
+  ],
+  other: [] //Пустой массив для категории "Другое"
 };
 
 //Обновление полей спецификаций при выборе категории
@@ -7556,7 +8177,7 @@ function updateManualSpecFields() {
       const groupDiv = document.createElement('div');
       groupDiv.className = 'manual-spec-group';
 
-      specKeys.forEach(specKey => {
+      specKeys.forEach((specKey) => {
         const displayName = window.specKeyTranslations?.[specKey] || specKey;
 
         const fieldGroup = document.createElement('div');
@@ -7582,9 +8203,9 @@ function updateManualSpecFields() {
     currentManualCategory = '';
     const placeholder = document.createElement('p');
     placeholder.className = 'placeholder-text';
-    const message = selectedCategory ?
-      `Для категории "${selectedCategory}" не определены поля характеристик.` :
-      'Выберите категорию, чтобы увидеть доступные поля для характеристик.';
+    const message = selectedCategory
+      ? `Для категории "${selectedCategory}" не определены поля характеристик.`
+      : 'Выберите категорию, чтобы увидеть доступные поля для характеристик.';
     placeholder.textContent = message;
     container.appendChild(placeholder);
   }
@@ -7705,7 +8326,6 @@ async function fillManualPricesFromUrls() {
       }
       filled += 1;
     } catch (e) {
-      console.warn('fetch-price-from-url:', e);
       skipped += 1;
     }
   }
@@ -7730,17 +8350,15 @@ function removeManualPriceEntry(index) {
 //Сброс формы вручную
 function resetManualAddForm() {
   document.getElementById('manualAddForm').reset();
-  document.getElementById('manualSpecFieldsContainer').innerHTML = '<p class="placeholder-text">Выберите категорию, чтобы увидеть доступные поля для характеристик.</p>';
+  document.getElementById('manualSpecFieldsContainer').innerHTML =
+    '<p class="placeholder-text">Выберите категорию, чтобы увидеть доступные поля для характеристик.</p>';
   initDefaultManualPriceEntries();
   currentManualCategory = '';
-  console.log('Форма "Добавление вручную" сброшена.');
 }
 
 //Отправка формы вручную
-document.getElementById('manualAddForm')?.addEventListener('submit', async function(e) {
+document.getElementById('manualAddForm')?.addEventListener('submit', async function (e) {
   e.preventDefault();
-  console.log('Отправка формы "Добавление вручную"...');
-
   const name = document.getElementById('manualName').value.trim();
   const category = document.getElementById('manualCategory').value;
   const description = document.getElementById('manualDescription').value.trim();
@@ -7753,7 +8371,7 @@ document.getElementById('manualAddForm')?.addEventListener('submit', async funct
 
   const specs = {};
   if (currentManualCategory && CATEGORY_TO_SPECS_MAP[currentManualCategory]) {
-    CATEGORY_TO_SPECS_MAP[currentManualCategory].forEach(specKey => {
+    CATEGORY_TO_SPECS_MAP[currentManualCategory].forEach((specKey) => {
       const inputValue = document.getElementById(`spec_${specKey}`)?.value?.trim();
       if (inputValue) {
         specs[specKey] = inputValue;
@@ -7783,8 +8401,7 @@ document.getElementById('manualAddForm')?.addEventListener('submit', async funct
         url: buyUrl
       });
     } else {
-      console.warn(`Пропуск неполного блока цены ${i}:`, { storeName, sellerName, priceValue, buyUrl });
-      showCustomNotification(`Блок цены ${i+1} заполнен не полностью и будет пропущен.`, 'warning');
+      showCustomNotification(`Блок цены ${i + 1} заполнен не полностью и будет пропущен.`, 'warning');
     }
   }
 
@@ -7801,16 +8418,13 @@ document.getElementById('manualAddForm')?.addEventListener('submit', async funct
     specs: specs,
     prices: prices
   };
-
-  console.log('Данные для отправки (вручную):', productData);
-
   const token = localStorage.getItem('techAggregatorToken');
   try {
     const response = await fetch('http://localhost:3000/api/admin/manual-add-product', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
+        Authorization: `Bearer ${token}`
       },
       body: JSON.stringify(productData)
     });
@@ -7821,10 +8435,8 @@ document.getElementById('manualAddForm')?.addEventListener('submit', async funct
     }
 
     const result = await response.json();
-    console.log('Товар успешно добавлен вручную:', result);
     showCustomNotification('Товар успешно добавлен в базу данных.', 'success');
     resetManualAddForm();
-
   } catch (error) {
     console.error('Ошибка добавления товара вручную:', error);
     showCustomNotification(`Ошибка добавления товара: ${error.message}`, 'error');
@@ -7845,7 +8457,14 @@ function resetImportPreviewUI() {
   if (fe) fe.innerHTML = '';
   if (sum) sum.textContent = '';
   if (resPanel) resPanel.style.display = 'none';
-  window.importPreviewSession = { rows: [], source: null, format: null, commitFile: null, feedId: null, feedMeta: null };
+  window.importPreviewSession = {
+    rows: [],
+    source: null,
+    format: null,
+    commitFile: null,
+    feedId: null,
+    feedMeta: null
+  };
 }
 
 function renderImportPreviewTable() {
@@ -8028,7 +8647,9 @@ async function postImportCommit() {
     source === 'json'
       ? document.getElementById('importJsonSeller').value.trim() || undefined
       : source === 'feed'
-        ? (ses.feedMeta?.sellerName ? String(ses.feedMeta.sellerName).trim() : undefined)
+        ? ses.feedMeta?.sellerName
+          ? String(ses.feedMeta.sellerName).trim()
+          : undefined
         : document.getElementById('importSellerName').value.trim() || undefined;
   if (!storeName) {
     showCustomNotification('Выберите магазин в колонке файла/JSON или заполните магазин у ссылки-фида.', 'info');
@@ -8082,11 +8703,8 @@ async function postImportCommit() {
     };
 
     const batches = Math.ceil(allRows.length / batchSize);
-    console.log('[import] JSON commit batches:', batches, 'rows:', allRows.length, 'batchSize:', batchSize);
-
     for (let offset = 0; offset < allRows.length; offset += batchSize) {
       const chunk = allRows.slice(offset, offset + batchSize);
-      console.log('[import] batch', offset / batchSize + 1, '/', batches, 'chunk', chunk.length);
       const feedCommit = source === 'feed' && Number.isFinite(Number(ses.feedId));
       const endpoint = feedCommit
         ? `http://localhost:3000/api/admin/import/feeds/${Number(ses.feedId)}/commit`
@@ -8160,9 +8778,12 @@ function renderImportResult(data) {
   const li = (arr, emptyMsg) => {
     if (!arr || !arr.length) return `<p style="color:#94a3b8;margin:0;">${emptyMsg}</p>`;
     return `<ul style="margin:0;padding-left:1.1rem;">${arr
-      .map((r) => `<li>#${escapeHtml(String(r.id))} — ${escapeHtml(r.name || '')} <span style="color:#64748b;">(${escapeHtml(
-        r.category || ''
-      )})</span></li>`)
+      .map(
+        (r) =>
+          `<li>#${escapeHtml(String(r.id))} — ${escapeHtml(r.name || '')} <span style="color:#64748b;">(${escapeHtml(
+            r.category || ''
+          )})</span></li>`
+      )
       .join('')}</ul>`;
   };
   cEl.innerHTML = li(data.created, 'Нет');
@@ -8252,7 +8873,10 @@ async function runImportFeed(id) {
       feedId: id,
       feedMeta: data.feed || null
     });
-    showCustomNotification('Предпросмотр по ссылке готов. Проверьте таблицу и нажмите «Импортировать в каталог».', 'success');
+    showCustomNotification(
+      'Предпросмотр по ссылке готов. Проверьте таблицу и нажмите «Импортировать в каталог».',
+      'success'
+    );
   } catch (e) {
     showCustomNotification(e.message, 'error');
   }
@@ -8322,7 +8946,10 @@ function initAdminImportTab() {
       await postImportPreviewFile();
       const fe = window.__lastImportPreview?.fileErrors;
       const has = Array.isArray(fe) && fe.length;
-      showCustomNotification(has ? 'Предпросмотр: проверьте сообщения над таблицей.' : 'Предпросмотр готов.', has ? 'warning' : 'success');
+      showCustomNotification(
+        has ? 'Предпросмотр: проверьте сообщения над таблицей.' : 'Предпросмотр готов.',
+        has ? 'warning' : 'success'
+      );
     } catch (err) {
       showCustomNotification(err.message, 'error');
     }
@@ -8333,7 +8960,10 @@ function initAdminImportTab() {
       await postImportPreviewJson();
       const fe = window.__lastImportPreview?.fileErrors;
       const has = Array.isArray(fe) && fe.length;
-      showCustomNotification(has ? 'Предпросмотр: проверьте сообщения над таблицей.' : 'Предпросмотр готов.', has ? 'warning' : 'success');
+      showCustomNotification(
+        has ? 'Предпросмотр: проверьте сообщения над таблицей.' : 'Предпросмотр готов.',
+        has ? 'warning' : 'success'
+      );
     } catch (err) {
       showCustomNotification(err.message, 'error');
     }
@@ -8384,151 +9014,139 @@ function initAdminImportTab() {
 function resetParseForm() {
   document.getElementById('parseProductForm').reset();
   document.getElementById('parseResult').style.display = 'none';
-  console.log('Форма "Парсинг" сброшена.');
 }
-
-
-
 
 function openAdminTab(tabName) {
-    document.querySelectorAll('.admin-tab-content').forEach(tab => tab.classList.remove('active'));
-    document.querySelectorAll('.admin-tab-btn').forEach(btn => btn.classList.remove('active'));
-    document.getElementById(tabName).classList.add('active');
-    //Обновим активные кнопки
-    event.target.classList.add('active');
+  document.querySelectorAll('.admin-tab-content').forEach((tab) => tab.classList.remove('active'));
+  document.querySelectorAll('.admin-tab-btn').forEach((btn) => btn.classList.remove('active'));
+  document.getElementById(tabName).classList.add('active');
+  //Обновим активные кнопки
+  event.target.classList.add('active');
 
-    //Загрузка данных для вкладки при её открытии
-    if (tabName === 'moderation') {
-        loadModerationData(currentModerationTab);
-    } else if (tabName === 'editor') {
-        loadTableList();
-    } else if (tabName === 'analytics') {
-        loadAnalyticsData();
-    } else if (tabName === 'users') {
-        loadUsersTable();
-    } else if (tabName === 'priceHistory') {
-        fetchAdminPriceSyncStatus();
-    } else if (tabName === 'import') {
-        loadImportFeeds();
-    }
-    //Для 'parser' и 'manualAdd' ничего загружать не нужно, только открыть форму
+  //Загрузка данных для вкладки при её открытии
+  if (tabName === 'moderation') {
+    loadModerationData(currentModerationTab);
+  } else if (tabName === 'editor') {
+    loadTableList();
+  } else if (tabName === 'analytics') {
+    loadAnalyticsData();
+  } else if (tabName === 'users') {
+    loadUsersTable();
+  } else if (tabName === 'priceHistory') {
+    fetchAdminPriceSyncStatus();
+  } else if (tabName === 'import') {
+    loadImportFeeds();
+  }
+  //Для 'parser' и 'manualAdd' ничего загружать не нужно, только открыть форму
 }
-
-
 
 //по истории цен на админ панели
 async function loadAllProductsForPriceHistory() {
-    const selectElement = document.getElementById('priceHistoryProductSelect');
-    selectElement.innerHTML = '<option value="">-- Загрузка товаров... --</option>';
+  const selectElement = document.getElementById('priceHistoryProductSelect');
+  selectElement.innerHTML = '<option value="">-- Загрузка товаров... --</option>';
 
-    const token = localStorage.getItem('techAggregatorToken');
-    try {
-        const response = await fetch('http://localhost:3000/api/admin/products', { //Предполагаемый маршрут для получения всех продуктов
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
+  const token = localStorage.getItem('techAggregatorToken');
+  try {
+    const response = await fetch('http://localhost:3000/api/admin/products', {
+      //Предполагаемый маршрут для получения всех продуктов
+      headers: { Authorization: `Bearer ${token}` }
+    });
 
-        if (!response.ok) {
-            if (response.status === 401) {
-                localStorage.removeItem('techAggregatorToken');
-                currentUser = null;
-                updateAuthButtons();
-                showCustomNotification('Сессия истекла. Пожалуйста, войдите снова.', 'warning');
-                //window.location.href = 'auth.html';
-                return;
-            }
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-
-        const products = await response.json();
-        console.log('Загружен список товаров для истории цен:', products);
-
-        selectElement.innerHTML = '<option value="">-- Выберите товар --</option>';
-        products.forEach(product => {
-            const option = document.createElement('option');
-            option.value = product.id;
-            option.textContent = `${product.name} (ID: ${product.id})`;
-            selectElement.appendChild(option);
-        });
-
-    } catch (error) {
-        console.error('Ошибка загрузки товаров для истории цен:', error);
-        selectElement.innerHTML = '<option value="">-- Ошибка загрузки --</option>';
-        showCustomNotification(`Ошибка загрузки товаров: ${error.message}`, 'error');
+    if (!response.ok) {
+      if (response.status === 401) {
+        localStorage.removeItem('techAggregatorToken');
+        currentUser = null;
+        updateAuthButtons();
+        showCustomNotification('Сессия истекла. Пожалуйста, войдите снова.', 'warning');
+        //window.location.href = 'auth.html';
+        return;
+      }
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
+
+    const products = await response.json();
+    selectElement.innerHTML = '<option value="">-- Выберите товар --</option>';
+    products.forEach((product) => {
+      const option = document.createElement('option');
+      option.value = product.id;
+      option.textContent = `${product.name} (ID: ${product.id})`;
+      selectElement.appendChild(option);
+    });
+  } catch (error) {
+    console.error('Ошибка загрузки товаров для истории цен:', error);
+    selectElement.innerHTML = '<option value="">-- Ошибка загрузки --</option>';
+    showCustomNotification(`Ошибка загрузки товаров: ${error.message}`, 'error');
+  }
 }
 
 //Загрузка истории цен для выбранного товара
 async function loadPriceHistoryForProduct() {
-    const selectElement = document.getElementById('priceHistoryProductSelect');
-    const productId = parseInt(selectElement.value, 10);
+  const selectElement = document.getElementById('priceHistoryProductSelect');
+  const productId = parseInt(selectElement.value, 10);
 
-    if (!productId) {
-        //Если выбрана пустая опция, скрываем форму и список
-        document.getElementById('priceHistoryFormContainer').style.display = 'none';
-        document.getElementById('priceHistoryListContainer').style.display = 'none';
-        currentPriceHistoryProduct = null;
-        currentPriceHistoryEntries = [];
+  if (!productId) {
+    //Если выбрана пустая опция, скрываем форму и список
+    document.getElementById('priceHistoryFormContainer').style.display = 'none';
+    document.getElementById('priceHistoryListContainer').style.display = 'none';
+    currentPriceHistoryProduct = null;
+    currentPriceHistoryEntries = [];
+    return;
+  }
+
+  currentPriceHistoryProduct = productId;
+  const token = localStorage.getItem('techAggregatorToken');
+  try {
+    const response = await fetch(`http://localhost:3000/api/admin/price-history/${productId}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        localStorage.removeItem('techAggregatorToken');
+        currentUser = null;
+        updateAuthButtons();
+        showCustomNotification('Сессия истекла. Пожалуйста, войдите снова.', 'warning');
+        //window.location.href = 'auth.html';
         return;
+      }
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
 
-    currentPriceHistoryProduct = productId;
-    console.log(`Загрузка истории цен для товара ID: ${productId}`);
+    const historyEntries = await response.json();
+    currentPriceHistoryEntries = [...historyEntries]; //Сохраняем копию
 
-    const token = localStorage.getItem('techAggregatorToken');
-    try {
-        const response = await fetch(`http://localhost:3000/api/admin/price-history/${productId}`, {
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
-
-        if (!response.ok) {
-            if (response.status === 401) {
-                localStorage.removeItem('techAggregatorToken');
-                currentUser = null;
-                updateAuthButtons();
-                showCustomNotification('Сессия истекла. Пожалуйста, войдите снова.', 'warning');
-                //window.location.href = 'auth.html';
-                return;
-            }
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-
-        const historyEntries = await response.json();
-        console.log('Загружена история цен:', historyEntries);
-
-        currentPriceHistoryEntries = [...historyEntries]; //Сохраняем копию
-
-        //Показываем форму добавления
-        document.getElementById('priceHistoryFormContainer').style.display = 'block';
-        //Показываем список
-        document.getElementById('priceHistoryListContainer').style.display = 'block';
-        //Отрисовываем список
-        renderPriceHistoryList(historyEntries);
-
-    } catch (error) {
-        console.error('Ошибка загрузки истории цен:', error);
-        document.getElementById('priceHistoryList').innerHTML = `<p class="error-message">Ошибка: ${error.message}</p>`;
-        showCustomNotification(`Ошибка загрузки истории цен: ${error.message}`, 'error');
-    }
+    //Показываем форму добавления
+    document.getElementById('priceHistoryFormContainer').style.display = 'block';
+    //Показываем список
+    document.getElementById('priceHistoryListContainer').style.display = 'block';
+    //Отрисовываем список
+    renderPriceHistoryList(historyEntries);
+  } catch (error) {
+    console.error('Ошибка загрузки истории цен:', error);
+    document.getElementById('priceHistoryList').innerHTML = `<p class="error-message">Ошибка: ${error.message}</p>`;
+    showCustomNotification(`Ошибка загрузки истории цен: ${error.message}`, 'error');
+  }
 }
 
 //Отрисовка списка истории цен
 function renderPriceHistoryList(entries) {
-    const container = document.getElementById('priceHistoryList');
-    if (!container) return;
+  const container = document.getElementById('priceHistoryList');
+  if (!container) return;
 
-    if (entries.length === 0) {
-        container.innerHTML = '<p>Для этого товара пока нет записей об истории цен.</p>';
-        return;
-    }
+  if (entries.length === 0) {
+    container.innerHTML = '<p>Для этого товара пока нет записей об истории цен.</p>';
+    return;
+  }
 
-    container.innerHTML = entries.map(entry => {
-        const formattedDate = new Date(entry.date).toLocaleDateString('ru-RU', {
-            day: '2-digit',
-            month: 'long',
-            year: 'numeric'
-        });
+  container.innerHTML = entries
+    .map((entry) => {
+      const formattedDate = new Date(entry.date).toLocaleDateString('ru-RU', {
+        day: '2-digit',
+        month: 'long',
+        year: 'numeric'
+      });
 
-        return `
+      return `
             <div class="price-history-item" data-id="${entry.id}">
                 <div class="price-history-info">
                     <p><strong>Магазин:</strong> ${entry.storeName}</p>
@@ -8541,65 +9159,62 @@ function renderPriceHistoryList(entries) {
                 </div>
             </div>
         `;
-    }).join('');
+    })
+    .join('');
 }
 
 //Сброс формы добавления
 function resetPriceHistoryForm() {
-    document.getElementById('addPriceHistoryForm').reset();
+  document.getElementById('addPriceHistoryForm').reset();
 }
 
 //Функция редактирования (заглушка, требует реализации формы редактирования)
 function editPriceHistoryEntry(entryId) {
-    //Найти запись
-    const entry = currentPriceHistoryEntries.find(e => e.id === entryId);
-    if (!entry) {
-        showCustomNotification('Запись не найдена.', 'error');
-        return;
-    }
+  //Найти запись
+  const entry = currentPriceHistoryEntries.find((e) => e.id === entryId);
+  if (!entry) {
+    showCustomNotification('Запись не найдена.', 'error');
+    return;
+  }
 
-    alert(`Редактирование записи ID ${entryId}:\nМагазин: ${entry.storeName}\nЦена: ${entry.price}\nДата: ${entry.date}`);
+  alert(`Редактирование записи ID ${entryId}:\nМагазин: ${entry.storeName}\nЦена: ${entry.price}\nДата: ${entry.date}`);
 }
 
 //Функция удаления
 async function deletePriceHistoryEntry(entryId) {
-    if (!confirm(`Вы уверены, что хотите удалить запись истории цен ID ${entryId}?`)) {
+  if (!confirm(`Вы уверены, что хотите удалить запись истории цен ID ${entryId}?`)) {
+    return;
+  }
+
+  const token = localStorage.getItem('techAggregatorToken');
+  try {
+    const response = await fetch(`http://localhost:3000/api/admin/price-history/${entryId}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${token}` }
+    });
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        localStorage.removeItem('techAggregatorToken');
+        currentUser = null;
+        updateAuthButtons();
+        showCustomNotification('Сессия истекла. Пожалуйста, войдите снова.', 'warning');
+        //window.location.href = 'auth.html';
         return;
+      }
+      const errorData = await response.json().catch(() => ({ error: `HTTP ${response.status}` }));
+      throw new Error(errorData.error || `HTTP ${response.status}`);
     }
 
-    const token = localStorage.getItem('techAggregatorToken');
-    try {
-        const response = await fetch(`http://localhost:3000/api/admin/price-history/${entryId}`, {
-            method: 'DELETE',
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
-
-        if (!response.ok) {
-            if (response.status === 401) {
-                localStorage.removeItem('techAggregatorToken');
-                currentUser = null;
-                updateAuthButtons();
-                showCustomNotification('Сессия истекла. Пожалуйста, войдите снова.', 'warning');
-                //window.location.href = 'auth.html';
-                return;
-            }
-            const errorData = await response.json().catch(() => ({ error: `HTTP ${response.status}` }));
-            throw new Error(errorData.error || `HTTP ${response.status}`);
-        }
-
-        const result = await response.json();
-        console.log(result.message);
-
-        showCustomNotification(result.message, 'success');
-        //Обновим список
-        loadPriceHistoryForProduct(); //Перезагружаем для текущего товара
-
-    } catch (error) {
-        console.error('Ошибка удаления записи истории цен:', error);
-        showCustomNotification(`Ошибка удаления: ${error.message}`, 'error');
-    }
+    const result = await response.json();
+    showCustomNotification(result.message, 'success');
+    //Обновим список
+    loadPriceHistoryForProduct(); //Перезагружаем для текущего товара
+  } catch (error) {
+    console.error('Ошибка удаления записи истории цен:', error);
+    showCustomNotification(`Ошибка удаления: ${error.message}`, 'error');
+  }
 }
-
 
 //Рекоммендации
 function initializeRecommendationsPage() {
@@ -8630,75 +9245,75 @@ function initializeRecommendationsPage() {
   setupRecommendationsFilters();
 }
 
-
 async function loadRecommendationsByType(type) {
-    const gridId = recommendationGridIdMap[type];
-    const grid = document.getElementById(gridId);
-    if (!grid) return;
-    grid.innerHTML = '<p style="text-align:center; padding:20px;">Загрузка...</p>';
-    const token = localStorage.getItem('techAggregatorToken');
-    let endpoint = `/api/recommendations/${type}`;
-    if (type === 'bestValue') endpoint = '/api/recommendations/best-value';
-    else if (type === 'priceDrop') endpoint = '/api/recommendations/price-drops';
-    try {
-        const res = await fetch(`http://localhost:3000${endpoint}`, {
-            headers: { ...(token && { 'Authorization': `Bearer ${token}` }) }
-        });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const products = await res.json();
-        recommendationStore[type] = Array.isArray(products) ? products : [];
-        await renderRecommendationsByType(type);
-    } catch (error) {
-        console.error(`Ошибка загрузки ${type}:`, error);
-        grid.innerHTML = '<p style="text-align:center; color:red;">Ошибка загрузки рекомендаций</p>';
-    }
+  const gridId = recommendationGridIdMap[type];
+  const grid = document.getElementById(gridId);
+  if (!grid) return;
+  grid.innerHTML = '<p style="text-align:center; padding:20px;">Загрузка...</p>';
+  const token = localStorage.getItem('techAggregatorToken');
+  let endpoint = `/api/recommendations/${type}`;
+  if (type === 'bestValue') endpoint = '/api/recommendations/best-value';
+  else if (type === 'priceDrop') endpoint = '/api/recommendations/price-drops';
+  try {
+    const res = await fetch(`http://localhost:3000${endpoint}`, {
+      headers: { ...(token && { Authorization: `Bearer ${token}` }) }
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const products = await res.json();
+    recommendationStore[type] = Array.isArray(products) ? products : [];
+    await renderRecommendationsByType(type);
+  } catch (error) {
+    console.error(`Ошибка загрузки ${type}:`, error);
+    grid.innerHTML = '<p style="text-align:center; color:red;">Ошибка загрузки рекомендаций</p>';
+  }
 }
 
 async function loadPersonalRecommendations() {
-    const gridId = recommendationGridIdMap.personal;
-    const grid = document.getElementById(gridId);
-    if (!grid) return;
+  const gridId = recommendationGridIdMap.personal;
+  const grid = document.getElementById(gridId);
+  if (!grid) return;
 
-    const token = localStorage.getItem('techAggregatorToken');
-    if (!token) {
-        grid.innerHTML = '<p>Войдите, чтобы видеть персональные рекомендации</p>';
-        return;
-    }
+  const token = localStorage.getItem('techAggregatorToken');
+  if (!token) {
+    grid.innerHTML = '<p>Войдите, чтобы видеть персональные рекомендации</p>';
+    return;
+  }
 
-    try {
-        const res = await fetch('http://localhost:3000/api/recommendations/personal', {
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        
-        const data = await res.json();
-        recommendationStore.personal = Array.isArray(data) ? data : (data.products || []);
-        await renderRecommendationsByType('personal');
-    } catch (error) {
-        console.error('Ошибка личных рекомендаций:', error);
-        grid.innerHTML = '<p>Ошибка загрузки</p>';
-    }
+  try {
+    const res = await fetch('http://localhost:3000/api/recommendations/personal', {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+    const data = await res.json();
+    recommendationStore.personal = Array.isArray(data) ? data : data.products || [];
+    await renderRecommendationsByType('personal');
+  } catch (error) {
+    console.error('Ошибка личных рекомендаций:', error);
+    grid.innerHTML = '<p>Ошибка загрузки</p>';
+  }
 }
 
 //Отображение товаров в контейнере с расширенной информацией
 function displayEnhancedProducts(gridId, products, type) {
-    const grid = document.getElementById(gridId);
-    if (!grid) return;
-    if (!products || products.length === 0) {
-        grid.innerHTML = '<p style="text-align:center; color:#6b7280; padding:2rem;">Нет доступных товаров в данной подборке</p>';
-        return;
-    }
-    grid.innerHTML = products.map(product => {
-        const badgeText = getRecommendationBadge(product, type);
-        let priceDropHtml = '';
-        if (type === 'priceDrop' && product.priceDrop) {
-            priceDropHtml = `<div style="background:#ef4444; color:white; padding:4px 8px; border-radius:12px; font-size:0.8rem; margin-top:5px; display:inline-block;">📉 Снизилось на ${product.priceDrop.dropPercent}%</div>`;
-        }
-        return `
+  const grid = document.getElementById(gridId);
+  if (!grid) return;
+  if (!products || products.length === 0) {
+    grid.innerHTML =
+      '<p style="text-align:center; color:#6b7280; padding:2rem;">Нет доступных товаров в данной подборке</p>';
+    return;
+  }
+  grid.innerHTML = products
+    .map((product) => {
+      const badgeText = getRecommendationBadge(product, type);
+      let priceDropHtml = '';
+      if (type === 'priceDrop' && product.priceDrop) {
+        priceDropHtml = `<div style="background:#ef4444; color:white; padding:4px 8px; border-radius:12px; font-size:0.8rem; margin-top:5px; display:inline-block;">📉 Снизилось на ${product.priceDrop.dropPercent}%</div>`;
+      }
+      return `
         <div class="product-card product-card-enhanced" onclick="openProduct(${product.id})">
             ${badgeText ? `<div class="recommendation-badge">${badgeText}</div>` : ''}
-            <img src="${product.image || product.imageUrl || 'https://via.placeholder.com/300?text=Нет+изображения'}" alt="${product.name}"
-            style="width: 100%; height: 200px; object-fit: contain; background: #f8f9fa; border-radius: 8px;">
+            ${renderProductImage(product, { size: 'card' })}
             <h3>${product.name}</h3>
             <div class="product-rating">
                 <span class="rating-stars">${getStarRating(product.rating)}</span>
@@ -8707,11 +9322,13 @@ function displayEnhancedProducts(gridId, products, type) {
             <div class="product-price">${formatPrice(getMinPrice(product))} ₽</div>
             ${priceDropHtml}
             ${product.valueScore ? `<div style="display:inline-block; padding:4px 8px; background:#dbeafe; color:#1d4ed8; border-radius:20px; font-size:0.8rem; margin-top:5px;">💰 Выгода: ${Math.round(product.valueScore)}%</div>` : ''}
-            ${type === 'personal' && product.recommendationType === 'viewed'
+            ${
+              type === 'personal' && product.recommendationType === 'viewed'
                 ? `<div style="display:inline-block; padding:4px 8px; background:#ede9fe; color:#5b21b6; border-radius:20px; font-size:0.8rem; margin-top:5px;">👀 Вы смотрели</div>`
                 : ''
             }
-            ${type === 'personal' && product.recommendationType === 'similar' && product.similarityScore !== undefined
+            ${
+              type === 'personal' && product.recommendationType === 'similar' && product.similarityScore !== undefined
                 ? `<div style="display:inline-block; padding:4px 8px; background:#dcfce7; color:#166534; border-radius:20px; font-size:0.8rem; margin-top:5px;">🔍 Похоже на просмотренное (${Math.round(product.similarityScore * 100)}%)</div>`
                 : ''
             }
@@ -8721,47 +9338,51 @@ function displayEnhancedProducts(gridId, products, type) {
             </div>
         </div>
         `;
-    }).join('');
+    })
+    .join('');
+  refreshProductImages(grid);
 }
 
 async function displayBestValueProducts(gridId, products) {
-    const grid = document.getElementById(gridId);
-    if (!grid) return;
+  const grid = document.getElementById(gridId);
+  if (!grid) return;
 
-    if (!products || products.length === 0) {
-        grid.innerHTML = '<p style="text-align:center; color:#6b7280; padding:2rem;">Нет доступных товаров в данной подборке</p>';
-        return;
-    }
+  if (!products || products.length === 0) {
+    grid.innerHTML =
+      '<p style="text-align:center; color:#6b7280; padding:2rem;">Нет доступных товаров в данной подборке</p>';
+    return;
+  }
 
-    const enrichedProducts = await Promise.all(products.map(async (product) => {
-        const minPrice = getMinPrice(product);
-        let marketPrice = null;
-        if (product.id) {
-            try {
-                marketPrice = await getMarketPrice(product.id);
-            } catch (e) {
-                console.warn('Не удалось получить рыночную цену для рекомендации:', product.id, e);
-            }
-        }
-        const score = calculateValueScore(product, minPrice || 0, marketPrice);
-        const interpretation = getValueInterpretation(score);
-        const normalizedScore = Number.isFinite(score) ? score : -Infinity;
-        return {
-          ...product,
-          _minPrice: minPrice,
-          _marketPrice: marketPrice,
-          _valueScore: normalizedScore,
-          _valueInterpretation: interpretation
-        };
-    }));
+  const enrichedProducts = await Promise.all(
+    products.map(async (product) => {
+      const minPrice = getMinPrice(product);
+      let marketPrice = null;
+      if (product.id) {
+        try {
+          marketPrice = await getMarketPrice(product.id);
+        } catch (e) {}
+      }
+      const score = calculateValueScore(product, minPrice || 0, marketPrice);
+      const interpretation = getValueInterpretation(score);
+      const normalizedScore = Number.isFinite(score) ? score : -Infinity;
+      return {
+        ...product,
+        _minPrice: minPrice,
+        _marketPrice: marketPrice,
+        _valueScore: normalizedScore,
+        _valueInterpretation: interpretation
+      };
+    })
+  );
 
-    enrichedProducts.sort((a, b) => b._valueScore - a._valueScore);
+  enrichedProducts.sort((a, b) => b._valueScore - a._valueScore);
 
-    grid.innerHTML = enrichedProducts.map((product) => `
+  grid.innerHTML = enrichedProducts
+    .map(
+      (product) => `
         <div class="product-card product-card-enhanced" onclick="openProduct(${product.id})">
             <div class="recommendation-badge">💰 Выгодно</div>
-            <img src="${product.image || product.imageUrl || 'https://via.placeholder.com/300?text=Нет+изображения'}" alt="${product.name}"
-            style="width: 100%; height: 200px; object-fit: contain; background: #f8f9fa; border-radius: 8px;">
+            ${renderProductImage(product, { size: 'card' })}
             <h3>${product.name}</h3>
             <div class="product-rating">
                 <span class="rating-stars">${getStarRating(product.rating)}</span>
@@ -8782,38 +9403,40 @@ async function displayBestValueProducts(gridId, products) {
                 <button class="btn btn-primary" onclick="event.stopPropagation(); openProduct(${product.id})">Подробнее</button>
             </div>
         </div>
-    `).join('');
+    `
+    )
+    .join('');
+  refreshProductImages(grid);
 }
 
 function setupRecommendationsFilters() {
-  const queryInput = document.getElementById('recommendationsSearch');
   const categorySelect = document.getElementById('recommendationsCategory');
   const minPriceInput = document.getElementById('recommendationsMinPrice');
   const maxPriceInput = document.getElementById('recommendationsMaxPrice');
   const sortSelect = document.getElementById('recommendationsSort');
   const resetBtn = document.getElementById('recommendationsResetFilters');
 
-  if (!queryInput || !categorySelect || !minPriceInput || !maxPriceInput || !sortSelect || !resetBtn) return;
+  if (!categorySelect || !minPriceInput || !maxPriceInput || !sortSelect || !resetBtn) return;
 
-  const apply = () => applyRecommendationsFilters();
-
-  queryInput.addEventListener('input', apply);
-  categorySelect.addEventListener('change', apply);
-  minPriceInput.addEventListener('change', apply);
-  maxPriceInput.addEventListener('change', apply);
-  sortSelect.addEventListener('change', apply);
+  categorySelect.addEventListener('change', () => {
+    updateRecommendationsFiltersPanel();
+    applyRecommendationsFilters();
+  });
+  minPriceInput.addEventListener('change', () => applyRecommendationsFilters());
+  maxPriceInput.addEventListener('change', () => applyRecommendationsFilters());
+  sortSelect.addEventListener('change', () => applyRecommendationsFilters());
   resetBtn.addEventListener('click', resetRecommendationsFilters);
 
-  populateRecommendationsCategoryFilter();
+  renderDynamicFiltersPanel('', 'recommendations');
 }
 
 function populateRecommendationsCategoryFilter() {
   const categorySelect = document.getElementById('recommendationsCategory');
   if (!categorySelect) return;
 
-  const categories = Array.from(new Set((demoProducts || []).map(p => p.category).filter(Boolean))).sort();
+  const categories = Array.from(new Set((demoProducts || []).map((p) => p.category).filter(Boolean))).sort();
   const current = categorySelect.value;
-  categorySelect.innerHTML = `<option value="">Все категории</option>${categories.map(cat => `<option value="${cat}">${getCategoryName(cat)}</option>`).join('')}`;
+  categorySelect.innerHTML = `<option value="">Все категории</option>${categories.map((cat) => `<option value="${cat}">${getCategoryName(cat)}</option>`).join('')}`;
   categorySelect.value = current || '';
 }
 
@@ -8839,26 +9462,28 @@ async function renderRecommendationsByType(type) {
 }
 
 async function prepareBestValueProducts(products) {
-  const enriched = await Promise.all((products || []).map(async (product) => {
-    const minPrice = getMinPrice(product);
-    let marketPrice = null;
-    if (product.id) {
-      try {
-        marketPrice = await getMarketPrice(product.id);
-      } catch (e) {
-        marketPrice = null;
+  const enriched = await Promise.all(
+    (products || []).map(async (product) => {
+      const minPrice = getMinPrice(product);
+      let marketPrice = null;
+      if (product.id) {
+        try {
+          marketPrice = await getMarketPrice(product.id);
+        } catch (e) {
+          marketPrice = null;
+        }
       }
-    }
-    const rawScore = calculateValueScore(product, minPrice || 0, marketPrice);
-    const valueScore = Number.isFinite(rawScore) ? rawScore : -Infinity;
-    return {
-      ...product,
-      _minPrice: minPrice,
-      _marketPrice: marketPrice,
-      _valueScore: valueScore,
-      _valueInterpretation: getValueInterpretation(valueScore)
-    };
-  }));
+      const rawScore = calculateValueScore(product, minPrice || 0, marketPrice);
+      const valueScore = Number.isFinite(rawScore) ? rawScore : -Infinity;
+      return {
+        ...product,
+        _minPrice: minPrice,
+        _marketPrice: marketPrice,
+        _valueScore: valueScore,
+        _valueInterpretation: getValueInterpretation(valueScore)
+      };
+    })
+  );
   return enriched;
 }
 
@@ -8866,14 +9491,16 @@ function renderPreparedBestValueProducts(gridId, products) {
   const grid = document.getElementById(gridId);
   if (!grid) return;
   if (!products || products.length === 0) {
-    grid.innerHTML = '<p style="text-align:center; color:#6b7280; padding:2rem;">Нет доступных товаров в данной подборке</p>';
+    grid.innerHTML =
+      '<p style="text-align:center; color:#6b7280; padding:2rem;">Нет доступных товаров в данной подборке</p>';
     return;
   }
-  grid.innerHTML = products.map((product) => `
+  grid.innerHTML = products
+    .map(
+      (product) => `
     <div class="product-card product-card-enhanced" onclick="openProduct(${product.id})">
       <div class="recommendation-badge">💰 Выгодно</div>
-      <img src="${product.image || product.imageUrl || 'https://via.placeholder.com/300?text=Нет+изображения'}" alt="${product.name}"
-      style="width: 100%; height: 200px; object-fit: contain; background: #f8f9fa; border-radius: 8px;">
+      ${renderProductImage(product, { size: 'card' })}
       <h3>${product.name}</h3>
       <div class="product-rating">
         <span class="rating-stars">${getStarRating(product.rating)}</span>
@@ -8894,7 +9521,10 @@ function renderPreparedBestValueProducts(gridId, products) {
         <button class="btn btn-primary" onclick="event.stopPropagation(); openProduct(${product.id})">Подробнее</button>
       </div>
     </div>
-  `).join('');
+  `
+    )
+    .join('');
+  refreshProductImages(grid);
 }
 
 function filterAndSortRecommendationProducts(products, type) {
@@ -8904,18 +9534,28 @@ function filterAndSortRecommendationProducts(products, type) {
   const maxPrice = recommendationFilters.maxPrice !== '' ? Number(recommendationFilters.maxPrice) : Infinity;
   const sortBy = recommendationFilters.sortBy || 'relevance';
 
-  let result = [...products].filter(product => {
+  let result = [...products].filter((product) => {
     const min = product._minPrice ?? getMinPrice(product) ?? 0;
-    const matchesQuery = !query || product.name?.toLowerCase().includes(query) ||
-      (product.specs && Object.values(product.specs).some(v => String(v).toLowerCase().includes(query)));
+    const matchesQuery =
+      !query ||
+      product.name?.toLowerCase().includes(query) ||
+      (product.specs && Object.values(product.specs).some((v) => String(v).toLowerCase().includes(query)));
     const matchesCategory = !category || product.category === category;
     const matchesPrice = min >= minPrice && min <= maxPrice;
     return matchesQuery && matchesCategory && matchesPrice;
   });
 
+  Object.keys(recommendationSelectedCheckboxes).forEach((specKey) => {
+    const selectedValues = recommendationSelectedCheckboxes[specKey];
+    if (selectedValues.length > 0) {
+      result = result.filter((product) => selectedValues.some((value) => matchFilter(product, specKey, value)));
+    }
+  });
+
   result.sort((a, b) => {
     if (type === 'bestValue') {
-      if (sortBy === 'price_asc') return (a._minPrice ?? getMinPrice(a) ?? Infinity) - (b._minPrice ?? getMinPrice(b) ?? Infinity);
+      if (sortBy === 'price_asc')
+        return (a._minPrice ?? getMinPrice(a) ?? Infinity) - (b._minPrice ?? getMinPrice(b) ?? Infinity);
       if (sortBy === 'price_desc') return (b._minPrice ?? getMinPrice(b) ?? 0) - (a._minPrice ?? getMinPrice(a) ?? 0);
       if (sortBy === 'rating') return (b.rating || 0) - (a.rating || 0);
       if (sortBy === 'name') return (a.name || '').localeCompare(b.name || '', 'ru');
@@ -8939,7 +9579,7 @@ function closeRecommendationsMobileDrawersIfAny() {
 }
 
 async function applyRecommendationsFilters(opts = {}) {
-  recommendationFilters.query = document.getElementById('recommendationsSearch')?.value || '';
+  recommendationFilters.query = '';
   recommendationFilters.category = document.getElementById('recommendationsCategory')?.value || '';
   recommendationFilters.minPrice = document.getElementById('recommendationsMinPrice')?.value || '';
   recommendationFilters.maxPrice = document.getElementById('recommendationsMaxPrice')?.value || '';
@@ -8949,17 +9589,18 @@ async function applyRecommendationsFilters(opts = {}) {
 }
 
 async function resetRecommendationsFilters() {
-  const queryInput = document.getElementById('recommendationsSearch');
   const categorySelect = document.getElementById('recommendationsCategory');
   const minPriceInput = document.getElementById('recommendationsMinPrice');
   const maxPriceInput = document.getElementById('recommendationsMaxPrice');
   const sortSelect = document.getElementById('recommendationsSort');
 
-  if (queryInput) queryInput.value = '';
   if (categorySelect) categorySelect.value = '';
   if (minPriceInput) minPriceInput.value = '';
   if (maxPriceInput) maxPriceInput.value = '';
   if (sortSelect) sortSelect.value = 'relevance';
+
+  recommendationSelectedCheckboxes = {};
+  renderDynamicFiltersPanel('', 'recommendations');
 
   await applyRecommendationsFilters();
   closeRecommendationsMobileDrawersIfAny();
@@ -8974,16 +9615,15 @@ function calculateMatchScore(product, type) {
       return Math.min(Math.max(product.valueScore || 0, 0), 100);
     case 'personal':
       let score = product.rating * 20; //Базовый счёт за рейтинг
-      
-      const favIds = JSON.parse(localStorage.getItem('techAggregatorFavorites') || '[]').map(f => f.id);
-      const compIds = JSON.parse(localStorage.getItem('techAggregatorComparisons') || '[]').map(c => c.id); //Предположим, что есть такая переменная
+
+      const favIds = JSON.parse(localStorage.getItem('techAggregatorFavorites') || '[]').map((f) => f.id);
+      const compIds = JSON.parse(localStorage.getItem('techAggregatorComparisons') || '[]').map((c) => c.id); //Предположим, что есть такая переменная
 
       if (favIds.includes(product.id)) score += 30;
       if (compIds.includes(product.id)) score += 20;
 
-      
       if (product.similarityScore !== undefined) {
-        score += (product.similarityScore * 50);
+        score += product.similarityScore * 50;
       }
 
       return Math.min(Math.max(score, 0), 100);
@@ -8994,17 +9634,22 @@ function calculateMatchScore(product, type) {
 
 //Функция получения бейджа
 function getRecommendationBadge(product, type) {
-    switch (type) {
-        case 'popular': return product.rating >= 4.8 ? '🔥 Топ' : product.rating >= 4.5 ? '🔥 Популярно' : '';
-        case 'trending': return '📈 Тренд';
-        case 'bestValue': return '💰 Выгодно';
-        case 'priceDrop': return '📉 Цена упала';
-        case 'personal':
-            if (product.recommendationType === 'viewed') return '👀 Вы смотрели';
-            if (product.recommendationType === 'similar') return '🎯 Похоже на ваши просмотры';
-            return '🎯 Для вас';
-        default: return '';
-    }
+  switch (type) {
+    case 'popular':
+      return product.rating >= 4.8 ? '🔥 Топ' : product.rating >= 4.5 ? '🔥 Популярно' : '';
+    case 'trending':
+      return '📈 Тренд';
+    case 'bestValue':
+      return '💰 Выгодно';
+    case 'priceDrop':
+      return '📉 Цена упала';
+    case 'personal':
+      if (product.recommendationType === 'viewed') return '👀 Вы смотрели';
+      if (product.recommendationType === 'similar') return '🎯 Похоже на ваши просмотры';
+      return '🎯 Для вас';
+    default:
+      return '';
+  }
 }
 
 //Индикатор тренда
@@ -9028,18 +9673,19 @@ function getTrendIndicator(product, type) {
 //Открытие вкладки на странице рекомендаций
 function openTab(tabName) {
   //Скрываем все вкладки
-  document.querySelectorAll('.tab-content').forEach(tab => {
+  document.querySelectorAll('.tab-content').forEach((tab) => {
     tab.classList.remove('active');
   });
   //Убираем активный класс со всех кнопок
-  document.querySelectorAll('.tab-btn').forEach(btn => {
+  document.querySelectorAll('.tab-btn').forEach((btn) => {
     btn.classList.remove('active');
   });
   //Показываем выбранную вкладку
   document.getElementById(tabName).classList.add('active');
   //Активируем соответствующую кнопку
-  const targetBtn = Array.from(document.querySelectorAll('.tab-btn'))
-    .find(btn => btn.getAttribute('onclick')?.includes(`'${tabName}'`));
+  const targetBtn = Array.from(document.querySelectorAll('.tab-btn')).find((btn) =>
+    btn.getAttribute('onclick')?.includes(`'${tabName}'`)
+  );
   if (targetBtn) targetBtn.classList.add('active');
   applyRecommendationsFilters();
 }
@@ -9100,7 +9746,7 @@ function editProfile() {
 
   const overlay = document.getElementById('editProfileModalOverlay');
   if (overlay) {
-    overlay.onclick = function(event) {
+    overlay.onclick = function (event) {
       if (event.target === overlay) {
         closeEditProfileModal();
       }
@@ -9129,7 +9775,7 @@ function editProfile() {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          Authorization: `Bearer ${token}`
         },
         body: JSON.stringify({
           fullName: newFullName
@@ -9150,17 +9796,14 @@ function editProfile() {
       }
 
       const updatedUser = await response.json();
-      console.log('Профиль обновлён:', updatedUser);
-
       currentUser.fullName = updatedUser.fullName;
 
       closeEditProfileModal();
       showCustomNotification('Профиль успешно обновлён', 'success');
 
       if (window.location.pathname.includes('profile.html')) {
-         loadProfileDataFromAPI();
+        loadProfileDataFromAPI();
       }
-
     } catch (error) {
       console.error('Ошибка обновления профиля:', error);
       showCustomNotification(`Ошибка обновления профиля: ${error.message}`, 'error');
@@ -9234,7 +9877,7 @@ function changePassword() {
 
   const overlay = document.getElementById('changePasswordModalOverlay');
   if (overlay) {
-    overlay.onclick = function(event) {
+    overlay.onclick = function (event) {
       if (event.target === overlay) {
         closeChangePasswordModal();
       }
@@ -9273,7 +9916,7 @@ function changePassword() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          Authorization: `Bearer ${token}`
         },
         body: JSON.stringify({
           oldPassword: oldPassword,
@@ -9295,12 +9938,9 @@ function changePassword() {
       }
 
       const result = await response.json();
-      console.log('Пароль изменён:', result);
-
       closeChangePasswordModal();
       showCustomNotification('Пароль успешно изменён', 'success');
       logout();
-
     } catch (error) {
       console.error('Ошибка смены пароля:', error);
       showCustomNotification(`Ошибка смены пароля: ${error.message}`, 'error');
@@ -9315,77 +9955,73 @@ function closeChangePasswordModal() {
   }
 }
 
-
 async function addProductToDatabase(productData) {
-    const token = localStorage.getItem('techAggregatorToken');
-    if (!token) return showCustomNotification('Ошибка авторизации', 'error');
+  const token = localStorage.getItem('techAggregatorToken');
+  if (!token) return showCustomNotification('Ошибка авторизации', 'error');
 
-    try {
-        const response = await fetch('http://localhost:3000/api/admin/manual-add-product', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-            body: JSON.stringify(productData)
-        });
+  try {
+    const response = await fetch('http://localhost:3000/api/admin/manual-add-product', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify(productData)
+    });
 
-        if (response.ok) {
-            showCustomNotification('Товар успешно добавлен в каталог!', 'success');
-            resetParseForm();
-        } else {
-            const err = await response.json();
-            showCustomNotification(`Ошибка: ${err.error}`, 'error');
-        }
-    } catch (e) {
-        console.error(e);
-        showCustomNotification('Ошибка сети', 'error');
+    if (response.ok) {
+      showCustomNotification('Товар успешно добавлен в каталог!', 'success');
+      resetParseForm();
+    } else {
+      const err = await response.json();
+      showCustomNotification(`Ошибка: ${err.error}`, 'error');
     }
+  } catch (e) {
+    console.error(e);
+    showCustomNotification('Ошибка сети', 'error');
+  }
 }
 
 //Отправка на парсинг
 async function sendParseRequest(url, category, proxy = null, query = null) {
-    const token = localStorage.getItem('techAggregatorToken');
-    if (!token) {
-        showCustomNotification('Требуется авторизация администратора', 'error');
-        return;
+  const token = localStorage.getItem('techAggregatorToken');
+  if (!token) {
+    showCustomNotification('Требуется авторизация администратора', 'error');
+    return;
+  }
+
+  try {
+    const response = await fetch('http://localhost:3000/api/admin/parse-product', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify({ url, query, productName: query, parseName: query, category, proxy })
+    });
+
+    if (!response.ok) {
+      const errData = await response.json().catch(() => ({ error: `HTTP ${response.status}` }));
+      throw new Error(errData.error || `Ошибка сервера: ${response.status}`);
     }
 
-    try {
-        console.log('📤 Отправка запроса на парсинг:', { url, query, category, proxy });
-        
-        const response = await fetch('http://localhost:3000/api/admin/parse-product', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify({ url, query, productName: query, parseName: query, category, proxy })
-        });
-
-        if (!response.ok) {
-            const errData = await response.json().catch(() => ({ error: `HTTP ${response.status}` }));
-            throw new Error(errData.error || `Ошибка сервера: ${response.status}`);
-        }
-
-        const result = await response.json();
-        console.log('✅ Ответ сервера:', result);
-        displayParsedResult(result.parsedData, result.message);
-    } catch (error) {
-        console.error('❌ Ошибка парсинга:', error);
-        showCustomNotification(`Ошибка: ${error.message}`, 'error');
-        //Показываем ошибку в контейнере результата, если сервер вернул данные частично
-        const resultContainer = document.getElementById('parseResult');
-        if (resultContainer) {
-            resultContainer.innerHTML = `<p class="error-message" style="color: #ef4444;">⚠️ ${error.message}</p>`;
-            resultContainer.style.display = 'block';
-        }
+    const result = await response.json();
+    displayParsedResult(result.parsedData, result.message);
+  } catch (error) {
+    console.error('❌ Ошибка парсинга:', error);
+    showCustomNotification(`Ошибка: ${error.message}`, 'error');
+    //Показываем ошибку в контейнере результата, если сервер вернул данные частично
+    const resultContainer = document.getElementById('parseResult');
+    if (resultContainer) {
+      resultContainer.innerHTML = `<p class="error-message" style="color: #ef4444;">⚠️ ${error.message}</p>`;
+      resultContainer.style.display = 'block';
     }
+  }
 }
 
 //Отображение спаршеного товара админу
 function displayParsedResult(parsedData, message) {
-    const resultContainer = document.getElementById('parseResult');
-    if (!resultContainer) return;
+  const resultContainer = document.getElementById('parseResult');
+  if (!resultContainer) return;
 
-    const storeOptions = `
+  const storeOptions = `
       <option value="Wildberries">Wildberries</option>
       <option value="Yandex Market">Яндекс Маркет</option>
       <option value="eBay">eBay</option>
@@ -9400,23 +10036,31 @@ function displayParsedResult(parsedData, message) {
       <option value="Other">Другой</option>
     `;
 
-    const baseRowsData = Array.isArray(parsedData.prices) && parsedData.prices.length
+  const baseRowsData =
+    Array.isArray(parsedData.prices) && parsedData.prices.length
       ? parsedData.prices
-      : (parsedData.price != null || parsedData.sourceUrl || parsedData.priceStoreName)
-        ? [{ storeName: parsedData.priceStoreName || 'Yandex Market', price: parsedData.price, url: parsedData.sourceUrl || '' }]
+      : parsedData.price != null || parsedData.sourceUrl || parsedData.priceStoreName
+        ? [
+            {
+              storeName: parsedData.priceStoreName || 'Yandex Market',
+              price: parsedData.price,
+              url: parsedData.sourceUrl || ''
+            }
+          ]
         : [];
 
-    const initialRowsData = [...baseRowsData];
-    const wbRows = initialRowsData.filter((r) => String(r.storeName || '').toLowerCase() === 'wildberries').length;
-    const ymRows = initialRowsData.filter((r) => String(r.storeName || '').toLowerCase() === 'yandex market').length;
-    for (let i = wbRows; i < 2; i += 1) {
-      initialRowsData.push({ storeName: 'Wildberries', sellerName: '', price: '', url: '' });
-    }
-    for (let i = ymRows; i < 2; i += 1) {
-      initialRowsData.push({ storeName: 'Yandex Market', sellerName: '', price: '', url: '' });
-    }
+  const initialRowsData = [...baseRowsData];
+  const wbRows = initialRowsData.filter((r) => String(r.storeName || '').toLowerCase() === 'wildberries').length;
+  const ymRows = initialRowsData.filter((r) => String(r.storeName || '').toLowerCase() === 'yandex market').length;
+  for (let i = wbRows; i < 2; i += 1) {
+    initialRowsData.push({ storeName: 'Wildberries', sellerName: '', price: '', url: '' });
+  }
+  for (let i = ymRows; i < 2; i += 1) {
+    initialRowsData.push({ storeName: 'Yandex Market', sellerName: '', price: '', url: '' });
+  }
 
-    const initialPriceRows = initialRowsData.map((row) => {
+  const initialPriceRows = initialRowsData
+    .map((row) => {
       const selectedStore = row.storeName || 'Other';
       const optionExists = storeOptions.includes(`value="${selectedStore}"`);
       const optionsMarkup = optionExists
@@ -9431,24 +10075,27 @@ function displayParsedResult(parsedData, message) {
           <button type="button" class="btn btn-danger btn-small" onclick="this.parentElement.remove()">✕</button>
         </div>
       `;
-    }).join('');
+    })
+    .join('');
 
-    //Начальные характеристики (уже нормализованные сервером)
-    let specsHtml = '';
-    if (parsedData.specs && typeof parsedData.specs === 'object') {
-        specsHtml = Object.entries(parsedData.specs).map(([key, val]) => {
-            const displayKey = window.specKeyTranslations?.[key] || key;
-            return `
+  //Начальные характеристики (уже нормализованные сервером)
+  let specsHtml = '';
+  if (parsedData.specs && typeof parsedData.specs === 'object') {
+    specsHtml = Object.entries(parsedData.specs)
+      .map(([key, val]) => {
+        const displayKey = window.specKeyTranslations?.[key] || key;
+        return `
             <div class="spec-row" style="display: flex; gap: 10px; margin-bottom: 5px;">
                 <input type="text" class="spec-key" value="${displayKey}" style="flex: 1;" placeholder="Название">
                 <input type="text" class="spec-value" value="${val}" style="flex: 1;" placeholder="Значение">
                 <button type="button" class="btn btn-danger btn-small" onclick="this.parentElement.remove()">✕</button>
             </div>
             `;
-        }).join('');
-    }
+      })
+      .join('');
+  }
 
-    resultContainer.innerHTML = `
+  resultContainer.innerHTML = `
         <div class="admin-parse-edit-panel" style="background: #f8f9fa; padding: 20px; border-radius: 14px; border: 1px solid #e5e7eb;">
             <h3>📦 Редактирование товара перед сохранением</h3>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
@@ -9519,10 +10166,9 @@ function displayParsedResult(parsedData, message) {
             </div>
         </div>
     `;
-    resultContainer.style.display = 'block';
-    ensureAdminPriceUrlAutofillWired();
+  resultContainer.style.display = 'block';
+  ensureAdminPriceUrlAutofillWired();
 }
-
 
 function addPriceRow() {
   const container = document.getElementById('pricesContainer');
@@ -9553,15 +10199,15 @@ function addPriceRow() {
 }
 
 function updateImagePreview(url) {
-    const img = document.getElementById('imagePreviewThumb');
-    if (img) {
-        if (url) {
-            img.src = url;
-            img.style.display = 'block';
-        } else {
-            img.style.display = 'none';
-        }
+  const img = document.getElementById('imagePreviewThumb');
+  if (img) {
+    if (url) {
+      img.src = url;
+      img.style.display = 'block';
+    } else {
+      img.style.display = 'none';
     }
+  }
 }
 
 //История цен
@@ -9588,8 +10234,9 @@ async function searchProductForPriceHistory() {
     //Или используем маршрут получения всех товаров и фильтруем на клиенте (неэффективно для больших списков)
     //Лучше добавить маршрут /api/products/search в server.js
     //const response = await fetch(`http://localhost:3000/api/products/search?q=${encodeURIComponent(searchTerm)}`, {
-    const response = await fetch(`http://localhost:3000/api/products?search=${encodeURIComponent(searchTerm)}`, { //Используем существующий маршрут с параметром поиска, если он реализован
-      headers: { 'Authorization': `Bearer ${token}` }
+    const response = await fetch(`http://localhost:3000/api/products?search=${encodeURIComponent(searchTerm)}`, {
+      //Используем существующий маршрут с параметром поиска, если он реализован
+      headers: { Authorization: `Bearer ${token}` }
     });
 
     if (!response.ok) {
@@ -9605,8 +10252,6 @@ async function searchProductForPriceHistory() {
     }
 
     const products = await response.json();
-    console.log('Результаты поиска:', products);
-
     const ranked = rankAdminPriceHistorySearchResults(products, searchTerm);
     if (!ranked.length) {
       document.getElementById('priceHistoryResult').style.display = 'none';
@@ -9615,7 +10260,6 @@ async function searchProductForPriceHistory() {
     }
 
     await loadAndDisplayPriceHistory(ranked[0].id, ranked[0].name);
-
   } catch (error) {
     console.error('Ошибка поиска товара:', error);
     showCustomNotification(`Ошибка поиска товара: ${error.message}`, 'error');
@@ -9631,8 +10275,9 @@ async function loadAndDisplayPriceHistory(productId, productName) {
 
   try {
     //Загружаем историю цен
-    const historyResponse = await fetch(`http://localhost:3000/api/products/${productId}/price-history`, { //Используем существующий маршрут
-      headers: { 'Authorization': `Bearer ${token}` }
+    const historyResponse = await fetch(`http://localhost:3000/api/products/${productId}/price-history`, {
+      //Используем существующий маршрут
+      headers: { Authorization: `Bearer ${token}` }
     });
 
     if (!historyResponse.ok) {
@@ -9648,8 +10293,6 @@ async function loadAndDisplayPriceHistory(productId, productName) {
     }
 
     const historyData = await historyResponse.json();
-    console.log('История цен для товара:', productId, historyData);
-
     //Обновляем заголовок
     document.getElementById('selectedProductTitle').textContent = productName;
     //Устанавливаем ID товара в скрытое поле формы
@@ -9676,11 +10319,12 @@ async function loadAndDisplayPriceHistory(productId, productName) {
     //Отрисовываем список
     renderPriceHistoryList(historyData);
     updateAdminPriceSyncSingleButtons();
-
   } catch (error) {
     console.error('Ошибка загрузки истории цен:', error);
-    document.getElementById('priceHistoryChartContainer').innerHTML = `<p class="error-message">Ошибка загрузки истории: ${error.message}</p>`;
-    document.getElementById('priceHistoryListContainer').innerHTML = `<p class="error-message">Ошибка загрузки списка: ${error.message}</p>`;
+    document.getElementById('priceHistoryChartContainer').innerHTML =
+      `<p class="error-message">Ошибка загрузки истории: ${error.message}</p>`;
+    document.getElementById('priceHistoryListContainer').innerHTML =
+      `<p class="error-message">Ошибка загрузки списка: ${error.message}</p>`;
     showCustomNotification(`Ошибка загрузки истории цен: ${error.message}`, 'error');
   }
 }
@@ -9702,7 +10346,7 @@ function renderPriceHistoryChart(data, productName) {
     const color = getDistinctSeriesColorForLabel(storeName, seriesIndex);
     return {
       label: storeName,
-      data: storeData.map(point => ({
+      data: storeData.map((point) => ({
         x: new Date(point.x).getTime(), //Преобразуем строку в timestamp
         y: point.y
       })),
@@ -9728,7 +10372,7 @@ function renderPriceHistoryChart(data, productName) {
           type: 'time',
           time: {
             unit: 'day', //Можно настроить на 'week', 'month' в зависимости от данных
-            tooltipFormat: 'dd.MM.yyyy',
+            tooltipFormat: 'dd.MM.yyyy'
           },
           title: {
             display: true,
@@ -9745,13 +10389,13 @@ function renderPriceHistoryChart(data, productName) {
       plugins: {
         legend: {
           display: true,
-          position: 'top',
+          position: 'top'
         },
         tooltip: {
           mode: 'index',
           intersect: false,
           callbacks: {
-            title: function(context) {
+            title: function (context) {
               const d = new Date(context[0].parsed.x);
               return d.toLocaleString('ru-RU');
             }
@@ -9764,86 +10408,83 @@ function renderPriceHistoryChart(data, productName) {
   priceHistoryChartInstance = new Chart(canvas, config);
 }
 
-document.getElementById('addPriceHistoryForm').addEventListener('submit', async function (e) {
-  e.preventDefault();
+const addPriceHistoryForm = document.getElementById('addPriceHistoryForm');
+if (addPriceHistoryForm)
+  addPriceHistoryForm.addEventListener('submit', async function (e) {
+    e.preventDefault();
 
-  const productId = document.getElementById('selectedProductId').value;
-  const storeName = document.getElementById('newStoreName').value.trim();
-  const price = parseFloat(document.getElementById('newPrice').value);
-  const date = document.getElementById('newDate').value; //Это строка в формате YYYY-MM-DD
+    const productId = document.getElementById('selectedProductId').value;
+    const storeName = document.getElementById('newStoreName').value.trim();
+    const price = parseFloat(document.getElementById('newPrice').value);
+    const date = document.getElementById('newDate').value; //Это строка в формате YYYY-MM-DD
 
-  if (!productId || !storeName || isNaN(price) || price < 0 || !date) {
-    showCustomNotification('Пожалуйста, заполните все поля корректно.', 'info');
-    return;
-  }
-
-  const token = localStorage.getItem('techAggregatorToken');
-  if (!token) {
-    showCustomNotification('Токен отсутствует', 'error');
-    return;
-  }
-
-  try {
-    //Отправляем новую запись на сервер
-    const response = await fetch('http://localhost:3000/api/admin/price-history', { //Используем маршрут добавления
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify({
-        productId: parseInt(productId, 10),
-        storeName: storeName,
-        sellerName: (document.getElementById('newSellerName')?.value || '').trim() || null,
-        price: price,
-        date: date,
-        url: (document.getElementById('newPurchaseUrl')?.value || '').trim() || null
-      })
-    });
-
-    if (!response.ok) {
-      if (response.status === 401) {
-        localStorage.removeItem('techAggregatorToken');
-        currentUser = null;
-        updateAuthButtons();
-        showCustomNotification('Сессия истекла. Пожалуйста, войдите снова.', 'warning');
-        window.location.href = 'auth.html';
-        return;
-      }
-      const errorData = await response.json();
-      throw new Error(errorData.error || `HTTP ${response.status}`);
+    if (!productId || !storeName || isNaN(price) || price < 0 || !date) {
+      showCustomNotification('Пожалуйста, заполните все поля корректно.', 'info');
+      return;
     }
 
-    const result = await response.json();
-    console.log('Новая запись добавлена:', result);
-    showCustomNotification('Новая запись в истории цен добавлена.', 'success');
+    const token = localStorage.getItem('techAggregatorToken');
+    if (!token) {
+      showCustomNotification('Токен отсутствует', 'error');
+      return;
+    }
 
-    //Очищаем форму
-    document.getElementById('newStoreName').value = '';
-    document.getElementById('newSellerName').value = '';
-    document.getElementById('newPrice').value = '';
-    const urlEl = document.getElementById('newPurchaseUrl');
-    if (urlEl) urlEl.value = '';
-    document.getElementById('newDate').value = formatLocalDateYMD();
+    try {
+      //Отправляем новую запись на сервер
+      const response = await fetch('http://localhost:3000/api/admin/price-history', {
+        //Используем маршрут добавления
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          productId: parseInt(productId, 10),
+          storeName: storeName,
+          sellerName: (document.getElementById('newSellerName')?.value || '').trim() || null,
+          price: price,
+          date: date,
+          url: (document.getElementById('newPurchaseUrl')?.value || '').trim() || null
+        })
+      });
 
-    //Перезагружаем историю цен для обновления графика и списка
-    const productName = document.getElementById('selectedProductTitle').textContent;
-    await loadAndDisplayPriceHistory(productId, productName); //Перезагружаем данные для текущего товара
+      if (!response.ok) {
+        if (response.status === 401) {
+          localStorage.removeItem('techAggregatorToken');
+          currentUser = null;
+          updateAuthButtons();
+          showCustomNotification('Сессия истекла. Пожалуйста, войдите снова.', 'warning');
+          window.location.href = 'auth.html';
+          return;
+        }
+        const errorData = await response.json();
+        throw new Error(errorData.error || `HTTP ${response.status}`);
+      }
 
-  } catch (error) {
-    console.error('Ошибка добавления записи в историю:', error);
-    showCustomNotification(`Ошибка добавления записи: ${error.message}`, 'error');
-  }
-});
+      const result = await response.json();
+      showCustomNotification('Новая запись в истории цен добавлена.', 'success');
+
+      //Очищаем форму
+      document.getElementById('newStoreName').value = '';
+      document.getElementById('newSellerName').value = '';
+      document.getElementById('newPrice').value = '';
+      const urlEl = document.getElementById('newPurchaseUrl');
+      if (urlEl) urlEl.value = '';
+      document.getElementById('newDate').value = formatLocalDateYMD();
+
+      //Перезагружаем историю цен для обновления графика и списка
+      const productName = document.getElementById('selectedProductTitle').textContent;
+      await loadAndDisplayPriceHistory(productId, productName); //Перезагружаем данные для текущего товара
+    } catch (error) {
+      console.error('Ошибка добавления записи в историю:', error);
+      showCustomNotification(`Ошибка добавления записи: ${error.message}`, 'error');
+    }
+  });
 
 //Админ поиск
 function adminPriceSyncEscapeCell(val) {
   if (val === null || val === undefined) return '';
-  return String(val)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
+  return String(val).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
 function getAdminPriceSyncProxy() {
@@ -9923,7 +10564,9 @@ async function fetchAdminPriceSyncStatus() {
     if (s.autoSyncRunning) {
       lines.push('Сейчас выполняется фоновое обновление.');
     }
-    lines.push(`Интервал между запросами при сборе: ${s.delayMs} мс. Предпросмотр до ${s.maxPreviewStores} позиций за один запрос.`);
+    lines.push(
+      `Интервал между запросами при сборе: ${s.delayMs} мс. Предпросмотр до ${s.maxPreviewStores} позиций за один запрос.`
+    );
     box.textContent = lines.join('\n');
   } catch (e) {
     box.textContent = 'Не удалось загрузить статус: ' + e.message;
@@ -10067,7 +10710,8 @@ async function runAdminPriceSyncApplySingle() {
   const token = localStorage.getItem('techAggregatorToken');
   const idVal = document.getElementById('selectedProductId') && document.getElementById('selectedProductId').value;
   const productId = parseInt(idVal, 10);
-  const productName = document.getElementById('selectedProductTitle') && document.getElementById('selectedProductTitle').textContent;
+  const productName =
+    document.getElementById('selectedProductTitle') && document.getElementById('selectedProductTitle').textContent;
   if (!token || !productId) {
     showCustomNotification('Сначала найдите и выберите товар.', 'info');
     return;
@@ -10106,15 +10750,13 @@ async function runAdminPriceSyncApplySingle() {
       throw new Error(err.error || `HTTP ${res.status}`);
     }
     const data = await res.json();
-    const n = typeof data.applied === 'number'
-      ? data.applied
-      : data.applied && typeof data.applied.applied === 'number'
-        ? data.applied.applied
-        : null;
-    showCustomNotification(
-      n != null ? `Обновлено позиций: ${n}.` : 'Обновление выполнено.',
-      'success'
-    );
+    const n =
+      typeof data.applied === 'number'
+        ? data.applied
+        : data.applied && typeof data.applied.applied === 'number'
+          ? data.applied.applied
+          : null;
+    showCustomNotification(n != null ? `Обновлено позиций: ${n}.` : 'Обновление выполнено.', 'success');
     closeAdminPriceSyncModal();
     fetchAdminPriceSyncStatus();
     lastAdminPriceSyncPreviewSingle = null;
@@ -10149,19 +10791,19 @@ function escapeAdminSuggestHtml(text) {
     .replace(/"/g, '&quot;');
 }
 
-
 function adminPriceHistorySearchRelevanceScore(productName, query) {
-  const n = String(productName || '').toLowerCase().trim();
-  const q = String(query || '').toLowerCase().trim();
+  const n = String(productName || '')
+    .toLowerCase()
+    .trim();
+  const q = String(query || '')
+    .toLowerCase()
+    .trim();
   if (!q || !n) return -1;
   if (n === q) return 1_000_000;
   const idx = n.indexOf(q);
   if (idx !== -1) {
     const after = n[idx + q.length];
-    const tightEnd =
-      after === undefined ||
-      /\s/.test(after) ||
-      !/[a-zа-яё0-9]/i.test(after);
+    const tightEnd = after === undefined || /\s/.test(after) || !/[a-zа-яё0-9]/i.test(after);
     let score = tightEnd ? 800_000 : 200_000;
     score -= idx;
     score -= Math.min(n.length, 400) * 0.05;
@@ -10190,10 +10832,9 @@ async function fetchAdminPriceHistorySearchCandidates(query) {
   if (!token) return [];
   const q = String(query || '').trim();
   if (!q) return [];
-  const response = await fetch(
-    `http://localhost:3000/api/admin/products?search=${encodeURIComponent(q)}`,
-    { headers: { Authorization: `Bearer ${token}` } }
-  );
+  const response = await fetch(`http://localhost:3000/api/admin/products?search=${encodeURIComponent(q)}`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
   if (response.status === 401) {
     localStorage.removeItem('techAggregatorToken');
     currentUser = null;
@@ -10248,7 +10889,6 @@ function initializeAdminProductSearch() {
   const sugg = document.getElementById(suggestionsContainerId);
 
   if (!searchInput || !searchForm || !sugg) {
-    console.warn('Элементы поиска для админ-панели не найдены.');
     return;
   }
   if (searchForm.dataset.adminPhSearchInit === '1') return;
@@ -10341,7 +10981,7 @@ function renderPriceHistoryList(entries) {
 
   let flatList = [];
   for (const [storeName, storeEntries] of Object.entries(entries)) {
-    storeEntries.forEach(entry => {
+    storeEntries.forEach((entry) => {
       flatList.push({
         storeName: storeName,
         date: entry.x,
@@ -10364,14 +11004,18 @@ function renderPriceHistoryList(entries) {
         </tr>
       </thead>
       <tbody>
-        ${flatList.map(entry => `
+        ${flatList
+          .map(
+            (entry) => `
           <tr>
             <td>${entry.storeName}</td>
             <td>${new Date(entry.date).toLocaleString('ru-RU')}</td>
             <td>${formatPrice(entry.price)}</td>
             <td>${entry.url ? `<a href="${entry.url}" target="_blank" rel="noopener noreferrer">Открыть</a>` : '—'}</td>
           </tr>
-        `).join('')}
+        `
+          )
+          .join('')}
       </tbody>
     </table>
   `;
@@ -10379,25 +11023,25 @@ function renderPriceHistoryList(entries) {
 
 //Удаление строки характеристики
 function removeSpecRow(button) {
-    const row = button.closest('.spec-edit-row');
-    if (row) {
-        row.style.opacity = '0.5';
-        row.style.transition = 'opacity 0.2s';
-        setTimeout(() => row.remove(), 200);
-    }
+  const row = button.closest('.spec-edit-row');
+  if (row) {
+    row.style.opacity = '0.5';
+    row.style.transition = 'opacity 0.2s';
+    setTimeout(() => row.remove(), 200);
+  }
 }
 
 //Дублирование строки характеристики
 function duplicateSpecRow(button) {
-    const row = button.closest('.spec-edit-row');
-    if (!row) return;
-    
-    const keyInput = row.querySelector('.spec-key-input');
-    const valueInput = row.querySelector('.spec-value-input');
-    
-    const newRow = document.createElement('div');
-    newRow.className = 'spec-edit-row';
-    newRow.innerHTML = `
+  const row = button.closest('.spec-edit-row');
+  if (!row) return;
+
+  const keyInput = row.querySelector('.spec-key-input');
+  const valueInput = row.querySelector('.spec-value-input');
+
+  const newRow = document.createElement('div');
+  newRow.className = 'spec-edit-row';
+  newRow.innerHTML = `
         <div style="display: grid; grid-template-columns: 1fr 2fr auto auto; gap: 0.5rem; align-items: center;">
             <input type="text" class="spec-key-input" value="${keyInput?.value || ''}" 
                    placeholder="Ключ" style="padding: 0.4rem; border: 1px solid #ddd; border-radius: 4px;">
@@ -10409,125 +11053,125 @@ function duplicateSpecRow(button) {
                     onclick="duplicateSpecRow(this)" style="padding: 0.4rem 0.6rem;">📋</button>
         </div>
     `;
-    
-    row.parentNode.insertBefore(newRow, row.nextSibling);
-    
-    //Подсветка новой строки
-    newRow.style.animation = 'fadeIn 0.3s ease';
+
+  row.parentNode.insertBefore(newRow, row.nextSibling);
+
+  //Подсветка новой строки
+  newRow.style.animation = 'fadeIn 0.3s ease';
 }
 
 //Добавление новой пустой строки характеристики
 function addSpecRow() {
-    const container = document.getElementById('specsContainer');
-    if (container.querySelector('p')) container.innerHTML = '';
-    const div = document.createElement('div');
-    div.className = 'spec-row';
-    div.style.cssText = 'display: flex; gap: 10px; margin-bottom: 5px;';
-    div.innerHTML = `
+  const container = document.getElementById('specsContainer');
+  if (container.querySelector('p')) container.innerHTML = '';
+  const div = document.createElement('div');
+  div.className = 'spec-row';
+  div.style.cssText = 'display: flex; gap: 10px; margin-bottom: 5px;';
+  div.innerHTML = `
         <input type="text" class="spec-key" style="flex: 1;" placeholder="Название">
         <input type="text" class="spec-value" style="flex: 1;" placeholder="Значение">
         <button type="button" class="btn btn-danger btn-small" onclick="this.parentElement.remove()">✕</button>
     `;
-    container.appendChild(div);
+  container.appendChild(div);
 }
 
 async function confirmAndSaveParsedDataWithEdit() {
-    const name = document.getElementById('editProdName')?.value;
-    const category = document.getElementById('editProdCategory')?.value;
-    const imageUrl = document.getElementById('editProdImage')?.value;
+  const name = document.getElementById('editProdName')?.value;
+  const category = document.getElementById('editProdCategory')?.value;
+  const imageUrl = document.getElementById('editProdImage')?.value;
 
-    if (!name) return showCustomNotification('Введите название товара', 'warning');
-    if (!category) return showCustomNotification('Выберите категорию', 'warning');
+  if (!name) return showCustomNotification('Введите название товара', 'warning');
+  if (!category) return showCustomNotification('Выберите категорию', 'warning');
 
-    //Сбор характеристик (используем обратный перевод, если ключ был русским)
-    const specs = {};
-    document.querySelectorAll('.spec-row').forEach(row => {
-        const keyInput = row.querySelector('.spec-key');
-        const valInput = row.querySelector('.spec-value');
-        if (keyInput && valInput && keyInput.value) {
-            //Пытаемся найти английский ключ по русскому названию
-            let finalKey = keyInput.value;
-            for (const [eng, rus] of Object.entries(window.specKeyTranslations || {})) {
-                if (rus === keyInput.value) {
-                    finalKey = eng;
-                    break;
-                }
-            }
-            specs[finalKey] = valInput.value;
+  //Сбор характеристик (используем обратный перевод, если ключ был русским)
+  const specs = {};
+  document.querySelectorAll('.spec-row').forEach((row) => {
+    const keyInput = row.querySelector('.spec-key');
+    const valInput = row.querySelector('.spec-value');
+    if (keyInput && valInput && keyInput.value) {
+      //Пытаемся найти английский ключ по русскому названию
+      let finalKey = keyInput.value;
+      for (const [eng, rus] of Object.entries(window.specKeyTranslations || {})) {
+        if (rus === keyInput.value) {
+          finalKey = eng;
+          break;
         }
-    });
-
-    //Сбор цен
-    const prices = [];
-    let hasIncompletePriceRow = false;
-    document.querySelectorAll('.price-row').forEach(row => {
-  const storeSelect = row.querySelector('.price-store-select');
-  const sellerInput = row.querySelector('.price-seller-input');
-  const priceInput = row.querySelector('.price-value-input');
-  const urlInput = row.querySelector('.price-url-input'); //<-- ДОБАВЛЕНО
-  if (storeSelect && priceInput) {
-    const price = parseFloat(priceInput.value);
-    const sellerName = sellerInput ? sellerInput.value.trim() : '';
-    const url = urlInput ? urlInput.value.trim() : ''; //<-- ДОБАВЛЕНО
-    const hasAnyValue = storeSelect.value || sellerName || (!isNaN(price) && price > 0) || url;
-    if (!isNaN(price) && price > 0 && sellerName && url) {
-      prices.push({ storeName: storeSelect.value, sellerName, price: price, url: url }); //<-- ДОБАВЛЕНО url
-    } else if (hasAnyValue) {
-      hasIncompletePriceRow = true;
+      }
+      specs[finalKey] = valInput.value;
     }
+  });
+
+  //Сбор цен
+  const prices = [];
+  let hasIncompletePriceRow = false;
+  document.querySelectorAll('.price-row').forEach((row) => {
+    const storeSelect = row.querySelector('.price-store-select');
+    const sellerInput = row.querySelector('.price-seller-input');
+    const priceInput = row.querySelector('.price-value-input');
+    const urlInput = row.querySelector('.price-url-input'); //<-- ДОБАВЛЕНО
+    if (storeSelect && priceInput) {
+      const price = parseFloat(priceInput.value);
+      const sellerName = sellerInput ? sellerInput.value.trim() : '';
+      const url = urlInput ? urlInput.value.trim() : ''; //<-- ДОБАВЛЕНО
+      const hasAnyValue = storeSelect.value || sellerName || (!isNaN(price) && price > 0) || url;
+      if (!isNaN(price) && price > 0 && sellerName && url) {
+        prices.push({ storeName: storeSelect.value, sellerName, price: price, url: url }); //<-- ДОБАВЛЕНО url
+      } else if (hasAnyValue) {
+        hasIncompletePriceRow = true;
+      }
+    }
+  });
+
+  if (hasIncompletePriceRow) {
+    return showCustomNotification(
+      'В блоке цен заполнены не все поля. Для каждой строки укажите магазин, продавца, цену и ссылку.',
+      'warning'
+    );
   }
-});
 
-    if (hasIncompletePriceRow) {
-      return showCustomNotification('В блоке цен заполнены не все поля. Для каждой строки укажите магазин, продавца, цену и ссылку.', 'warning');
-    }
+  const productData = {
+    name,
+    category,
+    imageUrl,
+    specs,
+    prices
+  };
 
-    const productData = {
-        name,
-        category,
-        imageUrl,
-        specs,
-        prices
-    };
-
-    await addProductToDatabase(productData);
+  await addProductToDatabase(productData);
 }
 
 function addParsedPriceRow() {
-    const container = document.getElementById('parsedPriceRows');
-    //Убираем подсказку, если она есть
-    const hint = container.querySelector('.text-muted');
-    if (hint) hint.remove();
+  const container = document.getElementById('parsedPriceRows');
+  //Убираем подсказку, если она есть
+  const hint = container.querySelector('.text-muted');
+  if (hint) hint.remove();
 
-    const row = document.createElement('div');
-    row.className = 'parsed-price-row';
-    row.style.cssText = 'display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 0.5rem; margin-bottom: 0.5rem;';
-    row.innerHTML = `
+  const row = document.createElement('div');
+  row.className = 'parsed-price-row';
+  row.style.cssText = 'display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 0.5rem; margin-bottom: 0.5rem;';
+  row.innerHTML = `
         <input type="text" class="parsed-price-store" value="" placeholder="Магазин (напр. DNS)" style="padding: 0.4rem; border: 1px solid #ddd; border-radius: 4px;">
         <input type="number" class="parsed-price-value" value="" placeholder="Цена" style="padding: 0.4rem; border: 1px solid #ddd; border-radius: 4px;">
         <input type="url" class="parsed-price-url" value="" placeholder="Ссылка на товар" style="padding: 0.4rem; border: 1px solid #ddd; border-radius: 4px;">
         <button type="button" class="btn btn-danger btn-small" onclick="this.closest('.parsed-price-row').remove()">✕</button>
     `;
-    container.appendChild(row);
-    row.querySelector('.parsed-price-store').focus();
+  container.appendChild(row);
+  row.querySelector('.parsed-price-store').focus();
 }
 
-
 async function trackProductView(productId) {
-    if (!productId) return;
-    try {
-        const token = localStorage.getItem('techAggregatorToken');
-        await fetch('http://localhost:3000/api/analytics/track-view', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                ...(token && { 'Authorization': `Bearer ${token}` })
-            },
-            body: JSON.stringify({ productId: parseInt(productId) })
-        });
-    } catch (e) {
-        console.warn('Не удалось записать просмотр:', e);
-    }
+  if (!productId) return;
+  try {
+    const token = localStorage.getItem('techAggregatorToken');
+    await fetch('http://localhost:3000/api/analytics/track-view', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token && { Authorization: `Bearer ${token}` })
+      },
+      body: JSON.stringify({ productId: parseInt(productId) })
+    });
+  } catch (e) {}
 }
 
 async function trackSearchQuery(query) {
@@ -10539,11 +11183,9 @@ async function trackSearchQuery(query) {
       keepalive: true,
       headers: {
         'Content-Type': 'application/json',
-        ...(token && { 'Authorization': `Bearer ${token}` })
+        ...(token && { Authorization: `Bearer ${token}` })
       },
       body: JSON.stringify({ query: query.trim() })
     });
-  } catch (e) {
-    console.warn('Ошибка логирования поиска:', e);
-  }
+  } catch (e) {}
 }

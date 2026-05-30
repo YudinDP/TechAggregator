@@ -1,233 +1,234 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ru">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <script src="theme.js"></script>
-  <title>Избранное — tech-nozone</title>
-  <link rel="stylesheet" href="style.css">
-  <link rel="stylesheet" href="dark-theme.css">
-  <link rel="icon" sizes="180x180" href="sources/logo.png">
-  <style>
-    .favorites-container {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 20px;
-    }
-    .product-card-favorite {
-      display: flex;
-      gap: 20px;
-      padding: 20px;
-      border: 1px solid #e5e7eb;
-      border-radius: 12px;
-      margin-bottom: 20px;
-      background: white;
-    }
-    .product-image {
-      width: 120px;
-      height: 120px;
-      object-fit: contain;
-      background: #f8f9fa;
-      border-radius: 8px;
-      cursor: pointer;
-    }
-    .product-info {
-      flex: 1;
-    }
-    .product-meta {
-      display: flex;
-      gap: 15px;
-      margin: 10px 0;
-      color: #6b7280;
-      font-size: 0.9rem;
-    }
-    .remove-favorite-btn {
-      background: #ef4444;
-      color: white;
-      border: none;
-      width: 28px;
-      height: 28px;
-      border-radius: 50%;
-      font-weight: bold;
-      cursor: pointer;
-      position: relative;
-      top: -10px;
-      left: -10px;
-    }
-    .empty-state {
-      text-align: center;
-      padding: 60px 20px;
-      background: #f8f9fa;
-      border-radius: 12px;
-      margin: 40px 0;
-      color: #6b7280;
-    }
-    .price-drop-highlight {
-      border-color: #10b981;
-      box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.25);
-    }
-    .low-stock-highlight {
-      border-color: #f59e0b;
-      box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.2);
-    }
-    .low-stock-badge {
-      margin-top: 6px;
-      font-size: 0.82rem;
-      color: #b45309;
-      font-weight: 600;
-    }
-    @media (max-width: 768px) {
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="site-nav.js"></script>
+    <script src="theme.js"></script>
+    <title>Избранное — tech-nozone</title>
+    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="dark-theme.css" />
+    <link rel="icon" sizes="180x180" href="sources/logo.png" />
+    <style>
+      .favorites-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+      }
       .product-card-favorite {
-        position: relative;
-        flex-direction: row;
-        align-items: flex-start;
-        padding: 12px;
-        gap: 10px;
+        display: flex;
+        gap: 20px;
+        padding: 20px;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        margin-bottom: 20px;
+        background: white;
+      }
+      .product-image,
+      .product-image-wrap.product-image,
+      .product-image-wrap--favorite,
+      .product-image-fallback--favorite {
+        width: 120px;
+        height: 120px;
+        object-fit: contain;
+        background: #f8f9fa;
+        border-radius: 8px;
+        cursor: pointer;
+      }
+      .product-info {
+        flex: 1;
+      }
+      .product-meta {
+        display: flex;
+        gap: 15px;
+        margin: 10px 0;
+        color: #6b7280;
+        font-size: 0.9rem;
       }
       .remove-favorite-btn {
-        order: 3;
-        position: absolute !important;
-        top: 10px !important;
-        right: 10px !important;
-        left: auto !important;
-        width: 32px !important;
-        height: 32px !important;
-        border-radius: 50% !important;
-        flex-shrink: 0;
+        background: #ef4444;
+        color: white;
+        border: none;
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        font-weight: bold;
+        cursor: pointer;
+        position: relative;
+        top: -10px;
+        left: -10px;
       }
-      .product-image {
-        width: 88px;
-        height: 88px;
+      .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        background: #f8f9fa;
+        border-radius: 12px;
+        margin: 40px 0;
+        color: #6b7280;
       }
-    }
-  </style>
-</head>
-<body>
-<header class="header">
-  <div class="container">
-    <div class="logo">
-      <h1><a href="index.html" style="color: inherit; text-decoration: none;">tech-nozone</a></h1>
-    </div>
-    <nav class="nav">
-      <a href="index.html" class="nav-link">Главная</a>
-      <a href="catalog.html" class="nav-link">Каталог</a>
-      <a href="comparison.html" class="nav-link">Сравнение<span class="comparison-counter">0</span></a>
-      <a href="recommendations.html" class="nav-link">Рекомендации</a>
-      <a href="learn.html" class="nav-link">Обучение</a>
-    </nav>
-    <div class="auth-buttons">
-      <a href="auth.html" class="btn btn-outline">Войти</a>
-      <a href="auth.html?tab=register" class="btn btn-primary">Регистрация</a>
-    </div>
-  </div>
-</header>
-
-<main class="main">
-  <div class="favorites-container">
-    <h1>❤️ Моё избранное</h1>
-    <div id="favoritesList"></div>
-    <div id="emptyFavoritesState" class="empty-state" style="display: none;">
-      <h3>Нет избранных товаров</h3>
-      <p>Добавьте товары в избранное со страницы каталога или карточки товара</p>
-      <a href="catalog.html" class="btn btn-primary" style="margin-top: 20px;">Перейти в каталог</a>
-    </div>
-  </div>
-</main>
-
-<footer class="footer">
-  <div class="container">
-    <p>&copy; 2025-2026 tech-nozone. Все права защищены.</p>
-  </div>
-</footer>
-<script src="config.js"></script>
-<script src="script.js?v=import2"></script>
-<script>
-document.addEventListener('DOMContentLoaded', async function () {
-  const token = localStorage.getItem('techAggregatorToken');
-  if (!token) {
-    alert('Пожалуйста, войдите в аккаунт');
-    window.location.href = 'auth.html';
-    return;
-  }
-
-  try {
-    //Загружаем пользователя
-    loadUserData();
-    updateComparisonCounter();
-
-    //Загружаем избранное
-    const res = await fetch('http://localhost:3000/api/favorites', {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-
-    if (!res.ok) throw new Error('Не удалось загрузить избранное');
-
-    const favorites = await res.json();
-    renderFavorites(favorites);
-  } catch (err) {
-    console.error('Ошибка:', err);
-    document.getElementById('favoritesList').innerHTML = '<p style="color: #ef4444;">Не удалось загрузить избранное</p>';
-  }
-});
-
-//Отрисовка избранных товаров
-function renderFavorites(favorites) {
-  const listEl = document.getElementById('favoritesList');
-  const emptyEl = document.getElementById('emptyFavoritesState');
-
-  if (favorites.length === 0) {
-    emptyEl.style.display = 'block';
-    listEl.innerHTML = '';
-    return;
-  }
-
-  emptyEl.style.display = 'none';
-
-
-  listEl.innerHTML = favorites.map(fav => {
-    //Получаем минимальную цену из текущих цен товара
-    const currentMinPrice = getMinPrice(fav);
-
-    let priceDropInfo = null;
-    const lastPrice = fav.lastPrice || fav.price; //lastPrice — это цена при добавлении в избранное 
-    if (lastPrice && currentMinPrice && currentMinPrice < lastPrice) {
-      const dropPercentage = ((lastPrice - currentMinPrice) / lastPrice) * 100;
-      if (dropPercentage >= 5) { // Порог 5%
-        priceDropInfo = {
-          percentage: dropPercentage.toFixed(1),
-          oldPrice: lastPrice,
-          newPrice: currentMinPrice
-        };
+      .price-drop-highlight {
+        border-color: #10b981;
+        box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.25);
       }
-    }
-
-    let lowStockVal = null;
-    if (fav.prices && fav.prices.length) {
-      const stocks = fav.prices
-        .map((p) => p.stock ?? p.storeSignals?.stock)
-        .filter((s) => s != null && Number.isFinite(Number(s)));
-      if (stocks.length) {
-        const m = Math.min(...stocks.map(Number));
-        if (m >= 0 && m < 10) lowStockVal = m;
+      .low-stock-highlight {
+        border-color: #f59e0b;
+        box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.2);
       }
-    }
+      .low-stock-badge {
+        margin-top: 6px;
+        font-size: 0.82rem;
+        color: #b45309;
+        font-weight: 600;
+      }
+      @media (max-width: 768px) {
+        .product-card-favorite {
+          position: relative;
+          flex-direction: row;
+          align-items: flex-start;
+          padding: 12px;
+          gap: 10px;
+        }
+        .remove-favorite-btn {
+          order: 3;
+          position: absolute !important;
+          top: 10px !important;
+          right: 10px !important;
+          left: auto !important;
+          width: 32px !important;
+          height: 32px !important;
+          border-radius: 50% !important;
+          flex-shrink: 0;
+        }
+        .product-image,
+        .product-image-wrap.product-image,
+        .product-image-wrap--favorite,
+        .product-image-fallback--favorite {
+          width: 88px;
+          height: 88px;
+          font-size: 2.75rem;
+        }
 
-    const imgSrc = fav.image || fav.imageUrl || 'https://via.placeholder.com/120x120?text=?';
-    const cardClass = [
-      'product-card-favorite',
-      priceDropInfo ? 'price-drop-highlight' : '',
-      lowStockVal != null ? 'low-stock-highlight' : ''
-    ]
-      .filter(Boolean)
-      .join(' ');
+        .product-image-wrap--favorite .product-image-fallback,
+        .product-image-wrap.product-image .product-image-fallback {
+          font-size: 2.75rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="header" data-nav-search="false">
+      <div class="container"></div>
+    </header>
 
-    return `
+    <main class="main">
+      <div class="favorites-container">
+        <h1>❤️ Моё избранное</h1>
+        <div id="favoritesList"></div>
+        <div id="emptyFavoritesState" class="empty-state" style="display: none">
+          <h3>Нет избранных товаров</h3>
+          <p>Добавьте товары в избранное со страницы каталога или карточки товара</p>
+          <a href="catalog.html" class="btn btn-primary" style="margin-top: 20px">Перейти в каталог</a>
+        </div>
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="container">
+        <p>&copy; 2025-2026 tech-nozone. Все права защищены.</p>
+      </div>
+    </footer>
+    <script src="config.js"></script>
+    <script src="script.js?v=import2"></script>
+    <script src="site-footer.js"></script>
+    <script>
+      document.addEventListener('DOMContentLoaded', async function () {
+        const token = localStorage.getItem('techAggregatorToken');
+        if (!token) {
+          alert('Пожалуйста, войдите в аккаунт');
+          window.location.href = 'auth.html';
+          return;
+        }
+
+        try {
+          //Загружаем пользователя
+          loadUserData();
+          updateComparisonCounter();
+
+          //Загружаем избранное
+          const res = await fetch('http://localhost:3000/api/favorites', {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+
+          if (!res.ok) throw new Error('Не удалось загрузить избранное');
+
+          const favorites = await res.json();
+          renderFavorites(favorites);
+        } catch (err) {
+          console.error('Ошибка:', err);
+          document.getElementById('favoritesList').innerHTML =
+            '<p style="color: #ef4444;">Не удалось загрузить избранное</p>';
+        }
+      });
+
+      //Отрисовка избранных товаров
+      function renderFavorites(favorites) {
+        const listEl = document.getElementById('favoritesList');
+        const emptyEl = document.getElementById('emptyFavoritesState');
+
+        if (favorites.length === 0) {
+          emptyEl.style.display = 'block';
+          listEl.innerHTML = '';
+          return;
+        }
+
+        emptyEl.style.display = 'none';
+
+        listEl.innerHTML = favorites
+          .map((fav) => {
+            //Получаем минимальную цену из текущих цен товара
+            const currentMinPrice = getMinPrice(fav);
+
+            let priceDropInfo = null;
+            const lastPrice = fav.lastPrice || fav.price; //lastPrice — это цена при добавлении в избранное
+            if (lastPrice && currentMinPrice && currentMinPrice < lastPrice) {
+              const dropPercentage = ((lastPrice - currentMinPrice) / lastPrice) * 100;
+              if (dropPercentage >= 5) {
+                // Порог 5%
+                priceDropInfo = {
+                  percentage: dropPercentage.toFixed(1),
+                  oldPrice: lastPrice,
+                  newPrice: currentMinPrice
+                };
+              }
+            }
+
+            let lowStockVal = null;
+            if (fav.prices && fav.prices.length) {
+              const stocks = fav.prices
+                .map((p) => p.stock ?? p.storeSignals?.stock)
+                .filter((s) => s != null && Number.isFinite(Number(s)));
+              if (stocks.length) {
+                const m = Math.min(...stocks.map(Number));
+                if (m >= 0 && m < 10) lowStockVal = m;
+              }
+            }
+
+            const cardClass = [
+              'product-card-favorite',
+              priceDropInfo ? 'price-drop-highlight' : '',
+              lowStockVal != null ? 'low-stock-highlight' : ''
+            ]
+              .filter(Boolean)
+              .join(' ');
+
+            return `
       <div class="${cardClass}">
         <button type="button" class="remove-favorite-btn" onclick="removeFromFavorites(${fav.id})">×</button>
-        <img src="${imgSrc}" 
-             alt="${fav.name}" 
-             class="product-image"
-             onclick="window.location.href='product.html?id=${fav.id}'">
+        ${renderProductImage(fav, {
+          size: 'favorite',
+          className: 'product-image',
+          extraAttrs: `onclick="window.location.href='product.html?id=${fav.id}'"`
+        })}
         <div class="product-info">
           <h3 onclick="window.location.href='product.html?id=${fav.id}'" style="cursor: pointer;">${fav.name}</h3>
           <div class="product-meta">
@@ -243,42 +244,45 @@ function renderFavorites(favorites) {
         </div>
       </div>
     `;
-  }).join('');
-}
+          })
+          .join('');
+        if (typeof refreshProductImages === 'function') {
+          refreshProductImages(listEl);
+        }
+      }
 
-//Удаление из избранного
-async function removeFromFavorites(productId) {
-  const token = localStorage.getItem('techAggregatorToken');
-  if (!token) return;
+      //Удаление из избранного
+      async function removeFromFavorites(productId) {
+        const token = localStorage.getItem('techAggregatorToken');
+        if (!token) return;
 
-  try {
-    const res = await fetch(`http://localhost:3000/api/favorites/${productId}`, {
-      method: 'DELETE',
-      headers: { Authorization: `Bearer ${token}` }
-    });
+        try {
+          const res = await fetch(`http://localhost:3000/api/favorites/${productId}`, {
+            method: 'DELETE',
+            headers: { Authorization: `Bearer ${token}` }
+          });
 
-    if (res.ok) {
-      showCustomNotification('Удалено из избранного', 'info');
-      //Перезагружаем список
-      document.dispatchEvent(new Event('DOMContentLoaded'));
-    } else {
-      const data = await res.json();
-      showCustomNotification(data.error || 'Ошибка удаления', 'error');
-    }
-  } catch (err) {
-    showCustomNotification('Не удалось подключиться к серверу', 'error');
-  }
-}
+          if (res.ok) {
+            showCustomNotification('Удалено из избранного', 'info');
+            //Перезагружаем список
+            document.dispatchEvent(new Event('DOMContentLoaded'));
+          } else {
+            const data = await res.json();
+            showCustomNotification(data.error || 'Ошибка удаления', 'error');
+          }
+        } catch (err) {
+          showCustomNotification('Не удалось подключиться к серверу', 'error');
+        }
+      }
 
-
-function formatPrice(price) {
-  if (price == null || isNaN(price)) return '—';
-  return Number(price).toLocaleString('ru-RU');
-}
-function getMinPrice(product) {
-  if (!product.prices || product.prices.length === 0) return null;
-  return Math.min(...product.prices.map(p => p.price));
-}
-</script>
-</body>
+      function formatPrice(price) {
+        if (price == null || isNaN(price)) return '—';
+        return Number(price).toLocaleString('ru-RU');
+      }
+      function getMinPrice(product) {
+        if (!product.prices || product.prices.length === 0) return null;
+        return Math.min(...product.prices.map((p) => p.price));
+      }
+    </script>
+  </body>
 </html>

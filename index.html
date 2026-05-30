@@ -1,245 +1,186 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ru">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<script src="theme.js"></script>
-<title>tech-nozone - Анализ рынка цифровой техники</title>
-<link rel="stylesheet" href="style.css">
-<link rel="stylesheet" href="dark-theme.css">
-<link rel="icon" sizes="180x180" href="sources/logo.png">
-<style>
-/* Стили для новой витрины популярных товаров */
-.carousel-container {
-  overflow: hidden;
-  border-radius: 16px;
-  background: linear-gradient(180deg, #f8fbff 0%, #ffffff 100%);
-  border: 1px solid #e2e8f0;
-  padding: 18px;
-}
-
-.carousel-track {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 16px;
-  transition: opacity 0.25s ease;
-}
-.carousel-item {
-  background: #ffffff;
-  border-radius: 14px;
-  border: 1px solid #e2e8f0;
-  padding: 14px;
-  box-shadow: 0 6px 20px rgba(15, 23, 42, 0.06);
-  cursor: pointer;
-  min-height: 280px;
-}
-@media (max-width: 768px) {
-  .carousel-track { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .carousel-item { min-height: 240px; padding: 12px; }
-  .carousel-item img { height: 130px; }
-}
-@media (max-width: 560px) {
-  .carousel-track { grid-template-columns: 1fr; }
-}
-.carousel-item img {
-  width: 100%;
-  height: 160px;
-  object-fit: contain;
-  background: #f8f9fa;
-  border-radius: 8px;
-  margin-bottom: 12px;
-}
-.carousel-item-name {
-  margin: 0 0 8px 0;
-  font-size: 1rem;
-  line-height: 1.3;
-  font-weight: 700;
-  color: #0f172a;
-}
-.carousel-item-category {
-  color: #6b7280;
-  font-size: 0.85rem;
-  margin-bottom: 8px;
-}
-.carousel-item-price {
-  font-weight: bold;
-  color: #2563eb;
-}
-.carousel-item-meta {
-  margin-top: 8px;
-  color: #475569;
-  font-size: 0.82rem;
-}
-/* Поиск в центре */
-.search-center {
-  max-width: 600px;
-  margin: 0 auto 40px;
-}
-.search-center input {
-  width: 100%;
-  padding: 14px 20px;
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
-  font-size: 1rem;
-}
-.search-center input:focus {
-  outline: none;
-  border-color: #2563eb;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
-}
-</style>
-</head>
-<body>
-<header class="header">
-<div class="container">
-<div class="logo">
-<h1><a href="index.html" style="color: inherit; text-decoration: none;">tech-nozone</a></h1>
-</div>
-<nav class="nav">
-<a href="index.html" class="nav-link active">Главная</a>
-<a href="catalog.html" class="nav-link">Каталог</a>
-<a href="comparison.html" class="nav-link">Сравнение<span class="comparison-counter">0</span></a>
-<a href="recommendations.html" class="nav-link">Рекомендации</a>
-<a href="learn.html" class="nav-link">Обучение</a>
-</nav>
-
-<div class="nav-search-container">
-<input type="text" class="nav-search" id="navSearch"
-placeholder="Поиск товаров..."
-oninput="showNavSearchSuggestions()"
-onkeypress="handleNavSearchEnter(event)">
-<button class="nav-search-btn" onclick="navSearchProducts()">
-🔍
-</button>
-<div id="navSearchSuggestions" class="nav-search-suggestions"></div>
-</div>
-<div class="auth-buttons">
-
-<a href="auth.html?tab=register" class="btn btn-primary">Регистрация</a>
-<a href="auth.html?tab=register" class="btn btn-primary">Регистрация</a>
-</div>
-</div>
-</header>
-<main class="main">
-
-<section class="hero">
-<div class="container">
-<h2>Найдите идеальную технику</h2>
-<p>Сравнивайте цены, характеристики и отзывы на одном сайте</p>
-<div class="hero-buttons">
-<a href="catalog.html" class="btn btn-primary">Начать поиск</a>
-</div>
-</div>
-</section>
-<div class="container home-category-band">
-  <div class="home-category-quicklinks">
-    <a href="catalog.html?category=smartphones" class="btn btn-outline btn-small">📱 Смартфоны</a>
-<a href="catalog.html?category=laptops" class="btn btn-outline btn-small">💻 Ноутбуки</a>
-<a href="catalog.html?category=tv" class="btn btn-outline btn-small">📺 Телевизоры</a>
-<a href="catalog.html?category=headphones" class="btn btn-outline btn-small">🎧 Наушники</a>
-<a href="catalog.html?category=cameras" class="btn btn-outline btn-small">📸 Фотоаппараты</a>
-<a href="catalog.html?category=tablets" class="btn btn-outline btn-small">📲 Планшеты</a>
-<a href="catalog.html?category=smartwatches" class="btn btn-outline btn-small">⌚ Смарт-часы</a>
-<a href="catalog.html?category=ebooks" class="btn btn-outline btn-small">📗 Электронные книги</a>
-<a href="catalog.html?category=drones" class="btn btn-outline btn-small">🚁 Дроны</a>
-<a href="catalog.html?category=pc_components" class="btn btn-outline btn-small">🧩 Комплектующие ПК</a>
-<a href="catalog.html?category=keyboards" class="btn btn-outline btn-small">⌨️ Клавиатуры</a>
-<a href="catalog.html?category=mouses" class="btn btn-outline btn-small">🖱️ Мыши</a>
-<a href="catalog.html?category=cases" class="btn btn-outline btn-small">📦 Корпуса ПК</a>
-<a href="catalog.html?category=drivers" class="btn btn-outline btn-small">💽 Накопители</a>
-<a href="catalog.html?category=fitness_trackers" class="btn btn-outline btn-small">🏃 Фитнес-трекеры</a>
-<a href="catalog.html?category=power_units" class="btn btn-outline btn-small">🔌 Блоки питания</a>
-<a href="catalog.html?category=microphones" class="btn btn-outline btn-small">🎤 Микрофоны</a>
-<a href="catalog.html?category=webcams" class="btn btn-outline btn-small">📷 Веб-камеры</a>
-<a href="catalog.html?category=power_banks" class="btn btn-outline btn-small">🔋 Павербанки</a>
-<a href="catalog.html?category=portable_speakers" class="btn btn-outline btn-small">🔊 Портативные колонки</a>
-<a href="catalog.html?category=monitors" class="btn btn-outline btn-small">🖥️ Мониторы</a>
-<a href="catalog.html?category=accessories" class="btn btn-outline btn-small">🎒 Аксессуары</a>
-<a href="catalog.html?category=gaming" class="btn btn-outline btn-small">🎮 Игровые консоли</a>
-<a href="catalog.html?category=networking" class="btn btn-outline btn-small">🌐 Сетевое оборудование</a>
-<a href="catalog.html?category=cpus" class="btn btn-outline btn-small">⚙️ Процессоры</a>
-<a href="catalog.html?category=motherboards" class="btn btn-outline btn-small">🖧 Материнские платы</a>
-<a href="catalog.html?category=ram" class="btn btn-outline btn-small">🧠 Оперативная память</a>
-<a href="catalog.html?category=graphics_cards" class="btn btn-outline btn-small">🎮 Видеокарты</a>
-<a href="catalog.html?category=external_drives" class="btn btn-outline btn-small">💿 Внешние накопители</a>
-<a href="catalog.html?category=audio" class="btn btn-outline btn-small">🎵 Аудиосистемы</a>
-<a href="catalog.html?category=smart_home" class="btn btn-outline btn-small">🏠 Умный дом</a>
-<a href="catalog.html?category=wearables" class="btn btn-outline btn-small">🕶️ Носимые устройства</a>
-<a href="catalog.html?category=other" class="btn btn-outline btn-small">📦 Другое</a>
-  </div>
-</div>
-<!-- Описание -->
-<section class="features-section">
-<div class="container">
-<h3 class="section-title">Почему выбирают нас?</h3>
-<div class="features-grid">
-<div class="feature-card enhanced">
-<div class="feature-icon">🤖</div>
-<h4>Умный анализ</h4>
-<p>Мониторинг цен и выгоды</p>
-</div>
-<div class="feature-card enhanced">
-<div class="feature-icon">📊</div>
-<h4>Сравнение</h4>
-<p>Сравнивайте товары, цены, выгоду</p>
-</div>
-<div class="feature-card enhanced">
-<div class="feature-icon">🎯</div>
-<h4>Умный подбор</h4>
-<p>Найдите технику, соответствующую вашим требованиям</p>
-</div>
-<div class="feature-card enhanced">
-<div class="feature-icon">🔄</div>
-<h4>Отслеживание</h4>
-<p>Следите за изменениями цен и находите лучшие предложения</p>
-</div>
-</div>
-</div>
-</section>
-<!-- Новая витрина популярных товаров -->
-<section class="Popular-products-section">
-<div class="container">
-<div class="section-header">
-<h3 class="section-title">Популярные товары недели</h3>
-<div class="carousel-nav">
-<button id="prevBtn" class="carousel-btn">❮</button>
-<button id="nextBtn" class="carousel-btn">❯</button>
-</div>
-</div>
-<div class="carousel-container">
-<div id="PopularProductsCarousel" class="carousel-track">
-<div style="padding: 16px; color: #6b7280;">Загрузка товаров...</div>
-</div>
-</div>
-</div>
-</section>
-<!-- Категории -->
-<section class="categories">
-<div class="container">
-<h3 class="section-title">Популярные категории</h3>
-<div class="categories-grid">
-<div class="category-card" onclick="navigateToCategory('smartphones')">
-<h4>Смартфоны</h4>
-</div>
-<div class="category-card" onclick="navigateToCategory('laptops')">
-<h4>Ноутбуки</h4>
-</div>
-<div class="category-card" onclick="navigateToCategory('tv')">
-<h4>Телевизоры</h4>
-</div>
-<div class="category-card" onclick="navigateToCategory('headphones')">
-<h4>Наушники</h4>
-</div>
-</div>
-</div>
-</section>
-</main>
-<footer class="footer">
-<div class="container">
-<p>&copy; 2025-2026 tech-nozone. Все права защищены.</p>
-</div>
-</footer>
-<script src="script.js?v=import2"></script>
-
-</body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="site-nav.js"></script>
+    <script src="theme.js"></script>
+    <title>tech-nozone - Анализ рынка цифровой техники</title>
+    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="dark-theme.css" />
+    <link rel="icon" sizes="180x180" href="sources/logo.png" />
+    <style>
+      /* Доп. размеры витрины (цвета — в style.css и dark-theme.css) */
+      .carousel-container {
+        border-radius: 16px;
+        padding: 18px;
+      }
+      .carousel-item {
+        border-radius: 14px;
+        padding: 14px;
+        min-height: 280px;
+      }
+      @media (max-width: 768px) {
+        .carousel-item {
+          min-height: 240px;
+          padding: 12px;
+        }
+        .carousel-item img {
+          height: 130px;
+        }
+      }
+      .carousel-item img {
+        height: 160px;
+        border-radius: 8px;
+        margin-bottom: 12px;
+      }
+      .carousel-item-name {
+        margin: 0 0 8px 0;
+        font-size: 1rem;
+        line-height: 1.3;
+        font-weight: 700;
+      }
+      .carousel-item-meta {
+        margin-top: 8px;
+        font-size: 0.82rem;
+      }
+      /* Поиск в центре */
+      .search-center {
+        max-width: 600px;
+        margin: 0 auto 40px;
+      }
+      .search-center input {
+        width: 100%;
+        padding: 14px 20px;
+        border: 1px solid #d1d5db;
+        border-radius: 8px;
+        font-size: 1rem;
+      }
+      .search-center input:focus {
+        outline: none;
+        border-color: #2563eb;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+      }
+    </style>
+  </head>
+  <body class="page-home">
+    <header class="header">
+      <div class="container"></div>
+    </header>
+    <main class="main">
+      <section class="hero">
+        <div class="container">
+          <h2>Найдите идеальную технику</h2>
+          <p>Сравнивайте цены, учитесь и получайте выгоду с tech-nozone</p>
+          <div class="hero-buttons">
+            <a href="catalog.html" class="btn btn-primary">Начать поиск</a>
+          </div>
+        </div>
+      </section>
+      <div class="container home-category-band">
+        <div class="home-category-quicklinks">
+          <a href="catalog.html?category=smartphones" class="btn btn-outline btn-small">📱 Смартфоны</a>
+          <a href="catalog.html?category=laptops" class="btn btn-outline btn-small">💻 Ноутбуки</a>
+          <a href="catalog.html?category=tv" class="btn btn-outline btn-small">📺 Телевизоры</a>
+          <a href="catalog.html?category=headphones" class="btn btn-outline btn-small">🎧 Наушники</a>
+          <a href="catalog.html?category=cameras" class="btn btn-outline btn-small">📸 Фотоаппараты</a>
+          <a href="catalog.html?category=tablets" class="btn btn-outline btn-small">📲 Планшеты</a>
+          <a href="catalog.html?category=smartwatches" class="btn btn-outline btn-small">⌚ Смарт-часы</a>
+          <a href="catalog.html?category=drones" class="btn btn-outline btn-small">🚁 Дроны</a>
+          <a href="catalog.html?category=pc_components" class="btn btn-outline btn-small">🧩 Комплектующие ПК</a>
+          <a href="catalog.html?category=keyboards" class="btn btn-outline btn-small">⌨️ Клавиатуры</a>
+          <a href="catalog.html?category=mouses" class="btn btn-outline btn-small">🖱️ Мыши</a>
+          <a href="catalog.html?category=cases" class="btn btn-outline btn-small">📦 Корпуса ПК</a>
+          <a href="catalog.html?category=drivers" class="btn btn-outline btn-small">💽 Накопители</a>
+          <a href="catalog.html?category=power_units" class="btn btn-outline btn-small">🔌 Блоки питания</a>
+          <a href="catalog.html?category=microphones" class="btn btn-outline btn-small">🎤 Микрофоны</a>
+          <a href="catalog.html?category=webcams" class="btn btn-outline btn-small">📷 Веб-камеры</a>
+          <a href="catalog.html?category=power_banks" class="btn btn-outline btn-small">🔋 Павербанки</a>
+          <a href="catalog.html?category=portable_speakers" class="btn btn-outline btn-small">🔊 Портативные колонки</a>
+          <a href="catalog.html?category=monitors" class="btn btn-outline btn-small">🖥️ Мониторы</a>
+          <a href="catalog.html?category=accessories" class="btn btn-outline btn-small">🎒 Аксессуары</a>
+          <a href="catalog.html?category=gaming" class="btn btn-outline btn-small">🎮 Игровые консоли</a>
+          <a href="catalog.html?category=networking" class="btn btn-outline btn-small">🌐 Сетевое оборудование</a>
+          <a href="catalog.html?category=cpus" class="btn btn-outline btn-small">⚙️ Процессоры</a>
+          <a href="catalog.html?category=motherboards" class="btn btn-outline btn-small">🖧 Материнские платы</a>
+          <a href="catalog.html?category=ram" class="btn btn-outline btn-small">🧠 Оперативная память</a>
+          <a href="catalog.html?category=graphics_cards" class="btn btn-outline btn-small">🎮 Видеокарты</a>
+          <a href="catalog.html?category=external_drives" class="btn btn-outline btn-small">💿 Внешние накопители</a>
+        </div>
+      </div>
+      <!-- Описание -->
+      <section class="features-section">
+        <div class="container">
+          <h3 class="section-title">Почему выбирают нас?</h3>
+          <div class="features-grid">
+            <div class="feature-card enhanced">
+              <div class="feature-icon">🤖</div>
+              <h4>Умный анализ</h4>
+              <p>Мониторинг цен и выгоды, уведомления о снижении цен</p>
+            </div>
+            <div class="feature-card enhanced">
+              <div class="feature-icon">📊</div>
+              <h4>Сравнение</h4>
+              <p>Сравнивайте товары, цены, выгоду в 1 месте</p>
+            </div>
+            <div class="feature-card enhanced">
+              <div class="feature-icon">🎯</div>
+              <h4>Рекомендации</h4>
+              <p>Получайте персональные рекомендации или изучайте популярную технику</p>
+            </div>
+            <div class="feature-card enhanced">
+              <div class="feature-icon">📚</div>
+              <h4>Обучение</h4>
+              <p>Наглядное и простое объяснение техники с тестами</p>
+            </div>
+          </div>
+        </div>
+      </section>
+      <!-- Новая витрина популярных товаров -->
+      <section class="popular-products-section">
+        <div class="container">
+          <div class="section-header">
+            <h3 class="section-title">Популярные товары недели</h3>
+            <div class="carousel-nav">
+              <button id="prevBtn" class="carousel-btn">❮</button>
+              <button id="nextBtn" class="carousel-btn">❯</button>
+            </div>
+          </div>
+          <div class="carousel-container">
+            <div id="PopularProductsCarousel" class="carousel-track">
+              <div style="padding: 16px; color: #6b7280">Загрузка товаров...</div>
+            </div>
+          </div>
+        </div>
+      </section>
+      <!-- Категории -->
+      <section class="categories">
+        <div class="container">
+          <h3 class="section-title">Популярные категории</h3>
+          <div class="categories-grid">
+            <div class="category-card" onclick="navigateToCategory('smartphones')">
+              <h4>Смартфоны</h4>
+            </div>
+            <div class="category-card" onclick="navigateToCategory('laptops')">
+              <h4>Ноутбуки</h4>
+            </div>
+            <div class="category-card" onclick="navigateToCategory('tv')">
+              <h4>Телевизоры</h4>
+            </div>
+            <div class="category-card" onclick="navigateToCategory('headphones')">
+              <h4>Наушники</h4>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+    <footer class="footer">
+      <div class="container">
+        <p>&copy; 2025-2026 tech-nozone. Все права защищены.</p>
+      </div>
+    </footer>
+    <script src="config.js"></script>
+    <script src="script.js?v=import2"></script>
+    <script src="site-footer.js"></script>
+  </body>
 </html>

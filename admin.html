@@ -1,1945 +1,1693 @@
-<!DOCTYPE html>
+﻿<!doctype html>
 <html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="site-nav.js"></script>
     <script src="theme.js"></script>
     <title>Админ-панель - tech-nozone</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="dark-theme.css">
-    <link rel="icon" sizes="180x180" href="sources/logo.png">
+    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="dark-theme.css" />
+    <link rel="icon" sizes="180x180" href="sources/logo.png" />
     <style>
-        /* Стили для админ-панели */
+      /* Стили для админ-панели */
+      .admin-page {
+        padding: 2rem 0;
+        min-height: calc(100vh - 200px);
+      }
+      .admin-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+        padding-bottom: 1.5rem;
+        border-bottom: 2px solid #e5e7eb;
+        flex-wrap: wrap;
+        gap: 1rem;
+        min-width: 0;
+      }
+      .admin-welcome {
+        color: #6b7280;
+      }
+      .admin-welcome strong {
+        color: #2563eb;
+      }
+      .admin-tabs-container {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        overflow: hidden;
+        max-width: 100%;
+        margin-bottom: 2rem;
+      }
+      .admin-tabs-header {
+        display: flex;
+        background: #f8f9fa;
+        border-bottom: 1px solid #e5e7eb;
+        overflow-x: auto;
+      }
+      .admin-tab-btn {
+        padding: 1.25rem 2rem;
+        background: none;
+        border: none;
+        font-size: 1rem;
+        font-weight: 500;
+        color: #4b5563;
+        cursor: pointer;
+        white-space: nowrap;
+        position: relative;
+        transition: all 0.3s;
+      }
+      .admin-tab-btn:hover {
+        background: #f1f5f9;
+        color: #2563eb;
+      }
+      .admin-tab-btn.active {
+        color: #2563eb;
+        background: white;
+      }
+      .admin-tab-btn.active::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: #2563eb;
+      }
+      .admin-tab-content {
+        padding: 2rem;
+        display: none;
+        animation: fadeIn 0.3s ease;
+        min-width: 0;
+        max-width: 100%;
+        box-sizing: border-box;
+      }
+      .admin-tab-content.active {
+        display: block;
+      }
+      .moderation-item {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+        border: 1px solid #e5e7eb;
+        min-width: 0;
+        max-width: 100%;
+        box-sizing: border-box;
+        overflow-wrap: anywhere;
+        word-break: break-word;
+      }
+      .moderation-item > div:not(.moderation-header):not(.moderation-actions) {
+        min-width: 0;
+        max-width: 100%;
+      }
+      .moderation-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 1rem;
+        flex-wrap: wrap;
+        gap: 0.5rem 1rem;
+      }
+      .moderation-info {
+        flex: 1 1 200px;
+        min-width: 0;
+      }
+      .moderation-info h4 {
+        margin: 0 0 0.25rem 0;
+        font-size: 1.1rem;
+        overflow-wrap: anywhere;
+        word-break: break-word;
+      }
+      .moderation-info p {
+        margin: 0;
+        color: #6b7280;
+        font-size: 0.9rem;
+        overflow-wrap: anywhere;
+        word-break: break-word;
+      }
+      .admin-moderation-link {
+        word-break: break-all;
+        overflow-wrap: anywhere;
+        max-width: 100%;
+        display: inline-block;
+      }
+      .status-badge {
+        padding: 0.4rem 0.8rem;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 500;
+      }
+      .status-pending {
+        background: #fef3c7;
+        color: #92400e;
+      }
+      .status-approved {
+        background: #d1fae5;
+        color: #065f46;
+      }
+      .status-rejected {
+        background: #fee2e2;
+        color: #991b1b;
+      }
+      .moderation-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-top: 1rem;
+      }
+      .btn-action {
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        border: none;
+        cursor: pointer;
+        font-size: 0.9rem;
+        font-weight: 500;
+      }
+      .btn-approve {
+        background: #10b981;
+        color: white;
+      }
+      .btn-reject {
+        background: #ef4444;
+        color: white;
+      }
+      .btn-view {
+        background: #3b82f6;
+        color: white;
+      }
+      textarea.admin-notes {
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
+        padding: 0.5rem;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 0.9rem;
+        margin-top: 0.5rem;
+        resize: vertical;
+      }
+      .crud-container {
+        margin-top: 1.5rem;
+        min-width: 0;
+        max-width: 100%;
+      }
+      .crud-header {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+        align-items: end;
+        min-width: 0;
+      }
+      .crud-header .crud-table-selector {
+        flex: 1 1 200px;
+        min-width: 0;
+        max-width: 100%;
+      }
+      .crud-controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+        min-width: 0;
+      }
+      .crud-table-selector {
+        padding: 0.5rem;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 0.9rem;
+      }
+      .admin-table-search-controls {
+        margin-bottom: 1rem;
+        padding: 1rem;
+        background: #f8f9fa;
+        border-radius: 8px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        align-items: flex-end;
+        min-width: 0;
+        max-width: 100%;
+        box-sizing: border-box;
+      }
+      .admin-table-search-field {
+        flex: 1 1 160px;
+        min-width: 0;
+      }
+      .admin-table-search-field select,
+      .admin-table-search-field input {
+        max-width: 100%;
+        box-sizing: border-box;
+      }
+      .admin-table-search-buttons {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        align-items: center;
+      }
+      .admin-crud-table-outer {
+        display: flex;
+        flex-direction: column;
+        max-width: 100%;
+        width: 100%;
+        margin-top: 1rem;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        box-sizing: border-box;
+        max-height: min(70vh, 640px);
+        min-height: 200px;
+        background: #fff;
+      }
+      .admin-crud-table-scroll-top {
+        position: sticky;
+        top: 0;
+        z-index: 5;
+        overflow-x: auto;
+        overflow-y: hidden;
+        flex: 0 0 auto;
+        height: 14px;
+        background: #f1f5f9;
+        border-bottom: 1px solid #e5e7eb;
+        border-radius: 8px 8px 0 0;
+      }
+      .admin-crud-table-scroll-top-inner {
+        height: 1px;
+      }
+      .admin-crud-table-scroll {
+        overflow: auto;
+        -webkit-overflow-scrolling: touch;
+        flex: 1 1 auto;
+        min-height: 0;
+        max-width: 100%;
+        width: 100%;
+        box-sizing: border-box;
+      }
+      .crud-loading-inline {
+        padding: 1rem;
+        margin: 0;
+      }
+      .crud-empty-row td {
+        text-align: center;
+        color: #6b7280;
+        font-style: italic;
+        padding: 2rem 1rem;
+      }
+      .crud-table {
+        width: max-content;
+        min-width: 100%;
+        border-collapse: collapse;
+        margin: 0;
+        table-layout: auto;
+      }
+      .crud-table th,
+      .crud-table td {
+        padding: 0.75rem;
+        border: 1px solid #e5e7eb;
+        text-align: left;
+        min-width: 0;
+        vertical-align: top;
+        overflow-wrap: anywhere;
+        word-break: break-word;
+      }
+      .crud-table th:first-child,
+      .crud-table td.crud-actions-cell {
+        width: 1%;
+        white-space: nowrap;
+        max-width: none;
+      }
+      .crud-table th {
+        background: #f8f9fa;
+        font-weight: 600;
+      }
+      .crud-actions-cell {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.25rem;
+      }
+      .crud-table .field-display {
+        display: block;
+        max-width: 100%;
+      }
+      .crud-table .field-input {
+        max-width: 100%;
+        box-sizing: border-box;
+        min-width: 0;
+      }
+      .btn-crud {
+        padding: 0.25rem 0.5rem;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 0.8rem;
+      }
+      .btn-edit-crud {
+        background: #f59e0b;
+        color: white;
+      }
+      .btn-delete-crud {
+        background: #ef4444;
+        color: white;
+      }
+      .btn-save-crud {
+        background: #10b981;
+        color: white;
+      }
+      .btn-cancel-crud {
+        background: #6b7280;
+        color: white;
+      }
+      .crud-bulk-toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        align-items: center;
+        margin-bottom: 0.75rem;
+        padding: 0.75rem 1rem;
+        background: #fff7ed;
+        border: 1px solid #fed7aa;
+        border-radius: 8px;
+      }
+      .crud-selected-count {
+        font-weight: 600;
+        color: #9a3412;
+        min-width: 7rem;
+      }
+      .btn-delete-bulk {
+        background: #ef4444;
+        color: white;
+        border: none;
+      }
+      .btn-delete-bulk:disabled {
+        background: #fca5a5;
+        cursor: not-allowed;
+      }
+      .crud-checkbox-col {
+        width: 2.5rem;
+        text-align: center;
+        white-space: nowrap;
+      }
+      .crud-checkbox-col input[type='checkbox'] {
+        width: 1rem;
+        height: 1rem;
+        cursor: pointer;
+      }
+      .parse-form-container {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 8px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+      }
+      .form-group {
+        margin-bottom: 1rem;
+      }
+      .form-group label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+      }
+      .form-group input,
+      .form-group select,
+      .form-group textarea {
+        width: 100%;
+        padding: 0.5rem;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 0.9rem;
+      }
+      .form-actions {
+        display: flex;
+        gap: 1rem;
+        margin-top: 1.5rem;
+        justify-content: flex-end;
+      }
+      .btn {
+        padding: 0.5rem 1rem;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 500;
+      }
+      .btn-primary {
+        background: #2563eb;
+        color: white;
+      }
+      .btn-outline {
+        background: transparent;
+        color: #2563eb;
+        border: 1px solid #2563eb;
+      }
+      .btn-secondary {
+        background: #6b7280;
+        color: white;
+      }
+      .btn-danger {
+        background: #ef4444;
+        color: white;
+      }
+      .loading {
+        text-align: center;
+        padding: 2rem;
+        color: #6b7280;
+      }
+      .error-message {
+        color: #ef4444;
+        text-align: center;
+        padding: 2rem;
+      }
+      .admin-stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 0.75rem;
+        margin-bottom: 1.5rem;
+      }
+      .stat-card-enhanced {
+        background: white;
+        border-radius: 10px;
+        padding: 0.85rem 1rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+        border-left: 3px solid;
+        transition:
+          transform 0.3s,
+          box-shadow 0.3s;
+      }
+      .stat-card-enhanced:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 14px rgba(0, 0, 0, 0.1);
+      }
+      .stat-card-enhanced.primary {
+        border-left-color: #2563eb;
+      }
+      .stat-card-enhanced.success {
+        border-left-color: #10b981;
+      }
+      .stat-card-enhanced.warning {
+        border-left-color: #f59e0b;
+      }
+      .stat-card-enhanced.danger {
+        border-left-color: #ef4444;
+      }
+      .stat-icon {
+        font-size: 1.35rem;
+        margin-bottom: 0.35rem;
+        display: inline-block;
+      }
+      .stat-title {
+        font-size: 0.78rem;
+        color: #6b7280;
+        margin-bottom: 0.25rem;
+      }
+      .stat-value {
+        font-size: 1.35rem;
+        font-weight: 700;
+        margin-bottom: 0.25rem;
+      }
+      .stat-change {
+        font-size: 0.78rem;
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+      }
+      .stat-change.positive {
+        color: #10b981;
+      }
+      .stat-change.negative {
+        color: #ef4444;
+      }
+      .pagination {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 0.5rem;
+        margin-top: 2rem;
+      }
+      .pagination-btn {
+        width: 40px;
+        height: 40px;
+        border: 1px solid #e5e7eb;
+        background: white;
+        border-radius: 6px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
+      }
+      .pagination-btn:hover:not(.disabled):not(.active) {
+        border-color: #2563eb;
+        color: #2563eb;
+      }
+      .pagination-btn.active {
+        background: #2563eb;
+        border-color: #2563eb;
+        color: white;
+      }
+      .pagination-btn.disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+      .message-form-container {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 8px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        margin-top: 1.5rem;
+      }
+      .message-input-group {
+        margin-bottom: 1rem;
+      }
+      .message-input-group label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+      }
+      .message-input-group textarea {
+        width: 100%;
+        padding: 0.75rem;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        font-size: 0.9rem;
+        resize: vertical;
+      }
+      .message-actions {
+        display: flex;
+        gap: 1rem;
+        justify-content: flex-end;
+      }
+
+      /* Формы истории цен и блоки цен при добавлении товара */
+      .admin-form-card {
+        margin-top: 1.25rem;
+        padding: 1.25rem 1.35rem;
+        background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+        box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06);
+      }
+      .admin-form-card h5 {
+        margin: 0 0 1rem 0;
+        font-size: 1rem;
+        color: #0f172a;
+      }
+      .admin-form-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem 1.25rem;
+        align-items: end;
+      }
+      .admin-field label {
+        display: block;
+        font-size: 0.82rem;
+        font-weight: 600;
+        color: #475569;
+        margin-bottom: 0.4rem;
+      }
+      .admin-field input,
+      .admin-field select {
+        width: 100%;
+        padding: 0.65rem 0.85rem;
+        border: 1px solid #cbd5e1;
+        border-radius: 10px;
+        font-size: 0.95rem;
+        background: #fff;
+        transition:
+          border-color 0.15s,
+          box-shadow 0.15s;
+      }
+      .admin-field input:focus,
+      .admin-field select:focus {
+        outline: none;
+        border-color: #2563eb;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+      }
+      .admin-btn-primary {
+        padding: 0.65rem 1.35rem;
+        border: none;
+        border-radius: 10px;
+        font-weight: 600;
+        font-size: 0.95rem;
+        cursor: pointer;
+        color: #fff;
+        background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
+        transition:
+          transform 0.12s,
+          box-shadow 0.12s;
+      }
+      .admin-btn-primary:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 16px rgba(37, 99, 235, 0.4);
+      }
+      .admin-manual-price-card {
+        padding: 1rem 1.15rem;
+        margin-bottom: 1rem;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        background: #fff;
+        box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+      }
+      .admin-manual-price-card h5 {
+        margin: 0 0 0.75rem 0;
+        font-size: 0.95rem;
+        color: #334155;
+      }
+      .admin-manual-price-card .form-group input,
+      .admin-manual-price-card .form-group select {
+        border-radius: 10px;
+        border: 1px solid #cbd5e1;
+        padding: 0.55rem 0.75rem;
+      }
+      .admin-manual-price-card .remove-price-btn {
+        margin-top: 0.5rem;
+        padding: 0.45rem 0.9rem;
+        border-radius: 8px;
+        border: 1px solid #fecaca;
+        background: #fef2f2;
+        color: #b91c1c;
+        font-size: 0.85rem;
+        font-weight: 500;
+        cursor: pointer;
+      }
+      .admin-manual-price-card .remove-price-btn:hover {
+        background: #fee2e2;
+      }
+      #parseResult .admin-parse-edit-panel input,
+      #parseResult .admin-parse-edit-panel select,
+      #parseResult .admin-parse-edit-panel textarea {
+        border-radius: 10px;
+        border: 1px solid #cbd5e1;
+        padding: 0.55rem 0.75rem;
+      }
+      #parseResult .admin-parse-edit-panel .price-row {
+        flex-wrap: wrap;
+        align-items: stretch;
+        padding: 0.65rem;
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        margin-bottom: 0.65rem !important;
+      }
+      #parseResult .admin-parse-edit-panel .spec-row {
+        padding: 0.5rem;
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        margin-bottom: 0.5rem !important;
+      }
+      #adminPriceHistorySearchForm {
+        position: relative;
+        max-width: 640px;
+      }
+      #adminPriceHistorySearchSuggestions {
+        max-height: 320px;
+      }
+
+      .moderation-list {
+        min-width: 0;
+        max-width: 100%;
+      }
+
+      .import-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+        align-items: start;
+        margin-top: 1rem;
+      }
+
+      @media (max-width: 768px) {
         .admin-page {
-            padding: 2rem 0;
-            min-height: calc(100vh - 200px);
-        }
-        .admin-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 2rem;
-            padding-bottom: 1.5rem;
-            border-bottom: 2px solid #e5e7eb;
-            flex-wrap: wrap;
-            gap: 1rem;
-            min-width: 0;
-        }
-        .admin-welcome {
-            color: #6b7280;
-        }
-        .admin-welcome strong {
-            color: #2563eb;
-        }
-        .admin-tabs-container {
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-            overflow: hidden;
-            max-width: 100%;
-            margin-bottom: 2rem;
-        }
-        .admin-tabs-header {
-            display: flex;
-            background: #f8f9fa;
-            border-bottom: 1px solid #e5e7eb;
-            overflow-x: auto;
-        }
-        .admin-tab-btn {
-            padding: 1.25rem 2rem;
-            background: none;
-            border: none;
-            font-size: 1rem;
-            font-weight: 500;
-            color: #4b5563;
-            cursor: pointer;
-            white-space: nowrap;
-            position: relative;
-            transition: all 0.3s;
-        }
-        .admin-tab-btn:hover {
-            background: #f1f5f9;
-            color: #2563eb;
-        }
-        .admin-tab-btn.active {
-            color: #2563eb;
-            background: white;
-        }
-        .admin-tab-btn.active::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            height: 3px;
-            background: #2563eb;
+          padding: 1rem 0;
         }
         .admin-tab-content {
-            padding: 2rem;
-            display: none;
-            animation: fadeIn 0.3s ease;
-            min-width: 0;
-            max-width: 100%;
-            box-sizing: border-box;
-        }
-        .admin-tab-content.active {
-            display: block;
-        }
-        .moderation-item {
-            background: white;
-            padding: 1.5rem;
-            border-radius: 8px;
-            margin-bottom: 1rem;
-            border: 1px solid #e5e7eb;
-            min-width: 0;
-            max-width: 100%;
-            box-sizing: border-box;
-            overflow-wrap: anywhere;
-            word-break: break-word;
-        }
-        .moderation-item > div:not(.moderation-header):not(.moderation-actions) {
-            min-width: 0;
-            max-width: 100%;
-        }
-        .moderation-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 1rem;
-            flex-wrap: wrap;
-            gap: 0.5rem 1rem;
-        }
-        .moderation-info {
-            flex: 1 1 200px;
-            min-width: 0;
-        }
-        .moderation-info h4 {
-            margin: 0 0 0.25rem 0;
-            font-size: 1.1rem;
-            overflow-wrap: anywhere;
-            word-break: break-word;
-        }
-        .moderation-info p {
-            margin: 0;
-            color: #6b7280;
-            font-size: 0.9rem;
-            overflow-wrap: anywhere;
-            word-break: break-word;
-        }
-        .admin-moderation-link {
-            word-break: break-all;
-            overflow-wrap: anywhere;
-            max-width: 100%;
-            display: inline-block;
-        }
-        .status-badge {
-            padding: 0.4rem 0.8rem;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            font-weight: 500;
-        }
-        .status-pending {
-            background: #fef3c7;
-            color: #92400e;
-        }
-        .status-approved {
-            background: #d1fae5;
-            color: #065f46;
-        }
-        .status-rejected {
-            background: #fee2e2;
-            color: #991b1b;
-        }
-        .moderation-actions {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.5rem;
-            margin-top: 1rem;
-        }
-        .btn-action {
-            padding: 0.5rem 1rem;
-            border-radius: 6px;
-            border: none;
-            cursor: pointer;
-            font-size: 0.9rem;
-            font-weight: 500;
-        }
-        .btn-approve {
-            background: #10b981;
-            color: white;
-        }
-        .btn-reject {
-            background: #ef4444;
-            color: white;
-        }
-        .btn-view {
-            background: #3b82f6;
-            color: white;
-        }
-        textarea.admin-notes {
-            width: 100%;
-            max-width: 100%;
-            box-sizing: border-box;
-            padding: 0.5rem;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 0.9rem;
-            margin-top: 0.5rem;
-            resize: vertical;
-        }
-        .crud-container {
-            margin-top: 1.5rem;
-            min-width: 0;
-            max-width: 100%;
-        }
-        .crud-header {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 1rem;
-            margin-bottom: 1.5rem;
-            align-items: end;
-            min-width: 0;
-        }
-        .crud-header .crud-table-selector {
-            flex: 1 1 200px;
-            min-width: 0;
-            max-width: 100%;
-        }
-        .crud-controls {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.5rem;
-            margin-bottom: 1rem;
-            min-width: 0;
-        }
-        .crud-table-selector {
-            padding: 0.5rem;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 0.9rem;
-        }
-        .admin-table-search-controls {
-            margin-bottom: 1rem;
-            padding: 1rem;
-            background: #f8f9fa;
-            border-radius: 8px;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 1rem;
-            align-items: flex-end;
-            min-width: 0;
-            max-width: 100%;
-            box-sizing: border-box;
-        }
-        .admin-table-search-field {
-            flex: 1 1 160px;
-            min-width: 0;
-        }
-        .admin-table-search-field select,
-        .admin-table-search-field input {
-            max-width: 100%;
-            box-sizing: border-box;
-        }
-        .admin-table-search-buttons {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.5rem;
-            align-items: center;
-        }
-        .admin-crud-table-outer {
-            display: flex;
-            flex-direction: column;
-            max-width: 100%;
-            width: 100%;
-            margin-top: 1rem;
-            border: 1px solid #e5e7eb;
-            border-radius: 8px;
-            box-sizing: border-box;
-            max-height: min(70vh, 640px);
-            min-height: 200px;
-            background: #fff;
-        }
-        .admin-crud-table-scroll-top {
-            position: sticky;
-            top: 0;
-            z-index: 5;
-            overflow-x: auto;
-            overflow-y: hidden;
-            flex: 0 0 auto;
-            height: 14px;
-            background: #f1f5f9;
-            border-bottom: 1px solid #e5e7eb;
-            border-radius: 8px 8px 0 0;
-        }
-        .admin-crud-table-scroll-top-inner {
-            height: 1px;
-        }
-        .admin-crud-table-scroll {
-            overflow: auto;
-            -webkit-overflow-scrolling: touch;
-            flex: 1 1 auto;
-            min-height: 0;
-            max-width: 100%;
-            width: 100%;
-            box-sizing: border-box;
-        }
-        .crud-loading-inline {
-            padding: 1rem;
-            margin: 0;
-        }
-        .crud-empty-row td {
-            text-align: center;
-            color: #6b7280;
-            font-style: italic;
-            padding: 2rem 1rem;
-        }
-        .crud-table {
-            width: max-content;
-            min-width: 100%;
-            border-collapse: collapse;
-            margin: 0;
-            table-layout: auto;
-        }
-        .crud-table th, .crud-table td {
-            padding: 0.75rem;
-            border: 1px solid #e5e7eb;
-            text-align: left;
-            min-width: 0;
-            vertical-align: top;
-            overflow-wrap: anywhere;
-            word-break: break-word;
-        }
-        .crud-table th:first-child,
-        .crud-table td.crud-actions-cell {
-            width: 1%;
-            white-space: nowrap;
-            max-width: none;
-        }
-        .crud-table th {
-            background: #f8f9fa;
-            font-weight: 600;
-        }
-        .crud-actions-cell {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.25rem;
-        }
-        .crud-table .field-display {
-            display: block;
-            max-width: 100%;
-        }
-        .crud-table .field-input {
-            max-width: 100%;
-            box-sizing: border-box;
-            min-width: 0;
-        }
-        .btn-crud {
-            padding: 0.25rem 0.5rem;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 0.8rem;
-        }
-        .btn-edit-crud { background: #f59e0b; color: white; }
-        .btn-delete-crud { background: #ef4444; color: white; }
-        .btn-save-crud { background: #10b981; color: white; }
-        .btn-cancel-crud { background: #6b7280; color: white; }
-        .crud-bulk-toolbar {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.75rem;
-            align-items: center;
-            margin-bottom: 0.75rem;
-            padding: 0.75rem 1rem;
-            background: #fff7ed;
-            border: 1px solid #fed7aa;
-            border-radius: 8px;
-        }
-        .crud-selected-count {
-            font-weight: 600;
-            color: #9a3412;
-            min-width: 7rem;
-        }
-        .btn-delete-bulk {
-            background: #ef4444;
-            color: white;
-            border: none;
-        }
-        .btn-delete-bulk:disabled {
-            background: #fca5a5;
-            cursor: not-allowed;
-        }
-        .crud-checkbox-col {
-            width: 2.5rem;
-            text-align: center;
-            white-space: nowrap;
-        }
-        .crud-checkbox-col input[type="checkbox"] {
-            width: 1rem;
-            height: 1rem;
-            cursor: pointer;
-        }
-        .parse-form-container {
-            background: white;
-            padding: 1.5rem;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-        }
-        .form-group {
-            margin-bottom: 1rem;
-        }
-        .form-group label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: 500;
-        }
-        .form-group input,
-        .form-group select,
-        .form-group textarea {
-            width: 100%;
-            padding: 0.5rem;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 0.9rem;
-        }
-        .form-actions {
-            display: flex;
-            gap: 1rem;
-            margin-top: 1.5rem;
-            justify-content: flex-end;
-        }
-        .btn {
-            padding: 0.5rem 1rem;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: 500;
-        }
-        .btn-primary { background: #2563eb; color: white; }
-        .btn-outline { background: transparent; color: #2563eb; border: 1px solid #2563eb; }
-        .btn-secondary { background: #6b7280; color: white; }
-        .btn-danger { background: #ef4444; color: white; }
-        .loading {
-            text-align: center;
-            padding: 2rem;
-            color: #6b7280;
-        }
-        .error-message {
-            color: #ef4444;
-            text-align: center;
-            padding: 2rem;
-        }
-        .admin-stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-            gap: 0.75rem;
-            margin-bottom: 1.5rem;
-        }
-        .stat-card-enhanced {
-            background: white;
-            border-radius: 10px;
-            padding: 0.85rem 1rem;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-            border-left: 3px solid;
-            transition: transform 0.3s, box-shadow 0.3s;
-        }
-        .stat-card-enhanced:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 14px rgba(0,0,0,0.1);
-        }
-        .stat-card-enhanced.primary { border-left-color: #2563eb; }
-        .stat-card-enhanced.success { border-left-color: #10b981; }
-        .stat-card-enhanced.warning { border-left-color: #f59e0b; }
-        .stat-card-enhanced.danger { border-left-color: #ef4444; }
-        .stat-icon { font-size: 1.35rem; margin-bottom: 0.35rem; display: inline-block; }
-        .stat-title { font-size: 0.78rem; color: #6b7280; margin-bottom: 0.25rem; }
-        .stat-value { font-size: 1.35rem; font-weight: 700; margin-bottom: 0.25rem; }
-        .stat-change { font-size: 0.78rem; display: flex; align-items: center; gap: 0.25rem; }
-        .stat-change.positive { color: #10b981; }
-        .stat-change.negative { color: #ef4444; }
-        .pagination {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 0.5rem;
-            margin-top: 2rem;
-        }
-        .pagination-btn {
-            width: 40px;
-            height: 40px;
-            border: 1px solid #e5e7eb;
-            background: white;
-            border-radius: 6px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s;
-        }
-        .pagination-btn:hover:not(.disabled):not(.active) { border-color: #2563eb; color: #2563eb; }
-        .pagination-btn.active { background: #2563eb; border-color: #2563eb; color: white; }
-        .pagination-btn.disabled { opacity: 0.5; cursor: not-allowed; }
-        .message-form-container {
-            background: white;
-            padding: 1.5rem;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-            margin-top: 1.5rem;
-        }
-        .message-input-group {
-            margin-bottom: 1rem;
-        }
-        .message-input-group label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: 500;
-        }
-        .message-input-group textarea {
-            width: 100%;
-            padding: 0.75rem;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            font-size: 0.9rem;
-            resize: vertical;
-        }
-        .message-actions {
-            display: flex;
-            gap: 1rem;
-            justify-content: flex-end;
-        }
-
-        /* Формы истории цен и блоки цен при добавлении товара */
-        .admin-form-card {
-            margin-top: 1.25rem;
-            padding: 1.25rem 1.35rem;
-            background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
-            border: 1px solid #e2e8f0;
-            border-radius: 14px;
-            box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06);
-        }
-        .admin-form-card h5 {
-            margin: 0 0 1rem 0;
-            font-size: 1rem;
-            color: #0f172a;
+          padding: 1rem !important;
         }
         .admin-form-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1rem 1.25rem;
-            align-items: end;
+          grid-template-columns: minmax(0, 1fr);
         }
-        .admin-field label {
-            display: block;
-            font-size: 0.82rem;
-            font-weight: 600;
-            color: #475569;
-            margin-bottom: 0.4rem;
+        #manualPricesContainer > .btn-outline {
+          display: block;
+          width: 100%;
+          max-width: 100%;
+          margin-bottom: 0.5rem;
+          box-sizing: border-box;
         }
-        .admin-field input,
-        .admin-field select {
-            width: 100%;
-            padding: 0.65rem 0.85rem;
-            border: 1px solid #cbd5e1;
-            border-radius: 10px;
-            font-size: 0.95rem;
-            background: #fff;
-            transition: border-color 0.15s, box-shadow 0.15s;
+        #parser ul code,
+        #parser li code {
+          word-break: break-all;
+          overflow-wrap: anywhere;
+          white-space: pre-wrap;
         }
-        .admin-field input:focus,
-        .admin-field select:focus {
-            outline: none;
-            border-color: #2563eb;
-            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+        .form-actions {
+          flex-direction: column;
+          align-items: stretch;
         }
-        .admin-btn-primary {
-            padding: 0.65rem 1.35rem;
-            border: none;
-            border-radius: 10px;
-            font-weight: 600;
-            font-size: 0.95rem;
-            cursor: pointer;
-            color: #fff;
-            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
-            transition: transform 0.12s, box-shadow 0.12s;
+        .crud-header .btn {
+          width: 100%;
+          max-width: 280px;
         }
-        .admin-btn-primary:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 6px 16px rgba(37, 99, 235, 0.4);
-        }
-        .admin-manual-price-card {
-            padding: 1rem 1.15rem;
-            margin-bottom: 1rem;
-            border: 1px solid #e2e8f0;
-            border-radius: 12px;
-            background: #fff;
-            box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
-        }
-        .admin-manual-price-card h5 {
-            margin: 0 0 0.75rem 0;
-            font-size: 0.95rem;
-            color: #334155;
-        }
-        .admin-manual-price-card .form-group input,
-        .admin-manual-price-card .form-group select {
-            border-radius: 10px;
-            border: 1px solid #cbd5e1;
-            padding: 0.55rem 0.75rem;
-        }
-        .admin-manual-price-card .remove-price-btn {
-            margin-top: 0.5rem;
-            padding: 0.45rem 0.9rem;
-            border-radius: 8px;
-            border: 1px solid #fecaca;
-            background: #fef2f2;
-            color: #b91c1c;
-            font-size: 0.85rem;
-            font-weight: 500;
-            cursor: pointer;
-        }
-        .admin-manual-price-card .remove-price-btn:hover {
-            background: #fee2e2;
-        }
-        #parseResult .admin-parse-edit-panel input,
-        #parseResult .admin-parse-edit-panel select,
-        #parseResult .admin-parse-edit-panel textarea {
-            border-radius: 10px;
-            border: 1px solid #cbd5e1;
-            padding: 0.55rem 0.75rem;
-        }
-        #parseResult .admin-parse-edit-panel .price-row {
-            flex-wrap: wrap;
-            align-items: stretch;
-            padding: 0.65rem;
-            background: #fff;
-            border: 1px solid #e2e8f0;
-            border-radius: 10px;
-            margin-bottom: 0.65rem !important;
-        }
-        #parseResult .admin-parse-edit-panel .spec-row {
-            padding: 0.5rem;
-            background: #fff;
-            border: 1px solid #e2e8f0;
-            border-radius: 10px;
-            margin-bottom: 0.5rem !important;
-        }
-        #adminPriceHistorySearchForm {
-            position: relative;
-            max-width: 640px;
-        }
-        #adminPriceHistorySearchSuggestions {
-            max-height: 320px;
-        }
-
-        .moderation-list {
-            min-width: 0;
-            max-width: 100%;
-        }
-
         .import-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1.5rem;
-            align-items: start;
-            margin-top: 1rem;
+          grid-template-columns: 1fr !important;
         }
+      }
 
-        @media (max-width: 768px) {
-            .admin-page {
-                padding: 1rem 0;
-            }
-            .admin-tab-content {
-                padding: 1rem !important;
-            }
-            .admin-form-grid {
-                grid-template-columns: minmax(0, 1fr);
-            }
-            #manualPricesContainer > .btn-outline {
-                display: block;
-                width: 100%;
-                max-width: 100%;
-                margin-bottom: 0.5rem;
-                box-sizing: border-box;
-            }
-            #parser ul code,
-            #parser li code {
-                word-break: break-all;
-                overflow-wrap: anywhere;
-                white-space: pre-wrap;
-            }
-            .form-actions {
-                flex-direction: column;
-                align-items: stretch;
-            }
-            .crud-header .btn {
-                width: 100%;
-                max-width: 280px;
-            }
-            .import-grid {
-                grid-template-columns: 1fr !important;
-            }
-        }
+      /* Вкладка «Импорт»: предпросмотр и выбор файла */
+      .import-file-field-label {
+        display: block;
+        margin-bottom: 0.45rem;
+        font-weight: 600;
+        color: #374151;
+        font-size: 0.95rem;
+      }
+      .import-file-row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.75rem 1rem;
+        padding: 0.85rem 1rem;
+        background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+        border: 1px solid #cbd5e1;
+        border-radius: 12px;
+      }
+      .import-file-native {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+      }
+      .import-file-browse-btn {
+        padding: 0.65rem 1.25rem !important;
+        font-size: 0.95rem !important;
+        font-weight: 600 !important;
+        border-radius: 10px !important;
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+        flex-shrink: 0;
+      }
+      .import-file-browse-btn:hover {
+        box-shadow: 0 2px 6px rgba(15, 23, 42, 0.12);
+      }
+      .import-file-chosen {
+        flex: 1;
+        min-width: 0;
+        font-size: 0.95rem;
+        color: #475569;
+        word-break: break-word;
+      }
+      .import-file-chosen.is-empty {
+        color: #94a3b8;
+        font-style: italic;
+      }
 
-        /* Вкладка «Импорт»: предпросмотр и выбор файла */
-        .import-file-field-label {
-            display: block;
-            margin-bottom: 0.45rem;
-            font-weight: 600;
-            color: #374151;
-            font-size: 0.95rem;
-        }
-        .import-file-row {
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-            gap: 0.75rem 1rem;
-            padding: 0.85rem 1rem;
-            background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
-            border: 1px solid #cbd5e1;
-            border-radius: 12px;
-        }
-        .import-file-native {
-            position: absolute;
-            width: 1px;
-            height: 1px;
-            padding: 0;
-            margin: -1px;
-            overflow: hidden;
-            clip: rect(0, 0, 0, 0);
-            white-space: nowrap;
-            border: 0;
-        }
-        .import-file-browse-btn {
-            padding: 0.65rem 1.25rem !important;
-            font-size: 0.95rem !important;
-            font-weight: 600 !important;
-            border-radius: 10px !important;
-            box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
-            flex-shrink: 0;
-        }
-        .import-file-browse-btn:hover {
-            box-shadow: 0 2px 6px rgba(15, 23, 42, 0.12);
-        }
-        .import-file-chosen {
-            flex: 1;
-            min-width: 0;
-            font-size: 0.95rem;
-            color: #475569;
-            word-break: break-word;
-        }
-        .import-file-chosen.is-empty {
-            color: #94a3b8;
-            font-style: italic;
-        }
-
-        .import-preview-panel {
-            margin-top: 1.5rem;
-            padding: 1.25rem 1.35rem 1.35rem;
-            border: 1px solid #cbd5e1;
-            border-radius: 14px;
-            background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
-            box-shadow: 0 4px 24px rgba(15, 23, 42, 0.06);
-        }
-        .import-preview-table-wrap {
-            max-height: min(78vh, 720px);
-            overflow: auto;
-            border: 1px solid #e2e8f0;
-            border-radius: 12px;
-            background: #fff;
-            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
-            width: 100%;
-            max-width: none;
-        }
-        #import .import-preview-table {
-            width: 2860px;
-            min-width: 2860px;
-            border-collapse: separate;
-            border-spacing: 0;
-            font-size: 0.875rem;
-            line-height: 1.32;
-            table-layout: fixed;
-        }
-        #import .import-preview-col--num { width: 2.25rem; }
-        #import .import-preview-col--ok { width: 1.75rem; }
-        #import .import-preview-col--err { width: 11rem; min-width: 11rem; }
-        #import .import-preview-col--sku { width: 6.5rem; min-width: 6.5rem; }
-        #import .import-preview-col--name { width: 280px; min-width: 280px; }
-        #import .import-preview-col--cat { width: 8.5rem; min-width: 8.5rem; }
-        #import .import-preview-col--price { width: 5rem; min-width: 5rem; }
-        #import .import-preview-col--url { width: 320px; min-width: 320px; }
-        #import .import-preview-col--img { width: 260px; min-width: 260px; }
-        #import .import-preview-col--desc { width: 420px; min-width: 420px; }
-        #import .import-preview-col--stock { width: 3.5rem; min-width: 3.5rem; }
-        #import .import-preview-col--rating { width: 3.5rem; min-width: 3.5rem; }
-        #import .import-preview-col--reviews { width: 3.5rem; min-width: 3.5rem; }
-        #import .import-preview-col--store { width: 130px; min-width: 130px; }
-        #import .import-preview-col--seller { width: 130px; min-width: 130px; }
-        #import .import-preview-col--specs { width: 520px; min-width: 520px; }
-        #import .import-preview-table thead th {
-            position: sticky;
-            top: 0;
-            z-index: 2;
-            background: linear-gradient(180deg, #1e293b 0%, #334155 100%);
-            color: #f1f5f9;
-            font-weight: 600;
-            padding: 0.45rem 0.35rem;
-            text-align: left;
-            font-size: 0.68rem;
-            letter-spacing: 0.03em;
-            text-transform: uppercase;
-            border-bottom: 2px solid #0f172a;
-            white-space: nowrap;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
-        }
-        #import .import-preview-table tbody td {
-            padding: 0.3rem 0.3rem;
-            vertical-align: top;
-            border-bottom: 1px solid #e2e8f0;
-            background: #fff;
-        }
-        #import .import-preview-table tbody tr:nth-child(even) td {
-            background: #f9fafb;
-        }
-        #import .import-preview-table tbody tr.import-preview-row--invalid td {
-            background: #fff1f2;
-        }
-        #import .import-preview-table tbody tr.import-preview-row--invalid:nth-child(even) td {
-            background: #ffe4e6;
-        }
-        #import .import-preview-table .import-preview-cell--errors {
-            max-width: none;
-            font-size: 0.78rem;
-            color: #b91c1c;
-            line-height: 1.28;
-            word-break: normal;
-            overflow-wrap: break-word;
-        }
-        #import .import-preview-table .import-prev-inp,
-        #import .import-preview-table .import-prev-ta {
-            font-size: 0.875rem !important;
-            line-height: 1.3 !important;
-            padding: 0.22rem 0.38rem !important;
-            border-radius: 6px !important;
-            border: 1px solid #cbd5e1 !important;
-            width: 100%;
-            max-width: 100%;
-            min-width: 0;
-            box-sizing: border-box;
-            background: #fff;
-        }
-        #import .import-preview-table .import-prev-inp:focus,
-        #import .import-preview-table .import-prev-ta:focus {
-            border-color: #3b82f6 !important;
-            outline: none;
-            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.22);
-        }
-        #import .import-preview-table .import-prev-ta {
-            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-            font-size: 0.8125rem !important;
-            resize: vertical;
-            word-break: normal;
-            overflow-wrap: break-word;
-            field-sizing: content;
-            min-height: 2.5rem;
-        }
-        #import .import-preview-table .import-prev-ta--specsJson {
-            overflow-wrap: anywhere;
-            word-break: break-all;
-        }
-        #import .import-preview-table .import-prev-ta--name,
-        #import .import-preview-table .import-prev-ta--imageUrl,
-        #import .import-preview-table .import-prev-ta--storeName,
-        #import .import-preview-table .import-prev-ta--sellerName {
-            font-family: inherit;
-            min-height: 2.65rem;
-        }
-        #import .import-preview-table .import-prev-ta--url {
-            min-height: 3.6rem;
-        }
-        #import .import-preview-table .import-prev-ta--description {
-            min-height: 6.5rem;
-        }
-        #import .import-preview-table .import-prev-ta--specsJson {
-            min-height: 12rem;
-        }
-        #import .import-preview-summary {
-            margin-bottom: 0.85rem;
-            font-size: 0.95rem;
-            color: #334155;
-            padding: 0.65rem 0.85rem;
-            background: #f1f5f9;
-            border-radius: 10px;
-            border: 1px solid #e2e8f0;
-        }
-        #import .import-preview-file-errors {
-            margin-bottom: 0.75rem;
-            color: #b91c1c;
-            font-size: 0.9rem;
-        }
+      .import-preview-panel {
+        margin-top: 1.5rem;
+        padding: 1.25rem 1.35rem 1.35rem;
+        border: 1px solid #cbd5e1;
+        border-radius: 14px;
+        background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+        box-shadow: 0 4px 24px rgba(15, 23, 42, 0.06);
+      }
+      .import-preview-table-wrap {
+        max-height: min(78vh, 720px);
+        overflow: auto;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        background: #fff;
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+        width: 100%;
+        max-width: none;
+      }
+      #import .import-preview-table {
+        width: 2860px;
+        min-width: 2860px;
+        border-collapse: separate;
+        border-spacing: 0;
+        font-size: 0.875rem;
+        line-height: 1.32;
+        table-layout: fixed;
+      }
+      #import .import-preview-col--num {
+        width: 2.25rem;
+      }
+      #import .import-preview-col--ok {
+        width: 1.75rem;
+      }
+      #import .import-preview-col--err {
+        width: 11rem;
+        min-width: 11rem;
+      }
+      #import .import-preview-col--sku {
+        width: 6.5rem;
+        min-width: 6.5rem;
+      }
+      #import .import-preview-col--name {
+        width: 280px;
+        min-width: 280px;
+      }
+      #import .import-preview-col--cat {
+        width: 8.5rem;
+        min-width: 8.5rem;
+      }
+      #import .import-preview-col--price {
+        width: 5rem;
+        min-width: 5rem;
+      }
+      #import .import-preview-col--url {
+        width: 320px;
+        min-width: 320px;
+      }
+      #import .import-preview-col--img {
+        width: 260px;
+        min-width: 260px;
+      }
+      #import .import-preview-col--desc {
+        width: 420px;
+        min-width: 420px;
+      }
+      #import .import-preview-col--stock {
+        width: 3.5rem;
+        min-width: 3.5rem;
+      }
+      #import .import-preview-col--rating {
+        width: 3.5rem;
+        min-width: 3.5rem;
+      }
+      #import .import-preview-col--reviews {
+        width: 3.5rem;
+        min-width: 3.5rem;
+      }
+      #import .import-preview-col--store {
+        width: 130px;
+        min-width: 130px;
+      }
+      #import .import-preview-col--seller {
+        width: 130px;
+        min-width: 130px;
+      }
+      #import .import-preview-col--specs {
+        width: 520px;
+        min-width: 520px;
+      }
+      #import .import-preview-table thead th {
+        position: sticky;
+        top: 0;
+        z-index: 2;
+        background: linear-gradient(180deg, #1e293b 0%, #334155 100%);
+        color: #f1f5f9;
+        font-weight: 600;
+        padding: 0.45rem 0.35rem;
+        text-align: left;
+        font-size: 0.68rem;
+        letter-spacing: 0.03em;
+        text-transform: uppercase;
+        border-bottom: 2px solid #0f172a;
+        white-space: nowrap;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+      }
+      #import .import-preview-table tbody td {
+        padding: 0.3rem 0.3rem;
+        vertical-align: top;
+        border-bottom: 1px solid #e2e8f0;
+        background: #fff;
+      }
+      #import .import-preview-table tbody tr:nth-child(even) td {
+        background: #f9fafb;
+      }
+      #import .import-preview-table tbody tr.import-preview-row--invalid td {
+        background: #fff1f2;
+      }
+      #import .import-preview-table tbody tr.import-preview-row--invalid:nth-child(even) td {
+        background: #ffe4e6;
+      }
+      #import .import-preview-table .import-preview-cell--errors {
+        max-width: none;
+        font-size: 0.78rem;
+        color: #b91c1c;
+        line-height: 1.28;
+        word-break: normal;
+        overflow-wrap: break-word;
+      }
+      #import .import-preview-table .import-prev-inp,
+      #import .import-preview-table .import-prev-ta {
+        font-size: 0.875rem !important;
+        line-height: 1.3 !important;
+        padding: 0.22rem 0.38rem !important;
+        border-radius: 6px !important;
+        border: 1px solid #cbd5e1 !important;
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+        box-sizing: border-box;
+        background: #fff;
+      }
+      #import .import-preview-table .import-prev-inp:focus,
+      #import .import-preview-table .import-prev-ta:focus {
+        border-color: #3b82f6 !important;
+        outline: none;
+        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.22);
+      }
+      #import .import-preview-table .import-prev-ta {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        font-size: 0.8125rem !important;
+        resize: vertical;
+        word-break: normal;
+        overflow-wrap: break-word;
+        field-sizing: content;
+        min-height: 2.5rem;
+      }
+      #import .import-preview-table .import-prev-ta--specsJson {
+        overflow-wrap: anywhere;
+        word-break: break-all;
+      }
+      #import .import-preview-table .import-prev-ta--name,
+      #import .import-preview-table .import-prev-ta--imageUrl,
+      #import .import-preview-table .import-prev-ta--storeName,
+      #import .import-preview-table .import-prev-ta--sellerName {
+        font-family: inherit;
+        min-height: 2.65rem;
+      }
+      #import .import-preview-table .import-prev-ta--url {
+        min-height: 3.6rem;
+      }
+      #import .import-preview-table .import-prev-ta--description {
+        min-height: 6.5rem;
+      }
+      #import .import-preview-table .import-prev-ta--specsJson {
+        min-height: 12rem;
+      }
+      #import .import-preview-summary {
+        margin-bottom: 0.85rem;
+        font-size: 0.95rem;
+        color: #334155;
+        padding: 0.65rem 0.85rem;
+        background: #f1f5f9;
+        border-radius: 10px;
+        border: 1px solid #e2e8f0;
+      }
+      #import .import-preview-file-errors {
+        margin-bottom: 0.75rem;
+        color: #b91c1c;
+        font-size: 0.9rem;
+      }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
-</head>
-<body>
+  </head>
+  <body>
     <header class="header">
-        <div class="container">
-            <div class="logo">
-                <h1><a href="index.html" style="color: inherit; text-decoration: none;">tech-nozone</a></h1>
-            </div>
-            <nav class="nav">
-                <a href="index.html" class="nav-link">Главная</a>
-                <a href="catalog.html" class="nav-link">Каталог</a>
-                <a href="comparison.html" class="nav-link">Сравнение<span class="comparison-counter">0</span></a>
-                <a href="recommendations.html" class="nav-link">Рекомендации</a>
-                <a href="learn.html" class="nav-link">Обучение</a>
-            </nav>
-            <!-- Поиск -->
-            <div class="nav-search-container">
-                <input type="text" class="nav-search" id="navSearch"
-                       placeholder="Поиск товаров..."
-                       oninput="showNavSearchSuggestions()"
-                       onkeypress="handleNavSearchEnter(event)">
-                <button class="nav-search-btn" onclick="navSearchProducts()">🔍</button>
-                <div id="navSearchSuggestions" class="nav-search-suggestions"></div>
-            </div>
-            <div class="auth-buttons">
-                <span class="admin-welcome">👑 <strong>Администратор</strong></span>
-                <button class="btn btn-outline" onclick="logout()">Выйти</button>
-            </div>
-        </div>
+      <div class="container"></div>
     </header>
 
     <main class="main">
-    <div class="container admin-page">
+      <div class="container admin-page">
         <div class="admin-header">
-            <div>
-                <h1>Панель администратора</h1>
-                <p class="admin-welcome">Управление каталогом, модерация и аналитика</p>
-            </div>
-            <div class="quick-stats">
-                <div class="quick-stat">
-                    <div style="font-size: 0.9rem; color: #6b7280;">Онлайн</div>
-                    <div id="onlineUsersQuick" style="font-size: 1.2rem; font-weight: 600; color: #10b981;">0</div>
-                </div>
-                <div class="quick-stat">
-                    <div style="font-size: 0.9rem; color: #6b7280;">Загрузка</div>
-                    <div id="serverLoadQuick" style="font-size: 1.2rem; font-weight: 600; color: #2563eb;">0%</div>
-                </div>
-            </div>
+          <div>
+            <h1>Панель администратора</h1>
+            <p class="admin-welcome">Управление каталогом и модерация</p>
+          </div>
         </div>
 
         <div class="admin-stats-grid">
-            <div class="stat-card-enhanced primary">
-                <div class="stat-icon">📦</div>
-                <div class="stat-title">Всего товаров</div>
-                <div class="stat-value" id="totalProducts">0</div>
-                <div class="stat-change positive">+0 за неделю</div>
-            </div>
-            <div class="stat-card-enhanced warning">
-                <div class="stat-icon">⏳</div>
-                <div class="stat-title">На модерации</div>
-                <div class="stat-value" id="pendingItems">0</div>
-                <div class="stat-change negative">-0 за день</div>
-            </div>
-            <div class="stat-card-enhanced success">
-                <div class="stat-icon">💬</div>
-                <div class="stat-title">Новых отзывов</div>
-                <div class="stat-value" id="newReviews">0</div>
-                <div class="stat-change positive">+0 за день</div>
-            </div>
-            <div class="stat-card-enhanced danger">
-                <div class="stat-icon">📝</div>
-                <div class="stat-title">Запросы на добавление</div>
-                <div class="stat-value" id="addRequests">0</div>
-                <div class="stat-change positive">+0 за день</div>
-            </div>
+          <div class="stat-card-enhanced primary">
+            <div class="stat-icon">📦</div>
+            <div class="stat-title">Всего товаров</div>
+            <div class="stat-value" id="totalProducts">0</div>
+            <div class="stat-change positive">+0 за неделю</div>
+          </div>
+          <div class="stat-card-enhanced warning">
+            <div class="stat-icon">⏳</div>
+            <div class="stat-title">На модерации</div>
+            <div class="stat-value" id="pendingItems">0</div>
+            <div class="stat-change negative">-0 за день</div>
+          </div>
+          <div class="stat-card-enhanced success">
+            <div class="stat-icon">💬</div>
+            <div class="stat-title">Новых отзывов</div>
+            <div class="stat-value" id="newReviews">0</div>
+            <div class="stat-change positive">+0 за день</div>
+          </div>
+          <div class="stat-card-enhanced danger">
+            <div class="stat-icon">📝</div>
+            <div class="stat-title">Запросы на добавление</div>
+            <div class="stat-value" id="addRequests">0</div>
+            <div class="stat-change positive">+0 за день</div>
+          </div>
         </div>
 
         <!-- Основной контейнер для вкладок админ-панели -->
         <div class="admin-tabs-container">
-            <!-- Глобальный заголовок вкладок -->
-            <div class="admin-tabs-header">
-                <button class="admin-tab-btn active" onclick="openAdminTab('moderation')">Модерация</button>
-                <button class="admin-tab-btn" onclick="openAdminTab('editor')">Редактор таблиц</button>
-                <button class="admin-tab-btn" onclick="openAdminTab('parser')">Добавление товара</button>
-                <button class="admin-tab-btn" onclick="openAdminTab('manualAdd')">Добавление вручную</button>
-                <button class="admin-tab-btn" onclick="openAdminTab('priceHistory')">История цен</button>
-                <button class="admin-tab-btn" onclick="openAdminTab('import')">Импорт</button>
-                <button class="admin-tab-btn" onclick="openAdminTab('analytics')">Аналитика</button>
-                
+          <!-- Глобальный заголовок вкладок -->
+          <div class="admin-tabs-header">
+            <button class="admin-tab-btn active" onclick="openAdminTab('moderation')">Модерация</button>
+            <button class="admin-tab-btn" onclick="openAdminTab('editor')">Редактор таблиц</button>
+            <button class="admin-tab-btn" onclick="openAdminTab('parser')">Добавление товара</button>
+            <button class="admin-tab-btn" onclick="openAdminTab('manualAdd')">Добавление вручную</button>
+            <button class="admin-tab-btn" onclick="openAdminTab('priceHistory')">История цен</button>
+            <button class="admin-tab-btn" onclick="openAdminTab('import')">Импорт</button>
+          </div>
+
+          <!-- Содержимое вкладок -->
+          <!-- Вкладка Модерация -->
+          <div id="moderation" class="admin-tab-content active">
+            <div
+              class="admin-tabs-header"
+              style="background: white; border-bottom: 1px solid #e5e7eb; border-top: 1px solid #e5e7eb"
+            >
+              <button class="admin-tab-btn active" onclick="openModerationSubTab('reviews')">Отзывы</button>
+              <button class="admin-tab-btn" onclick="openModerationSubTab('requests')">Запросы</button>
+              <button class="admin-tab-btn" onclick="openModerationSubTab('lessonSuggestions')">Темы уроков</button>
+              <button class="admin-tab-btn" onclick="openModerationSubTab('supportTickets')">Поддержка</button>
+            </div>
+            <div id="moderationContent">
+              <!-- Содержимое (отзывы/запросы) будет подгружаться сюда -->
+            </div>
+          </div>
+
+          <!-- Вкладка Редактор таблиц -->
+          <div id="editor" class="admin-tab-content">
+            <div class="crud-header">
+              <select id="crudTableSelector" class="crud-table-selector">
+                <option value="">Выберите таблицу</option>
+                <!-- Опции будут загружены динамически -->
+              </select>
+              <button class="btn btn-primary" onclick="loadTableData()">Загрузить</button>
+            </div>
+            <div class="crud-controls">
+              <button class="btn btn-outline" onclick="addNewRecord()">Добавить запись</button>
+              <button class="btn btn-outline" onclick="saveTableData()">Сохранить изменения</button>
+            </div>
+            <div id="crudTableContainer" class="crud-container">
+              <!-- Таблица будет вставлена сюда -->
+            </div>
+          </div>
+
+          <div id="manualAdd" class="admin-tab-content">
+            <h3>Добавление товара вручную</h3>
+            <p>Заполните форму ниже, чтобы добавить новый товар вручную.</p>
+            <form id="manualAddForm">
+              <div class="form-group">
+                <label for="manualName">Название товара *</label>
+                <input type="text" id="manualName" required placeholder="Введите полное название товара" />
+              </div>
+
+              <div class="form-group">
+                <label for="manualCategory">Категория *</label>
+                <select id="manualCategory" required onchange="updateManualSpecFields()">
+                  <option value="">Выберите категорию</option>
+                  <option value="smartphones">Смартфоны</option>
+                  <option value="laptops">Ноутбуки</option>
+                  <option value="tv">Телевизоры</option>
+                  <option value="headphones">Наушники</option>
+                  <option value="cameras">Фотоаппараты</option>
+                  <option value="tablets">Планшеты</option>
+                  <option value="smartwatches">Смарт-часы</option>
+                  <option value="ebooks">Электронные книги</option>
+                  <option value="drones">Дроны</option>
+                  <option value="pc_components">Комплектующие ПК</option>
+                  <option value="keyboards">Клавиатуры</option>
+                  <option value="mouses">Мыши</option>
+                  <option value="cases">Корпуса ПК</option>
+                  <option value="drivers">Накопители</option>
+                  <option value="fitness_trackers">Фитнес-трекеры</option>
+                  <option value="power_units">Блоки питания</option>
+                  <option value="microphones">Микрофоны</option>
+                  <option value="webcams">Веб-камеры</option>
+                  <option value="power_banks">Павербанки</option>
+                  <option value="portable_speakers">Портативные колонки</option>
+                  <option value="monitors">Мониторы</option>
+                  <option value="accessories">Аксессуары</option>
+                  <option value="gaming">Игровые консоли</option>
+                  <option value="networking">Сетевое оборудование</option>
+                  <option value="cpus">Процессоры</option>
+                  <option value="motherboards">Материнские платы</option>
+                  <option value="ram">Оперативная память</option>
+                  <option value="graphics_cards">Видеокарты</option>
+                  <option value="external_drives">Внешние накопители</option>
+                  <option value="audio">Аудиосистемы</option>
+                  <option value="smart_home">Умный дом</option>
+                  <option value="wearables">Носимые устройства</option>
+                  <option value="other">Другое</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="manualDescription">Описание (опционально)</label>
+                <textarea id="manualDescription" rows="3" placeholder="Введите описание товара..."></textarea>
+              </div>
+
+              <div class="form-group">
+                <label for="manualImageUrl">URL изображения (опционально)</label>
+                <input type="url" id="manualImageUrl" placeholder="https://example.com/image.jpg" />
+              </div>
+
+              <div id="manualSpecFieldsContainer">
+                <p class="placeholder-text">Выберите категорию, чтобы увидеть доступные поля для характеристик.</p>
+              </div>
+
+              <div id="manualPricesContainer">
+                <h4>Цены и ссылки на покупку</h4>
+                <div id="manualPricesList">
+                  <!-- Блоки цен будут добавляться сюда -->
+                </div>
+                <button type="button" class="btn btn-outline" onclick="addManualPriceEntry()">
+                  + Добавить цену и ссылку
+                </button>
+                <button type="button" class="btn btn-outline" onclick="fillManualPricesFromUrls()">
+                  Подставить цены по ссылкам (Яндекс, WB, DNS, Ozon и др.)
+                </button>
+              </div>
+
+              <div class="form-actions">
+                <button type="button" class="btn btn-secondary" onclick="resetManualAddForm()">Сбросить</button>
+                <button type="submit" class="btn btn-primary">Сохранить товар</button>
+              </div>
+            </form>
+          </div>
+
+          <div id="parser" class="admin-tab-content">
+            <h3>Парсер товаров</h3>
+            <div class="admin-info-box">
+              <h4>Поддерживаемые источники и примеры ссылок</h4>
+              <p class="admin-info-box__text">
+                Парсинг и обновление цен работает через API-источники: <strong>API Systems (WB/Яндекс.Маркет)</strong>,
+                <strong>PricesAPI.io</strong>, <strong>eBay Browse API</strong>. По возможности используйте URL
+                карточки; если URL нет — можно ввести только название.
+              </p>
+              <ul class="admin-info-box__list">
+                <li>
+                  <strong>Wildberries:</strong> <code>https://www.wildberries.ru/catalog/123456/detail.aspx</code> или
+                  <code>https://wb.ru/catalog/123456/detail.aspx</code>
+                </li>
+                <li>
+                  <strong>Яндекс.Маркет:</strong> <code>https://market.yandex.ru/card/123456/spec</code> (и вариации
+                  <code>/card/</code>, <code>/product--</code>)
+                </li>
+                <li>
+                  <strong>eBay:</strong> <code>https://www.ebay.com/itm/123456789012</code> (требуются
+                  <code>EBAY_CLIENT_ID</code>/<code>EBAY_CLIENT_SECRET</code> в <code>.env</code>)
+                </li>
+                <li>
+                  <strong>PricesAPI:</strong> поддерживает поиск по названию и по URL карточки магазина в поддерживаемых
+                  странах. По умолчанию используется country <code>us</code> (настраивается
+                  <code>PRICESAPI_COUNTRY</code>).
+                </li>
+              </ul>
+            </div>
+            <div class="parse-form-container">
+              <form id="parseProductForm">
+                <div class="form-group">
+                  <label for="parseUrl">URL товара (опционально)</label>
+                  <input type="url" id="parseUrl" placeholder="Ссылка на карточку (WB / Я.Маркет / eBay и т.д.)" />
+                </div>
+                <div class="form-group">
+                  <label for="parseCategory">Категория *</label>
+                  <select id="parseCategory" required>
+                    <option value="">Выберите категорию</option>
+                    <option value="smartphones">Смартфоны</option>
+                    <option value="laptops">Ноутбуки</option>
+                    <option value="tv">Телевизоры</option>
+                    <option value="headphones">Наушники</option>
+                    <option value="cameras">Фотоаппараты</option>
+                    <option value="tablets">Планшеты</option>
+                    <option value="smartwatches">Смарт-часы</option>
+                    <option value="ebooks">Электронные книги</option>
+                    <option value="drones">Дроны</option>
+                    <option value="pc_components">Комплектующие ПК</option>
+                    <option value="keyboards">Клавиатуры</option>
+                    <option value="mouses">Мыши</option>
+                    <option value="cases">Корпуса ПК</option>
+                    <option value="drivers">Накопители</option>
+                    <option value="fitness_trackers">Фитнес-трекеры</option>
+                    <option value="power_units">Блоки питания</option>
+                    <option value="microphones">Микрофоны</option>
+                    <option value="webcams">Веб-камеры</option>
+                    <option value="power_banks">Павербанки</option>
+                    <option value="portable_speakers">Портативные колонки</option>
+                    <option value="monitors">Мониторы</option>
+                    <option value="accessories">Аксессуары</option>
+                    <option value="gaming">Игровые консоли</option>
+                    <option value="networking">Сетевое оборудование</option>
+                    <option value="cpus">Процессоры</option>
+                    <option value="motherboards">Материнские платы</option>
+                    <option value="ram">Оперативная память</option>
+                    <option value="graphics_cards">Видеокарты</option>
+                    <option value="external_drives">Внешние накопители</option>
+                    <option value="audio">Аудиосистемы</option>
+                    <option value="smart_home">Умный дом</option>
+                    <option value="wearables">Носимые устройства</option>
+                    <option value="other">Другое</option>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label for="parseProxy">Прокси (опционально, формат: http://ip:port)</label>
+                  <input type="text" id="parseProxy" placeholder="http://127.0.0.1:8080" />
+                </div>
+
+                <div class="form-group">
+                  <label for="parseName">Название устройства (опционально)</label>
+                  <input type="text" id="parseName" placeholder="Можно без URL: Samsung Galaxy S24 Ultra 512GB" />
+                </div>
+                <div class="form-group">
+                  <label for="parseDescription">Описание (опционально)</label>
+                  <textarea id="parseDescription" rows="3" placeholder="Введите описание..."></textarea>
+                </div>
+                <div class="form-actions">
+                  <button type="button" class="btn btn-secondary" onclick="resetParseForm()">Сбросить</button>
+                  <button type="submit" class="btn btn-primary">Запустить парсинг</button>
+                </div>
+              </form>
+            </div>
+            <div id="parseResult" style="margin-top: 1.5rem; display: none">
+              <!-- Результаты парсинга будут здесь -->
+            </div>
+          </div>
+          <div class="admin-tab-content" id="priceHistory">
+            <h3>Изменение истории цен</h3>
+
+            <div class="admin-info-box admin-price-sync-section">
+              <h4>Автообновление цен по ссылкам</h4>
+              <p class="admin-info-box__text">
+                Источники: <strong>API Systems</strong>, <strong>eBay</strong>, <strong>PricesAPI.io</strong>. Цены в
+                рублях. Автообновление каталога — не чаще 1 раза в 3 дня; для товара ниже — вручную в любой момент.
+              </p>
+              <details style="margin-bottom: 0.75rem; font-size: 0.85rem; color: #6b7280">
+                <summary style="cursor: pointer; color: #2563eb">Подробнее об обновлении</summary>
+                <p style="margin: 0.5rem 0 0">
+                  Учитываются только сохранённые у товара строки цен и ссылки. Для eBay/PricesAPI — по названию или по
+                  сохранённым ссылкам на поддерживаемые площадки.
+                </p>
+              </details>
+              <div
+                id="priceSyncStatusDisplay"
+                style="font-size: 0.85rem; margin-bottom: 0.75rem; line-height: 1.5"
+              ></div>
+              <div class="form-group">
+                <label for="priceSyncProxyInput">Прокси (опционально)</label>
+                <input
+                  type="text"
+                  id="priceSyncProxyInput"
+                  class="search-input"
+                  style="max-width: 420px"
+                  placeholder="http://127.0.0.1:8080"
+                  autocomplete="off"
+                />
+              </div>
+              <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem">
+                <button type="button" class="btn btn-secondary" id="btnPriceSyncRefreshStatus">Обновить статус</button>
+                <button type="button" class="btn btn-primary" id="btnPriceSyncPreview">Предпросмотр (каталог)</button>
+                <button type="button" class="btn btn-primary" id="btnPriceSyncApply" disabled>
+                  Применить предпросмотр
+                </button>
+                <button type="button" class="btn btn-outline" id="btnPriceSyncBackground">
+                  Фоновое обновление (как авто)
+                </button>
+              </div>
+              <div style="border-top: 1px solid #e5e7eb; padding-top: 1rem">
+                <h5 style="margin-top: 0">Текущий товар</h5>
+                <p style="color: #6b7280; font-size: 0.85rem; margin-bottom: 0.5rem">
+                  Выберите товар поиском ниже, затем проверьте или примените цены только для него.
+                </p>
+                <div style="display: flex; flex-wrap: wrap; gap: 0.5rem">
+                  <button type="button" class="btn btn-secondary" id="btnPriceSyncPreviewOne" disabled>
+                    Предпросмотр цен (в т.ч. ЯМ, WB)
+                  </button>
+                  <button type="button" class="btn btn-primary" id="btnPriceSyncApplyOne" disabled>
+                    Обновить цены товара по ссылкам
+                  </button>
+                </div>
+              </div>
             </div>
 
-            <!-- Содержимое вкладок -->
-            <!-- Вкладка Модерация -->
-            <div id="moderation" class="admin-tab-content active">
-                
-                <div class="admin-tabs-header" style="background: white; border-bottom: 1px solid #e5e7eb; border-top: 1px solid #e5e7eb;">
-                    <button class="admin-tab-btn active" onclick="openModerationSubTab('reviews')">Отзывы</button>
-                    <button class="admin-tab-btn" onclick="openModerationSubTab('requests')">Запросы</button>
-                    <button class="admin-tab-btn" onclick="openModerationSubTab('lessonSuggestions')">Темы уроков</button>
+            <div
+              id="priceSyncPreviewModal"
+              style="
+                display: none;
+                position: fixed;
+                inset: 0;
+                z-index: 10000;
+                background: rgba(0, 0, 0, 0.45);
+                align-items: center;
+                justify-content: center;
+              "
+            >
+              <div
+                id="priceSyncModalPanel"
+                style="
+                  background: #fff;
+                  max-width: 960px;
+                  width: 92%;
+                  max-height: 85vh;
+                  overflow: auto;
+                  border-radius: 12px;
+                  padding: 1.25rem;
+                  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+                "
+              >
+                <div
+                  style="
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    margin-bottom: 1rem;
+                    gap: 1rem;
+                  "
+                >
+                  <h4 id="priceSyncModalTitle" style="margin: 0">Результаты проверки цен</h4>
+                  <button type="button" class="btn btn-secondary" id="btnPriceSyncModalClose">Закрыть</button>
                 </div>
-                <div id="moderationContent">
-                    <!-- Содержимое (отзывы/запросы) будет подгружаться сюда -->
+                <div id="priceSyncModalSummary" style="margin-bottom: 1rem; font-size: 0.9rem"></div>
+                <div style="overflow-x: auto">
+                  <table class="price-history-table" style="width: 100%; font-size: 0.85rem">
+                    <thead>
+                      <tr>
+                        <th>Товар</th>
+                        <th>Источник</th>
+                        <th>Было</th>
+                        <th>Стало</th>
+                        <th>Статус</th>
+                        <th>Комментарий</th>
+                      </tr>
+                    </thead>
+                    <tbody id="priceSyncPreviewTableBody"></tbody>
+                  </table>
                 </div>
+              </div>
             </div>
 
-            <!-- Вкладка Редактор таблиц -->
-            <div id="editor" class="admin-tab-content">
-                <div class="crud-header">
-                    <select id="crudTableSelector" class="crud-table-selector">
-                        <option value="">Выберите таблицу</option>
-                        <!-- Опции будут загружены динамически -->
-                    </select>
-                    <button class="btn btn-primary" onclick="loadTableData()">Загрузить</button>
-                </div>
-                <div class="crud-controls">
-                    <button class="btn btn-outline" onclick="addNewRecord()">Добавить запись</button>
-                    <button class="btn btn-outline" onclick="saveTableData()">Сохранить изменения</button>
-                </div>
-                <div id="crudTableContainer" class="crud-container">
-                    <!-- Таблица будет вставлена сюда -->
-                </div>
-            </div>
+            <form class="search-form" id="adminPriceHistorySearchForm" style="padding-bottom: 200px">
+              <div class="search-input-container">
+                <input
+                  type="text"
+                  id="adminPriceHistorySearchInput"
+                  class="search-input"
+                  placeholder="Поиск товара для истории цен..."
+                  autocomplete="off"
+                />
+                <button type="submit" class="search-button">🔍</button>
+                <div id="adminPriceHistorySearchSuggestions" class="search-suggestions" style="display: none"></div>
+              </div>
+            </form>
 
-            <div id="manualAdd" class="admin-tab-content">
-                <h3>Добавление товара вручную</h3>
-                <p>Заполните форму ниже, чтобы добавить новый товар вручную.</p>
-                <form id="manualAddForm">
-                    <div class="form-group">
-                        <label for="manualName">Название товара *</label>
-                        <input type="text" id="manualName" required placeholder="Введите полное название товара">
-                    </div>
-
-                    <div class="form-group">
-                        <label for="manualCategory">Категория *</label>
-                        <select id="manualCategory" required onchange="updateManualSpecFields()">
-                            <option value="">Выберите категорию</option>
-                            <option value="smartphones">Смартфоны</option>
-                            <option value="laptops">Ноутбуки</option>
-                            <option value="tv">Телевизоры</option>
-                            <option value="headphones">Наушники</option>
-                            <option value="cameras">Фотоаппараты</option>
-                            <option value="tablets">Планшеты</option>
-                            <option value="smartwatches">Смарт-часы</option>
-                            <option value="ebooks">Электронные книги</option>
-                            <option value="drones">Дроны</option>
-                            <option value="pc_components">Комплектующие ПК</option>
-                            <option value="keyboards">Клавиатуры</option>
-                            <option value="mouses">Мыши</option>
-                            <option value="cases">Корпуса ПК</option>
-                            <option value="drivers">Накопители</option>
-                            <option value="fitness_trackers">Фитнес-трекеры</option>
-                            <option value="power_units">Блоки питания</option>
-                            <option value="microphones">Микрофоны</option>
-                            <option value="webcams">Веб-камеры</option>
-                            <option value="power_banks">Павербанки</option>
-                            <option value="portable_speakers">Портативные колонки</option>
-                            <option value="monitors">Мониторы</option>
-                            <option value="accessories">Аксессуары</option>
-                            <option value="gaming">Игровые консоли</option>
-                            <option value="networking">Сетевое оборудование</option>
-                            <option value="cpus">Процессоры</option>
-                            <option value="motherboards">Материнские платы</option>
-                            <option value="ram">Оперативная память</option>
-                            <option value="graphics_cards">Видеокарты</option>
-                            <option value="external_drives">Внешние накопители</option>
-                            <option value="audio">Аудиосистемы</option>
-                            <option value="smart_home">Умный дом</option>
-                            <option value="wearables">Носимые устройства</option>
-                            <option value="other">Другое</option>
+            <div id="priceHistoryResult" style="display: none">
+              <h4 id="selectedProductTitle"></h4>
+              <div id="priceHistoryChartContainer" style="width: 100%; height: 400px; margin-top: 20px">
+                <!-- Canvas для Chart.js будет добавлен сюда -->
+              </div>
+              <div id="priceHistoryListContainer" style="margin-top: 20px">
+                <!-- Список истории цен будет добавлен сюда -->
+              </div>
+              <div class="admin-form-card">
+                <h5>Добавить запись в историю</h5>
+                <form id="addPriceHistoryForm">
+                  <input type="hidden" id="selectedProductId" value="" />
+                  <div class="manual-price-entry admin-price-history-manual-row">
+                    <div class="admin-form-grid">
+                      <div class="admin-field">
+                        <label for="newStoreName">Магазин</label>
+                        <select id="newStoreName" class="price-store-select" required>
+                          <option value="">Выберите магазин</option>
+                          <option value="DNS">DNS</option>
+                          <option value="OZON">OZON</option>
+                          <option value="Wildberries">Wildberries</option>
+                          <option value="Citilink">Ситилинк</option>
+                          <option value="MVideo">М.Видео</option>
+                          <option value="Yandex Market">Яндекс Маркет</option>
+                          <option value="Eldorado">Эльдорадо</option>
+                          <option value="Other">Другой</option>
                         </select>
+                      </div>
+                      <div class="admin-field">
+                        <label for="newSellerName">Продавец</label>
+                        <input
+                          type="text"
+                          id="newSellerName"
+                          class="price-seller-input"
+                          placeholder="Как в карточке источника (можно пусто)"
+                        />
+                      </div>
+                      <div class="admin-field">
+                        <label for="newPrice">Цена, ₽</label>
+                        <input
+                          type="number"
+                          id="newPrice"
+                          class="price-value-input"
+                          min="0"
+                          step="1"
+                          required
+                          placeholder="0"
+                        />
+                      </div>
+                      <div class="admin-field">
+                        <label for="newDate">Дата</label>
+                        <input type="date" id="newDate" required />
+                      </div>
+                      <div class="admin-field" style="align-self: end">
+                        <button type="submit" class="admin-btn-primary" style="width: 100%">Добавить в историю</button>
+                      </div>
                     </div>
-
-                    <div class="form-group">
-                        <label for="manualDescription">Описание (опционально)</label>
-                        <textarea id="manualDescription" rows="3" placeholder="Введите описание товара..."></textarea>
+                    <div class="admin-field" style="margin-top: 1rem">
+                      <label for="newPurchaseUrl">Ссылка на покупку у продавца</label>
+                      <input
+                        type="url"
+                        id="newPurchaseUrl"
+                        class="price-url-autofill"
+                        placeholder="Вставьте URL карточки — цена, магазин и продавец подставятся автоматически (как при добавлении товара)"
+                      />
                     </div>
-
-                    <div class="form-group">
-                        <label for="manualImageUrl">URL изображения (опционально)</label>
-                        <input type="url" id="manualImageUrl" placeholder="https://example.com/image.jpg">
-                    </div>
-
-                    
-                    <div id="manualSpecFieldsContainer">
-                        <p class="placeholder-text">Выберите категорию, чтобы увидеть доступные поля для характеристик.</p>
-                    </div>
-
-                   
-                    <div id="manualPricesContainer">
-                        <h4>Цены и ссылки на покупку</h4>
-                        <div id="manualPricesList">
-                            <!-- Блоки цен будут добавляться сюда -->
-                        </div>
-                        <button type="button" class="btn btn-outline" onclick="addManualPriceEntry()">+ Добавить цену и ссылку</button>
-                        <button type="button" class="btn btn-outline" onclick="fillManualPricesFromUrls()">Подставить цены по ссылкам (Яндекс, WB, DNS, Ozon и др.)</button>
-                    </div>
-
-                    <div class="form-actions">
-                        <button type="button" class="btn btn-secondary" onclick="resetManualAddForm()">Сбросить</button>
-                        <button type="submit" class="btn btn-primary">Сохранить товар</button>
-                    </div>
+                  </div>
                 </form>
+              </div>
             </div>
-            
+          </div>
+          <div id="import" class="admin-tab-content">
+            <h3>Импорт каталога</h3>
+            <details
+              style="
+                margin: 1rem 0;
+                padding: 0.75rem 1rem;
+                border: 1px solid #e5e7eb;
+                border-radius: 10px;
+                background: #f9fafb;
+                max-width: 920px;
+              "
+            >
+              <summary style="cursor: pointer; font-weight: 600">Колонки Excel / поля JSON</summary>
+              <ul
+                style="margin: 0.75rem 0 0; padding-left: 1.2rem; font-size: 0.88rem; color: #475569; line-height: 1.5"
+              >
+                <li><strong>sku / артикул</strong> — внешний код для сопоставления при следующих импортах</li>
+                <li>
+                  <strong>name / наименование</strong>, <strong>category / категория</strong>,
+                  <strong>price / цена</strong>, <strong>url / ссылка</strong> (на покупку)
+                </li>
+                <li>
+                  Опционально: <strong>image_url / картинка</strong>, <strong>description / описание</strong>,
+                  <strong>stock / остаток</strong>, <strong>rating / рейтинг</strong> (0–5),
+                  <strong>reviews / отзывов</strong>
+                </li>
+                <li>
+                  <strong>store_name / магазин</strong>, <strong>seller / продавец</strong> — в строке; если не указаны,
+                  подставляются из формы ниже
+                </li>
+                <li>
+                  <strong>specs_json</strong> — JSON-объект характеристик одной строкой; либо поле <code>specs</code> в
+                  JSON-элементе; прочие колонки Excel трактуются как доп. характеристики
+                </li>
+              </ul>
+            </details>
 
-            
-            <div id="parser" class="admin-tab-content">
-                <h3>Парсер товаров</h3>
-                <div style="margin: 0.75rem 0 1rem; padding: 0.9rem 1rem; border: 1px solid #e5e7eb; border-radius: 10px; background: #f9fafb;">
-                    <h4 style="margin: 0 0 0.5rem;">Поддерживаемые источники и примеры ссылок</h4>
-                    <p style="margin: 0 0 0.5rem; color:#475569; font-size: 0.9rem;">
-                        Парсинг и обновление цен работает через API-источники: <strong>API Systems (WB/Яндекс.Маркет)</strong>, <strong>PricesAPI.io</strong>, <strong>eBay Browse API</strong>.
-                        По возможности используйте URL карточки; если URL нет — можно ввести только название.
-                    </p>
-                    <ul style="margin: 0; padding-left: 1.2rem; color:#475569; font-size: 0.9rem; line-height: 1.45;">
-                        <li><strong>Wildberries:</strong> <code>https://www.wildberries.ru/catalog/123456/detail.aspx</code> или <code>https://wb.ru/catalog/123456/detail.aspx</code></li>
-                        <li><strong>Яндекс.Маркет:</strong> <code>https://market.yandex.ru/card/123456/spec</code> (и вариации <code>/card/</code>, <code>/product--</code>)</li>
-                        <li><strong>eBay:</strong> <code>https://www.ebay.com/itm/123456789012</code> (требуются <code>EBAY_CLIENT_ID</code>/<code>EBAY_CLIENT_SECRET</code> в <code>.env</code>)</li>
-                        <li><strong>PricesAPI:</strong> поддерживает поиск по названию и по URL карточки магазина в поддерживаемых странах. По умолчанию используется country <code>us</code> (настраивается <code>PRICESAPI_COUNTRY</code>).</li>
-                    </ul>
-                </div>
-                <div class="parse-form-container">
-                    <form id="parseProductForm">
-                        <div class="form-group">
-                            <label for="parseUrl">URL товара (опционально)</label>
-                            <input type="url" id="parseUrl" placeholder="Ссылка на карточку (WB / Я.Маркет / eBay и т.д.)">
-                        </div>
-                        <div class="form-group">
-                            <label for="parseCategory">Категория *</label>
-                            <select id="parseCategory" required>
-                                <option value="">Выберите категорию</option>
-                                <option value="smartphones">Смартфоны</option>
-                                <option value="laptops">Ноутбуки</option>
-                                <option value="tv">Телевизоры</option>
-                                <option value="headphones">Наушники</option>
-                                <option value="cameras">Фотоаппараты</option>
-                                <option value="tablets">Планшеты</option>
-                                <option value="smartwatches">Смарт-часы</option>
-                                <option value="ebooks">Электронные книги</option>
-                                <option value="drones">Дроны</option>
-                                <option value="pc_components">Комплектующие ПК</option>
-                                <option value="keyboards">Клавиатуры</option>
-                                <option value="mouses">Мыши</option>
-                                <option value="cases">Корпуса ПК</option>
-                                <option value="drivers">Накопители</option>
-                                <option value="fitness_trackers">Фитнес-трекеры</option>
-                                <option value="power_units">Блоки питания</option>
-                                <option value="microphones">Микрофоны</option>
-                                <option value="webcams">Веб-камеры</option>
-                                <option value="power_banks">Павербанки</option>
-                                <option value="portable_speakers">Портативные колонки</option>
-                                <option value="monitors">Мониторы</option>
-                                <option value="accessories">Аксессуары</option>
-                                <option value="gaming">Игровые консоли</option>
-                                <option value="networking">Сетевое оборудование</option>
-                                <option value="cpus">Процессоры</option>
-                                <option value="motherboards">Материнские платы</option>
-                                <option value="ram">Оперативная память</option>
-                                <option value="graphics_cards">Видеокарты</option>
-                                <option value="external_drives">Внешние накопители</option>
-                                <option value="audio">Аудиосистемы</option>
-                                <option value="smart_home">Умный дом</option>
-                                <option value="wearables">Носимые устройства</option>
-                                <option value="other">Другое</option>
-                            </select>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="parseProxy">Прокси (опционально, формат: http://ip:port)</label>
-                            <input type="text" id="parseProxy" placeholder="http://127.0.0.1:8080">
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="parseName">Название устройства (опционально)</label>
-                            <input type="text" id="parseName" placeholder="Можно без URL: Samsung Galaxy S24 Ultra 512GB">
-                        </div>
-                        <div class="form-group">
-                            <label for="parseDescription">Описание (опционально)</label>
-                            <textarea id="parseDescription" rows="3" placeholder="Введите описание..."></textarea>
-                        </div>
-                        <div class="form-actions">
-                            <button type="button" class="btn btn-secondary" onclick="resetParseForm()">Сбросить</button>
-                            <button type="submit" class="btn btn-primary">Запустить парсинг</button>
-                        </div>
-                    </form>
-                </div>
-                <div id="parseResult" style="margin-top: 1.5rem; display: none;">
-                    <!-- Результаты парсинга будут здесь -->
-                </div>
-            </div>
-            <div class="admin-tab-content" id="priceHistory">
-  <h3>Изменение истории цен</h3>
-
-  <div class="admin-price-sync-section" style="margin-bottom: 1.75rem; padding: 1rem 1.25rem; border: 1px solid #e5e7eb; border-radius: 10px; background: #f9fafb;">
-    <h4 style="margin-top: 0;">Автообновление цен по ссылкам</h4>
-    <p style="color: #4b5563; font-size: 0.88rem; margin-bottom: 0.5rem;">
-      Источники: <strong>API Systems</strong>, <strong>eBay</strong>, <strong>PricesAPI.io</strong>. Цены в рублях. Автообновление каталога — не чаще 1 раза в 3 дня; для товара ниже — вручную в любой момент.
-    </p>
-    <details style="margin-bottom: 0.75rem; font-size: 0.85rem; color: #6b7280;">
-      <summary style="cursor: pointer; color: #2563eb;">Подробнее об обновлении</summary>
-      <p style="margin: 0.5rem 0 0;">
-        Учитываются только сохранённые у товара строки цен и ссылки. Для eBay/PricesAPI — по названию или по сохранённым ссылкам на поддерживаемые площадки.
-      </p>
-    </details>
-    <div id="priceSyncStatusDisplay" style="font-size: 0.85rem; margin-bottom: 0.75rem; line-height: 1.5;"></div>
-    <div class="form-group">
-      <label for="priceSyncProxyInput">Прокси (опционально)</label>
-      <input type="text" id="priceSyncProxyInput" class="search-input" style="max-width: 420px;" placeholder="http://127.0.0.1:8080" autocomplete="off">
-    </div>
-    <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem;">
-      <button type="button" class="btn btn-secondary" id="btnPriceSyncRefreshStatus">Обновить статус</button>
-      <button type="button" class="btn btn-primary" id="btnPriceSyncPreview">Предпросмотр (каталог)</button>
-      <button type="button" class="btn btn-primary" id="btnPriceSyncApply" disabled>Применить предпросмотр</button>
-      <button type="button" class="btn btn-outline" id="btnPriceSyncBackground">Фоновое обновление (как авто)</button>
-    </div>
-    <div style="border-top: 1px solid #e5e7eb; padding-top: 1rem;">
-      <h5 style="margin-top: 0;">Текущий товар</h5>
-      <p style="color: #6b7280; font-size: 0.85rem; margin-bottom: 0.5rem;">Выберите товар поиском ниже, затем проверьте или примените цены только для него.</p>
-      <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
-        <button type="button" class="btn btn-secondary" id="btnPriceSyncPreviewOne" disabled>Предпросмотр цен (в т.ч. ЯМ, WB)</button>
-        <button type="button" class="btn btn-primary" id="btnPriceSyncApplyOne" disabled>Обновить цены товара по ссылкам</button>
-      </div>
-    </div>
-  </div>
-
-  <div id="priceSyncPreviewModal" style="display: none; position: fixed; inset: 0; z-index: 10000; background: rgba(0,0,0,0.45); align-items: center; justify-content: center;">
-    <div id="priceSyncModalPanel" style="background: #fff; max-width: 960px; width: 92%; max-height: 85vh; overflow: auto; border-radius: 12px; padding: 1.25rem; box-shadow: 0 20px 50px rgba(0,0,0,0.2);">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; gap: 1rem;">
-        <h4 id="priceSyncModalTitle" style="margin: 0;">Результаты проверки цен</h4>
-        <button type="button" class="btn btn-secondary" id="btnPriceSyncModalClose">Закрыть</button>
-      </div>
-      <div id="priceSyncModalSummary" style="margin-bottom: 1rem; font-size: 0.9rem;"></div>
-      <div style="overflow-x: auto;">
-        <table class="price-history-table" style="width: 100%; font-size: 0.85rem;">
-          <thead>
-            <tr>
-              <th>Товар</th>
-              <th>Источник</th>
-              <th>Было</th>
-              <th>Стало</th>
-              <th>Статус</th>
-              <th>Комментарий</th>
-            </tr>
-          </thead>
-          <tbody id="priceSyncPreviewTableBody"></tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-
-  <form class="search-form" id="adminPriceHistorySearchForm" style="padding-bottom: 200px;">
-    <div class="search-input-container">
-      <input type="text" id="adminPriceHistorySearchInput" class="search-input" placeholder="Поиск товара для истории цен..." autocomplete="off">
-      <button type="submit" class="search-button">🔍</button>
-      <div id="adminPriceHistorySearchSuggestions" class="search-suggestions" style="display: none;"></div>
-    </div>
-  </form>
-
-  <div id="priceHistoryResult" style="display: none;">
-    <h4 id="selectedProductTitle"></h4>
-    <div id="priceHistoryChartContainer" style="width: 100%; height: 400px; margin-top: 20px;">
-      <!-- Canvas для Chart.js будет добавлен сюда -->
-    </div>
-    <div id="priceHistoryListContainer" style="margin-top: 20px;">
-      <!-- Список истории цен будет добавлен сюда -->
-    </div>
-    <div class="admin-form-card">
-    <h5>Добавить запись в историю</h5>
-    <form id="addPriceHistoryForm">
-      <input type="hidden" id="selectedProductId" value="">
-      <div class="manual-price-entry admin-price-history-manual-row">
-      <div class="admin-form-grid">
-        <div class="admin-field">
-          <label for="newStoreName">Магазин</label>
-          <select id="newStoreName" class="price-store-select" required>
-            <option value="">Выберите магазин</option>
-            <option value="DNS">DNS</option>
-            <option value="OZON">OZON</option>
-            <option value="Wildberries">Wildberries</option>
-            <option value="Citilink">Ситилинк</option>
-            <option value="MVideo">М.Видео</option>
-            <option value="Yandex Market">Яндекс Маркет</option>
-            <option value="Eldorado">Эльдорадо</option>
-            <option value="Other">Другой</option>
-          </select>
-        </div>
-        <div class="admin-field">
-          <label for="newSellerName">Продавец</label>
-          <input type="text" id="newSellerName" class="price-seller-input" placeholder="Как в карточке источника (можно пусто)">
-        </div>
-        <div class="admin-field">
-          <label for="newPrice">Цена, ₽</label>
-          <input type="number" id="newPrice" class="price-value-input" min="0" step="1" required placeholder="0">
-        </div>
-        <div class="admin-field">
-          <label for="newDate">Дата</label>
-          <input type="date" id="newDate" required>
-        </div>
-        <div class="admin-field" style="align-self: end;">
-          <button type="submit" class="admin-btn-primary" style="width:100%;">Добавить в историю</button>
-        </div>
-      </div>
-      <div class="admin-field" style="margin-top: 1rem;">
-        <label for="newPurchaseUrl">Ссылка на покупку у продавца</label>
-        <input type="url" id="newPurchaseUrl" class="price-url-autofill" placeholder="Вставьте URL карточки — цена, магазин и продавец подставятся автоматически (как при добавлении товара)">
-      </div>
-      </div>
-    </form>
-    </div>
-  </div>
-</div>
-            <div id="import" class="admin-tab-content">
-                <h3>Импорт каталога</h3>
-                <details style="margin:1rem 0;padding:0.75rem 1rem;border:1px solid #e5e7eb;border-radius:10px;background:#f9fafb;max-width:920px;">
-                    <summary style="cursor:pointer;font-weight:600;">Колонки Excel / поля JSON</summary>
-                    <ul style="margin:0.75rem 0 0;padding-left:1.2rem;font-size:0.88rem;color:#475569;line-height:1.5;">
-                        <li><strong>sku / артикул</strong> — внешний код для сопоставления при следующих импортах</li>
-                        <li><strong>name / наименование</strong>, <strong>category / категория</strong>, <strong>price / цена</strong>, <strong>url / ссылка</strong> (на покупку)</li>
-                        <li>Опционально: <strong>image_url / картинка</strong>, <strong>description / описание</strong>, <strong>stock / остаток</strong>, <strong>rating / рейтинг</strong> (0–5), <strong>reviews / отзывов</strong></li>
-                        <li><strong>store_name / магазин</strong>, <strong>seller / продавец</strong> — в строке; если не указаны, подставляются из формы ниже</li>
-                        <li><strong>specs_json</strong> — JSON-объект характеристик одной строкой; либо поле <code>specs</code> в JSON-элементе; прочие колонки Excel трактуются как доп. характеристики</li>
-                    </ul>
-                </details>
-
-                <div class="import-grid">
-                    <div style="border:1px solid #e5e7eb;border-radius:12px;padding:1rem;background:#fff;">
-                        <h4 style="margin-top:0;">Файл с компьютера</h4>
-                        <form id="importUploadForm" enctype="multipart/form-data" onsubmit="return false;">
-                            <div class="form-group">
-                                <label for="importStoreName">Магазин (если не задан в файле) *</label>
-                                <select id="importStoreName" required class="search-input" style="max-width:100%;">
-                                    <option value="">Выберите</option>
-                                    <option value="DNS">DNS</option>
-                                    <option value="OZON">OZON</option>
-                                    <option value="Wildberries">Wildberries</option>
-                                    <option value="Citilink">Ситилинк</option>
-                                    <option value="MVideo">М.Видео</option>
-                                    <option value="Yandex Market">Яндекс Маркет</option>
-                                    <option value="Eldorado">Эльдорадо</option>
-                                    <option value="Other">Другой</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label for="importSellerName">Продавец по умолчанию (опционально)</label>
-                                <input type="text" id="importSellerName" class="search-input" placeholder="Как в карточке магазина" style="max-width:100%;">
-                            </div>
-                            <div class="form-group">
-                                <span class="import-file-field-label">Файл (.json, .xlsx, .csv) *</span>
-                                <div class="import-file-row">
-                                    <input type="file" id="importFile" class="import-file-native" accept=".json,.xlsx,.xls,.csv,application/json" aria-label="Выбор файла каталога">
-                                    <button type="button" class="btn btn-secondary import-file-browse-btn" id="importFileBrowseBtn">Выбрать файл</button>
-                                    <span class="import-file-chosen is-empty" id="importFileChosen">Файл не выбран</span>
-                                </div>
-                            </div>
-                            <button type="button" class="btn btn-primary" id="importFilePreviewBtn">Предпросмотр</button>
-                        </form>
+            <div class="import-grid">
+              <div style="border: 1px solid #e5e7eb; border-radius: 12px; padding: 1rem; background: #fff">
+                <h4 style="margin-top: 0">Файл с компьютера</h4>
+                <form id="importUploadForm" enctype="multipart/form-data" onsubmit="return false;">
+                  <div class="form-group">
+                    <label for="importStoreName">Магазин (если не задан в файле) *</label>
+                    <select id="importStoreName" required class="search-input" style="max-width: 100%">
+                      <option value="">Выберите</option>
+                      <option value="DNS">DNS</option>
+                      <option value="OZON">OZON</option>
+                      <option value="Wildberries">Wildberries</option>
+                      <option value="Citilink">Ситилинк</option>
+                      <option value="MVideo">М.Видео</option>
+                      <option value="Yandex Market">Яндекс Маркет</option>
+                      <option value="Eldorado">Эльдорадо</option>
+                      <option value="Other">Другой</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label for="importSellerName">Продавец по умолчанию (опционально)</label>
+                    <input
+                      type="text"
+                      id="importSellerName"
+                      class="search-input"
+                      placeholder="Как в карточке магазина"
+                      style="max-width: 100%"
+                    />
+                  </div>
+                  <div class="form-group">
+                    <span class="import-file-field-label">Файл (.json, .xlsx, .csv) *</span>
+                    <div class="import-file-row">
+                      <input
+                        type="file"
+                        id="importFile"
+                        class="import-file-native"
+                        accept=".json,.xlsx,.xls,.csv,application/json"
+                        aria-label="Выбор файла каталога"
+                      />
+                      <button type="button" class="btn btn-secondary import-file-browse-btn" id="importFileBrowseBtn">
+                        Выбрать файл
+                      </button>
+                      <span class="import-file-chosen is-empty" id="importFileChosen">Файл не выбран</span>
                     </div>
-                    <div style="border:1px solid #e5e7eb;border-radius:12px;padding:1rem;background:#fff;">
-                        <h4 style="margin-top:0;">JSON из буфера</h4>
-                        <div class="form-group">
-                            <label for="importJsonStore">Магазин *</label>
-                            <select id="importJsonStore" required class="search-input" style="max-width:100%;">
-                                <option value="">Выберите</option>
-                                <option value="DNS">DNS</option>
-                                <option value="OZON">OZON</option>
-                                <option value="Wildberries">Wildberries</option>
-                                <option value="Citilink">Ситилинк</option>
-                                <option value="MVideo">М.Видео</option>
-                                <option value="Yandex Market">Яндекс Маркет</option>
-                                <option value="Eldorado">Эльдорадо</option>
-                                <option value="Other">Другой</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="importJsonSeller">Продавец (опционально)</label>
-                            <input type="text" id="importJsonSeller" class="search-input" style="max-width:100%;">
-                        </div>
-                        <div class="form-group">
-                            <label for="importJsonTextarea">Массив JSON или объект с полем items *</label>
-                            <textarea id="importJsonTextarea" rows="10" style="width:100%;font-family:ui-monospace,monospace;font-size:0.8rem;" placeholder='[ { "sku": "...", "name": "...", "category": "smartphones", ... } ]'></textarea>
-                        </div>
-                        <button type="button" class="btn btn-primary" id="importJsonPreviewBtn">Предпросмотр</button>
-                    </div>
+                  </div>
+                  <button type="button" class="btn btn-primary" id="importFilePreviewBtn">Предпросмотр</button>
+                </form>
+              </div>
+              <div style="border: 1px solid #e5e7eb; border-radius: 12px; padding: 1rem; background: #fff">
+                <h4 style="margin-top: 0">JSON из буфера</h4>
+                <div class="form-group">
+                  <label for="importJsonStore">Магазин *</label>
+                  <select id="importJsonStore" required class="search-input" style="max-width: 100%">
+                    <option value="">Выберите</option>
+                    <option value="DNS">DNS</option>
+                    <option value="OZON">OZON</option>
+                    <option value="Wildberries">Wildberries</option>
+                    <option value="Citilink">Ситилинк</option>
+                    <option value="MVideo">М.Видео</option>
+                    <option value="Yandex Market">Яндекс Маркет</option>
+                    <option value="Eldorado">Эльдорадо</option>
+                    <option value="Other">Другой</option>
+                  </select>
                 </div>
-
-                <div id="importPreviewPanel" class="import-preview-panel" style="display:none;">
-                    <h4 style="margin-top:0;">Предпросмотр (проверьте и при необходимости отредактируйте)</h4>
-                    <div id="importPreviewFileErrors" class="import-preview-file-errors"></div>
-                    <div id="importPreviewSummary" class="import-preview-summary"></div>
-                    <div id="importPreviewTableHost" class="import-preview-table-wrap"></div>
-                    <div style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-top:1rem;">
-                        <button type="button" class="btn btn-primary" id="importCommitBtn">Импортировать в каталог</button>
-                        <button type="button" class="btn btn-secondary" id="importResetPreviewBtn">Сбросить предпросмотр</button>
-                    </div>
-                    <p style="margin:0.75rem 0 0;font-size:0.82rem;color:#64748b;">Магазин и продавец по умолчанию берутся из левой колонки (файл) или правой (JSON). Если предпросмотр был из файла, при «Импортировать» на сервер снова отправляется этот файл — в каталог попадают все строки файла (правки в ячейках таблицы для файлового режима не применяются; чтобы импортировать правки — используйте JSON). Строки с ошибками подсвечены; ошибочные строки отчитаются в отчёте.</p>
+                <div class="form-group">
+                  <label for="importJsonSeller">Продавец (опционально)</label>
+                  <input type="text" id="importJsonSeller" class="search-input" style="max-width: 100%" />
                 </div>
-
-                <div id="importResultPanel" style="display:none;margin-top:1.5rem;padding:1rem;border:1px solid #cbd5e1;border-radius:12px;background:#f8fafc;">
-                    <h4 style="margin-top:0;">Результат импорта</h4>
-                    <div id="importResultSummary" style="margin-bottom:0.75rem;font-weight:600;"></div>
-                    <div style="display:flex;flex-wrap:wrap;gap:1rem;">
-                        <div style="flex:1;min-width:260px;">
-                            <h5>Добавлено</h5>
-                            <div id="importCreatedList" style="max-height:220px;overflow:auto;font-size:0.85rem;"></div>
-                        </div>
-                        <div style="flex:1;min-width:260px;">
-                            <h5>Обновлено</h5>
-                            <div id="importUpdatedList" style="max-height:220px;overflow:auto;font-size:0.85rem;"></div>
-                        </div>
-                        <div style="flex:1;min-width:260px;">
-                            <h5>Ошибки по строкам</h5>
-                            <div id="importErrorsList" style="max-height:220px;overflow:auto;font-size:0.85rem;color:#b91c1c;"></div>
-                        </div>
-                    </div>
+                <div class="form-group">
+                  <label for="importJsonTextarea">Массив JSON или объект с полем items *</label>
+                  <textarea
+                    id="importJsonTextarea"
+                    rows="10"
+                    style="width: 100%; font-family: ui-monospace, monospace; font-size: 0.8rem"
+                    placeholder='[ { "sku": "...", "name": "...", "category": "smartphones", ... } ]'
+                  ></textarea>
                 </div>
-
-                <div style="margin-top:2rem;padding-top:1.5rem;border-top:1px solid #e5e7eb;">
-                    <h4>Импорт по ссылке на файл</h4>
-                    <p style="color:#6b7280;font-size:0.9rem;">Сервер <strong>раз в час</strong> проверяет фиды. При изменении файла (другой SHA-256 или ответ не 304) каталог перезагружается.</p>
-                    <form id="importFeedAddForm" style="display:flex;flex-wrap:wrap;gap:0.75rem;align-items:end;margin-bottom:1rem;">
-                        <div class="form-group" style="margin:0;flex:2;min-width:220px;">
-                            <label for="importFeedUrl">URL файла *</label>
-                            <input type="url" id="importFeedUrl" class="search-input" style="width:100%;" placeholder="https://partner.store/export/catalog.json" required>
-                        </div>
-                        <div class="form-group" style="margin:0;flex:1;min-width:140px;">
-                            <label for="importFeedStore">Магазин *</label>
-                            <select id="importFeedStore" required class="search-input" style="width:100%;">
-                                <option value="">—</option>
-                                <option value="DNS">DNS</option>
-                                <option value="OZON">OZON</option>
-                                <option value="Wildberries">Wildberries</option>
-                                <option value="Citilink">Ситилинк</option>
-                                <option value="MVideo">М.Видео</option>
-                                <option value="Yandex Market">Яндекс Маркет</option>
-                                <option value="Eldorado">Эльдорадо</option>
-                                <option value="Other">Другой</option>
-                            </select>
-                        </div>
-                        <div class="form-group" style="margin:0;flex:1;min-width:120px;">
-                            <label for="importFeedSeller">Продавец</label>
-                            <input type="text" id="importFeedSeller" class="search-input" style="width:100%;">
-                        </div>
-                        <button type="submit" class="btn btn-primary">Добавить ссылку</button>
-                    </form>
-                    <div id="importFeedsTableWrap" style="overflow-x:auto;"></div>
-                </div>
-            </div>
-            <!-- Вкладка Аналитика -->
-            <div id="analytics" class="admin-tab-content">
-                <h3>Аналитика системы</h3>
-                <p style="color: #6b7280; margin-bottom: 2rem;">Статистика использования и производительности системы</p>
-                <div class="admin-stats-grid" style="margin-bottom: 1rem;">
-                    <div class="stat-card-enhanced primary">
-                        <div class="stat-icon">👁️</div>
-                        <div class="stat-title">Просмотры за день</div>
-                        <div class="stat-value" id="dailyViews">0</div>
-                        <div class="stat-change positive">+0%</div>
-                    </div>
-                    <div class="stat-card-enhanced success">
-                        <div class="stat-icon">🛒</div>
-                        <div class="stat-title">Переходы к покупке</div>
-                        <div class="stat-value" id="purchaseClicks">0</div>
-                        <div class="stat-change positive">+0%</div>
-                    </div>
-                    <div class="stat-card-enhanced warning">
-                        <div class="stat-icon">💾</div>
-                        <div class="stat-title">Загрузка сервера</div>
-                        <div class="stat-value" id="serverLoad">0%</div>
-                        <div class="stat-change negative">+0%</div>
-                    </div>
-                    <div class="stat-card-enhanced">
-                        <div class="stat-icon">⚡</div>
-                        <div class="stat-title">Время ответа</div>
-                        <div class="stat-value" id="responseTime">0ms</div>
-                        <div class="stat-change positive">-0ms</div>
-                    </div>
-                </div>
-                
+                <button type="button" class="btn btn-primary" id="importJsonPreviewBtn">Предпросмотр</button>
+              </div>
             </div>
 
-            
-        </div> 
-    </div> 
-</main>
+            <div id="importPreviewPanel" class="import-preview-panel" style="display: none">
+              <h4 style="margin-top: 0">Предпросмотр (проверьте и при необходимости отредактируйте)</h4>
+              <div id="importPreviewFileErrors" class="import-preview-file-errors"></div>
+              <div id="importPreviewSummary" class="import-preview-summary"></div>
+              <div id="importPreviewTableHost" class="import-preview-table-wrap"></div>
+              <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 1rem">
+                <button type="button" class="btn btn-primary" id="importCommitBtn">Импортировать в каталог</button>
+                <button type="button" class="btn btn-secondary" id="importResetPreviewBtn">
+                  Сбросить предпросмотр
+                </button>
+              </div>
+              <p style="margin: 0.75rem 0 0; font-size: 0.82rem; color: #64748b">
+                Магазин и продавец по умолчанию берутся из левой колонки (файл) или правой (JSON). Если предпросмотр был
+                из файла, при «Импортировать» на сервер снова отправляется этот файл — в каталог попадают все строки
+                файла (правки в ячейках таблицы для файлового режима не применяются; чтобы импортировать правки —
+                используйте JSON). Строки с ошибками подсвечены; ошибочные строки отчитаются в отчёте.
+              </p>
+            </div>
+
+            <div
+              id="importResultPanel"
+              style="
+                display: none;
+                margin-top: 1.5rem;
+                padding: 1rem;
+                border: 1px solid #cbd5e1;
+                border-radius: 12px;
+                background: #f8fafc;
+              "
+            >
+              <h4 style="margin-top: 0">Результат импорта</h4>
+              <div id="importResultSummary" style="margin-bottom: 0.75rem; font-weight: 600"></div>
+              <div style="display: flex; flex-wrap: wrap; gap: 1rem">
+                <div style="flex: 1; min-width: 260px">
+                  <h5>Добавлено</h5>
+                  <div id="importCreatedList" style="max-height: 220px; overflow: auto; font-size: 0.85rem"></div>
+                </div>
+                <div style="flex: 1; min-width: 260px">
+                  <h5>Обновлено</h5>
+                  <div id="importUpdatedList" style="max-height: 220px; overflow: auto; font-size: 0.85rem"></div>
+                </div>
+                <div style="flex: 1; min-width: 260px">
+                  <h5>Ошибки по строкам</h5>
+                  <div
+                    id="importErrorsList"
+                    style="max-height: 220px; overflow: auto; font-size: 0.85rem; color: #b91c1c"
+                  ></div>
+                </div>
+              </div>
+            </div>
+
+            <div style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid #e5e7eb">
+              <h4>Импорт по ссылке на файл</h4>
+              <p style="color: #6b7280; font-size: 0.9rem">
+                Сервер <strong>раз в час</strong> проверяет фиды. При изменении файла (другой SHA-256 или ответ не 304)
+                каталог перезагружается.
+              </p>
+              <form
+                id="importFeedAddForm"
+                style="display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: end; margin-bottom: 1rem"
+              >
+                <div class="form-group" style="margin: 0; flex: 2; min-width: 220px">
+                  <label for="importFeedUrl">URL файла *</label>
+                  <input
+                    type="url"
+                    id="importFeedUrl"
+                    class="search-input"
+                    style="width: 100%"
+                    placeholder="https://partner.store/export/catalog.json"
+                    required
+                  />
+                </div>
+                <div class="form-group" style="margin: 0; flex: 1; min-width: 140px">
+                  <label for="importFeedStore">Магазин *</label>
+                  <select id="importFeedStore" required class="search-input" style="width: 100%">
+                    <option value="">—</option>
+                    <option value="DNS">DNS</option>
+                    <option value="OZON">OZON</option>
+                    <option value="Wildberries">Wildberries</option>
+                    <option value="Citilink">Ситилинк</option>
+                    <option value="MVideo">М.Видео</option>
+                    <option value="Yandex Market">Яндекс Маркет</option>
+                    <option value="Eldorado">Эльдорадо</option>
+                    <option value="Other">Другой</option>
+                  </select>
+                </div>
+                <div class="form-group" style="margin: 0; flex: 1; min-width: 120px">
+                  <label for="importFeedSeller">Продавец</label>
+                  <input type="text" id="importFeedSeller" class="search-input" style="width: 100%" />
+                </div>
+                <button type="submit" class="btn btn-primary">Добавить ссылку</button>
+              </form>
+              <div id="importFeedsTableWrap" style="overflow-x: auto"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
 
     <footer class="footer">
-        <div class="container">
-            <p>&copy; 2025-2026 tech-nozone. Все права защищены.</p>
-        </div>
+      <div class="container">
+        <p>&copy; 2025-2026 tech-nozone. Все права защищены.</p>
+      </div>
     </footer>
     <script src="config.js"></script>
     <script src="script.js?v=import2"></script>
-    <script>
-
-        let currentTableData = [];
-        let currentTableName = '';
-        let currentModerationTab = 'reviews'; 
-
-
-
-        //Открытие вкладки админ-панели
-        function openAdminTab(tabName) {
-            document.querySelectorAll('.admin-tab-content').forEach(tab => tab.classList.remove('active'));
-            document.querySelectorAll('.admin-tab-btn').forEach(btn => btn.classList.remove('active'));
-            document.getElementById(tabName).classList.add('active');
-            //Найдём кнопку вкладки, которая находится в admin-tabs-header
-            const tabButtons = document.querySelectorAll('#moderation ~ .admin-tabs-container .admin-tabs-header .admin-tab-btn');
-            let foundActive = false;
-            for (let btn of tabButtons) {
-                if (btn.textContent.trim().toLowerCase().includes(tabName.toLowerCase())) {
-                    btn.classList.add('active');
-                    foundActive = true;
-                    break;
-                }
-            }
-            //Если не нашли в заголовке вкладки (например, moderation), ищем в основном заголовке
-            if (!foundActive) {
-                 const mainTabBtns = document.querySelectorAll('.admin-tabs-header .admin-tab-btn');
-                 for (let btn of mainTabBtns) {
-                     if (btn.textContent.trim().toLowerCase() === tabName.toLowerCase()) {
-                         btn.classList.add('active');
-                         break;
-                     }
-                 }
-            }
-
-            //Загрузка данных для вкладки при её открытии
-            if (tabName === 'moderation') {
-                loadModerationData(currentModerationTab); //Загружаем текущую подвкладку модерации
-            } else if (tabName === 'editor') {
-                loadTableList();
-            } else if (tabName === 'analytics') {
-                loadAnalyticsData();
-            } else if (tabName === 'users') {
-                loadUsersTable();
-            }
-        }
-
-        //Открытие подвкладки модерации (отзывы/запросы)
-        function openModerationSubTab(subTabName) {
-            currentModerationTab = subTabName;
-            //Обновим активные кнопки подвкладок
-            document.querySelectorAll('#moderation .admin-tabs-header .admin-tab-btn').forEach(btn => btn.classList.remove('active'));
-            event.target.classList.add('active');
-            //Загрузим данные для выбранной подвкладки
-            loadModerationData(subTabName);
-        }
-
-        //Загрузка данных для модерации (отзывы или запросы)
-        async function loadModerationData(type) {
-            const container = document.getElementById('moderationContent');
-            if (!container) return;
-
-            try {
-                const token = localStorage.getItem('techAggregatorToken');
-                let endpoint = '';
-                let title = '';
-                if (type === 'reviews') {
-                    endpoint = '/api/admin/reviews';
-                    title = 'Отзывы на модерации';
-                } else if (type === 'requests') {
-                    endpoint = '/api/admin/requests';
-                    title = 'Запросы на добавление';
-                } else if (type === 'lessonSuggestions') {
-                    endpoint = '/api/admin/lesson-suggestions';
-                    title = 'Темы уроков (предложения)';
-                } else {
-                    console.error('Неизвестный тип модерации:', type);
-                    return;
-                }
-
-                container.innerHTML = `<h3>${title}</h3><div class="moderation-list"><p class="loading">Загрузка...</p></div>`;
-                const listContainer = container.querySelector('.moderation-list');
-
-                const response = await fetch(endpoint, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-
-                if (!response.ok) throw new Error(await response.text());
-
-                const items = await response.json();
-                console.log(`Загружены ${type} для модерации:`, items);
-
-                if (items.length === 0) {
-                    listContainer.innerHTML = '<p>Нет элементов на модерации</p>';
-                    return;
-                }
-
-                //Сортировка по дате создания, новые сверху
-                const sortedItems = items.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-
-                listContainer.innerHTML = sortedItems.map(item => {
-                    const date = new Date(item.createdAt);
-                    const formattedDate = date.toLocaleDateString('ru-RU', {
-                        day: '2-digit',
-                        month: 'long',
-                        year: 'numeric'
-                    });
-
-                    if (type === 'reviews') {
-                        const userName = item.user?.fullName || item.userName || 'Аноним';
-                        return `
-                            <div class="moderation-item" data-id="${item.id}" data-type="review">
-                                <div class="moderation-header">
-                                    <div class="moderation-info">
-                                        <h4>${item.product?.name || 'Товар'} (ID: ${item.productId})</h4>
-                                        <p>Пользователь: ${userName} (ID: ${item.userId || 'N/A'})</p>
-                                        <p>Дата: ${formattedDate}</p>
-                                    </div>
-                                    <span class="status-badge status-${item.status || 'pending'}">${item.status || 'pending'}</span>
-                                </div>
-                                <div>
-                                    <strong>Оценка:</strong> ${'★'.repeat(item.rating)}${'☆'.repeat(5 - item.rating)} (${item.rating}/5)<br>
-                                    <strong>Отзыв:</strong> ${item.comment || item.text || '<em>Без комментария</em>'}
-                                </div>
-                                <div class="moderation-actions">
-                                    <button class="btn-action btn-approve" onclick="updateReviewStatus(${item.id}, 'approved')">Одобрить</button>
-                                    <button class="btn-action btn-reject" onclick="updateReviewStatus(${item.id}, 'rejected')">Отклонить</button>
-                                </div>
-                                <textarea class="admin-notes" id="notesReview${item.id}" placeholder="Примечания администратора...">${item.adminNotes || ''}</textarea>
-                                <button class="btn-action btn-view" style="margin-top: 0.5rem;" onclick="viewReviewDetails(${item.id})">Посмотреть</button>
-                            </div>
-                        `;
-                    } else if (type === 'requests') {
-                        const requesterName = item.user?.fullName || 'Аноним';
-                        return `
-                            <div class="moderation-item" data-id="${item.id}" data-type="request">
-                                <div class="moderation-header">
-                                    <div class="moderation-info">
-                                        <h4>${item.productName}</h4>
-                                        <p>Категория: ${item.category || 'Не указана'}</p>
-                                        <p>Пользователь: ${requesterName} (ID: ${item.userId || 'N/A'})</p>
-                                        <p>Дата: ${formattedDate}</p>
-                                    </div>
-                                    <span class="status-badge status-${item.status}">${item.status}</span>
-                                </div>
-                                <div>
-                                    <strong>Ссылка:</strong> ${item.url ? `<a href="${item.url}" target="_blank" rel="noopener noreferrer" class="admin-moderation-link">${item.url}</a>` : 'Не указана'}<br>
-                                    <strong>Комментарий:</strong> ${item.comment || '<em>Нет</em>'}
-                                </div>
-                                <div class="moderation-actions">
-                                    <button class="btn-action btn-approve" onclick="updateRequestStatus(${item.id}, 'approved')">Одобрить</button>
-                                    <button class="btn-action btn-reject" onclick="updateRequestStatus(${item.id}, 'rejected')">Отклонить</button>
-                                </div>
-                                <textarea class="admin-notes" id="notesRequest${item.id}" placeholder="Примечания администратора...">${item.adminNotes || ''}</textarea>
-                                <button class="btn-action btn-view" style="margin-top: 0.5rem;" onclick="viewRequestDetails(${item.id})">Посмотреть</button>
-                            </div>
-                        `;
-                    } else if (type === 'lessonSuggestions') {
-                        const safeText = (s) => String(s == null ? '' : s)
-                            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-                        const requesterName = item.userName || 'Аноним';
-                        const userEmail = item.userEmail ? ` (${safeText(item.userEmail)})` : '';
-                        return `
-                            <div class="moderation-item" data-id="${item.id}" data-type="lessonSuggestion">
-                                <div class="moderation-header">
-                                    <div class="moderation-info">
-                                        <h4>${safeText(item.topic)}</h4>
-                                        <p>Категория: ${safeText(item.category) || 'Не указана'}</p>
-                                        <p>Пользователь: ${safeText(requesterName)}${userEmail} (ID: ${item.userId || 'N/A'})</p>
-                                        <p>Дата: ${formattedDate}</p>
-                                    </div>
-                                    <span class="status-badge status-${item.status || 'pending'}">${item.status || 'pending'}</span>
-                                </div>
-                                <div>
-                                    <strong>Описание от пользователя:</strong><br>
-                                    ${item.message ? safeText(item.message).replace(/\n/g, '<br>') : '<em>Не указано</em>'}
-                                </div>
-                                <div class="moderation-actions">
-                                    <button class="btn-action btn-approve" onclick="updateLessonSuggestionStatus(${item.id}, 'approved')">Одобрить</button>
-                                    <button class="btn-action btn-reject" onclick="updateLessonSuggestionStatus(${item.id}, 'rejected')">Отклонить</button>
-                                    <button class="btn-action" style="background: #e2e8f0; color: #1f2937;" onclick="deleteLessonSuggestion(${item.id})">Удалить</button>
-                                </div>
-                                <textarea class="admin-notes" id="notesLessonSuggestion${item.id}" placeholder="Примечания администратора...">${safeText(item.adminNotes || '')}</textarea>
-                            </div>
-                        `;
-                    }
-                    return '';
-                }).join('');
-            } catch (error) {
-                console.error(`Ошибка загрузки ${type}:`, error);
-                const errTitle =
-                    type === 'reviews'
-                        ? 'Отзывы на модерации'
-                        : type === 'requests'
-                        ? 'Запросы на добавление'
-                        : 'Темы уроков (предложения)';
-                container.innerHTML = `<h3>${errTitle}</h3><div class="moderation-list"><p class="error-message">Ошибка: ${error.message}</p></div>`;
-            }
-        }
-
-        async function updateLessonSuggestionStatus(suggestionId, newStatus) {
-            const notesInput = document.getElementById(`notesLessonSuggestion${suggestionId}`);
-            const adminNotes = notesInput ? notesInput.value.trim() : '';
-            const token = localStorage.getItem('techAggregatorToken');
-            try {
-                const response = await fetch(`/api/admin/lesson-suggestions/${suggestionId}`, {
-                    method: 'PATCH',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        Authorization: `Bearer ${token}`
-                    },
-                    body: JSON.stringify({ status: newStatus, adminNotes })
-                });
-                if (!response.ok) throw new Error(await response.text());
-                if (typeof showCustomNotification === 'function') {
-                    showCustomNotification(
-                        `Предложение ID ${suggestionId} ${newStatus === 'approved' ? 'одобрено' : 'отклонено'}.`,
-                        'success'
-                    );
-                }
-                loadModerationData(currentModerationTab);
-            } catch (error) {
-                console.error('Ошибка обновления предложения темы:', error);
-                if (typeof showCustomNotification === 'function') {
-                    showCustomNotification(`Ошибка: ${error.message}`, 'error');
-                }
-            }
-        }
-
-        async function deleteLessonSuggestion(suggestionId) {
-            if (!confirm('Удалить это предложение темы безвозвратно?')) return;
-            const token = localStorage.getItem('techAggregatorToken');
-            try {
-                const response = await fetch(`/api/admin/lesson-suggestions/${suggestionId}`, {
-                    method: 'DELETE',
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-                if (!response.ok) throw new Error(await response.text());
-                if (typeof showCustomNotification === 'function') {
-                    showCustomNotification('Предложение удалено.', 'success');
-                }
-                loadModerationData(currentModerationTab);
-            } catch (error) {
-                console.error('Ошибка удаления предложения темы:', error);
-                if (typeof showCustomNotification === 'function') {
-                    showCustomNotification(`Ошибка: ${error.message}`, 'error');
-                }
-            }
-        }
-
-        async function loadAnalyticsData() {
-            const token = localStorage.getItem('techAggregatorToken');
-            try {
-                const statsRes = await fetch('/api/admin/analytics/stats', {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (!statsRes.ok) throw new Error(await statsRes.text());
-
-                const stats = await statsRes.json();
-                document.getElementById('dailyViews').textContent = Number.isFinite(stats.dailyViews) ? stats.dailyViews : 0;
-                document.getElementById('purchaseClicks').textContent = Number.isFinite(stats.purchaseClicks) ? stats.purchaseClicks : 0;
-                document.getElementById('serverLoad').textContent = `${Number.isFinite(stats.serverLoad) ? stats.serverLoad : 0}%`;
-                document.getElementById('responseTime').textContent = `${Number.isFinite(stats.responseTime) ? stats.responseTime : 0}ms`;
-
-                const onlineQuick = document.getElementById('onlineUsersQuick');
-                if (onlineQuick) onlineQuick.textContent = Number.isFinite(stats.onlineUsers) ? stats.onlineUsers : 0;
-                const loadQuick = document.getElementById('serverLoadQuick');
-                if (loadQuick) loadQuick.textContent = `${Number.isFinite(stats.serverLoad) ? stats.serverLoad : 0}%`;
-
-                const dailyViewsChange = Number.isFinite(stats.dailyViewsChange) ? stats.dailyViewsChange : 0;
-                const purchaseChange = Number.isFinite(stats.purchaseClicksChange) ? stats.purchaseClicksChange : 0;
-                document.querySelector('#dailyViews ~ .stat-change').textContent = `${dailyViewsChange > 0 ? '+' : ''}${dailyViewsChange}%`;
-                document.querySelector('#purchaseClicks ~ .stat-change').textContent = `${purchaseChange > 0 ? '+' : ''}${purchaseChange}%`;
-
-                const searchesRes = await fetch('/api/admin/analytics/popular-searches', {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (searchesRes.ok) {
-                    const searches = await searchesRes.json();
-                    const searchesContainer = document.getElementById('popularSearches');
-                    if (searches.length > 0) {
-                        searchesContainer.innerHTML = searches.map(search => `<div>${search.term} (${search.count} раз)</div>`).join('');
-                    } else {
-                        searchesContainer.innerHTML = '<div>Нет данных</div>';
-                    }
-                }
-            } catch (error) {
-                console.error('Ошибка загрузки аналитики:', error);
-                //Показать сообщение об ошибке в соответствующих блоках
-                document.querySelectorAll('#analytics .stat-value').forEach(el => el.textContent = 'Err');
-                document.getElementById('popularSearches').innerHTML = '<div>Ошибка загрузки</div>';
-            }
-        }
-
-        async function loadUsersTable() {
-            const tbody = document.getElementById('usersTableBody');
-            if (!tbody) return;
-
-            try {
-                const token = localStorage.getItem('techAggregatorToken');
-                const response = await fetch('/api/admin/users', {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-
-                if (!response.ok) throw new Error(await response.text());
-
-                const users = await response.json();
-                console.log('Загружены пользователи:', users);
-
-                tbody.innerHTML = users.map(user => {
-                    const joinDate = new Date(user.createdAt);
-                    const formattedDate = joinDate.toLocaleDateString('ru-RU', {
-                        day: '2-digit',
-                        month: 'long',
-                        year: 'numeric'
-                    });
-
-                    return `
-                        <tr>
-                            <td>${user.id}</td>
-                            <td>${user.email}</td>
-                            <td>${user.fullName || '—'}</td>
-                            <td>${user.role}</td>
-                            <td>${formattedDate}</td>
-                            <td>
-                                <button class="btn btn-outline btn-small" onclick="viewUser(${user.id})">Просм.</button>
-                                <button class="btn btn-outline btn-small" onclick="editUser(${user.id})">Ред.</button>
-                                <button class="btn btn-danger btn-small" onclick="deleteUser(${user.id})">Удл.</button>
-                                <button class="btn btn-primary btn-small" onclick="openMessageForm(${user.id}, '${user.email}')">Сообщение</button>
-                            </td>
-                        </tr>
-                    `;
-                }).join('');
-
-            } catch (error) {
-                console.error('Ошибка загрузки пользователей:', error);
-                tbody.innerHTML = `<tr><td colspan="6"><p class="error-message">Ошибка: ${error.message}</p></td></tr>`;
-            }
-        }
-
-        //Форма отправки сообщения пользователю
-        let currentMessageUserId = null;
-
-        function openMessageForm(userId, userEmail) {
-            currentMessageUserId = userId;
-            const container = document.getElementById('usersTable').parentElement;
-            let messageFormContainer = container.querySelector('.message-form-container');
-            if (!messageFormContainer) {
-                messageFormContainer = document.createElement('div');
-                messageFormContainer.className = 'message-form-container';
-                container.appendChild(messageFormContainer);
-            }
-
-            messageFormContainer.innerHTML = `
-                <h4>Отправить сообщение пользователю: ${userEmail}</h4>
-                <form id="messageForm">
-                    <div class="message-input-group">
-                        <label for="messageText">Текст сообщения:</label>
-                        <textarea id="messageText" name="messageText" rows="4" required placeholder="Введите ваше сообщение..."></textarea>
-                    </div>
-                    <div class="message-actions">
-                        <button type="button" class="btn btn-secondary" onclick="closeMessageForm()">Отмена</button>
-                        <button type="submit" class="btn btn-primary">Отправить</button>
-                    </div>
-                </form>
-            `;
-
-            document.getElementById('messageForm').addEventListener('submit', sendMessageToUser);
-        }
-
-        function closeMessageForm() {
-            const container = document.getElementById('usersTable').parentElement;
-            const messageFormContainer = container.querySelector('.message-form-container');
-            if (messageFormContainer) {
-                messageFormContainer.remove();
-            }
-            currentMessageUserId = null;
-        }
-
-        async function sendMessageToUser(event) {
-            event.preventDefault();
-            if (!currentMessageUserId) {
-                showCustomNotification('Ошибка: не выбран пользователь', 'error');
-                return;
-            }
-
-            const messageText = document.getElementById('messageText').value.trim();
-            if (!messageText) {
-                showCustomNotification('Пожалуйста, введите текст сообщения', 'info');
-                return;
-            }
-
-            const token = localStorage.getItem('techAggregatorToken');
-            try {
-                const response = await fetch(`/api/admin/users/${currentMessageUserId}/send-message`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify({ message: messageText })
-                });
-
-                if (!response.ok) throw new Error(await response.text());
-
-                const result = await response.json();
-                console.log('Сообщение отправлено:', result);
-                showCustomNotification('Сообщение отправлено пользователю.', 'success');
-                closeMessageForm(); //Закрываем форму после отправки
-            } catch (error) {
-                console.error('Ошибка отправки сообщения:', error);
-                showCustomNotification(`Ошибка: ${error.message}`, 'error');
-            }
-        }
-
-        //Вспомогательные функции
-        function viewUser(userId) { alert(`Просмотр пользователя ID: ${userId}`); }
-        function editUser(userId) { alert(`Редактирование пользователя ID: ${userId}`); }
-        async function deleteUser(userId) {
-            if (confirm(`Вы уверены, что хотите удалить пользователя ID ${userId}?`)) {
-                const token = localStorage.getItem('techAggregatorToken');
-                try {
-                    const response = await fetch(`/api/admin/users/${userId}`, {
-                        method: 'DELETE',
-                        headers: { 'Authorization': `Bearer ${token}` }
-                    });
-                    if (!response.ok) throw new Error(await response.text());
-                    showCustomNotification('Пользователь удалён.', 'success');
-                    loadUsersTable(); //Перезагрузим таблицу
-                } catch (error) {
-                    console.error('Ошибка удаления пользователя:', error);
-                    showCustomNotification(`Ошибка: ${error.message}`, 'error');
-                }
-            }
-        }
-
-        async function updateMainStats() {
-            const token = localStorage.getItem('techAggregatorToken');
-            try {
-                //Загрузка статистики
-                const statsRes = await fetch('/api/admin/dashboard-stats', {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (statsRes.ok) {
-                    const stats = await statsRes.json();
-                    document.getElementById('totalProducts').textContent = stats.totalProducts || 0;
-                    //pendingItems = pendingReviews + pendingRequests
-                    const pendingReviews = stats.pendingReviews || 0;
-                    const pendingRequests = stats.pendingRequests || 0;
-                    document.getElementById('pendingItems').textContent = pendingReviews + pendingRequests;
-                    document.getElementById('newReviews').textContent = pendingReviews; //Или общее количество новых
-                    document.getElementById('addRequests').textContent = pendingRequests; //Или общее количество новых
-                }
-                //Обновляем быстрые метрики в шапке и аналитике
-                loadAnalyticsData();
-            } catch (error) {
-                console.error('Ошибка обновления статистики:', error);
-                //Показать ошибку в соответствующих блоках
-                document.querySelectorAll('.stat-card-enhanced .stat-value').forEach(el => el.textContent = 'Err');
-            }
-        }
-
-        
-        document.addEventListener('DOMContentLoaded', function() {
-           
-            updateMainStats();
-        });
-
-      
-        setInterval(updateMainStats, 60000); 
-
-    </script>
-</body>
+    <script src="site-footer.js"></script>
+  </body>
 </html>
