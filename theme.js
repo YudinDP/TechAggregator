@@ -300,6 +300,7 @@
       new ResizeObserver(updateHeaderStickyOffset).observe(tools);
     }
     setTimeout(updateHeaderStickyOffset, 150);
+    window.addEventListener('load', updateHeaderStickyOffset);
   }
 
   window.refreshMobileNavAuth = refreshMobileNavAuth;
