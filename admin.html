@@ -1043,12 +1043,21 @@
         <div class="admin-tabs-container">
           <!-- Глобальный заголовок вкладок -->
           <div class="admin-tabs-header">
-            <button class="admin-tab-btn active" onclick="openAdminTab('moderation')">Модерация</button>
-            <button class="admin-tab-btn" onclick="openAdminTab('editor')">Редактор таблиц</button>
-            <button class="admin-tab-btn" onclick="openAdminTab('parser')">Добавление товара</button>
-            <button class="admin-tab-btn" onclick="openAdminTab('manualAdd')">Добавление вручную</button>
-            <button class="admin-tab-btn" onclick="openAdminTab('priceHistory')">История цен</button>
-            <button class="admin-tab-btn" onclick="openAdminTab('import')">Импорт</button>
+            <button class="admin-tab-btn active" data-admin-tab="moderation" onclick="openAdminTab('moderation')">
+              Модерация
+            </button>
+            <button class="admin-tab-btn" data-admin-tab="editor" onclick="openAdminTab('editor')">Редактор таблиц</button>
+            <button class="admin-tab-btn" data-admin-tab="parser" onclick="openAdminTab('parser')">Добавление товара</button>
+            <button class="admin-tab-btn" data-admin-tab="manualAdd" onclick="openAdminTab('manualAdd')">
+              Добавление вручную
+            </button>
+            <button class="admin-tab-btn" data-admin-tab="priceHistory" onclick="openAdminTab('priceHistory')">
+              История цен
+            </button>
+            <button class="admin-tab-btn" data-admin-tab="import" onclick="openAdminTab('import')">Импорт</button>
+            <button class="admin-tab-btn" data-admin-tab="bulkParse" onclick="openAdminTab('bulkParse')">
+              Массовый парсинг
+            </button>
           </div>
 
           <!-- Содержимое вкладок -->
@@ -1324,58 +1333,29 @@
               </div>
             </div>
 
-            <div
-              id="priceSyncPreviewModal"
-              style="
-                display: none;
-                position: fixed;
-                inset: 0;
-                z-index: 10000;
-                background: rgba(0, 0, 0, 0.45);
-                align-items: center;
-                justify-content: center;
-              "
-            >
-              <div
-                id="priceSyncModalPanel"
-                style="
-                  background: #fff;
-                  max-width: 960px;
-                  width: 92%;
-                  max-height: 85vh;
-                  overflow: auto;
-                  border-radius: 12px;
-                  padding: 1.25rem;
-                  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
-                "
-              >
-                <div
-                  style="
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                    margin-bottom: 1rem;
-                    gap: 1rem;
-                  "
-                >
-                  <h4 id="priceSyncModalTitle" style="margin: 0">Результаты проверки цен</h4>
+            <div id="priceSyncPreviewModal" class="app-modal-overlay app-modal-overlay--elevated" style="display: none">
+              <div id="priceSyncModalPanel" class="app-modal-panel app-modal-panel--wide" role="dialog">
+                <div class="app-modal-panel__header">
+                  <h4 id="priceSyncModalTitle">Результаты проверки цен</h4>
                   <button type="button" class="btn btn-secondary" id="btnPriceSyncModalClose">Закрыть</button>
                 </div>
-                <div id="priceSyncModalSummary" style="margin-bottom: 1rem; font-size: 0.9rem"></div>
-                <div style="overflow-x: auto">
-                  <table class="price-history-table" style="width: 100%; font-size: 0.85rem">
-                    <thead>
-                      <tr>
-                        <th>Товар</th>
-                        <th>Источник</th>
-                        <th>Было</th>
-                        <th>Стало</th>
-                        <th>Статус</th>
-                        <th>Комментарий</th>
-                      </tr>
-                    </thead>
-                    <tbody id="priceSyncPreviewTableBody"></tbody>
-                  </table>
+                <div class="app-modal-panel__body">
+                  <div id="priceSyncModalSummary" class="app-modal-panel__summary"></div>
+                  <div style="overflow-x: auto">
+                    <table class="price-history-table" style="width: 100%; font-size: 0.85rem">
+                      <thead>
+                        <tr>
+                          <th>Товар</th>
+                          <th>Источник</th>
+                          <th>Было</th>
+                          <th>Стало</th>
+                          <th>Статус</th>
+                          <th>Комментарий</th>
+                        </tr>
+                      </thead>
+                      <tbody id="priceSyncPreviewTableBody"></tbody>
+                    </table>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1465,6 +1445,98 @@
               </div>
             </div>
           </div>
+          <div id="bulkParse" class="admin-tab-content">
+            <h3>Массовый парсинг магазинов</h3>
+
+            <div class="import-grid" style="max-width: 960px">
+              <div class="admin-form-card">
+                <div class="form-group">
+                  <label for="bulkParseStore">Магазин *</label>
+                  <select id="bulkParseStore" class="search-input" style="max-width: 100%">
+                    <option value="dns">DNS (dns-shop.ru)</option>
+                    <option value="ozon">OZON (ozon.ru)</option>
+                    <option value="mvideo">М.Видео (mvideo.ru)</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="bulkParseCategory">Категория в каталоге *</label>
+                  <select id="bulkParseCategory" required class="search-input" style="max-width: 100%">
+                    <option value="">Выберите</option>
+                    <option value="smartphones">Смартфоны</option>
+                    <option value="laptops">Ноутбуки</option>
+                    <option value="tv">Телевизоры</option>
+                    <option value="headphones">Наушники</option>
+                    <option value="tablets">Планшеты</option>
+                    <option value="monitors">Мониторы</option>
+                    <option value="pc_components">Комплектующие ПК</option>
+                    <option value="gaming">Игровые консоли</option>
+                    <option value="accessories">Аксессуары</option>
+                    <option value="other">Другое</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="bulkParseLimit">Макс. товаров за запуск</label>
+                  <input
+                    type="number"
+                    id="bulkParseLimit"
+                    class="search-input"
+                    min="1"
+                    max="25"
+                    value="10"
+                    style="max-width: 120px"
+                  />
+                </div>
+                <div class="form-group">
+                  <label for="bulkParseListingUrl">URL страницы категории / каталога</label>
+                  <input
+                    type="url"
+                    id="bulkParseListingUrl"
+                    class="search-input"
+                    style="max-width: 100%"
+                    placeholder="https://www.dns-shop.ru/catalog/... или раздел OZON / М.Видео"
+                  />
+                </div>
+                <div class="form-group">
+                  <label for="bulkParseUrlsText">Или ссылки на карточки (по одной в строке)</label>
+                  <textarea
+                    id="bulkParseUrlsText"
+                    rows="5"
+                    style="width: 100%; font-family: ui-monospace, monospace; font-size: 0.8rem"
+                    placeholder="https://www.dns-shop.ru/product/...
+https://www.ozon.ru/product/..."
+                  ></textarea>
+                </div>
+                <div class="form-group">
+                  <label for="bulkParseProxy">HTTP-прокси (опционально)</label>
+                  <input
+                    type="text"
+                    id="bulkParseProxy"
+                    class="search-input"
+                    style="max-width: 100%"
+                    placeholder="http://host:port"
+                  />
+                </div>
+                <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.5rem">
+                  <button type="button" class="btn btn-secondary" id="bulkParseDiscoverBtn">Найти ссылки на странице</button>
+                  <button type="button" class="btn btn-primary" id="bulkParseRunBtn">Запустить парсинг</button>
+                </div>
+              </div>
+            </div>
+
+            <div
+              id="bulkParseLogPanel"
+              class="admin-form-card admin-bulk-parse-log"
+              style="display: none; margin-top: 1.25rem; max-width: 960px"
+            >
+              <h4 style="margin-top: 0">Журнал парсинга</h4>
+              <div id="bulkParseLogSummary" style="font-weight: 600; margin-bottom: 0.5rem"></div>
+              <ul
+                id="bulkParseLogList"
+                style="margin: 0; padding-left: 1.1rem; max-height: 220px; overflow: auto; font-size: 0.85rem"
+              ></ul>
+            </div>
+          </div>
+
           <div id="import" class="admin-tab-content">
             <h3>Импорт каталога</h3>
             <details
@@ -1687,7 +1759,7 @@
       </div>
     </footer>
     <script src="config.js"></script>
-    <script src="script.js?v=import2"></script>
+    <script src="script.js?v=bulkparse1"></script>
     <script src="site-footer.js"></script>
   </body>
 </html>

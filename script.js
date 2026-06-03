@@ -9008,6 +9008,8 @@ function initAdminImportTab() {
       showCustomNotification(err.message, 'error');
     }
   });
+
+  initializeAdminBulkParse();
 }
 
 //Сброс формы парсинга
@@ -9018,10 +9020,11 @@ function resetParseForm() {
 
 function openAdminTab(tabName) {
   document.querySelectorAll('.admin-tab-content').forEach((tab) => tab.classList.remove('active'));
-  document.querySelectorAll('.admin-tab-btn').forEach((btn) => btn.classList.remove('active'));
-  document.getElementById(tabName).classList.add('active');
-  //Обновим активные кнопки
-  event.target.classList.add('active');
+  document.querySelectorAll('.admin-tabs-header > .admin-tab-btn').forEach((btn) => btn.classList.remove('active'));
+  const tabEl = document.getElementById(tabName);
+  if (tabEl) tabEl.classList.add('active');
+  const tabBtn = document.querySelector(`.admin-tabs-header > .admin-tab-btn[data-admin-tab="${tabName}"]`);
+  if (tabBtn) tabBtn.classList.add('active');
 
   //Загрузка данных для вкладки при её открытии
   if (tabName === 'moderation') {
@@ -9036,8 +9039,165 @@ function openAdminTab(tabName) {
     fetchAdminPriceSyncStatus();
   } else if (tabName === 'import') {
     loadImportFeeds();
+  } else if (tabName === 'bulkParse') {
+    loadBulkParseConfig();
   }
   //Для 'parser' и 'manualAdd' ничего загружать не нужно, только открыть форму
+}
+
+async function loadBulkParseConfig() {
+  const token = localStorage.getItem('techAggregatorToken');
+  if (!token) return;
+  try {
+    const res = await fetch('http://localhost:3000/api/admin/bulk-parse/config', {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    if (!res.ok) return;
+    const data = await res.json();
+    const limitInput = document.getElementById('bulkParseLimit');
+    if (limitInput && data.maxUrls) {
+      limitInput.max = String(data.maxUrls);
+      if (parseInt(limitInput.value, 10) > data.maxUrls) limitInput.value = String(data.maxUrls);
+    }
+  } catch (e) {
+    console.warn('[bulk-parse] config:', e.message);
+  }
+}
+
+function renderBulkParseLog(data) {
+  const panel = document.getElementById('bulkParseLogPanel');
+  const sumEl = document.getElementById('bulkParseLogSummary');
+  const listEl = document.getElementById('bulkParseLogList');
+  if (!panel || !sumEl || !listEl) return;
+  const ps = data.parseSummary || {};
+  sumEl.textContent = `Обработано: ${ps.requested ?? '—'} · успешно: ${ps.parsed ?? 0} · ошибок: ${ps.failed ?? 0}`;
+  const lines = Array.isArray(data.parseLog) ? data.parseLog : [];
+  if (!lines.length) {
+    listEl.innerHTML = '<li style="color:#64748b;">Нет записей</li>';
+  } else {
+    listEl.innerHTML = lines
+      .map((row) => {
+        const color = row.status === 'ok' ? '#15803d' : '#b91c1c';
+        const label = row.status === 'ok' ? 'OK' : 'Ошибка';
+        return `<li style="color:${color};margin-bottom:0.35rem;"><strong>${label}</strong>: ${escapeHtml(
+          row.message || ''
+        )} <span style="color:#64748b;font-size:0.8rem;">${escapeHtml((row.url || '').slice(0, 120))}</span></li>`;
+      })
+      .join('');
+  }
+  panel.style.display = 'block';
+}
+
+function getBulkParseRequestBody() {
+  const store = document.getElementById('bulkParseStore')?.value || 'dns';
+  const category = document.getElementById('bulkParseCategory')?.value?.trim() || '';
+  const listingUrl = document.getElementById('bulkParseListingUrl')?.value?.trim() || '';
+  const urlsText = document.getElementById('bulkParseUrlsText')?.value?.trim() || '';
+  const proxy = document.getElementById('bulkParseProxy')?.value?.trim() || '';
+  const limit = parseInt(document.getElementById('bulkParseLimit')?.value, 10) || 10;
+  return { store, category, listingUrl, urlsText, proxy: proxy || undefined, limit };
+}
+
+async function postBulkParseDiscover() {
+  const token = localStorage.getItem('techAggregatorToken');
+  const { store, listingUrl, proxy, limit } = getBulkParseRequestBody();
+  if (!listingUrl) {
+    showCustomNotification('Укажите URL страницы категории.', 'info');
+    return;
+  }
+  const btn = document.getElementById('bulkParseDiscoverBtn');
+  if (btn) {
+    btn.disabled = true;
+    btn.dataset.prevLabel = btn.textContent;
+    btn.textContent = 'Поиск…';
+  }
+  try {
+    const res = await fetch('http://localhost:3000/api/admin/bulk-parse/discover', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ store, listingUrl, proxy, limit })
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || res.statusText);
+    const ta = document.getElementById('bulkParseUrlsText');
+    if (ta) ta.value = (data.urls || []).join('\n');
+    showCustomNotification(`Найдено ссылок: ${data.count ?? 0}`, data.count ? 'success' : 'warning');
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      if (btn.dataset.prevLabel) {
+        btn.textContent = btn.dataset.prevLabel;
+        delete btn.dataset.prevLabel;
+      }
+    }
+  }
+}
+
+async function postBulkParseRun() {
+  const token = localStorage.getItem('techAggregatorToken');
+  const body = getBulkParseRequestBody();
+  if (!body.category) {
+    showCustomNotification('Выберите категорию каталога.', 'info');
+    return;
+  }
+  if (!body.listingUrl && !body.urlsText) {
+    showCustomNotification('Укажите URL категории или список ссылок на товары.', 'info');
+    return;
+  }
+  const btn = document.getElementById('bulkParseRunBtn');
+  if (btn) {
+    btn.disabled = true;
+    btn.dataset.prevLabel = btn.textContent;
+    btn.textContent = 'Парсинг… (может занять несколько минут)';
+  }
+  try {
+    const res = await fetch('http://localhost:3000/api/admin/bulk-parse/run', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(body)
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || res.statusText);
+    renderBulkParseLog(data);
+    const jsonStore = document.getElementById('importJsonStore');
+    const jsonSeller = document.getElementById('importJsonSeller');
+    if (jsonStore && data.storeName) jsonStore.value = data.storeName;
+    if (jsonSeller && data.sellerName) jsonSeller.value = data.sellerName;
+    openAdminTab('import');
+    showImportPreviewFromResponse(data, 'json');
+    wireImportPreviewDelegation();
+    const valid = data.summary?.validCount ?? 0;
+    showCustomNotification(
+      valid
+        ? `Готово: ${valid} строк для импорта. Проверьте таблицу ниже и нажмите «Импортировать в каталог».`
+        : 'Парсинг завершён, но нет валидных строк для импорта. См. журнал.',
+      valid ? 'success' : 'warning'
+    );
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      if (btn.dataset.prevLabel) {
+        btn.textContent = btn.dataset.prevLabel;
+        delete btn.dataset.prevLabel;
+      }
+    }
+  }
+}
+
+function initializeAdminBulkParse() {
+  document.getElementById('bulkParseDiscoverBtn')?.addEventListener('click', () => {
+    postBulkParseDiscover().catch((err) => showCustomNotification(err.message, 'error'));
+  });
+  document.getElementById('bulkParseRunBtn')?.addEventListener('click', () => {
+    postBulkParseRun().catch((err) => showCustomNotification(err.message, 'error'));
+  });
+  loadBulkParseConfig();
 }
 
 //по истории цен на админ панели
@@ -9701,28 +9861,8 @@ function editProfile() {
   closeEditProfileModal();
 
   const modalHtml = `
-    <div class="modal-overlay" id="editProfileModalOverlay" style="
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background-color: rgba(0, 0, 0, 0.5);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      z-index: 1000;
-    ">
-      <div class="modal-content" id="editProfileModalContent" style="
-        background-color: white;
-        padding: 2rem;
-        border-radius: 8px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-        max-width: 500px;
-        width: 90%;
-        max-height: 90vh;
-        overflow-y: auto;
-      ">
+    <div class="modal-overlay" id="editProfileModalOverlay">
+      <div class="modal-content" id="editProfileModalContent">
         <h3>Редактировать профиль</h3>
         <form id="editProfileForm">
           <div class="form-group">
@@ -9828,28 +9968,8 @@ function changePassword() {
   closeChangePasswordModal();
 
   const modalHtml = `
-    <div class="modal-overlay" id="changePasswordModalOverlay" style="
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background-color: rgba(0, 0, 0, 0.5);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      z-index: 1000;
-    ">
-      <div class="modal-content" id="changePasswordModalContent" style="
-        background-color: white;
-        padding: 2rem;
-        border-radius: 8px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-        max-width: 500px;
-        width: 90%;
-        max-height: 90vh;
-        overflow-y: auto;
-      ">
+    <div class="modal-overlay" id="changePasswordModalOverlay">
+      <div class="modal-content" id="changePasswordModalContent">
         <h3>Сменить пароль</h3>
         <form id="changePasswordForm">
           <div class="form-group">

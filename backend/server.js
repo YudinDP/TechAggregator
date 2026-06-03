@@ -73,6 +73,13 @@ const {
   buildImportPreview,
   previewRowToRawImportRow
 } = require('./services/productImport');
+const {
+  discoverProductUrls,
+  runBulkStoreParse,
+  BULK_PARSE_MAX_HARD,
+  BULK_PARSE_DELAY_MS,
+  STORE_META
+} = require('./services/storeProductParser');
 const { isGoogleAuthConfigured, verifyGoogleIdToken, findOrCreateGoogleUser } = require('./services/googleAuth');
 
 const importUpload = multer({
@@ -4277,6 +4284,97 @@ app.post('/api/admin/import/json', authenticateToken, requireAdminRole, async (r
   } catch (error) {
     console.error('[import/json]', error);
     res.status(500).json({ error: error.message || 'Ошибка импорта' });
+  }
+});
+
+app.get('/api/admin/bulk-parse/config', authenticateToken, requireAdminRole, (req, res) => {
+  res.json({
+    maxUrls: BULK_PARSE_MAX_HARD,
+    delayMs: BULK_PARSE_DELAY_MS,
+    stores: Object.entries(STORE_META).map(([key, m]) => ({
+      key,
+      storeName: m.storeName,
+      sellerName: m.sellerName,
+      hosts: m.hosts
+    }))
+  });
+});
+
+app.post('/api/admin/bulk-parse/discover', authenticateToken, requireAdminRole, async (req, res) => {
+  try {
+    const listingUrl = String(req.body.listingUrl || '').trim();
+    const store = String(req.body.store || '').trim().toLowerCase();
+    const proxy = req.body.proxy ? String(req.body.proxy).trim() : null;
+    const limit = Math.min(BULK_PARSE_MAX_HARD, Math.max(1, parseInt(req.body.limit, 10) || 15));
+    if (!listingUrl) {
+      return res.status(400).json({ error: 'Укажите listingUrl (страница категории магазина).' });
+    }
+    if (!store || !STORE_META[store]) {
+      return res.status(400).json({ error: 'Укажите store: dns, ozon или mvideo.' });
+    }
+    const urls = await discoverProductUrls(store, listingUrl, limit, proxy);
+    res.json({
+      store,
+      listingUrl,
+      urls,
+      count: urls.length,
+      limit
+    });
+  } catch (error) {
+    console.error('[bulk-parse/discover]', error);
+    res.status(500).json({ error: error.message || 'Ошибка поиска ссылок' });
+  }
+});
+
+app.post('/api/admin/bulk-parse/run', authenticateToken, requireAdminRole, async (req, res) => {
+  try {
+    const category = String(req.body.category || '').trim();
+    const store = String(req.body.store || '').trim().toLowerCase();
+    const listingUrl = req.body.listingUrl ? String(req.body.listingUrl).trim() : '';
+    const proxy = req.body.proxy ? String(req.body.proxy).trim() : null;
+    const limit = Math.min(BULK_PARSE_MAX_HARD, Math.max(1, parseInt(req.body.limit, 10) || 15));
+    const urls = Array.isArray(req.body.urls)
+      ? req.body.urls.map((u) => String(u).trim()).filter(Boolean)
+      : req.body.urlsText
+        ? String(req.body.urlsText)
+            .split(/[\r\n,]+/)
+            .map((u) => u.trim())
+            .filter(Boolean)
+        : [];
+
+    const bulk = await runBulkStoreParse({
+      store,
+      category,
+      listingUrl: listingUrl || undefined,
+      urls,
+      proxy: proxy || undefined,
+      limit
+    });
+
+    const preview = buildImportPreview(bulk.importRows);
+    const fileErrors = [...(preview.fileErrors || [])];
+    if (bulk.summary.failed > 0) {
+      fileErrors.push(
+        `Парсинг: успешно ${bulk.summary.parsed} из ${bulk.summary.requested}, ошибок: ${bulk.summary.failed}. Строки с ошибками в журнале ниже.`
+      );
+    }
+
+    res.json({
+      format: 'bulk-parse',
+      storeKey: bulk.storeKey,
+      storeName: bulk.storeName,
+      sellerName: bulk.sellerName,
+      category: bulk.category,
+      productUrls: bulk.productUrls,
+      parseLog: bulk.parseLog,
+      parseSummary: bulk.summary,
+      discoverLog: bulk.log,
+      ...preview,
+      fileErrors
+    });
+  } catch (error) {
+    console.error('[bulk-parse/run]', error);
+    res.status(500).json({ error: error.message || 'Ошибка массового парсинга' });
   }
 });
 

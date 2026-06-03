@@ -3,7 +3,8 @@
  * Контент: learn/product-lessons/{category}.json
  */
 (function (global) {
-  const STORAGE_KEY = 'techNozoneLearnMode';
+  /** Раньше хранился в localStorage — очищаем при загрузке, режим только на текущей карточке. */
+  const LEGACY_STORAGE_KEY = 'techNozoneLearnMode';
   const lessonsCache = new Map();
 
   let state = {
@@ -61,18 +62,14 @@
     return slug || raw.replace(/[^a-z0-9_-]/gi, '').toLowerCase();
   }
 
-  function readStoredEnabled() {
+  function clearLegacyStoredEnabled() {
     try {
-      return localStorage.getItem(STORAGE_KEY) === '1';
-    } catch {
-      return false;
-    }
+      localStorage.removeItem(LEGACY_STORAGE_KEY);
+    } catch (_) {}
   }
 
-  function writeStoredEnabled(on) {
-    try {
-      localStorage.setItem(STORAGE_KEY, on ? '1' : '0');
-    } catch (_) {}
+  function isProductPage() {
+    return /product\.html/i.test(global.location?.pathname || '');
   }
 
   async function fetchProductLessons(category) {
@@ -275,6 +272,7 @@
       if (!state.enabled) return;
       state.panelMinimized = true;
       panelEl.classList.add('learn-panel--minimized');
+      syncPanelBehindModal();
     });
 
     panelEl.querySelector('.learn-panel__header')?.addEventListener('click', (e) => {
@@ -282,6 +280,7 @@
       if (state.panelMinimized && !e.target.closest('button')) {
         state.panelMinimized = false;
         panelEl.classList.remove('learn-panel--minimized');
+        syncPanelBehindModal();
       }
     });
 
@@ -323,6 +322,7 @@
     panelEl.classList.remove('learn-panel--minimized');
     clearSpecHighlights();
     document.body.classList.remove('learn-mode-on');
+    panelEl.classList.remove('learn-panel--behind-modal');
   }
 
   function updatePanelVisibility() {
@@ -338,6 +338,7 @@
     if (state.panelMinimized) panelEl.classList.add('learn-panel--minimized');
     else panelEl.classList.remove('learn-panel--minimized');
     renderPanelContent();
+    syncPanelBehindModal();
   }
 
   async function loadLessonsForProduct(product) {
@@ -352,9 +353,8 @@
     state.slideIndex = 0;
   }
 
-  async function setEnabled(on, { skipStore } = {}) {
+  async function setEnabled(on) {
     state.enabled = Boolean(on);
-    if (!skipStore) writeStoredEnabled(state.enabled);
     if (toggleInput) toggleInput.checked = state.enabled;
 
     if (!state.enabled) {
@@ -383,12 +383,42 @@
       <span id="learnModeToggleHint" class="learn-mode-toggle__hint"></span>
     `;
     toggleInput = host.querySelector('#learnModeToggle');
-    const initial = readStoredEnabled();
-    toggleInput.checked = initial;
-    state.enabled = initial;
+    toggleInput.checked = false;
+    state.enabled = false;
 
     toggleInput.addEventListener('change', () => {
       setEnabled(toggleInput.checked);
+    });
+  }
+
+  function syncPanelBehindModal() {
+    if (!panelEl) return;
+    const modalOpen = Boolean(document.querySelector('.app-modal-overlay'));
+    panelEl.classList.toggle('learn-panel--behind-modal', modalOpen && state.panelMinimized);
+  }
+
+  function bindModalAwareness() {
+    if (global.__learnModeModalObserver) return;
+    global.__learnModeModalObserver = new MutationObserver(syncPanelBehindModal);
+    global.__learnModeModalObserver.observe(document.body, { childList: true });
+    syncPanelBehindModal();
+  }
+
+  function teardownOnPageLeave() {
+    state.enabled = false;
+    state.product = null;
+    state.panelMinimized = false;
+    if (toggleInput) toggleInput.checked = false;
+    hideLearnPanel();
+    clearLegacyStoredEnabled();
+  }
+
+  function bindPageLifecycle() {
+    if (global.__learnModeLifecycleBound) return;
+    global.__learnModeLifecycleBound = true;
+    clearLegacyStoredEnabled();
+    global.addEventListener('pagehide', () => {
+      if (isProductPage()) teardownOnPageLeave();
     });
   }
 
@@ -406,10 +436,14 @@
     }
   }
 
+  bindPageLifecycle();
+  bindModalAwareness();
+
   global.LearnMode = {
     onProductDisplayed,
     setEnabled,
     isEnabled: () => state.enabled,
-    goSlide
+    goSlide,
+    teardownOnPageLeave
   };
 })(typeof window !== 'undefined' ? window : global);

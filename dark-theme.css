@@ -507,12 +507,105 @@
 }
 
 /* ================== МОДАЛЬНЫЕ ОКНА ================== */
+[data-theme='dark'] .modal {
+  background-color: rgba(0, 0, 0, 0.65);
+}
+
 [data-theme='dark'] .modal-content {
   background: var(--dt-bg-elevated);
   color: var(--dt-text);
 }
 
 [data-theme='dark'] .close {
+  color: var(--dt-text-secondary);
+}
+
+[data-theme='dark'] .modal-overlay,
+[data-theme='dark'] .app-modal-overlay {
+  background: rgba(0, 0, 0, 0.65);
+}
+
+[data-theme='dark'] .app-modal-panel {
+  background: var(--dt-bg-elevated);
+  color: var(--dt-text);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.45);
+}
+
+[data-theme='dark'] .app-modal-panel__header,
+[data-theme='dark'] .app-modal-panel__footer {
+  border-color: var(--dt-border);
+}
+
+[data-theme='dark'] .app-modal-panel__close {
+  color: var(--dt-text-secondary);
+}
+
+[data-theme='dark'] .app-modal-panel__close:hover {
+  color: var(--dt-text);
+}
+
+[data-theme='dark'] .app-modal-panel__specs-box {
+  background: var(--dt-bg-muted);
+  border-color: var(--dt-border);
+}
+
+[data-theme='dark'] .app-modal-panel__empty,
+[data-theme='dark'] .app-modal-panel__summary {
+  color: var(--dt-text-secondary);
+}
+
+[data-theme='dark'] .app-modal-panel__option span,
+[data-theme='dark'] .app-modal-panel__section-title {
+  color: var(--dt-text);
+}
+
+[data-theme='dark'] .app-modal-panel .price-history-table th,
+[data-theme='dark'] .app-modal-panel .price-history-table td {
+  color: var(--dt-text);
+  border-color: var(--dt-border);
+}
+
+[data-theme='dark'] .spec-hint-popover {
+  background: var(--dt-bg-elevated);
+  border-color: var(--dt-border-strong);
+  color: var(--dt-text);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+}
+
+[data-theme='dark'] .spec-hint-popover__header {
+  background: var(--dt-bg-elevated);
+  border-bottom-color: var(--dt-border);
+}
+
+[data-theme='dark'] .spec-hint-popover__title {
+  color: var(--dt-text);
+}
+
+[data-theme='dark'] .spec-hint-popover__close {
+  color: var(--dt-text-secondary);
+}
+
+[data-theme='dark'] .spec-hint-popover__close:hover,
+[data-theme='dark'] .spec-hint-popover__close:focus {
+  background: var(--dt-bg-muted);
+  color: var(--dt-text);
+}
+
+[data-theme='dark'] .spec-hint-popover__section h4 {
+  color: var(--dt-text);
+}
+
+[data-theme='dark'] .spec-hint-popover__section p,
+[data-theme='dark'] .spec-hint-popover__list,
+[data-theme='dark'] .spec-hint-popover__current {
+  color: var(--dt-text-secondary);
+}
+
+[data-theme='dark'] .spec-hint-popover__current-label {
+  color: var(--dt-text-muted);
+}
+
+[data-theme='dark'] .spec-hint-empty {
   color: var(--dt-text-secondary);
 }
 
@@ -1639,6 +1732,42 @@
 
 [data-theme='dark'] #import #importJsonTextarea::placeholder {
   color: var(--dt-text-muted);
+}
+
+[data-theme='dark'] #bulkParse h3 {
+  color: var(--dt-text);
+}
+
+[data-theme='dark'] #bulkParse .form-group label {
+  color: var(--dt-text-secondary);
+}
+
+[data-theme='dark'] #bulkParse .admin-form-card h5 {
+  color: var(--dt-text);
+}
+
+[data-theme='dark'] #bulkParse .search-input,
+[data-theme='dark'] #bulkParse select.search-input,
+[data-theme='dark'] #bulkParse #bulkParseUrlsText,
+[data-theme='dark'] #bulkParse input[type='url'],
+[data-theme='dark'] #bulkParse input[type='text'],
+[data-theme='dark'] #bulkParse input[type='number'] {
+  background: var(--dt-input-bg) !important;
+  color: var(--dt-text) !important;
+  border: 1px solid var(--dt-border-strong) !important;
+}
+
+[data-theme='dark'] #bulkParse #bulkParseUrlsText::placeholder {
+  color: var(--dt-text-muted);
+}
+
+[data-theme='dark'] #bulkParseLogPanel h4,
+[data-theme='dark'] #bulkParseLogSummary {
+  color: var(--dt-text);
+}
+
+[data-theme='dark'] #bulkParseLogList {
+  color: var(--dt-text-secondary);
 }
 
 [data-theme='dark'] #importFeedsTableWrap .price-history-table,
