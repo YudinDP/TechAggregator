@@ -1,0 +1,2346 @@
+{
+  "version": 2,
+  "generated": "2026-05-26T10:57:25.376Z",
+  "description": "Те же SKU, что sample-catalog-rich.json — изменены только цены (≈+2–6% от RRP, проверка обновления цен и истории).",
+  "items": [
+    {
+      "sku": "RICH-00001",
+      "name": "Samsung Galaxy S24 Ultra",
+      "category": "smartphones",
+      "price": 134347,
+      "url": "https://duckduckgo.com/?q=!ducky%20Samsung%20Galaxy%20S24%20Ultra%20site%3Amarket.yandex.ru",
+      "image_url": "https://c.dns-shop.ru/thumb/st4/fit/320/250/bea7fbccd18d15cf779b326244070f3f/db262d3bc3119c875d26ba4bdbf85a8ad1a01115c12e1be461417dac4c45a0ec.jpg",
+      "description": "Samsung Galaxy S24 Ultra. Категория: smartphones. Артикул поставщика: RICH-00001.",
+      "stock": 5,
+      "rating": 3.5,
+      "reviews": 20,
+      "specs": {
+        "screen_size": "6.8\"",
+        "ram_size": "12 ГБ",
+        "storage_capacity": "512 ГБ",
+        "os": "Android 14",
+        "cpu_model": "Snapdragon 8 Gen 3",
+        "brand": "Samsung",
+        "model_line": "Galaxy S24 Ultra"
+      }
+    },
+    {
+      "sku": "RICH-00002",
+      "name": "ASUS Vivobook 16X",
+      "category": "laptops",
+      "price": 76730,
+      "url": "https://duckduckgo.com/?q=!ducky%20ASUS%20Vivobook%2016X%20site%3Amarket.yandex.ru",
+      "image_url": "https://c.dns-shop.ru/thumb/st1/fit/320/250/d05659b12938dc8a99aeda89cf6245f7/d39582f3992e7f1e64333185457203e52ccf14ffb9f2841a224fa240b2dc4061.jpg",
+      "description": "ASUS Vivobook 16X. Категория: laptops. Артикул поставщика: RICH-00002.",
+      "stock": 18,
+      "rating": 3.6,
+      "reviews": 37,
+      "specs": {
+        "screen_size": "16\"",
+        "cpu_model": "Intel Core i7-13620H",
+        "ram_size": "16 ГБ",
+        "storage_capacity": "512 ГБ SSD",
+        "os": "Windows 11",
+        "brand": "ASUS",
+        "model_line": "Vivobook 16X"
+      }
+    },
+    {
+      "sku": "RICH-00003",
+      "name": "Apple iPad Pro 12.9 M2",
+      "category": "tablets",
+      "price": 131636,
+      "url": "https://duckduckgo.com/?q=!ducky%20Apple%20iPad%20Pro%2012.9%20M2%20site%3Amarket.yandex.ru",
+      "image_url": "https://c.dns-shop.ru/thumb/st1/fit/320/250/96abce3286ced5588645e658ea4ce10d/91df1c340702a992c1d86f77005e5080f4fb753cf701247196f59d3463b4049d.png",
+      "description": "Apple iPad Pro 12.9 M2. Категория: tablets. Артикул поставщика: RICH-00003.",
+      "stock": 31,
+      "rating": 3.7,
+      "reviews": 54,
+      "specs": {
+        "screen_size": "12.9\"",
+        "ram_size": "8 ГБ",
+        "storage_capacity": "256 ГБ",
+        "os": "iPadOS 17",
+        "cpu_model": "Apple M2",
+        "brand": "Apple",
+        "model_line": "iPad Pro 12.9 M2"
+      }
+    },
+    {
+      "sku": "RICH-00004",
+      "name": "Sony WH-1000XM5",
+      "category": "headphones",
+      "price": 33385,
+      "url": "https://duckduckgo.com/?q=!ducky%20Sony%20WH-1000XM5%20site%3Amarket.yandex.ru",
+      "image_url": "https://c.dns-shop.ru/thumb/st4/fit/320/250/63aef9f158af2ed60e07edf33325ee64/2df2632475190df8324dd72376786ed737facef7dc387bf5fcd76f88d5fc28ec.jpg",
+      "description": "Sony WH-1000XM5. Категория: headphones. Артикул поставщика: RICH-00004.",
+      "stock": 44,
+      "rating": 3.8,
+      "reviews": 71,
+      "specs": {
+        "type": "полноразмерные",
+        "wireless_standard": "Bluetooth 5.2",
+        "anc_type": "активное",
+        "battery_life": "30 ч",
+        "brand": "Sony",
+        "model_line": "WH-1000XM5"
+      }
+    },
+    {
+      "sku": "RICH-00005",
+      "name": "LG OLED C4 55",
+      "category": "tv",
+      "price": 165236,
+      "url": "https://duckduckgo.com/?q=!ducky%20LG%20OLED%20C4%2055%20site%3Amarket.yandex.ru",
+      "image_url": "https://c.dns-shop.ru/thumb/st1/fit/320/250/24e39f84ebaf50eb6b80985a9b6bd0e7/f06d73f52eacae93c49f65c9e545213130c29529b49beb1ff2ee5984c0e9ea4e.jpg",
+      "description": "LG OLED C4 55. Категория: tv. Артикул поставщика: RICH-00005.",
+      "stock": 57,
+      "rating": 3.9,
+      "reviews": 88,
+      "specs": {
+        "diagonal_in": "55\"",
+        "screen_resolution": "4K UHD",
+        "hdr_support": "Dolby Vision",
+        "smart_platform": "webOS 24",
+        "brand": "LG",
+        "model_line": "OLED C4 55"
+      }
+    },
+    {
+      "sku": "RICH-00006",
+      "name": "LG 27GP850-B",
+      "category": "monitors",
+      "price": 35772,
+      "url": "https://duckduckgo.com/?q=!ducky%20LG%2027GP850-B%20site%3Amarket.yandex.ru",
+      "image_url": "https://c.dns-shop.ru/thumb/st1/fit/320/250/fc897fbef2d4415fc989c92f92ce9864/cfda853ff6c9064c8442e4565a6993407d931092a0ad5b2018d0e3248fffa32a.jpg",
+      "description": "LG 27GP850-B. Категория: monitors. Артикул поставщика: RICH-00006.",
+      "stock": 70,
+      "rating": 4,
+      "reviews": 105,
+      "specs": {
+        "panel_type": "IPS",
+        "screen_resolution": "2560×1440",
+        "refresh_rate": "165 Гц",
+        "adaptive_sync": "G-Sync Compatible",
+        "brand": "LG",
+        "model_line": "27GP850-B"
+      }
+    },
+    {
+      "sku": "RICH-00007",
+      "name": "Logitech MX Keys S",
+      "category": "keyboards",
+      "price": 14743,
+      "url": "https://duckduckgo.com/?q=!ducky%20Logitech%20MX%20Keys%20S%20site%3Amarket.yandex.ru",
+      "image_url": "https://c.dns-shop.ru/thumb/st1/fit/320/250/ba947f544d88aa942f1ef093f5544c3e/ed5b35a427e75897e81e0f36995d859240deb1d1149d9862e4025179df0a399b.jpg",
+      "description": "Logitech MX Keys S. Категория: keyboards. Артикул поставщика: RICH-00007.",
+      "stock": 83,
+      "rating": 4.1,
+      "reviews": 122,
+      "specs": {
+        "keyboard_layout": "RU/EN",
+        "connectivity": "Bluetooth + USB",
+        "keyboard_backlight": "белая подсветка",
+        "brand": "Logitech",
+        "model_line": "MX Keys S"
+      }
+    },
+    {
+      "sku": "RICH-00008",
+      "name": "Logitech MX Master 3S",
+      "category": "mouses",
+      "price": 11466,
+      "url": "https://duckduckgo.com/?q=!ducky%20Logitech%20MX%20Master%203S%20site%3Amarket.yandex.ru",
+      "image_url": "https://c.dns-shop.ru/thumb/st4/fit/320/250/7f99793d326d6019832112d13456cd07/1a8baaeca80131cc2c53cfbc64d423bc01a9eb106aa42ae6ff11ec07848f446c.jpg",
+      "description": "Logitech MX Master 3S. Категория: mouses. Артикул поставщика: RICH-00008.",
+      "stock": 96,
+      "rating": 4.2,
+      "reviews": 139,
+      "specs": {
+        "connectivity": "Bluetooth + Bolt USB",
+        "sensor": "Darkfield 8000 DPI",
+        "brand": "Logitech",
+        "model_line": "MX Master 3S"
+      }
+    },
+    {
+      "sku": "RICH-00009",
+      "name": "NVIDIA GeForce RTX 4070",
+      "category": "graphics_cards",
+      "price": 72204,
+      "url": "https://duckduckgo.com/?q=!ducky%20NVIDIA%20GeForce%20RTX%204070%20site%3Amarket.yandex.ru",
+      "image_url": "https://c.dns-shop.ru/thumb/st1/fit/320/250/3b268b85339f55fb988437b4c5ab1b2e/1bbb8b5cd9bfd148a9bbb35097c3a48824cb0b464af47e6a39c9d7f5118a486f.jpg",
+      "description": "NVIDIA GeForce RTX 4070. Категория: graphics_cards. Артикул поставщика: RICH-00009.",
+      "stock": 109,
+      "rating": 4.3,
+      "reviews": 156,
+      "specs": {
+        "vram_size": "12 ГБ GDDR6X",
+        "tdp": "200 Вт",
+        "cooling_type": "двухвентиляторная",
+        "brand": "NVIDIA",
+        "model_line": "GeForce RTX 4070"
+      }
+    },
+    {
+      "sku": "RICH-00010",
+      "name": "Intel Core i5-14400F",
+      "category": "cpus",
+      "price": 22230,
+      "url": "https://duckduckgo.com/?q=!ducky%20Intel%20Core%20i5-14400F%20site%3Amarket.yandex.ru",
+      "image_url": "https://c.dns-shop.ru/thumb/st1/fit/320/250/8a91bc813b66d250e4fd935fcf951a18/7f092121d22d5f60f8d4eecbd7bbf72592ca76f16080b13f8ea989853303f234.jpg",
+      "description": "Intel Core i5-14400F. Категория: cpus. Артикул поставщика: RICH-00010.",
+      "stock": 122,
+      "rating": 4.4,
+      "reviews": 173,
+      "specs": {
+        "socket": "LGA1700",
+        "tdp_watt": "65 Вт",
+        "cores": "10 (6P+4E)",
+        "brand": "Intel",
+        "model_line": "Core i5-14400F"
+      }
+    },
+    {
+      "sku": "RICH-00011",
+      "name": "Kingston FURY Beast DDR5 32 ГБ",
+      "category": "ram",
+      "price": 11451,
+      "url": "https://duckduckgo.com/?q=!ducky%20Kingston%20FURY%20Beast%20DDR5%2032%20%D0%93%D0%91%20site%3Amarket.yandex.ru",
+      "image_url": "https://c.dns-shop.ru/thumb/st4/fit/320/250/a38933ba0ff9d898f24b1bfd78f3134d/4e836d64618e0ce56357a6a571fa4d0f644a5600fe297db94f2fc97216c46992.jpg",
+      "description": "Kingston FURY Beast DDR5 32 ГБ. Категория: ram. Артикул поставщика: RICH-00011.",
+      "stock": 135,
+      "rating": 4.5,
+      "reviews": 190,
+      "specs": {
+        "ram_speed": "6000 МТ/с",
+        "ram_type": "DDR5",
+        "ram_latency": "CL36",
+        "brand": "Kingston",
+        "model_line": "FURY Beast DDR5 32 ГБ"
+      }
+    },
+    {
+      "sku": "RICH-00012",
+      "name": "Samsung T7 Shield 2 ТБ",
+      "category": "external_drives",
+      "price": 17519,
+      "url": "https://duckduckgo.com/?q=!ducky%20Samsung%20T7%20Shield%202%20%D0%A2%D0%91%20site%3Amarket.yandex.ru",
+      "image_url": "https://c.dns-shop.ru/thumb/st1/fit/320/250/5e18587ed3da787f6e4ff90e7d1930d2/1660722120feb664cf5747eafa5f3526df62ea0c1b1a8b57f77c0208748cabc3.jpg",
+      "description": "Samsung T7 Shield 2 ТБ. Категория: external_drives. Артикул поставщика: RICH-00012.",
+      "stock": 148,
+      "rating": 4.6,
+      "reviews": 207,
+      "specs": {
+        "interface": "USB 3.2 Gen 2",
+        "drive_type": "SSD",
+        "transfer_speed": "до 1050 МБ/с",
+        "brand": "Samsung",
+        "model_line": "T7 Shield 2 ТБ"
+      }
+    },
+    {
+      "sku": "RICH-00013",
+      "name": "Apple Watch Series 9 45mm",
+      "category": "smartwatches",
+      "price": 45901,
+      "url": "https://duckduckgo.com/?q=!ducky%20Apple%20Watch%20Series%209%2045mm%20site%3Amarket.yandex.ru",
+      "image_url": "https://c.dns-shop.ru/thumb/st4/fit/320/250/5973d6e3d54cc10bd685927cbfad786f/cdd9cb9980e86cfe936b7cddeaa47bb2339d341b42d445e73f4707ceb7b2fbbe.jpg",
+      "description": "Apple Watch Series 9 45mm. Категория: smartwatches. Артикул поставщика: RICH-00013.",
+      "stock": 161,
+      "rating": 4.7,
+      "reviews": 224,
+      "specs": {
+        "water_resistance_rating": "WR50",
+        "gps_type": "GPS + Cellular",
+        "battery_life": "до 18 ч",
+        "brand": "Apple",
+        "model_line": "Watch Series 9 45mm"
+      }
+    },
+    {
+      "sku": "RICH-00014",
+      "name": "Canon EOS R10 Kit",
+      "category": "cameras",
+      "price": 115592,
+      "url": "https://duckduckgo.com/?q=!ducky%20Canon%20EOS%20R10%20Kit%20site%3Amarket.yandex.ru",
+      "image_url": "https://c.dns-shop.ru/thumb/st1/fit/320/250/b1cba7b1988d09b6c1be7ab11a3b4daf/25f025d1311341b054c197f164ae80cbdf95e57af6df149601586ed9e2b617df.jpg",
+      "description": "Canon EOS R10 Kit. Категория: cameras. Артикул поставщика: RICH-00014.",
+      "stock": 174,
+      "rating": 4.8,
+      "reviews": 241,
+      "specs": {
+        "sensor_size": "APS-C",
+        "lens_mount": "RF",
+        "video_resolution": "4K 60p",
+        "brand": "Canon",
+        "model_line": "EOS R10 Kit"
+      }
+    },
+    {
+      "sku": "RICH-00015",
+      "name": "Sony PlayStation 5 Slim",
+      "category": "gaming",
+      "price": 57213,
+      "url": "https://duckduckgo.com/?q=!ducky%20Sony%20PlayStation%205%20Slim%20site%3Amarket.yandex.ru",
+      "image_url": "https://c.dns-shop.ru/thumb/st1/fit/320/250/12f6dd1faab7be255ffab3192b34c600/ad8e35b2b6a5965a0cb49f0d054156fbc735a07c13522551301682c8ea080299.jpg",
+      "description": "Sony PlayStation 5 Slim. Категория: gaming. Артикул поставщика: RICH-00015.",
+      "stock": 7,
+      "rating": 4.9,
+      "reviews": 258,
+      "specs": {
+        "storage_capacity_gb": "1 ТБ SSD",
+        "max_resolution": "4K",
+        "max_fps": "120",
+        "brand": "Sony",
+        "model_line": "PlayStation 5 Slim"
+      }
+    },
+    {
+      "sku": "RICH-00016",
+      "name": "Samsung Galaxy S23 FE",
+      "category": "smartphones",
+      "price": 56625,
+      "url": "https://duckduckgo.com/?q=!ducky%20Samsung%20Galaxy%20S23%20FE%20site%3Amarket.yandex.ru",
+      "image_url": "https://c.dns-shop.ru/thumb/st1/fit/320/250/bc152783c30c04abff1908d35646f074/ee2878305b2de008d4d4a9f122825d1f362566b70b9252a04580cc211c4cb839.jpg",
+      "description": "Samsung Galaxy S23 FE. Категория: smartphones. Артикул поставщика: RICH-00016.",
+      "stock": 20,
+      "rating": 3.5,
+      "reviews": 275,
+      "specs": {
+        "screen_size": "6.4\"",
+        "ram_size": "8 ГБ",
+        "storage_capacity": "256 ГБ",
+        "os": "Android 14",
+        "cpu_model": "Snapdragon 8 Gen 1",
+        "brand": "Samsung",
+        "model_line": "Galaxy S23 FE"
+      }
+    },
+    {
+      "sku": "RICH-00017",
+      "name": "ASUS Zenbook 14 OLED",
+      "category": "laptops",
+      "price": 116671,
+      "url": "https://duckduckgo.com/?q=!ducky%20ASUS%20Zenbook%2014%20OLED%20site%3Amarket.yandex.ru",
+      "image_url": "https://c.dns-shop.ru/thumb/st1/fit/320/250/a3abb267bb26ae5b2e2888785ec03437/25a03749e894705747859e7995a69b9b6e5297bd1588e06f9acc0e5a7ee2f07c.jpg",
+      "description": "ASUS Zenbook 14 OLED. Категория: laptops. Артикул поставщика: RICH-00017.",
+      "stock": 33,
+      "rating": 3.6,
+      "reviews": 292,
+      "specs": {
+        "screen_size": "14\"",
+        "cpu_model": "Intel Core Ultra 7",
+        "ram_size": "16 ГБ",
+        "storage_capacity": "1 ТБ SSD",
+        "os": "Windows 11",
+        "brand": "ASUS",
+        "model_line": "Zenbook 14 OLED"
+      }
+    },
+    {
+      "sku": "RICH-00018",
+      "name": "Apple iPad Air 11 M2",
+      "category": "tablets",
+      "price": 73492,
+      "url": "https://duckduckgo.com/?q=!ducky%20Apple%20iPad%20Air%2011%20M2%20site%3Amarket.yandex.ru",
+      "image_url": "https://c.dns-shop.ru/thumb/st1/fit/320/250/a2fc60128860cf3c08def5d4ae864d19/d02c5189ce2cf0e862bb6f6c08d4555b1041ea829a1c735aef1a00a3f2f3469c.jpg",
+      "description": "Apple iPad Air 11 M2. Категория: tablets. Артикул поставщика: RICH-00018.",
+      "stock": 46,
+      "rating": 3.7,
+      "reviews": 309,
+      "specs": {
+        "screen_size": "11\"",
+        "ram_size": "8 ГБ",
+        "storage_capacity": "256 ГБ",
+        "os": "iPadOS 17",
+        "cpu_model": "Apple M2",
+        "brand": "Apple",
+        "model_line": "iPad Air 11 M2"
+      }
+    },
+    {
+      "sku": "RICH-00019",
+      "name": "Sony WH-CH720N",
+      "category": "headphones",
+      "price": 11039,
+      "url": "https://duckduckgo.com/?q=!ducky%20Sony%20WH-CH720N%20site%3Amarket.yandex.ru",
+      "image_url": "https://c.dns-shop.ru/thumb/st1/fit/320/250/550465211777eb0ede5c3f4a16fb0f71/6da6cda56bcfc7c5fe6dbe54f1a5c9546f737ae3fc6c4258bb2ae4731d545fea.jpg",
+      "description": "Sony WH-CH720N. Категория: headphones. Артикул поставщика: RICH-00019.",
+      "stock": 59,
+      "rating": 3.8,
+      "reviews": 326,
+      "specs": {
+        "type": "полноразмерные",
+        "wireless_standard": "Bluetooth 5.2",
+        "anc_type": "активное",
+        "battery_life": "35 ч",
+        "brand": "Sony",
+        "model_line": "WH-CH720N"
+      }
+    },
+    {
+      "sku": "RICH-00020",
+      "name": "LG QNED81 65",
+      "category": "tv",
+      "price": 111970,
+      "url": "https://duckduckgo.com/?q=!ducky%20LG%20QNED81%2065%20site%3Amarket.yandex.ru",
+      "image_url": "https://c.dns-shop.ru/thumb/st1/fit/320/250/584a761fa7ef95f82eb6fdc6a49d0fb6/544b4ffed85fac37d44645b00c38c662c6e462cb04a9345774d3b7a4476d3bc9.png",
+      "description": "LG QNED81 65. Категория: tv. Артикул поставщика: RICH-00020.",
+      "stock": 72,
+      "rating": 3.9,
+      "reviews": 343,
+      "specs": {
+        "diagonal_in": "65\"",
+        "screen_resolution": "4K",
+        "hdr_support": "HDR10",
+        "smart_platform": "webOS 24",
+        "brand": "LG",
+        "model_line": "QNED81 65"
+      }
+    },
+    {
+      "sku": "RICH-00021",
+      "name": "LG 32GQ950-B",
+      "category": "monitors",
+      "price": 78640,
+      "url": "https://duckduckgo.com/?q=!ducky%20LG%2032GQ950-B%20site%3Amarket.yandex.ru",
+      "image_url": "https://c.dns-shop.ru/thumb/st1/fit/320/250/94c82dceecadc2c3583dbce47f7ab6ff/77e7301eae74cd5fc9df831d2b035b4b259ad21135946bd378ad58afb4b32ac2.jpg",
+      "description": "LG 32GQ950-B. Категория: monitors. Артикул поставщика: RICH-00021.",
+      "stock": 85,
+      "rating": 4,
+      "reviews": 360,
+      "specs": {
+        "panel_type": "Nano IPS",
+        "screen_resolution": "4K",
+        "refresh_rate": "160 Гц",
+        "adaptive_sync": "FreeSync Premium Pro",
+        "brand": "LG",
+        "model_line": "32GQ950-B"
+      }
+    },
+    {
+      "sku": "RICH-00022",
+      "name": "Logitech G915 TKL",
+      "category": "keyboards",
+      "price": 25952,
+      "url": "https://duckduckgo.com/?q=!ducky%20Logitech%20G915%20TKL%20site%3Amarket.yandex.ru",
+      "image_url": "https://c.dns-shop.ru/thumb/st1/fit/320/250/4bdc949b6b5c99182ca8f16a81d61190/68265204858dec7068dedaa58e29271380ee7a294143dc34a2664d38e120d2da.png",
+      "description": "Logitech G915 TKL. Категория: keyboards. Артикул поставщика: RICH-00022.",
+      "stock": 98,
+      "rating": 4.1,
+      "reviews": 377,
+      "specs": {
+        "keyboard_layout": "RU/EN",
+        "connectivity": "Lightspeed + Bluetooth",
+        "keyboard_backlight": "RGB",
+        "brand": "Logitech",
+        "model_line": "G915 TKL"
+      }
+    },
+    {
+      "sku": "RICH-00023",
+      "name": "Logitech G Pro X Superlight 2",
+      "category": "mouses",
+      "price": 16440,
+      "url": "https://duckduckgo.com/?q=!ducky%20Logitech%20G%20Pro%20X%20Superlight%202%20site%3Amarket.yandex.ru",
+      "image_url": "https://c.dns-shop.ru/thumb/st1/fit/320/250/81faaf01109ffa1f7cde98f2947927e9/87573ff00238829e3251398958bb45e4fd8226ad597831f4283baa1313518269.jpg",
+      "description": "Logitech G Pro X Superlight 2. Категория: mouses. Артикул поставщика: RICH-00023.",
+      "stock": 111,
+      "rating": 4.2,
+      "reviews": 394,
+      "specs": {
+        "connectivity": "Lightspeed",
+        "sensor": "HERO 2 32K",
+        "brand": "Logitech",
+        "model_line": "G Pro X Superlight 2"
+      }
+    },
+    {
+      "sku": "RICH-00024",
+      "name": "NVIDIA GeForce RTX 4080 Super",
+      "category": "graphics_cards",
+      "price": 137595,
+      "url": "https://duckduckgo.com/?q=!ducky%20NVIDIA%20GeForce%20RTX%204080%20Super%20site%3Amarket.yandex.ru",
+      "image_url": "https://c.dns-shop.ru/thumb/st1/fit/320/250/c1b6cd85b8ce5f0afbb472124fcdecd1/c39a0016caf53e948e8d29f43ed6db594838351d7cbd0a1b94f26423207c5a9b.jpg",
+      "description": "NVIDIA GeForce RTX 4080 Super. Категория: graphics_cards. Артикул поставщика: RICH-00024.",
+      "stock": 124,
+      "rating": 4.3,
+      "reviews": 411,
+      "specs": {
+        "vram_size": "16 ГБ GDDR6X",
+        "tdp": "320 Вт",
+        "cooling_type": "трёхвентиляторная",
+        "brand": "NVIDIA",
+        "model_line": "GeForce RTX 4080 Super"
+      }
+    },
+    {
+      "sku": "RICH-00025",
+      "name": "Intel Core i5-14600KF",
+      "category": "cpus",
+      "price": 33529,
+      "url": "https://duckduckgo.com/?q=!ducky%20Intel%20Core%20i5-14600KF%20site%3Amarket.yandex.ru",
+      "image_url": "https://c.dns-shop.ru/thumb/st4/fit/320/250/04edd4762954962519c6ac68e6348325/4037d46c89ca05f8c1a0d40564cc322949ee5732e4715b0b6dff8f9cd91989c6.jpg",
+      "description": "Intel Core i5-14600KF. Категория: cpus. Артикул поставщика: RICH-00025.",
+      "stock": 137,
+      "rating": 4.4,
+      "reviews": 428,
+      "specs": {
+        "socket": "LGA1700",
+        "tdp_watt": "125 Вт",
+        "cores": "14 (6P+8E)",
+        "brand": "Intel",
+        "model_line": "Core i5-14600KF"
+      }
+    },
+    {
+      "sku": "RICH-00026",
+      "name": "Kingston FURY Renegade DDR5 32 ГБ",
+      "category": "ram",
+      "price": 14519,
+      "url": "https://duckduckgo.com/?q=!ducky%20Kingston%20FURY%20Renegade%20DDR5%2032%20%D0%93%D0%91%20site%3Amarket.yandex.ru",
+      "image_url": "https://c.dns-shop.ru/thumb/st1/fit/320/250/c95146a543647a60c340bf2ed7da9f83/aaa63551586177bfb8ab5de4cb75245ee6032297ca7109844f2a04c9d3a005cf.jpg",
+      "description": "Kingston FURY Renegade DDR5 32 ГБ. Категория: ram. Артикул поставщика: RICH-00026.",
+      "stock": 150,
+      "rating": 4.5,
+      "reviews": 445,
+      "specs": {
+        "ram_speed": "6400 МТ/с",
+        "ram_type": "DDR5",
+        "ram_latency": "CL32",
+        "brand": "Kingston",
+        "model_line": "FURY Renegade DDR5 32 ГБ"
+      }
+    },
+    {
+      "sku": "RICH-00027",
+      "name": "Samsung T9 1 ТБ",
+      "category": "external_drives",
+      "price": 13887,
+      "url": "https://duckduckgo.com/?q=!ducky%20Samsung%20T9%201%20%D0%A2%D0%91%20site%3Amarket.yandex.ru",
+      "image_url": "https://c.dns-shop.ru/thumb/st1/fit/320/250/748dabce4a339f7b44afdbba0a5dfcdf/d2d2e3feceefbe76c7dd464d8769d463f35b3e9c8200ff9a4006d134a4a28268.jpg",
+      "description": "Samsung T9 1 ТБ. Категория: external_drives. Артикул поставщика: RICH-00027.",
+      "stock": 163,
+      "rating": 4.6,
+      "reviews": 462,
+      "specs": {
+        "interface": "USB 3.2 Gen 2x2",
+        "drive_type": "SSD",
+        "transfer_speed": "до 2000 МБ/с",
+        "brand": "Samsung",
+        "model_line": "T9 1 ТБ"
+      }
+    },
+    {
+      "sku": "RICH-00028",
+      "name": "Apple Watch SE 2 44mm",
+      "category": "smartwatches",
+      "price": 25535,
+      "url": "https://duckduckgo.com/?q=!ducky%20Apple%20Watch%20SE%202%2044mm%20site%3Amarket.yandex.ru",
+      "image_url": "https://c.dns-shop.ru/thumb/st1/fit/320/250/5e4373357e00cfd7c1c4dbbb484050f7/a74348748649159137442a2ebfcad31f4e620ee4626e310fd30f0514342da8a9.jpg",
+      "description": "Apple Watch SE 2 44mm. Категория: smartwatches. Артикул поставщика: RICH-00028.",
+      "stock": 176,
+      "rating": 4.7,
+      "reviews": 479,
+      "specs": {
+        "water_resistance_rating": "WR50",
+        "gps_type": "GPS",
+        "battery_life": "до 18 ч",
+        "brand": "Apple",
+        "model_line": "Watch SE 2 44mm"
+      }
+    },
+    {
+      "sku": "RICH-00029",
+      "name": "Canon EOS R6 Mark II",
+      "category": "cameras",
+      "price": 252748,
+      "url": "https://duckduckgo.com/?q=!ducky%20Canon%20EOS%20R6%20Mark%20II%20site%3Amarket.yandex.ru",
+      "image_url": "https://c.dns-shop.ru/thumb/st4/fit/320/250/63a1e39800d8329d8778d31d5926256a/eb85d3c88c28f5bddabc3f97269169aecb1a95072064a96e89f1731bce01f782.jpg",
+      "description": "Canon EOS R6 Mark II. Категория: cameras. Артикул поставщика: RICH-00029.",
+      "stock": 9,
+      "rating": 4.8,
+      "reviews": 496,
+      "specs": {
+        "sensor_size": "Full Frame",
+        "lens_mount": "RF",
+        "video_resolution": "4K 60p",
+        "brand": "Canon",
+        "model_line": "EOS R6 Mark II"
+      }
+    },
+    {
+      "sku": "RICH-00030",
+      "name": "Sony PlayStation 5 Digital Edition",
+      "category": "gaming",
+      "price": 46142,
+      "url": "https://duckduckgo.com/?q=!ducky%20Sony%20PlayStation%205%20Digital%20Edition%20site%3Amarket.yandex.ru",
+      "image_url": "https://c.dns-shop.ru/thumb/st1/fit/320/250/d2b48e459575afa71238b42e0ebe92e5/3181112a2f31850665cd19608016d598c377761deb71a817e39eb6b806eac0f6.jpg",
+      "description": "Sony PlayStation 5 Digital Edition. Категория: gaming. Артикул поставщика: RICH-00030.",
+      "stock": 22,
+      "rating": 4.9,
+      "reviews": 513,
+      "specs": {
+        "storage_capacity_gb": "825 ГБ SSD",
+        "max_resolution": "4K",
+        "max_fps": "120",
+        "brand": "Sony",
+        "model_line": "PlayStation 5 Digital Edition"
+      }
+    },
+    {
+      "sku": "RICH-00031",
+      "name": "Apple iPhone 15 Pro",
+      "category": "smartphones",
+      "price": 111631,
+      "url": "https://duckduckgo.com/?q=!ducky%20Apple%20iPhone%2015%20Pro%20site%3Amarket.yandex.ru",
+      "image_url": "https://c.dns-shop.ru/thumb/st1/fit/320/250/060b442cf2e535cc6a0f4e732aff1324/eeff1cbef4c43a2021b124eb759434e9ba0b8d93d085a896680b94504a324593.jpg",
+      "description": "Apple iPhone 15 Pro. Категория: smartphones. Артикул поставщика: RICH-00031.",
+      "stock": 35,
+      "rating": 3.5,
+      "reviews": 530,
+      "specs": {
+        "screen_size": "6.1\"",
+        "ram_size": "8 ГБ",
+        "storage_capacity": "256 ГБ",
+        "os": "iOS 17",
+        "cpu_model": "A17 Pro",
+        "brand": "Apple",
+        "model_line": "iPhone 15 Pro"
+      }
+    },
+    {
+      "sku": "RICH-00032",
+      "name": "Lenovo IdeaPad Slim 5",
+      "category": "laptops",
+      "price": 67965,
+      "url": "https://duckduckgo.com/?q=!ducky%20Lenovo%20IdeaPad%20Slim%205%20site%3Amarket.yandex.ru",
+      "image_url": "https://c.dns-shop.ru/thumb/st1/fit/320/250/878dad0f623b40ee4d58afd37586a349/6d6120b957996c7ac775cf6af956a41d7f02856f6a366ccf992c3a69eeca684b.jpg",
+      "description": "Lenovo IdeaPad Slim 5. Категория: laptops. Артикул поставщика: RICH-00032.",
+      "stock": 48,
+      "rating": 3.6,
+      "reviews": 547,
+      "specs": {
+        "screen_size": "14\"",
+        "cpu_model": "AMD Ryzen 7 7730U",
+        "ram_size": "16 ГБ",
+        "storage_capacity": "512 ГБ SSD",
+        "os": "Windows 11",
+        "brand": "Lenovo",
+        "model_line": "IdeaPad Slim 5"
+      }
+    },
+    {
+      "sku": "RICH-00033",
+      "name": "Apple iPad mini 6",
+      "category": "tablets",
+      "price": 51750,
+      "url": "https://duckduckgo.com/?q=!ducky%20Apple%20iPad%20mini%206%20site%3Amarket.yandex.ru",
+      "image_url": "https://c.dns-shop.ru/thumb/st1/fit/320/250/25f8209cff37c85e6af94a1bdc9c1073/4d53e48ba90232bedc04a5b87e9a5bff0def5f54b594ac1982927e12b45495a7.jpg",
+      "description": "Apple iPad mini 6. Категория: tablets. Артикул поставщика: RICH-00033.",
+      "stock": 61,
+      "rating": 3.7,
+      "reviews": 564,
+      "specs": {
+        "screen_size": "8.3\"",
+        "ram_size": "4 ГБ",
+        "storage_capacity": "64 ГБ",
+        "os": "iPadOS 17",
+        "cpu_model": "A15 Bionic",
+        "brand": "Apple",
+        "model_line": "iPad mini 6"
+      }
+    },
+    {
+      "sku": "RICH-00034",
+      "name": "Sennheiser HD 560S",
+      "category": "headphones",
+      "price": 17413,
+      "url": "https://duckduckgo.com/?q=!ducky%20Sennheiser%20HD%20560S%20site%3Amarket.yandex.ru",
+      "image_url": "https://c.dns-shop.ru/thumb/st1/fit/320/250/c1331bcf058059aad6ca26fe90d90d8e/d013a983b48496b691918cff4abfe16fcccd9a19574d89a7ab2616c421ce84f3.jpg",
+      "description": "Sennheiser HD 560S. Категория: headphones. Артикул поставщика: RICH-00034.",
+      "stock": 74,
+      "rating": 3.8,
+      "reviews": 581,
+      "specs": {
+        "type": "накладные",
+        "impedance_ohms": "120 Ом",
+        "frequency_response": "6–38000 Гц",
+        "brand": "Sennheiser",
+        "model_line": "HD 560S"
+      }
+    },
+    {
+      "sku": "RICH-00035",
+      "name": "Samsung QE55Q80C",
+      "category": "tv",
+      "price": 94983,
+      "url": "https://duckduckgo.com/?q=!ducky%20Samsung%20QE55Q80C%20site%3Amarket.yandex.ru",
+      "image_url": "https://c.dns-shop.ru/thumb/st1/fit/320/250/2a491bfb39878a771c1b78a53dfb36e1/356415edf3f3765a57ff1c1af8a6499dce3f30f426d1146903f237ca88176e9e.jpg",
+      "description": "Samsung QE55Q80C. Категория: tv. Артикул поставщика: RICH-00035.",
+      "stock": 87,
+      "rating": 3.9,
+      "reviews": 598,
+      "specs": {
+        "diagonal_in": "55\"",
+        "screen_resolution": "4K",
+        "hdr_support": "HDR10+",
+        "smart_platform": "Tizen",
+        "brand": "Samsung",
+        "model_line": "QE55Q80C"
+      }
+    },
+    {
+      "sku": "RICH-00036",
+      "name": "Dell UltraSharp U2723QE",
+      "category": "monitors",
+      "price": 57452,
+      "url": "https://duckduckgo.com/?q=!ducky%20Dell%20UltraSharp%20U2723QE%20site%3Amarket.yandex.ru",
+      "image_url": "https://c.dns-shop.ru/thumb/st1/fit/320/250/48b9b11085b1286b4b0233715f5e79f2/9f09bdef55190a0631349a6fa55c8b3b91952e5fcd5ec2891cb8e4cf528d7551.jpg",
+      "description": "Dell UltraSharp U2723QE. Категория: monitors. Артикул поставщика: RICH-00036.",
+      "stock": 100,
+      "rating": 4,
+      "reviews": 615,
+      "specs": {
+        "panel_type": "IPS Black",
+        "screen_resolution": "4K",
+        "brightness_nits": "400",
+        "brand": "Dell",
+        "model_line": "UltraSharp U2723QE"
+      }
+    },
+    {
+      "sku": "RICH-00037",
+      "name": "Keychron K8 Pro",
+      "category": "keyboards",
+      "price": 13510,
+      "url": "https://duckduckgo.com/?q=!ducky%20Keychron%20K8%20Pro%20site%3Amarket.yandex.ru",
+      "image_url": "https://c.dns-shop.ru/thumb/st4/fit/320/250/6ddcfd62aa60d83fc3fc8d3f7df3d9cd/49f4767944e5ed14aa1330ef48309c05e9a01a017415b8ac53025d6fc752bbe4.jpg",
+      "description": "Keychron K8 Pro. Категория: keyboards. Артикул поставщика: RICH-00037.",
+      "stock": 113,
+      "rating": 4.1,
+      "reviews": 632,
+      "specs": {
+        "keyboard_layout": "RU/EN",
+        "connectivity": "Bluetooth 5.1",
+        "keyboard_backlight": "RGB",
+        "brand": "Keychron",
+        "model_line": "K8 Pro"
+      }
+    },
+    {
+      "sku": "RICH-00038",
+      "name": "Razer DeathAdder V3",
+      "category": "mouses",
+      "price": 7202,
+      "url": "https://duckduckgo.com/?q=!ducky%20Razer%20DeathAdder%20V3%20site%3Amarket.yandex.ru",
+      "image_url": "https://c.dns-shop.ru/thumb/st1/fit/320/250/d89443797bd6d52c18821a820eddc169/1af287e4e0e29b436c7301306d562a2fed41abdaf3e5b3016467274182c55de6.jpg",
+      "description": "Razer DeathAdder V3. Категория: mouses. Артикул поставщика: RICH-00038.",
+      "stock": 126,
+      "rating": 4.2,
+      "reviews": 649,
+      "specs": {
+        "connectivity": "USB",
+        "sensor": "Focus Pro 30K",
+        "brand": "Razer",
+        "model_line": "DeathAdder V3"
+      }
+    },
+    {
+      "sku": "RICH-00039",
+      "name": "NVIDIA GeForce RTX 4060 Ti",
+      "category": "graphics_cards",
+      "price": 50922,
+      "url": "https://duckduckgo.com/?q=!ducky%20NVIDIA%20GeForce%20RTX%204060%20Ti%20site%3Amarket.yandex.ru",
+      "image_url": "https://c.dns-shop.ru/thumb/st1/fit/320/250/da43163bfc226b9006326e5156bc4f58/b423c5037cd5d94379552643bff35e4d6349ebfd1f22ffdcc5a9b35b7fdf70d4.jpg",
+      "description": "NVIDIA GeForce RTX 4060 Ti. Категория: graphics_cards. Артикул поставщика: RICH-00039.",
+      "stock": 139,
+      "rating": 4.3,
+      "reviews": 666,
+      "specs": {
+        "vram_size": "8 ГБ GDDR6",
+        "tdp": "160 Вт",
+        "cooling_type": "двухвентиляторная",
+        "brand": "NVIDIA",
+        "model_line": "GeForce RTX 4060 Ti"
+      }
+    },
+    {
+      "sku": "RICH-00040",
+      "name": "Intel Core i7-14700K",
+      "category": "cpus",
+      "price": 46479,
+      "url": "https://duckduckgo.com/?q=!ducky%20Intel%20Core%20i7-14700K%20site%3Amarket.yandex.ru",
+      "image_url": "https://c.dns-shop.ru/thumb/st1/fit/320/250/324a3c2b6e55ecf5fac8aaf35c192ab9/937f670c26d13bfd7a921750caf98fbcf2d38d1365de7b15084f852ce701aab9.jpg",
+      "description": "Intel Core i7-14700K. Категория: cpus. Артикул поставщика: RICH-00040.",
+      "stock": 152,
+      "rating": 4.4,
+      "reviews": 683,
+      "specs": {
+        "socket": "LGA1700",
+        "tdp_watt": "125 Вт",
+        "cores": "20 (8P+12E)",
+        "brand": "Intel",
+        "model_line": "Core i7-14700K"
+      }
+    },
+    {
+      "sku": "RICH-00041",
+      "name": "Corsair Vengeance DDR5 32 ГБ",
+      "category": "ram",
+      "price": 10223,
+      "url": "https://duckduckgo.com/?q=!ducky%20Corsair%20Vengeance%20DDR5%2032%20%D0%93%D0%91%20site%3Amarket.yandex.ru",
+      "image_url": "https://c.dns-shop.ru/thumb/st4/fit/320/250/b998ccc78f82e64116520497241c9992/adbeef115a2fd45571c272c65c4fa1d32ac67b606a801135a2e263560fe57d8d.jpg",
+      "description": "Corsair Vengeance DDR5 32 ГБ. Категория: ram. Артикул поставщика: RICH-00041.",
+      "stock": 165,
+      "rating": 4.5,
+      "reviews": 700,
+      "specs": {
+        "ram_speed": "5600 МТ/с",
+        "ram_type": "DDR5",
+        "ram_latency": "CL40",
+        "brand": "Corsair",
+        "model_line": "Vengeance DDR5 32 ГБ"
+      }
+    },
+    {
+      "sku": "RICH-00042",
+      "name": "SanDisk Extreme Portable 1 ТБ",
+      "category": "external_drives",
+      "price": 9479,
+      "url": "https://duckduckgo.com/?q=!ducky%20SanDisk%20Extreme%20Portable%201%20%D0%A2%D0%91%20site%3Amarket.yandex.ru",
+      "image_url": "https://c.dns-shop.ru/thumb/st1/fit/320/250/a1c2a901ccb76f42e2e5a3c4dced7edf/7dd13ba5c0720a0bafb374b58b092af44d83b821033fa4c5cfa7c54efcdb515e.jpg",
+      "description": "SanDisk Extreme Portable 1 ТБ. Категория: external_drives. Артикул поставщика: RICH-00042.",
+      "stock": 178,
+      "rating": 4.6,
+      "reviews": 717,
+      "specs": {
+        "interface": "USB 3.2",
+        "drive_type": "SSD",
+        "durability": "IP65",
+        "brand": "SanDisk",
+        "model_line": "Extreme Portable 1 ТБ"
+      }
+    },
+    {
+      "sku": "RICH-00043",
+      "name": "Samsung Galaxy Watch6 Classic",
+      "category": "smartwatches",
+      "price": 34403,
+      "url": "https://duckduckgo.com/?q=!ducky%20Samsung%20Galaxy%20Watch6%20Classic%20site%3Amarket.yandex.ru",
+      "image_url": "https://c.dns-shop.ru/thumb/st4/fit/320/250/f7ae326cb8036bbb0ff0248b2e0ad453/4ede0a637eb5d2825858c54979cb42d919eaffef24a8811364740632bfd8d1ac.jpg",
+      "description": "Samsung Galaxy Watch6 Classic. Категория: smartwatches. Артикул поставщика: RICH-00043.",
+      "stock": 11,
+      "rating": 4.7,
+      "reviews": 734,
+      "specs": {
+        "water_resistance_rating": "5ATM",
+        "gps_type": "GPS",
+        "battery_life": "до 40 ч",
+        "brand": "Samsung",
+        "model_line": "Galaxy Watch6 Classic"
+      }
+    },
+    {
+      "sku": "RICH-00044",
+      "name": "Sony Alpha 7 IV",
+      "category": "cameras",
+      "price": 247623,
+      "url": "https://duckduckgo.com/?q=!ducky%20Sony%20Alpha%207%20IV%20site%3Amarket.yandex.ru",
+      "image_url": "https://c.dns-shop.ru/thumb/st4/fit/320/250/9ead17c4ae8402071e60062ed44d2504/3e180b155d0b3dd098bde773e65715eacb96ef07ad50686c036e42bef286fbc0.jpg",
+      "description": "Sony Alpha 7 IV. Категория: cameras. Артикул поставщика: RICH-00044.",
+      "stock": 24,
+      "rating": 4.8,
+      "reviews": 751,
+      "specs": {
+        "sensor_size": "Full Frame",
+        "lens_mount": "E",
+        "video_resolution": "4K 60p",
+        "brand": "Sony",
+        "model_line": "Alpha 7 IV"
+      }
+    },
+    {
+      "sku": "RICH-00045",
+      "name": "Microsoft Xbox Series X",
+      "category": "gaming",
+      "price": 58463,
+      "url": "https://duckduckgo.com/?q=!ducky%20Microsoft%20Xbox%20Series%20X%20site%3Amarket.yandex.ru",
+      "image_url": "https://c.dns-shop.ru/thumb/st1/fit/320/250/68b2cca356305089b33e04f5cd680084/3bb9aabd00c66dcb2b46304f947691bf3501c561d833a839322088356efce38e.jpg",
+      "description": "Microsoft Xbox Series X. Категория: gaming. Артикул поставщика: RICH-00045.",
+      "stock": 37,
+      "rating": 4.9,
+      "reviews": 768,
+      "specs": {
+        "storage_capacity_gb": "1 ТБ SSD",
+        "max_resolution": "4K",
+        "max_fps": "120",
+        "brand": "Microsoft",
+        "model_line": "Xbox Series X"
+      }
+    },
+    {
+      "sku": "RICH-00046",
+      "name": "Apple iPhone 14",
+      "category": "smartphones",
+      "price": 66057,
+      "url": "https://duckduckgo.com/?q=!ducky%20Apple%20iPhone%2014%20site%3Amarket.yandex.ru",
+      "image_url": "https://c.dns-shop.ru/thumb/st4/fit/320/250/9b50eda7f5f2e79952c9e4d002167c03/5c99d5ab16f9cb240af7fde30145dac21972a2da3b7ebd59ed98c513b52d8074.jpg",
+      "description": "Apple iPhone 14. Категория: smartphones. Артикул поставщика: RICH-00046.",
+      "stock": 50,
+      "rating": 3.5,
+      "reviews": 785,
+      "specs": {
+        "screen_size": "6.1\"",
+        "ram_size": "6 ГБ",
+        "storage_capacity": "128 ГБ",
+        "os": "iOS 16",
+        "cpu_model": "A15 Bionic",
+        "brand": "Apple",
+        "model_line": "iPhone 14"
+      }
+    },
+    {
+      "sku": "RICH-00047",
+      "name": "Lenovo ThinkPad E14 Gen 5",
+      "category": "laptops",
+      "price": 80466,
+      "url": "https://duckduckgo.com/?q=!ducky%20Lenovo%20ThinkPad%20E14%20Gen%205%20site%3Amarket.yandex.ru",
+      "image_url": "https://c.dns-shop.ru/thumb/st1/fit/320/250/4849a2359f0cbfe569db3be00e0b6e19/92896ec2319500a55d8980c819b5a928358feb75680f6aa19ad8134ad0e1b676.jpg",
+      "description": "Lenovo ThinkPad E14 Gen 5. Категория: laptops. Артикул поставщика: RICH-00047.",
+      "stock": 63,
+      "rating": 3.6,
+      "reviews": 802,
+      "specs": {
+        "screen_size": "14\"",
+        "cpu_model": "AMD Ryzen 5 7530U",
+        "ram_size": "16 ГБ",
+        "storage_capacity": "512 ГБ SSD",
+        "os": "Windows 11",
+        "brand": "Lenovo",
+        "model_line": "ThinkPad E14 Gen 5"
+      }
+    },
+    {
+      "sku": "RICH-00048",
+      "name": "Samsung Galaxy Tab S9+",
+      "category": "tablets",
+      "price": 93276,
+      "url": "https://duckduckgo.com/?q=!ducky%20Samsung%20Galaxy%20Tab%20S9%2B%20site%3Amarket.yandex.ru",
+      "image_url": "https://c.dns-shop.ru/thumb/st1/fit/320/250/ab39c8fb33aa59d35ebeb11e578e438c/bed6c1ec6774d1c9e6708ec1142d6e1ba5d5b00df0556a3a85e9ec2036c47fa6.jpg",
+      "description": "Samsung Galaxy Tab S9+. Категория: tablets. Артикул поставщика: RICH-00048.",
+      "stock": 76,
+      "rating": 3.7,
+      "reviews": 819,
+      "specs": {
+        "screen_size": "12.4\"",
+        "ram_size": "12 ГБ",
+        "storage_capacity": "256 ГБ",
+        "os": "Android 14",
+        "cpu_model": "Snapdragon 8 Gen 2",
+        "brand": "Samsung",
+        "model_line": "Galaxy Tab S9+"
+      }
+    },
+    {
+      "sku": "RICH-00049",
+      "name": "Sennheiser Momentum 4 Wireless",
+      "category": "headphones",
+      "price": 30777,
+      "url": "https://duckduckgo.com/?q=!ducky%20Sennheiser%20Momentum%204%20Wireless%20site%3Amarket.yandex.ru",
+      "image_url": "https://c.dns-shop.ru/thumb/st4/fit/320/250/933700b7a6ced2a05b44cbabf769d333/aa26a1683a5df301c315ebb471ae5458a823049959f39a22496a28741ac19df0.jpg",
+      "description": "Sennheiser Momentum 4 Wireless. Категория: headphones. Артикул поставщика: RICH-00049.",
+      "stock": 89,
+      "rating": 3.8,
+      "reviews": 836,
+      "specs": {
+        "type": "полноразмерные",
+        "wireless_standard": "Bluetooth 5.2",
+        "anc_type": "активное",
+        "battery_life": "60 ч",
+        "brand": "Sennheiser",
+        "model_line": "Momentum 4 Wireless"
+      }
+    },
+    {
+      "sku": "RICH-00050",
+      "name": "Samsung Crystal UHD CU8000 50",
+      "category": "tv",
+      "price": 52020,
+      "url": "https://duckduckgo.com/?q=!ducky%20Samsung%20Crystal%20UHD%20CU8000%2050%20site%3Amarket.yandex.ru",
+      "image_url": "https://c.dns-shop.ru/thumb/st1/fit/320/250/e6372b788349e548860eed5ac37a95eb/5cb9f791a5269de65e22e0ff70d638c9199b6fb8d23bdd9e31be19b061ff419c.jpg",
+      "description": "Samsung Crystal UHD CU8000 50. Категория: tv. Артикул поставщика: RICH-00050.",
+      "stock": 102,
+      "rating": 3.9,
+      "reviews": 853,
+      "specs": {
+        "diagonal_in": "50\"",
+        "screen_resolution": "4K",
+        "hdr_support": "HDR10+",
+        "smart_platform": "Tizen",
+        "brand": "Samsung",
+        "model_line": "Crystal UHD CU8000 50"
+      }
+    },
+    {
+      "sku": "RICH-00051",
+      "name": "Dell Alienware AW3423DWF",
+      "category": "monitors",
+      "price": 113274,
+      "url": "https://duckduckgo.com/?q=!ducky%20Dell%20Alienware%20AW3423DWF%20site%3Amarket.yandex.ru",
+      "image_url": "https://c.dns-shop.ru/thumb/st1/fit/320/250/6297e0d44c4f21cf4ace2dfea687cba8/d6bdc81ccf1f80039b2b3531fa04aae425e4fd219ca52023f26815693e09ba2c.jpg",
+      "description": "Dell Alienware AW3423DWF. Категория: monitors. Артикул поставщика: RICH-00051.",
+      "stock": 115,
+      "rating": 4,
+      "reviews": 870,
+      "specs": {
+        "panel_type": "QD-OLED",
+        "screen_resolution": "3440×1440",
+        "refresh_rate": "165 Гц",
+        "adaptive_sync": "FreeSync Premium Pro",
+        "brand": "Dell",
+        "model_line": "Alienware AW3423DWF"
+      }
+    },
+    {
+      "sku": "RICH-00052",
+      "name": "Keychron Q1 Pro",
+      "category": "keyboards",
+      "price": 23337,
+      "url": "https://duckduckgo.com/?q=!ducky%20Keychron%20Q1%20Pro%20site%3Amarket.yandex.ru",
+      "image_url": "https://c.dns-shop.ru/thumb/st1/fit/320/250/8e51ff7ba2f84a75a3a455f63904ddbc/9a4d465257c10e63d9a65418287548cb098a19fddea50858c8b07a3403cc8f6a.jpg",
+      "description": "Keychron Q1 Pro. Категория: keyboards. Артикул поставщика: RICH-00052.",
+      "stock": 128,
+      "rating": 4.1,
+      "reviews": 887,
+      "specs": {
+        "keyboard_layout": "RU/EN",
+        "connectivity": "Bluetooth + USB",
+        "keyboard_backlight": "RGB",
+        "brand": "Keychron",
+        "model_line": "Q1 Pro"
+      }
+    },
+    {
+      "sku": "RICH-00053",
+      "name": "Razer Viper V3 Pro",
+      "category": "mouses",
+      "price": 17851,
+      "url": "https://duckduckgo.com/?q=!ducky%20Razer%20Viper%20V3%20Pro%20site%3Amarket.yandex.ru",
+      "image_url": "https://c.dns-shop.ru/thumb/st1/fit/320/250/17979e0e38a9c2959850405f678e40e6/ac153b9ec0c466a135181152366d1c7a3497d4086a74ecc36afff4811700fb81.jpg",
+      "description": "Razer Viper V3 Pro. Категория: mouses. Артикул поставщика: RICH-00053.",
+      "stock": 141,
+      "rating": 4.2,
+      "reviews": 904,
+      "specs": {
+        "connectivity": "HyperSpeed",
+        "sensor": "Focus Pro 35K",
+        "brand": "Razer",
+        "model_line": "Viper V3 Pro"
+      }
+    },
+    {
+      "sku": "RICH-00054",
+      "name": "AMD Radeon RX 7800 XT",
+      "category": "graphics_cards",
+      "price": 67553,
+      "url": "https://duckduckgo.com/?q=!ducky%20AMD%20Radeon%20RX%207800%20XT%20site%3Amarket.yandex.ru",
+      "image_url": "https://c.dns-shop.ru/thumb/st4/fit/320/250/1eeccf9b2c2cdfe0a85cda8787de4a55/0f0a3273ea7ffa4f6dde3310c556f06f24df5afe24e78b0dd90aa9fae3a9ab35.jpg",
+      "description": "AMD Radeon RX 7800 XT. Категория: graphics_cards. Артикул поставщика: RICH-00054.",
+      "stock": 154,
+      "rating": 4.3,
+      "reviews": 921,
+      "specs": {
+        "vram_size": "16 ГБ GDDR6",
+        "tdp": "263 Вт",
+        "cooling_type": "трёхвентиляторная",
+        "brand": "AMD",
+        "model_line": "Radeon RX 7800 XT"
+      }
+    },
+    {
+      "sku": "RICH-00055",
+      "name": "Intel Core Ultra 7 155H",
+      "category": "cpus",
+      "price": 46534,
+      "url": "https://duckduckgo.com/?q=!ducky%20Intel%20Core%20Ultra%207%20155H%20site%3Amarket.yandex.ru",
+      "image_url": "https://c.dns-shop.ru/thumb/st1/fit/320/250/48af050a396bd49bc0cf0b76e1e4ac83/443434e9da9f7f044af31978b5303e2fffb90abf27c2e7bfb45ef7a1fc31b45e.jpg",
+      "description": "Intel Core Ultra 7 155H. Категория: cpus. Артикул поставщика: RICH-00055.",
+      "stock": 167,
+      "rating": 4.4,
+      "reviews": 938,
+      "specs": {
+        "socket": "BGA",
+        "tdp_watt": "28 Вт",
+        "cores": "16",
+        "brand": "Intel",
+        "model_line": "Core Ultra 7 155H"
+      }
+    },
+    {
+      "sku": "RICH-00056",
+      "name": "Corsair Dominator Platinum DDR5 64 ГБ",
+      "category": "ram",
+      "price": 35831,
+      "url": "https://duckduckgo.com/?q=!ducky%20Corsair%20Dominator%20Platinum%20DDR5%2064%20%D0%93%D0%91%20site%3Amarket.yandex.ru",
+      "image_url": "https://c.dns-shop.ru/thumb/st4/fit/320/250/102eb5ce74f69545cea6026379a92361/8229d6fd81cd5ec6f662da721154d37cf436a5f16fd435f59a4649ea677b730b.jpg",
+      "description": "Corsair Dominator Platinum DDR5 64 ГБ. Категория: ram. Артикул поставщика: RICH-00056.",
+      "stock": 180,
+      "rating": 4.5,
+      "reviews": 955,
+      "specs": {
+        "ram_speed": "6000 МТ/с",
+        "ram_type": "DDR5",
+        "ram_latency": "CL30",
+        "brand": "Corsair",
+        "model_line": "Dominator Platinum DDR5 64 ГБ"
+      }
+    },
+    {
+      "sku": "RICH-00057",
+      "name": "SanDisk Extreme Pro V2 2 ТБ",
+      "category": "external_drives",
+      "price": 23305,
+      "url": "https://duckduckgo.com/?q=!ducky%20SanDisk%20Extreme%20Pro%20V2%202%20%D0%A2%D0%91%20site%3Amarket.yandex.ru",
+      "image_url": "https://c.dns-shop.ru/thumb/st1/fit/320/250/2f3c1171ab4a8d3b1e0e15fad996c56d/f5602b616d2d3f0569045715c47bd15c38d9134c13cd0e1a39d4f2e3905ee233.jpg",
+      "description": "SanDisk Extreme Pro V2 2 ТБ. Категория: external_drives. Артикул поставщика: RICH-00057.",
+      "stock": 13,
+      "rating": 4.6,
+      "reviews": 972,
+      "specs": {
+        "interface": "USB 3.2 Gen 2x2",
+        "drive_type": "SSD",
+        "transfer_speed": "до 2000 МБ/с",
+        "brand": "SanDisk",
+        "model_line": "Extreme Pro V2 2 ТБ"
+      }
+    },
+    {
+      "sku": "RICH-00058",
+      "name": "Samsung Galaxy Watch5 Pro",
+      "category": "smartwatches",
+      "price": 29230,
+      "url": "https://duckduckgo.com/?q=!ducky%20Samsung%20Galaxy%20Watch5%20Pro%20site%3Amarket.yandex.ru",
+      "image_url": "https://c.dns-shop.ru/thumb/st4/fit/320/250/64d196862cf54da624ee13908d8532d3/7c6e8489d59830b70814e40cc848cc97fb345184f6855ab9ce96d1e6c775673b.jpg",
+      "description": "Samsung Galaxy Watch5 Pro. Категория: smartwatches. Артикул поставщика: RICH-00058.",
+      "stock": 26,
+      "rating": 4.7,
+      "reviews": 989,
+      "specs": {
+        "water_resistance_rating": "5ATM",
+        "gps_type": "GPS",
+        "battery_life": "до 80 ч",
+        "brand": "Samsung",
+        "model_line": "Galaxy Watch5 Pro"
+      }
+    },
+    {
+      "sku": "RICH-00059",
+      "name": "Sony Alpha 6700",
+      "category": "cameras",
+      "price": 155009,
+      "url": "https://duckduckgo.com/?q=!ducky%20Sony%20Alpha%206700%20site%3Amarket.yandex.ru",
+      "image_url": "https://c.dns-shop.ru/thumb/st1/fit/320/250/51790b8447b64be54ad2f89c8bb989ef/726f9ed9c86a42a2b2cc9c98b17d69d1576a07a2c8f82818b8233aa60cbc9fd2.jpg",
+      "description": "Sony Alpha 6700. Категория: cameras. Артикул поставщика: RICH-00059.",
+      "stock": 39,
+      "rating": 4.8,
+      "reviews": 1006,
+      "specs": {
+        "sensor_size": "APS-C",
+        "lens_mount": "E",
+        "video_resolution": "4K 120p",
+        "brand": "Sony",
+        "model_line": "Alpha 6700"
+      }
+    },
+    {
+      "sku": "RICH-00060",
+      "name": "Microsoft Xbox Series S",
+      "category": "gaming",
+      "price": 36678,
+      "url": "https://duckduckgo.com/?q=!ducky%20Microsoft%20Xbox%20Series%20S%20site%3Amarket.yandex.ru",
+      "image_url": "https://loremflickr.com/640/480/microsoft,gameconsole/45479",
+      "description": "Microsoft Xbox Series S. Категория: gaming. Артикул поставщика: RICH-00060.",
+      "stock": 52,
+      "rating": 4.9,
+      "reviews": 1023,
+      "specs": {
+        "storage_capacity_gb": "512 ГБ SSD",
+        "max_resolution": "1440p",
+        "max_fps": "120",
+        "brand": "Microsoft",
+        "model_line": "Xbox Series S"
+      }
+    },
+    {
+      "sku": "RICH-00061",
+      "name": "Google Pixel 8 Pro",
+      "category": "smartphones",
+      "price": 98540,
+      "url": "https://duckduckgo.com/?q=!ducky%20Google%20Pixel%208%20Pro%20site%3Amarket.yandex.ru",
+      "image_url": "https://c.dns-shop.ru/thumb/st1/fit/320/250/6db7e75cb1b0ce854b2cd98b184dff99/c46b7815ffdb4908ab404cdae2c190b3dcb734ece136c1f40bd72647e8e12ada.jpg",
+      "description": "Google Pixel 8 Pro. Категория: smartphones. Артикул поставщика: RICH-00061.",
+      "stock": 65,
+      "rating": 3.5,
+      "reviews": 1040,
+      "specs": {
+        "screen_size": "6.7\"",
+        "ram_size": "12 ГБ",
+        "storage_capacity": "256 ГБ",
+        "os": "Android 14",
+        "cpu_model": "Google Tensor G3",
+        "brand": "Google",
+        "model_line": "Pixel 8 Pro"
+      }
+    },
+    {
+      "sku": "RICH-00062",
+      "name": "Apple MacBook Air 15 M3",
+      "category": "laptops",
+      "price": 160260,
+      "url": "https://duckduckgo.com/?q=!ducky%20Apple%20MacBook%20Air%2015%20M3%20site%3Amarket.yandex.ru",
+      "image_url": "https://c.dns-shop.ru/thumb/st1/fit/320/250/aef9db44c124f28887b185ef52f71cae/5c4432770dcfcfd5fc2f02efa898048e1b2a4a8ee0fbee4fbe99e83b8d83c8f1.jpg",
+      "description": "Apple MacBook Air 15 M3. Категория: laptops. Артикул поставщика: RICH-00062.",
+      "stock": 78,
+      "rating": 3.6,
+      "reviews": 1057,
+      "specs": {
+        "screen_size": "15.3\"",
+        "cpu_model": "Apple M3",
+        "ram_size": "8 ГБ",
+        "storage_capacity": "512 ГБ SSD",
+        "os": "macOS Sonoma",
+        "brand": "Apple",
+        "model_line": "MacBook Air 15 M3"
+      }
+    },
+    {
+      "sku": "RICH-00063",
+      "name": "Samsung Galaxy Tab S9 FE",
+      "category": "tablets",
+      "price": 47595,
+      "url": "https://duckduckgo.com/?q=!ducky%20Samsung%20Galaxy%20Tab%20S9%20FE%20site%3Amarket.yandex.ru",
+      "image_url": "https://loremflickr.com/640/480/samsung,tablet/45476",
+      "description": "Samsung Galaxy Tab S9 FE. Категория: tablets. Артикул поставщика: RICH-00063.",
+      "stock": 91,
+      "rating": 3.7,
+      "reviews": 1074,
+      "specs": {
+        "screen_size": "10.9\"",
+        "ram_size": "6 ГБ",
+        "storage_capacity": "128 ГБ",
+        "os": "Android 14",
+        "cpu_model": "Exynos 1380",
+        "brand": "Samsung",
+        "model_line": "Galaxy Tab S9 FE"
+      }
+    },
+    {
+      "sku": "RICH-00064",
+      "name": "Apple AirPods Pro 2",
+      "category": "headphones",
+      "price": 25278,
+      "url": "https://duckduckgo.com/?q=!ducky%20Apple%20AirPods%20Pro%202%20site%3Amarket.yandex.ru",
+      "image_url": "https://loremflickr.com/640/480/apple,headphones/45475",
+      "description": "Apple AirPods Pro 2. Категория: headphones. Артикул поставщика: RICH-00064.",
+      "stock": 104,
+      "rating": 3.8,
+      "reviews": 1091,
+      "specs": {
+        "type": "внутриканальные",
+        "wireless_standard": "Bluetooth 5.3",
+        "water_resistance": "IPX4",
+        "brand": "Apple",
+        "model_line": "AirPods Pro 2"
+      }
+    },
+    {
+      "sku": "RICH-00065",
+      "name": "Sony XR-55X90L",
+      "category": "tv",
+      "price": 98955,
+      "url": "https://duckduckgo.com/?q=!ducky%20Sony%20XR-55X90L%20site%3Amarket.yandex.ru",
+      "image_url": "https://loremflickr.com/640/480/sony,television/45474",
+      "description": "Sony XR-55X90L. Категория: tv. Артикул поставщика: RICH-00065.",
+      "stock": 117,
+      "rating": 3.9,
+      "reviews": 1108,
+      "specs": {
+        "diagonal_in": "55\"",
+        "screen_resolution": "4K",
+        "hdr_support": "Dolby Vision",
+        "smart_platform": "Google TV",
+        "brand": "Sony",
+        "model_line": "XR-55X90L"
+      }
+    },
+    {
+      "sku": "RICH-00066",
+      "name": "Samsung Odyssey G7",
+      "category": "monitors",
+      "price": 51561,
+      "url": "https://duckduckgo.com/?q=!ducky%20Samsung%20Odyssey%20G7%20site%3Amarket.yandex.ru",
+      "image_url": "https://loremflickr.com/640/480/samsung,monitor/45473",
+      "description": "Samsung Odyssey G7. Категория: monitors. Артикул поставщика: RICH-00066.",
+      "stock": 130,
+      "rating": 4,
+      "reviews": 1125,
+      "specs": {
+        "panel_type": "VA",
+        "screen_resolution": "2560×1440",
+        "refresh_rate": "240 Гц",
+        "curvature": "1000R",
+        "brand": "Samsung",
+        "model_line": "Odyssey G7"
+      }
+    },
+    {
+      "sku": "RICH-00067",
+      "name": "Corsair K70 RGB MK.2",
+      "category": "keyboards",
+      "price": 15310,
+      "url": "https://duckduckgo.com/?q=!ducky%20Corsair%20K70%20RGB%20MK.2%20site%3Amarket.yandex.ru",
+      "image_url": "https://loremflickr.com/640/480/corsair,keyboard/45472",
+      "description": "Corsair K70 RGB MK.2. Категория: keyboards. Артикул поставщика: RICH-00067.",
+      "stock": 143,
+      "rating": 4.1,
+      "reviews": 1142,
+      "specs": {
+        "keyboard_layout": "RU/EN",
+        "connectivity": "USB",
+        "keyboard_backlight": "RGB",
+        "brand": "Corsair",
+        "model_line": "K70 RGB MK.2"
+      }
+    },
+    {
+      "sku": "RICH-00068",
+      "name": "SteelSeries Aerox 3",
+      "category": "mouses",
+      "price": 7361,
+      "url": "https://duckduckgo.com/?q=!ducky%20SteelSeries%20Aerox%203%20site%3Amarket.yandex.ru",
+      "image_url": "https://loremflickr.com/640/480/steelseries,computermouse/45471",
+      "description": "SteelSeries Aerox 3. Категория: mouses. Артикул поставщика: RICH-00068.",
+      "stock": 156,
+      "rating": 4.2,
+      "reviews": 1159,
+      "specs": {
+        "connectivity": "USB",
+        "weight_g": "59",
+        "brand": "SteelSeries",
+        "model_line": "Aerox 3"
+      }
+    },
+    {
+      "sku": "RICH-00069",
+      "name": "AMD Radeon RX 7700 XT",
+      "category": "graphics_cards",
+      "price": 57250,
+      "url": "https://duckduckgo.com/?q=!ducky%20AMD%20Radeon%20RX%207700%20XT%20site%3Amarket.yandex.ru",
+      "image_url": "https://loremflickr.com/640/480/amd,graphicscard/45470",
+      "description": "AMD Radeon RX 7700 XT. Категория: graphics_cards. Артикул поставщика: RICH-00069.",
+      "stock": 169,
+      "rating": 4.3,
+      "reviews": 1176,
+      "specs": {
+        "vram_size": "12 ГБ GDDR6",
+        "tdp": "245 Вт",
+        "cooling_type": "двухвентиляторная",
+        "brand": "AMD",
+        "model_line": "Radeon RX 7700 XT"
+      }
+    },
+    {
+      "sku": "RICH-00070",
+      "name": "Intel Core Ultra 9 185H",
+      "category": "cpus",
+      "price": 63331,
+      "url": "https://duckduckgo.com/?q=!ducky%20Intel%20Core%20Ultra%209%20185H%20site%3Amarket.yandex.ru",
+      "image_url": "https://loremflickr.com/640/480/intel,processor/45448",
+      "description": "Intel Core Ultra 9 185H. Категория: cpus. Артикул поставщика: RICH-00070.",
+      "stock": 182,
+      "rating": 4.4,
+      "reviews": 1193,
+      "specs": {
+        "socket": "BGA",
+        "tdp_watt": "45 Вт",
+        "cores": "16",
+        "brand": "Intel",
+        "model_line": "Core Ultra 9 185H"
+      }
+    },
+    {
+      "sku": "RICH-00071",
+      "name": "G.Skill Trident Z5 Neo 32 ГБ",
+      "category": "ram",
+      "price": 13582,
+      "url": "https://duckduckgo.com/?q=!ducky%20G.Skill%20Trident%20Z5%20Neo%2032%20%D0%93%D0%91%20site%3Amarket.yandex.ru",
+      "image_url": "https://loremflickr.com/640/480/gskill,rammemory/45447",
+      "description": "G.Skill Trident Z5 Neo 32 ГБ. Категория: ram. Артикул поставщика: RICH-00071.",
+      "stock": 15,
+      "rating": 4.5,
+      "reviews": 1210,
+      "specs": {
+        "ram_speed": "6000 МТ/с",
+        "ram_type": "DDR5",
+        "ram_latency": "CL30",
+        "brand": "G.Skill",
+        "model_line": "Trident Z5 Neo 32 ГБ"
+      }
+    },
+    {
+      "sku": "RICH-00072",
+      "name": "WD My Passport 5 ТБ",
+      "category": "external_drives",
+      "price": 13442,
+      "url": "https://duckduckgo.com/?q=!ducky%20WD%20My%20Passport%205%20%D0%A2%D0%91%20site%3Amarket.yandex.ru",
+      "image_url": "https://loremflickr.com/640/480/wd,harddrive/45446",
+      "description": "WD My Passport 5 ТБ. Категория: external_drives. Артикул поставщика: RICH-00072.",
+      "stock": 28,
+      "rating": 4.6,
+      "reviews": 1227,
+      "specs": {
+        "interface": "USB 3.0",
+        "drive_type": "HDD",
+        "compatibility": "Windows / macOS",
+        "brand": "WD",
+        "model_line": "My Passport 5 ТБ"
+      }
+    },
+    {
+      "sku": "RICH-00073",
+      "name": "Garmin Forerunner 265",
+      "category": "smartwatches",
+      "price": 51448,
+      "url": "https://duckduckgo.com/?q=!ducky%20Garmin%20Forerunner%20265%20site%3Amarket.yandex.ru",
+      "image_url": "https://loremflickr.com/640/480/garmin,smartwatch/45445",
+      "description": "Garmin Forerunner 265. Категория: smartwatches. Артикул поставщика: RICH-00073.",
+      "stock": 41,
+      "rating": 4.7,
+      "reviews": 1244,
+      "specs": {
+        "water_resistance_rating": "5ATM",
+        "gps_type": "GPS",
+        "battery_life": "до 13 дней",
+        "brand": "Garmin",
+        "model_line": "Forerunner 265"
+      }
+    },
+    {
+      "sku": "RICH-00074",
+      "name": "Nikon Z50 II",
+      "category": "cameras",
+      "price": 112043,
+      "url": "https://duckduckgo.com/?q=!ducky%20Nikon%20Z50%20II%20site%3Amarket.yandex.ru",
+      "image_url": "https://loremflickr.com/640/480/nikon,camera/45444",
+      "description": "Nikon Z50 II. Категория: cameras. Артикул поставщика: RICH-00074.",
+      "stock": 54,
+      "rating": 4.8,
+      "reviews": 1261,
+      "specs": {
+        "sensor_size": "APS-C",
+        "lens_mount": "Z",
+        "video_resolution": "4K 30p",
+        "brand": "Nikon",
+        "model_line": "Z50 II"
+      }
+    },
+    {
+      "sku": "RICH-00075",
+      "name": "Nintendo Switch OLED",
+      "category": "gaming",
+      "price": 35282,
+      "url": "https://duckduckgo.com/?q=!ducky%20Nintendo%20Switch%20OLED%20site%3Amarket.yandex.ru",
+      "image_url": "https://loremflickr.com/640/480/nintendo,gameconsole/45443",
+      "description": "Nintendo Switch OLED. Категория: gaming. Артикул поставщика: RICH-00075.",
+      "stock": 67,
+      "rating": 4.9,
+      "reviews": 1278,
+      "specs": {
+        "storage_capacity_gb": "64 ГБ",
+        "max_resolution": "1080p (док)",
+        "max_fps": "60",
+        "brand": "Nintendo",
+        "model_line": "Switch OLED"
+      }
+    },
+    {
+      "sku": "RICH-00076",
+      "name": "Xiaomi 14",
+      "category": "smartphones",
+      "price": 88293,
+      "url": "https://duckduckgo.com/?q=!ducky%20Xiaomi%2014%20site%3Amarket.yandex.ru",
+      "image_url": "https://loremflickr.com/640/480/xiaomi,smartphone/45442",
+      "description": "Xiaomi 14. Категория: smartphones. Артикул поставщика: RICH-00076.",
+      "stock": 80,
+      "rating": 3.5,
+      "reviews": 1295,
+      "specs": {
+        "screen_size": "6.36\"",
+        "ram_size": "12 ГБ",
+        "storage_capacity": "512 ГБ",
+        "os": "Android 14",
+        "cpu_model": "Snapdragon 8 Gen 3",
+        "brand": "Xiaomi",
+        "model_line": "14"
+      }
+    },
+    {
+      "sku": "RICH-00077",
+      "name": "Apple MacBook Pro 14 M3 Pro",
+      "category": "laptops",
+      "price": 226198,
+      "url": "https://duckduckgo.com/?q=!ducky%20Apple%20MacBook%20Pro%2014%20M3%20Pro%20site%3Amarket.yandex.ru",
+      "image_url": "https://loremflickr.com/640/480/apple,laptop/45441",
+      "description": "Apple MacBook Pro 14 M3 Pro. Категория: laptops. Артикул поставщика: RICH-00077.",
+      "stock": 93,
+      "rating": 3.6,
+      "reviews": 1312,
+      "specs": {
+        "screen_size": "14.2\"",
+        "cpu_model": "Apple M3 Pro",
+        "ram_size": "18 ГБ",
+        "storage_capacity": "512 ГБ SSD",
+        "os": "macOS Sonoma",
+        "brand": "Apple",
+        "model_line": "MacBook Pro 14 M3 Pro"
+      }
+    },
+    {
+      "sku": "RICH-00078",
+      "name": "Xiaomi Pad 6",
+      "category": "tablets",
+      "price": 31773,
+      "url": "https://duckduckgo.com/?q=!ducky%20Xiaomi%20Pad%206%20site%3Amarket.yandex.ru",
+      "image_url": "https://loremflickr.com/640/480/xiaomi,tablet/45440",
+      "description": "Xiaomi Pad 6. Категория: tablets. Артикул поставщика: RICH-00078.",
+      "stock": 106,
+      "rating": 3.7,
+      "reviews": 1329,
+      "specs": {
+        "screen_size": "11\"",
+        "ram_size": "8 ГБ",
+        "storage_capacity": "256 ГБ",
+        "os": "Android 14",
+        "cpu_model": "Snapdragon 870",
+        "brand": "Xiaomi",
+        "model_line": "Pad 6"
+      }
+    },
+    {
+      "sku": "RICH-00079",
+      "name": "Apple AirPods Max",
+      "category": "headphones",
+      "price": 52423,
+      "url": "https://duckduckgo.com/?q=!ducky%20Apple%20AirPods%20Max%20site%3Amarket.yandex.ru",
+      "image_url": "https://loremflickr.com/640/480/apple,headphones/45439",
+      "description": "Apple AirPods Max. Категория: headphones. Артикул поставщика: RICH-00079.",
+      "stock": 119,
+      "rating": 3.8,
+      "reviews": 1346,
+      "specs": {
+        "type": "полноразмерные",
+        "wireless_standard": "Bluetooth 5.0",
+        "anc_type": "активное",
+        "battery_life": "20 ч",
+        "brand": "Apple",
+        "model_line": "AirPods Max"
+      }
+    },
+    {
+      "sku": "RICH-00080",
+      "name": "Sony KD-43X85K",
+      "category": "tv",
+      "price": 63787,
+      "url": "https://duckduckgo.com/?q=!ducky%20Sony%20KD-43X85K%20site%3Amarket.yandex.ru",
+      "image_url": "https://loremflickr.com/640/480/sony,television/45417",
+      "description": "Sony KD-43X85K. Категория: tv. Артикул поставщика: RICH-00080.",
+      "stock": 132,
+      "rating": 3.9,
+      "reviews": 1363,
+      "specs": {
+        "diagonal_in": "43\"",
+        "screen_resolution": "4K",
+        "hdr_support": "HDR10",
+        "smart_platform": "Google TV",
+        "brand": "Sony",
+        "model_line": "KD-43X85K"
+      }
+    },
+    {
+      "sku": "RICH-00081",
+      "name": "Samsung Smart Monitor M8",
+      "category": "monitors",
+      "price": 63142,
+      "url": "https://duckduckgo.com/?q=!ducky%20Samsung%20Smart%20Monitor%20M8%20site%3Amarket.yandex.ru",
+      "image_url": "https://loremflickr.com/640/480/samsung,monitor/45416",
+      "description": "Samsung Smart Monitor M8. Категория: monitors. Артикул поставщика: RICH-00081.",
+      "stock": 145,
+      "rating": 4,
+      "reviews": 1380,
+      "specs": {
+        "panel_type": "VA",
+        "screen_resolution": "4K",
+        "refresh_rate": "60 Гц",
+        "brand": "Samsung",
+        "model_line": "Smart Monitor M8"
+      }
+    },
+    {
+      "sku": "RICH-00082",
+      "name": "Corsair K100 RGB",
+      "category": "keyboards",
+      "price": 25150,
+      "url": "https://duckduckgo.com/?q=!ducky%20Corsair%20K100%20RGB%20site%3Amarket.yandex.ru",
+      "image_url": "https://loremflickr.com/640/480/corsair,keyboard/45415",
+      "description": "Corsair K100 RGB. Категория: keyboards. Артикул поставщика: RICH-00082.",
+      "stock": 158,
+      "rating": 4.1,
+      "reviews": 1397,
+      "specs": {
+        "keyboard_layout": "RU/EN",
+        "connectivity": "USB",
+        "keyboard_backlight": "RGB",
+        "brand": "Corsair",
+        "model_line": "K100 RGB"
+      }
+    },
+    {
+      "sku": "RICH-00083",
+      "name": "SteelSeries Rival 3",
+      "category": "mouses",
+      "price": 4146,
+      "url": "https://duckduckgo.com/?q=!ducky%20SteelSeries%20Rival%203%20site%3Amarket.yandex.ru",
+      "image_url": "https://loremflickr.com/640/480/steelseries,computermouse/45414",
+      "description": "SteelSeries Rival 3. Категория: mouses. Артикул поставщика: RICH-00083.",
+      "stock": 171,
+      "rating": 4.2,
+      "reviews": 1414,
+      "specs": {
+        "connectivity": "USB",
+        "sensor": "TrueMove Core",
+        "brand": "SteelSeries",
+        "model_line": "Rival 3"
+      }
+    },
+    {
+      "sku": "RICH-00084",
+      "name": "ASUS TUF RTX 4070 Ti Super OC",
+      "category": "graphics_cards",
+      "price": 112864,
+      "url": "https://duckduckgo.com/?q=!ducky%20ASUS%20TUF%20RTX%204070%20Ti%20Super%20OC%20site%3Amarket.yandex.ru",
+      "image_url": "https://loremflickr.com/640/480/asus,graphicscard/45413",
+      "description": "ASUS TUF RTX 4070 Ti Super OC. Категория: graphics_cards. Артикул поставщика: RICH-00084.",
+      "stock": 184,
+      "rating": 4.3,
+      "reviews": 1431,
+      "specs": {
+        "vram_size": "16 ГБ GDDR6X",
+        "tdp": "285 Вт",
+        "cooling_type": "трёхвентиляторная",
+        "brand": "ASUS",
+        "model_line": "TUF RTX 4070 Ti Super OC"
+      }
+    },
+    {
+      "sku": "RICH-00085",
+      "name": "AMD Ryzen 5 7600X",
+      "category": "cpus",
+      "price": 22341,
+      "url": "https://duckduckgo.com/?q=!ducky%20AMD%20Ryzen%205%207600X%20site%3Amarket.yandex.ru",
+      "image_url": "https://loremflickr.com/640/480/amd,processor/45412",
+      "description": "AMD Ryzen 5 7600X. Категория: cpus. Артикул поставщика: RICH-00085.",
+      "stock": 17,
+      "rating": 4.4,
+      "reviews": 1448,
+      "specs": {
+        "socket": "AM5",
+        "tdp_watt": "105 Вт",
+        "cores": "6",
+        "brand": "AMD",
+        "model_line": "Ryzen 5 7600X"
+      }
+    },
+    {
+      "sku": "RICH-00086",
+      "name": "G.Skill Ripjaws S5 DDR5 32 ГБ",
+      "category": "ram",
+      "price": 9417,
+      "url": "https://duckduckgo.com/?q=!ducky%20G.Skill%20Ripjaws%20S5%20DDR5%2032%20%D0%93%D0%91%20site%3Amarket.yandex.ru",
+      "image_url": "https://loremflickr.com/640/480/gskill,rammemory/45411",
+      "description": "G.Skill Ripjaws S5 DDR5 32 ГБ. Категория: ram. Артикул поставщика: RICH-00086.",
+      "stock": 30,
+      "rating": 4.5,
+      "reviews": 1465,
+      "specs": {
+        "ram_speed": "5200 МТ/с",
+        "ram_type": "DDR5",
+        "ram_latency": "CL40",
+        "brand": "G.Skill",
+        "model_line": "Ripjaws S5 DDR5 32 ГБ"
+      }
+    },
+    {
+      "sku": "RICH-00087",
+      "name": "WD Black P50 1 ТБ",
+      "category": "external_drives",
+      "price": 14499,
+      "url": "https://duckduckgo.com/?q=!ducky%20WD%20Black%20P50%201%20%D0%A2%D0%91%20site%3Amarket.yandex.ru",
+      "image_url": "https://loremflickr.com/640/480/wd,harddrive/45410",
+      "description": "WD Black P50 1 ТБ. Категория: external_drives. Артикул поставщика: RICH-00087.",
+      "stock": 43,
+      "rating": 4.6,
+      "reviews": 1482,
+      "specs": {
+        "interface": "USB 3.2 Gen 2x2",
+        "drive_type": "SSD",
+        "transfer_speed": "до 2000 МБ/с",
+        "brand": "WD",
+        "model_line": "Black P50 1 ТБ"
+      }
+    },
+    {
+      "sku": "RICH-00088",
+      "name": "Garmin Venu 3",
+      "category": "smartwatches",
+      "price": 46123,
+      "url": "https://duckduckgo.com/?q=!ducky%20Garmin%20Venu%203%20site%3Amarket.yandex.ru",
+      "image_url": "https://loremflickr.com/640/480/garmin,smartwatch/45409",
+      "description": "Garmin Venu 3. Категория: smartwatches. Артикул поставщика: RICH-00088.",
+      "stock": 56,
+      "rating": 4.7,
+      "reviews": 1499,
+      "specs": {
+        "water_resistance_rating": "5ATM",
+        "gps_type": "GPS",
+        "battery_life": "до 14 дней",
+        "brand": "Garmin",
+        "model_line": "Venu 3"
+      }
+    },
+    {
+      "sku": "RICH-00089",
+      "name": "Nikon Z6 III",
+      "category": "cameras",
+      "price": 295691,
+      "url": "https://duckduckgo.com/?q=!ducky%20Nikon%20Z6%20III%20site%3Amarket.yandex.ru",
+      "image_url": "https://loremflickr.com/640/480/nikon,camera/45408",
+      "description": "Nikon Z6 III. Категория: cameras. Артикул поставщика: RICH-00089.",
+      "stock": 69,
+      "rating": 4.8,
+      "reviews": 1516,
+      "specs": {
+        "sensor_size": "Full Frame",
+        "lens_mount": "Z",
+        "video_resolution": "6K RAW",
+        "brand": "Nikon",
+        "model_line": "Z6 III"
+      }
+    },
+    {
+      "sku": "RICH-00090",
+      "name": "Nintendo Switch Lite",
+      "category": "gaming",
+      "price": 23557,
+      "url": "https://duckduckgo.com/?q=!ducky%20Nintendo%20Switch%20Lite%20site%3Amarket.yandex.ru",
+      "image_url": "https://loremflickr.com/640/480/nintendo,gameconsole/45386",
+      "description": "Nintendo Switch Lite. Категория: gaming. Артикул поставщика: RICH-00090.",
+      "stock": 82,
+      "rating": 4.9,
+      "reviews": 1533,
+      "specs": {
+        "storage_capacity_gb": "32 ГБ",
+        "max_resolution": "720p",
+        "max_fps": "60",
+        "brand": "Nintendo",
+        "model_line": "Switch Lite"
+      }
+    },
+    {
+      "sku": "RICH-00091",
+      "name": "OnePlus 12",
+      "category": "smartphones",
+      "price": 92143,
+      "url": "https://duckduckgo.com/?q=!ducky%20OnePlus%2012%20site%3Amarket.yandex.ru",
+      "image_url": "https://loremflickr.com/640/480/oneplus,smartphone/45385",
+      "description": "OnePlus 12. Категория: smartphones. Артикул поставщика: RICH-00091.",
+      "stock": 95,
+      "rating": 3.5,
+      "reviews": 1550,
+      "specs": {
+        "screen_size": "6.82\"",
+        "ram_size": "16 ГБ",
+        "storage_capacity": "512 ГБ",
+        "os": "Android 14",
+        "cpu_model": "Snapdragon 8 Gen 3",
+        "brand": "OnePlus",
+        "model_line": "12"
+      }
+    },
+    {
+      "sku": "RICH-00092",
+      "name": "HP Pavilion 15",
+      "category": "laptops",
+      "price": 60804,
+      "url": "https://duckduckgo.com/?q=!ducky%20HP%20Pavilion%2015%20site%3Amarket.yandex.ru",
+      "image_url": "https://loremflickr.com/640/480/hp,laptop/45384",
+      "description": "HP Pavilion 15. Категория: laptops. Артикул поставщика: RICH-00092.",
+      "stock": 108,
+      "rating": 3.6,
+      "reviews": 1567,
+      "specs": {
+        "screen_size": "15.6\"",
+        "cpu_model": "Intel Core i5-1335U",
+        "ram_size": "16 ГБ",
+        "storage_capacity": "512 ГБ SSD",
+        "os": "Windows 11",
+        "brand": "HP",
+        "model_line": "Pavilion 15"
+      }
+    },
+    {
+      "sku": "RICH-00093",
+      "name": "Lenovo Tab P12",
+      "category": "tablets",
+      "price": 36540,
+      "url": "https://duckduckgo.com/?q=!ducky%20Lenovo%20Tab%20P12%20site%3Amarket.yandex.ru",
+      "image_url": "https://loremflickr.com/640/480/lenovo,tablet/45383",
+      "description": "Lenovo Tab P12. Категория: tablets. Артикул поставщика: RICH-00093.",
+      "stock": 121,
+      "rating": 3.7,
+      "reviews": 1584,
+      "specs": {
+        "screen_size": "12.7\"",
+        "ram_size": "8 ГБ",
+        "storage_capacity": "256 ГБ",
+        "os": "Android 14",
+        "cpu_model": "Dimensity 7050",
+        "brand": "Lenovo",
+        "model_line": "Tab P12"
+      }
+    },
+    {
+      "sku": "RICH-00094",
+      "name": "Bose QuietComfort 45",
+      "category": "headphones",
+      "price": 25838,
+      "url": "https://duckduckgo.com/?q=!ducky%20Bose%20QuietComfort%2045%20site%3Amarket.yandex.ru",
+      "image_url": "https://loremflickr.com/640/480/bose,headphones/45382",
+      "description": "Bose QuietComfort 45. Категория: headphones. Артикул поставщика: RICH-00094.",
+      "stock": 134,
+      "rating": 3.8,
+      "reviews": 1601,
+      "specs": {
+        "type": "полноразмерные",
+        "wireless_standard": "Bluetooth 5.1",
+        "anc_type": "активное",
+        "battery_life": "24 ч",
+        "brand": "Bose",
+        "model_line": "QuietComfort 45"
+      }
+    },
+    {
+      "sku": "RICH-00095",
+      "name": "TCL 55C745",
+      "category": "tv",
+      "price": 66492,
+      "url": "https://duckduckgo.com/?q=!ducky%20TCL%2055C745%20site%3Amarket.yandex.ru",
+      "image_url": "https://loremflickr.com/640/480/tcl,television/45381",
+      "description": "TCL 55C745. Категория: tv. Артикул поставщика: RICH-00095.",
+      "stock": 147,
+      "rating": 3.9,
+      "reviews": 1618,
+      "specs": {
+        "diagonal_in": "55\"",
+        "screen_resolution": "4K",
+        "hdr_support": "Dolby Vision IQ",
+        "smart_platform": "Google TV",
+        "brand": "TCL",
+        "model_line": "55C745"
+      }
+    },
+    {
+      "sku": "RICH-00096",
+      "name": "ASUS ROG Swift PG279QM",
+      "category": "monitors",
+      "price": 100116,
+      "url": "https://duckduckgo.com/?q=!ducky%20ASUS%20ROG%20Swift%20PG279QM%20site%3Amarket.yandex.ru",
+      "image_url": "https://loremflickr.com/640/480/asus,monitor/45380",
+      "description": "ASUS ROG Swift PG279QM. Категория: monitors. Артикул поставщика: RICH-00096.",
+      "stock": 160,
+      "rating": 4,
+      "reviews": 1635,
+      "specs": {
+        "panel_type": "IPS",
+        "screen_resolution": "2560×1440",
+        "refresh_rate": "240 Гц",
+        "adaptive_sync": "G-Sync",
+        "brand": "ASUS",
+        "model_line": "ROG Swift PG279QM"
+      }
+    },
+    {
+      "sku": "RICH-00097",
+      "name": "Razer BlackWidow V4 Pro",
+      "category": "keyboards",
+      "price": 25037,
+      "url": "https://duckduckgo.com/?q=!ducky%20Razer%20BlackWidow%20V4%20Pro%20site%3Amarket.yandex.ru",
+      "image_url": "https://loremflickr.com/640/480/razer,keyboard/45379",
+      "description": "Razer BlackWidow V4 Pro. Категория: keyboards. Артикул поставщика: RICH-00097.",
+      "stock": 173,
+      "rating": 4.1,
+      "reviews": 1652,
+      "specs": {
+        "keyboard_layout": "RU/EN",
+        "connectivity": "USB",
+        "keyboard_backlight": "RGB",
+        "brand": "Razer",
+        "model_line": "BlackWidow V4 Pro"
+      }
+    },
+    {
+      "sku": "RICH-00098",
+      "name": "Corsair M75 Air",
+      "category": "mouses",
+      "price": 12389,
+      "url": "https://duckduckgo.com/?q=!ducky%20Corsair%20M75%20Air%20site%3Amarket.yandex.ru",
+      "image_url": "https://loremflickr.com/640/480/corsair,computermouse/45378",
+      "description": "Corsair M75 Air. Категория: mouses. Артикул поставщика: RICH-00098.",
+      "stock": 6,
+      "rating": 4.2,
+      "reviews": 1669,
+      "specs": {
+        "connectivity": "Slipstream",
+        "sensor": "Marksman 26K",
+        "brand": "Corsair",
+        "model_line": "M75 Air"
+      }
+    },
+    {
+      "sku": "RICH-00099",
+      "name": "MSI Gaming X Trio RX 7900 GRE",
+      "category": "graphics_cards",
+      "price": 79773,
+      "url": "https://duckduckgo.com/?q=!ducky%20MSI%20Gaming%20X%20Trio%20RX%207900%20GRE%20site%3Amarket.yandex.ru",
+      "image_url": "https://loremflickr.com/640/480/msi,graphicscard/45377",
+      "description": "MSI Gaming X Trio RX 7900 GRE. Категория: graphics_cards. Артикул поставщика: RICH-00099.",
+      "stock": 19,
+      "rating": 4.3,
+      "reviews": 1686,
+      "specs": {
+        "vram_size": "16 ГБ GDDR6",
+        "tdp": "260 Вт",
+        "cooling_type": "трёхвентиляторная",
+        "brand": "MSI",
+        "model_line": "Gaming X Trio RX 7900 GRE"
+      }
+    },
+    {
+      "sku": "RICH-00100",
+      "name": "AMD Ryzen 7 7700",
+      "category": "cpus",
+      "price": 28918,
+      "url": "https://duckduckgo.com/?q=!ducky%20AMD%20Ryzen%207%207700%20site%3Amarket.yandex.ru",
+      "image_url": "https://loremflickr.com/640/480/amd,processor/44704",
+      "description": "AMD Ryzen 7 7700. Категория: cpus. Артикул поставщика: RICH-00100.",
+      "stock": 32,
+      "rating": 4.4,
+      "reviews": 1703,
+      "specs": {
+        "socket": "AM5",
+        "tdp_watt": "65 Вт",
+        "cores": "8",
+        "brand": "AMD",
+        "model_line": "Ryzen 7 7700"
+      }
+    },
+    {
+      "sku": "RICH-00101",
+      "name": "Crucial Pro DDR5 32 ГБ",
+      "category": "ram",
+      "price": 9202,
+      "url": "https://duckduckgo.com/?q=!ducky%20Crucial%20Pro%20DDR5%2032%20%D0%93%D0%91%20site%3Amarket.yandex.ru",
+      "image_url": "https://loremflickr.com/640/480/crucial,rammemory/44703",
+      "description": "Crucial Pro DDR5 32 ГБ. Категория: ram. Артикул поставщика: RICH-00101.",
+      "stock": 45,
+      "rating": 4.5,
+      "reviews": 1720,
+      "specs": {
+        "ram_speed": "5600 МТ/с",
+        "ram_type": "DDR5",
+        "ram_latency": "CL46",
+        "brand": "Crucial",
+        "model_line": "Pro DDR5 32 ГБ"
+      }
+    },
+    {
+      "sku": "RICH-00102",
+      "name": "Crucial X9 Pro 2 ТБ",
+      "category": "external_drives",
+      "price": 14167,
+      "url": "https://duckduckgo.com/?q=!ducky%20Crucial%20X9%20Pro%202%20%D0%A2%D0%91%20site%3Amarket.yandex.ru",
+      "image_url": "https://loremflickr.com/640/480/crucial,harddrive/44702",
+      "description": "Crucial X9 Pro 2 ТБ. Категория: external_drives. Артикул поставщика: RICH-00102.",
+      "stock": 58,
+      "rating": 4.6,
+      "reviews": 1737,
+      "specs": {
+        "interface": "USB 3.2 Gen 2",
+        "drive_type": "SSD",
+        "transfer_speed": "до 1050 МБ/с",
+        "brand": "Crucial",
+        "model_line": "X9 Pro 2 ТБ"
+      }
+    },
+    {
+      "sku": "RICH-00103",
+      "name": "Huawei Watch GT 4 46mm",
+      "category": "smartwatches",
+      "price": 22937,
+      "url": "https://duckduckgo.com/?q=!ducky%20Huawei%20Watch%20GT%204%2046mm%20site%3Amarket.yandex.ru",
+      "image_url": "https://loremflickr.com/640/480/huawei,smartwatch/44701",
+      "description": "Huawei Watch GT 4 46mm. Категория: smartwatches. Артикул поставщика: RICH-00103.",
+      "stock": 71,
+      "rating": 4.7,
+      "reviews": 1754,
+      "specs": {
+        "water_resistance_rating": "5ATM",
+        "gps_type": "GPS",
+        "battery_life": "до 14 дней",
+        "brand": "Huawei",
+        "model_line": "Watch GT 4 46mm"
+      }
+    },
+    {
+      "sku": "RICH-00104",
+      "name": "Fujifilm X-T5",
+      "category": "cameras",
+      "price": 206413,
+      "url": "https://duckduckgo.com/?q=!ducky%20Fujifilm%20X-T5%20site%3Amarket.yandex.ru",
+      "image_url": "https://loremflickr.com/640/480/fujifilm,camera/44700",
+      "description": "Fujifilm X-T5. Категория: cameras. Артикул поставщика: RICH-00104.",
+      "stock": 84,
+      "rating": 4.8,
+      "reviews": 1771,
+      "specs": {
+        "sensor_size": "APS-C",
+        "lens_mount": "X",
+        "video_resolution": "6.2K 30p",
+        "brand": "Fujifilm",
+        "model_line": "X-T5"
+      }
+    },
+    {
+      "sku": "RICH-00105",
+      "name": "Valve Steam Deck OLED 1TB",
+      "category": "gaming",
+      "price": 76605,
+      "url": "https://duckduckgo.com/?q=!ducky%20Valve%20Steam%20Deck%20OLED%201TB%20site%3Amarket.yandex.ru",
+      "image_url": "https://loremflickr.com/640/480/valve,gameconsole/44699",
+      "description": "Valve Steam Deck OLED 1TB. Категория: gaming. Артикул поставщика: RICH-00105.",
+      "stock": 97,
+      "rating": 4.9,
+      "reviews": 1788,
+      "specs": {
+        "storage_capacity_gb": "1 ТБ SSD",
+        "max_resolution": "1280×800",
+        "max_fps": "60",
+        "brand": "Valve",
+        "model_line": "Steam Deck OLED 1TB"
+      }
+    },
+    {
+      "sku": "RICH-00106",
+      "name": "Nothing Phone (2a)",
+      "category": "smartphones",
+      "price": 36833,
+      "url": "https://duckduckgo.com/?q=!ducky%20Nothing%20Phone%20(2a)%20site%3Amarket.yandex.ru",
+      "image_url": "https://loremflickr.com/640/480/nothing,smartphone/44698",
+      "description": "Nothing Phone (2a). Категория: smartphones. Артикул поставщика: RICH-00106.",
+      "stock": 110,
+      "rating": 3.5,
+      "reviews": 1805,
+      "specs": {
+        "screen_size": "6.7\"",
+        "ram_size": "12 ГБ",
+        "storage_capacity": "256 ГБ",
+        "os": "Android 14",
+        "cpu_model": "Dimensity 7200 Pro",
+        "brand": "Nothing",
+        "model_line": "Phone (2a)"
+      }
+    },
+    {
+      "sku": "RICH-00107",
+      "name": "HP Envy 16",
+      "category": "laptops",
+      "price": 135415,
+      "url": "https://duckduckgo.com/?q=!ducky%20HP%20Envy%2016%20site%3Amarket.yandex.ru",
+      "image_url": "https://loremflickr.com/640/480/hp,laptop/44697",
+      "description": "HP Envy 16. Категория: laptops. Артикул поставщика: RICH-00107.",
+      "stock": 123,
+      "rating": 3.6,
+      "reviews": 1822,
+      "specs": {
+        "screen_size": "16\"",
+        "cpu_model": "Intel Core i7-13700H",
+        "ram_size": "16 ГБ",
+        "storage_capacity": "1 ТБ SSD",
+        "os": "Windows 11",
+        "brand": "HP",
+        "model_line": "Envy 16"
+      }
+    },
+    {
+      "sku": "RICH-00108",
+      "name": "Microsoft Surface Pro 9",
+      "category": "tablets",
+      "price": 118019,
+      "url": "https://duckduckgo.com/?q=!ducky%20Microsoft%20Surface%20Pro%209%20site%3Amarket.yandex.ru",
+      "image_url": "https://loremflickr.com/640/480/microsoft,tablet/44696",
+      "description": "Microsoft Surface Pro 9. Категория: tablets. Артикул поставщика: RICH-00108.",
+      "stock": 136,
+      "rating": 3.7,
+      "reviews": 1839,
+      "specs": {
+        "screen_size": "13\"",
+        "ram_size": "16 ГБ",
+        "storage_capacity": "256 ГБ",
+        "os": "Windows 11",
+        "cpu_model": "Intel Core i7-1265U",
+        "brand": "Microsoft",
+        "model_line": "Surface Pro 9"
+      }
+    },
+    {
+      "sku": "RICH-00109",
+      "name": "JBL Tune 760NC",
+      "category": "headphones",
+      "price": 8207,
+      "url": "https://duckduckgo.com/?q=!ducky%20JBL%20Tune%20760NC%20site%3Amarket.yandex.ru",
+      "image_url": "https://loremflickr.com/640/480/jbl,headphones/44695",
+      "description": "JBL Tune 760NC. Категория: headphones. Артикул поставщика: RICH-00109.",
+      "stock": 149,
+      "rating": 3.8,
+      "reviews": 1856,
+      "specs": {
+        "type": "полноразмерные",
+        "wireless_standard": "Bluetooth 5.0",
+        "anc_type": "активное",
+        "battery_life": "35 ч",
+        "brand": "JBL",
+        "model_line": "Tune 760NC"
+      }
+    },
+    {
+      "sku": "RICH-00110",
+      "name": "Hisense 55U7KQ",
+      "category": "tv",
+      "price": 72822,
+      "url": "https://duckduckgo.com/?q=!ducky%20Hisense%2055U7KQ%20site%3Amarket.yandex.ru",
+      "image_url": "https://loremflickr.com/640/480/hisense,television/44673",
+      "description": "Hisense 55U7KQ. Категория: tv. Артикул поставщика: RICH-00110.",
+      "stock": 162,
+      "rating": 3.9,
+      "reviews": 1873,
+      "specs": {
+        "diagonal_in": "55\"",
+        "screen_resolution": "4K",
+        "hdr_support": "Dolby Vision",
+        "smart_platform": "VIDAA",
+        "brand": "Hisense",
+        "model_line": "55U7KQ"
+      }
+    },
+    {
+      "sku": "RICH-00111",
+      "name": "BenQ PD2705U",
+      "category": "monitors",
+      "price": 66943,
+      "url": "https://duckduckgo.com/?q=!ducky%20BenQ%20PD2705U%20site%3Amarket.yandex.ru",
+      "image_url": "https://loremflickr.com/640/480/benq,monitor/44672",
+      "description": "BenQ PD2705U. Категория: monitors. Артикул поставщика: RICH-00111.",
+      "stock": 175,
+      "rating": 4,
+      "reviews": 1890,
+      "specs": {
+        "panel_type": "IPS",
+        "screen_resolution": "4K",
+        "brightness_nits": "350",
+        "brand": "BenQ",
+        "model_line": "PD2705U"
+      }
+    },
+    {
+      "sku": "RICH-00112",
+      "name": "SteelSeries Apex Pro TKL",
+      "category": "keyboards",
+      "price": 21407,
+      "url": "https://duckduckgo.com/?q=!ducky%20SteelSeries%20Apex%20Pro%20TKL%20site%3Amarket.yandex.ru",
+      "image_url": "https://loremflickr.com/640/480/steelseries,keyboard/44671",
+      "description": "SteelSeries Apex Pro TKL. Категория: keyboards. Артикул поставщика: RICH-00112.",
+      "stock": 8,
+      "rating": 4.1,
+      "reviews": 1907,
+      "specs": {
+        "keyboard_layout": "RU/EN",
+        "connectivity": "USB",
+        "keyboard_backlight": "RGB",
+        "brand": "SteelSeries",
+        "model_line": "Apex Pro TKL"
+      }
+    },
+    {
+      "sku": "RICH-00113",
+      "name": "Zowie EC2-C",
+      "category": "mouses",
+      "price": 9452,
+      "url": "https://duckduckgo.com/?q=!ducky%20Zowie%20EC2-C%20site%3Amarket.yandex.ru",
+      "image_url": "https://loremflickr.com/640/480/zowie,computermouse/44670",
+      "description": "Zowie EC2-C. Категория: mouses. Артикул поставщика: RICH-00113.",
+      "stock": 21,
+      "rating": 4.2,
+      "reviews": 1924,
+      "specs": {
+        "connectivity": "USB",
+        "sensor": "3360",
+        "brand": "Zowie",
+        "model_line": "EC2-C"
+      }
+    },
+    {
+      "sku": "RICH-00114",
+      "name": "Gigabyte Windforce RTX 4060",
+      "category": "graphics_cards",
+      "price": 36385,
+      "url": "https://duckduckgo.com/?q=!ducky%20Gigabyte%20Windforce%20RTX%204060%20site%3Amarket.yandex.ru",
+      "image_url": "https://loremflickr.com/640/480/gigabyte,graphicscard/44669",
+      "description": "Gigabyte Windforce RTX 4060. Категория: graphics_cards. Артикул поставщика: RICH-00114.",
+      "stock": 34,
+      "rating": 4.3,
+      "reviews": 1941,
+      "specs": {
+        "vram_size": "8 ГБ GDDR6",
+        "tdp": "115 Вт",
+        "cooling_type": "двухвентиляторная",
+        "brand": "Gigabyte",
+        "model_line": "Windforce RTX 4060"
+      }
+    },
+    {
+      "sku": "RICH-00115",
+      "name": "AMD Ryzen 7 7800X3D",
+      "category": "cpus",
+      "price": 49386,
+      "url": "https://duckduckgo.com/?q=!ducky%20AMD%20Ryzen%207%207800X3D%20site%3Amarket.yandex.ru",
+      "image_url": "https://loremflickr.com/640/480/amd,processor/44668",
+      "description": "AMD Ryzen 7 7800X3D. Категория: cpus. Артикул поставщика: RICH-00115.",
+      "stock": 47,
+      "rating": 4.4,
+      "reviews": 1958,
+      "specs": {
+        "socket": "AM5",
+        "tdp_watt": "120 Вт",
+        "cores": "8",
+        "brand": "AMD",
+        "model_line": "Ryzen 7 7800X3D"
+      }
+    },
+    {
+      "sku": "RICH-00116",
+      "name": "TeamGroup T-Force Delta RGB DDR5 32 ГБ",
+      "category": "ram",
+      "price": 12720,
+      "url": "https://duckduckgo.com/?q=!ducky%20TeamGroup%20T-Force%20Delta%20RGB%20DDR5%2032%20%D0%93%D0%91%20site%3Amarket.yandex.ru",
+      "image_url": "https://loremflickr.com/640/480/teamgroup,rammemory/44667",
+      "description": "TeamGroup T-Force Delta RGB DDR5 32 ГБ. Категория: ram. Артикул поставщика: RICH-00116.",
+      "stock": 60,
+      "rating": 4.5,
+      "reviews": 1975,
+      "specs": {
+        "ram_speed": "6000 МТ/с",
+        "ram_type": "DDR5",
+        "ram_latency": "CL38",
+        "brand": "TeamGroup",
+        "model_line": "T-Force Delta RGB DDR5 32 ГБ"
+      }
+    },
+    {
+      "sku": "RICH-00117",
+      "name": "Seagate One Touch 2 ТБ",
+      "category": "external_drives",
+      "price": 7344,
+      "url": "https://duckduckgo.com/?q=!ducky%20Seagate%20One%20Touch%202%20%D0%A2%D0%91%20site%3Amarket.yandex.ru",
+      "image_url": "https://loremflickr.com/640/480/seagate,harddrive/44666",
+      "description": "Seagate One Touch 2 ТБ. Категория: external_drives. Артикул поставщика: RICH-00117.",
+      "stock": 73,
+      "rating": 4.6,
+      "reviews": 1992,
+      "specs": {
+        "interface": "USB 3.0",
+        "drive_type": "HDD",
+        "compatibility": "Windows / macOS",
+        "brand": "Seagate",
+        "model_line": "One Touch 2 ТБ"
+      }
+    },
+    {
+      "sku": "RICH-00118",
+      "name": "Amazfit Balance",
+      "category": "smartwatches",
+      "price": 18053,
+      "url": "https://duckduckgo.com/?q=!ducky%20Amazfit%20Balance%20site%3Amarket.yandex.ru",
+      "image_url": "https://loremflickr.com/640/480/amazfit,smartwatch/44665",
+      "description": "Amazfit Balance. Категория: smartwatches. Артикул поставщика: RICH-00118.",
+      "stock": 86,
+      "rating": 4.7,
+      "reviews": 2009,
+      "specs": {
+        "water_resistance_rating": "5ATM",
+        "gps_type": "двухчастотный GPS",
+        "battery_life": "до 14 дней",
+        "brand": "Amazfit",
+        "model_line": "Balance"
+      }
+    },
+    {
+      "sku": "RICH-00119",
+      "name": "OM System OM-1 Mark II",
+      "category": "cameras",
+      "price": 237681,
+      "url": "https://duckduckgo.com/?q=!ducky%20OM%20System%20OM-1%20Mark%20II%20site%3Amarket.yandex.ru",
+      "image_url": "https://loremflickr.com/640/480/omsystem,camera/44664",
+      "description": "OM System OM-1 Mark II. Категория: cameras. Артикул поставщика: RICH-00119.",
+      "stock": 99,
+      "rating": 4.8,
+      "reviews": 2026,
+      "specs": {
+        "sensor_size": "MFT",
+        "lens_mount": "MFT",
+        "video_resolution": "4K 60p",
+        "brand": "OM System",
+        "model_line": "OM-1 Mark II"
+      }
+    },
+    {
+      "sku": "RICH-00120",
+      "name": "ASUS ROG Ally Z1 Extreme",
+      "category": "gaming",
+      "price": 78590,
+      "url": "https://duckduckgo.com/?q=!ducky%20ASUS%20ROG%20Ally%20Z1%20Extreme%20site%3Amarket.yandex.ru",
+      "image_url": "https://loremflickr.com/640/480/asus,gameconsole/44642",
+      "description": "ASUS ROG Ally Z1 Extreme. Категория: gaming. Артикул поставщика: RICH-00120.",
+      "stock": 112,
+      "rating": 4.9,
+      "reviews": 2043,
+      "specs": {
+        "storage_capacity_gb": "512 ГБ SSD",
+        "max_resolution": "1080p",
+        "max_fps": "120",
+        "brand": "ASUS",
+        "model_line": "ROG Ally Z1 Extreme"
+      }
+    }
+  ]
+}
