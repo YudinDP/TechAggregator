@@ -1438,7 +1438,7 @@ app.listen(PORT, () => {
   }, 15000);
 
   try {
-    cron.schedule('0 * * * *', () => {
+    cron.schedule('0 */6 * * *', () => {
       runScheduledImportFeeds().catch((e) => console.warn('[import-feed] cron:', e.message || e));
     });
   } catch (e) {
