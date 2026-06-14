@@ -1904,12 +1904,10 @@ app.post('/api/reviews', authenticateToken, async (req, res) => {
   console.log('--- НАЧАЛО ОБРАБОТКИ POST /api/reviews ---');
   console.log('Тело запроса (req.body):', req.body);
   console.log('Пользователь из токена (req.user):', req.user);
-
   const { productId, rating, text } = req.body;
-
+  
   if (
-    //productId должен быть числом (как пришедшее с клиента) или строкой, которую можно превратить в число
-    productId == null || //Проверка на null или undefined
+    productId == null || 
     (typeof productId !== 'number' && (typeof productId !== 'string' || isNaN(parseInt(productId, 10)))) ||
     !rating ||
     typeof rating !== 'number' ||
@@ -1917,25 +1915,34 @@ app.post('/api/reviews', authenticateToken, async (req, res) => {
     rating > 5
   ) {
     console.log('   ОШИБКА ВАЛИДАЦИИ: productId или rating неверны.');
-    console.log(`     productId: ${productId} (type: ${typeof productId}), rating: ${rating} (type: ${typeof rating})`);
+    console.log(`productId: ${productId} (type: ${typeof productId}), rating: ${rating} (type: ${typeof rating})`);
     return res.status(400).json({ error: 'Product ID и rating (1-5) обязательны.' });
   }
 
-  //Преобразуем productId к числу для дальнейшего использования
   const parsedProductId = typeof productId === 'string' ? parseInt(productId, 10) : productId;
-
-  //Проверяем, существует ли товар
+  
   const productExists = await prisma.product.findUnique({
     where: { id: parsedProductId }
   });
   if (!productExists) {
-    console.log(`   ОШИБКА: Товар с ID ${parsedProductId} не найден.`);
+    console.log(`ОШИБКА: Товар с ID ${parsedProductId} не найден.`);
     return res.status(404).json({ error: 'Product not found.' });
   }
 
+  // ✅ НОВОЕ ОГРАНИЧЕНИЕ: Проверка количества отзывов пользователя на этот конкретный товар
+  const userReviewCount = await prisma.review.count({
+    where: {
+      userId: req.user.id,
+      productId: parsedProductId
+    }
+  });
+
+  if (userReviewCount >= 2) {
+    return res.status(429).json({ error: 'Превышен лимит: вы можете оставить не более 2 отзывов на один товар.' });
+  }
+
   try {
-    console.log(`   Подготовка к созданию отзыва для товара ${parsedProductId}, рейтинг ${rating}, текст: "${text}"`);
-    //Создаём отзыв
+    console.log(`Подготовка к созданию отзыва для товара ${parsedProductId}, рейтинг ${rating}, текст: "${text}"`);
     const newReview = await prisma.review.create({
       data: {
         userId: req.user.id,
@@ -1943,10 +1950,8 @@ app.post('/api/reviews', authenticateToken, async (req, res) => {
         userName: req.user.fullName || req.user.email.split('@')[0],
         rating: rating,
         comment: text ? text.trim() : null
-        //isApproved: false, status: 'pending' - установлены по умолчанию
       }
     });
-
     console.log(`   Отзыв успешно создан в БД с ID ${newReview.id}, comment: "${newReview.comment}"`);
     res.status(201).json(newReview);
   } catch (error) {
@@ -2034,12 +2039,9 @@ app.post('/api/requests', authenticateToken, async (req, res) => {
     const { productName, category, url, comment } = req.body;
     const userId = req.user.id;
 
-    //Валидация
     if (!productName || typeof productName !== 'string' || productName.trim() === '') {
       return res.status(400).json({ error: 'Поле "productName" обязательно и должно быть строкой.' });
     }
-    //Опциональные поля: category, url, comment
-    //Проверим, что, если поле передано, оно строковое
     if (category && typeof category !== 'string') {
       return res.status(400).json({ error: 'Поле "category", если указано, должно быть строкой.' });
     }
@@ -2050,13 +2052,24 @@ app.post('/api/requests', authenticateToken, async (req, res) => {
       return res.status(400).json({ error: 'Поле "comment", если указано, должно быть строкой.' });
     }
 
-    //Создаём запрос
-    //ПЕРЕДАЁМ url и comment в data
+    // ✅ НОВОЕ ОГРАНИЧЕНИЕ: Проверка количества запросов пользователя за последний час
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+    const recentRequestsCount = await prisma.request.count({
+      where: {
+        userId: userId,
+        createdAt: { gte: oneHourAgo }
+      }
+    });
+
+    if (recentRequestsCount >= 2) {
+      return res.status(429).json({ error: 'Превышен лимит: вы можете отправлять не более 2 запросов на добавление товара в час.' });
+    }
+
     const newRequest = await prisma.request.create({
       data: {
-        userId, //ID пользователя
-        productName: productName.trim(), //Название товара
-        category: category ? category.trim() : null, //Категория (опционально)
+        userId,
+        productName: productName.trim(),
+        category: category ? category.trim() : null,
         url: url ? url.trim() : null,
         comment: comment ? comment.trim() : null
       }
@@ -2229,11 +2242,25 @@ app.post('/api/learn/topic-suggestions', authenticateToken, async (req, res) => 
       }
     } catch (_) {}
 
+    // Существующая проверка на общее количество ожидающих модерации (сохраняем)
     const pendingCount = await prisma.lessonSuggestion.count({
       where: { userId: req.user.id, status: 'pending' }
     });
     if (pendingCount >= 10) {
       return res.status(429).json({ error: 'У вас слишком много необработанных предложений. Дождитесь модерации.' });
+    }
+
+    // ✅ НОВОЕ ОГРАНИЧЕНИЕ: Проверка количества предложений пользователя за последний час
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+    const recentSuggestionsCount = await prisma.lessonSuggestion.count({
+      where: {
+        userId: req.user.id,
+        createdAt: { gte: oneHourAgo }
+      }
+    });
+
+    if (recentSuggestionsCount >= 2) {
+      return res.status(429).json({ error: 'Превышен лимит: вы можете отправлять не более 2 предложений тем уроков в час.' });
     }
 
     const record = await prisma.lessonSuggestion.create({
@@ -2323,13 +2350,15 @@ app.post('/api/support/tickets', authenticateTokenOptional, async (req, res) => 
   try {
     const { issueType, message, userEmail, pageUrl } = req.body || {};
     const issue = typeof issueType === 'string' ? issueType.trim() : 'other';
+    
     if (!SUPPORT_ISSUE_TYPES.has(issue)) {
       return res.status(400).json({ error: 'Некорректный тип обращения.' });
     }
+    
     const messageStr = typeof message === 'string' ? message.trim() : '';
     let emailStr = typeof userEmail === 'string' ? userEmail.trim() : '';
     const pageStr = typeof pageUrl === 'string' ? pageUrl.trim().slice(0, 500) : null;
-
+    
     if (!messageStr || messageStr.length < 10) {
       return res.status(400).json({ error: 'Сообщение обязательно (минимум 10 символов).' });
     }
@@ -2361,6 +2390,22 @@ app.post('/api/support/tickets', authenticateTokenOptional, async (req, res) => 
       return res.status(400).json({ error: 'Некорректный e-mail.' });
     }
 
+    // ✅ НОВОЕ ОГРАНИЧЕНИЕ: Проверка количества тикетов авторизованного пользователя за последний час
+    if (userId) {
+      const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+      const recentTicketsCount = await prisma.supportTicket.count({
+        where: {
+          userId: userId,
+          createdAt: { gte: oneHourAgo }
+        }
+      });
+
+      if (recentTicketsCount >= 1) {
+        return res.status(429).json({ error: 'Превышен лимит: вы можете отправлять не более 1 обращения в поддержку в час.' });
+      }
+    }
+
+    // Существующая защита от спама по IP (сохраняем)
     const ipKey = String(req.ip || req.headers['x-forwarded-for'] || 'unknown').slice(0, 80);
     const fifteenMinAgo = new Date(Date.now() - 15 * 60 * 1000);
     const recentFromIp = await prisma.supportTicket.count({
@@ -2369,14 +2414,14 @@ app.post('/api/support/tickets', authenticateTokenOptional, async (req, res) => 
     if (recentFromIp >= 5) {
       return res.status(429).json({ error: 'Слишком много обращений. Подождите 15 минут.' });
     }
+    
+    // Существующая защита от большого количества ожидающих тикетов (сохраняем)
     if (userId) {
       const pendingByUser = await prisma.supportTicket.count({
         where: { userId, status: 'pending' }
       });
       if (pendingByUser >= 15) {
-        return res
-          .status(429)
-          .json({ error: 'У вас много необработанных обращений. Дождитесь ответа администратора.' });
+        return res.status(429).json({ error: 'У вас много необработанных обращений. Дождитесь ответа администратора.' });
       }
     }
 
