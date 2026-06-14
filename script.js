@@ -884,14 +884,12 @@ async function initializeApp() {
 function loadCategories() {
   const categorySelect = document.getElementById('categorySelect');
   if (!categorySelect) return;
+  
 
-  const categories = Array.from(new Set((demoProducts || []).map((p) => p.category).filter(Boolean))).sort();
-  if (!categories.length) return;
-
+  const categories = Object.keys(CATEGORY_EMOJI).sort();
+  
   const current = categorySelect.value;
-  categorySelect.innerHTML = `<option value="">Все категории</option>${categories
-    .map((cat) => `<option value="${cat}">${getCategoryName(cat)}</option>`)
-    .join('')}`;
+  categorySelect.innerHTML = `<option value="">Все категории</option>${categories.map((cat) => `<option value="${cat}">${getCategoryName(cat)}</option>`).join('')}`;
   categorySelect.value = current || '';
 }
 

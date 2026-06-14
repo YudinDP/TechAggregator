@@ -1467,7 +1467,7 @@
 }
 
 [data-theme='dark'] .buy-button {
-  color: #93c5fd !important;
+  color: #ffffff !important;
 }
 
 [data-theme='dark'] .store-insight-card,
@@ -2221,4 +2221,29 @@
     background-color: #2563eb !important;
     color: #ffffff !important;
     border-color: #1d4ed8 !important;
+}
+
+[data-theme='dark'] #priceHistoryFormContainer {
+    background-color: var(--dt-bg-elevated) !important;
+    border-color: var(--dt-border) !important;
+}
+
+/* 2. Делаем текст заголовка и подписей полей светлым */
+[data-theme='dark'] #priceHistoryFormContainer h5,
+[data-theme='dark'] #priceHistoryFormContainer .form-label {
+    color: var(--dt-text) !important;
+}
+
+/* 3. Делаем поля ввода (input, select) тёмными с светлым текстом */
+[data-theme='dark'] #priceHistoryFormContainer .form-control,
+[data-theme='dark'] #priceHistoryFormContainer .form-select {
+    background-color: var(--dt-input-bg) !important;
+    color: var(--dt-text) !important;
+    border-color: var(--dt-border-strong) !important;
+}
+
+/* 4. Делаем текст подсказок (placeholder) серым, чтобы он был виден на тёмном фоне */
+[data-theme='dark'] #priceHistoryFormContainer .form-control::placeholder,
+[data-theme='dark'] #priceHistoryFormContainer .form-select::placeholder {
+    color: var(--dt-text-muted) !important;
 }
