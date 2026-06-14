@@ -3112,7 +3112,36 @@ function getCategoryName(category) {
     smartphones: 'Смартфоны',
     laptops: 'Ноутбуки',
     tv: 'Телевизоры',
-    headphones: 'Наушники'
+    headphones: 'Наушники',
+    cameras: 'Фотоаппараты',
+    tablets: 'Планшеты',
+    smartwatches: 'Смарт-часы',
+    ebooks: 'Электронные книги',
+    drones: 'Дроны',
+    pc_components: 'Комплектующие ПК',
+    keyboards: 'Клавиатуры',
+    mouses: 'Мыши',
+    cases: 'Корпуса ПК',
+    drivers: 'Накопители',
+    fitness_trackers: 'Фитнес-трекеры',
+    power_units: 'Блоки питания',
+    microphones: 'Микрофоны',
+    webcams: 'Веб-камеры',
+    power_banks: 'Павербанки',
+    portable_speakers: 'Портативные колонки',
+    monitors: 'Мониторы',
+    accessories: 'Аксессуары',
+    gaming: 'Игровые консоли',
+    networking: 'Сетевое оборудование',
+    cpus: 'Процессоры',
+    motherboards: 'Материнские платы',
+    ram: 'Оперативная память',
+    graphics_cards: 'Видеокарты',
+    external_drives: 'Внешние накопители',
+    audio: 'Аудиосистемы',
+    smart_home: 'Умный дом',
+    wearables: 'Носимые устройства',
+    other: 'Другое'
   };
   return names[category] || category;
 }
@@ -4668,7 +4697,7 @@ function requestProductAddition() {
     </div>
     <div class="form-group">
         <label for="requestComment">Комментарий (необязательно)</label>
-        <textarea id="requestComment" name="requestComment" rows="3" placeholder="Дополнительная информация..."></textarea>
+        <textarea id="requestComment" name="requestComment" rows="3" style="resize: none;" placeholder="Дополнительная информация..."></textarea>
     </div>
                 
                 <div class="form-actions">
@@ -5400,7 +5429,35 @@ function getCategoryNameForCarousel(categoryKey) {
     laptops: 'Ноутбуки',
     tv: 'Телевизоры',
     headphones: 'Наушники',
-    graphics_cards: 'Видеокарты'
+    cameras: 'Фотоаппараты',
+    tablets: 'Планшеты',
+    smartwatches: 'Смарт-часы',
+    ebooks: 'Электронные книги',
+    drones: 'Дроны',
+    pc_components: 'Комплектующие ПК',
+    keyboards: 'Клавиатуры',
+    mouses: 'Мыши',
+    cases: 'Корпуса ПК',
+    drivers: 'Накопители',
+    fitness_trackers: 'Фитнес-трекеры',
+    power_units: 'Блоки питания',
+    microphones: 'Микрофоны',
+    webcams: 'Веб-камеры',
+    power_banks: 'Павербанки',
+    portable_speakers: 'Портативные колонки',
+    monitors: 'Мониторы',
+    accessories: 'Аксессуары',
+    gaming: 'Игровые консоли',
+    networking: 'Сетевое оборудование',
+    cpus: 'Процессоры',
+    motherboards: 'Материнские платы',
+    ram: 'Оперативная память',
+    graphics_cards: 'Видеокарты',
+    external_drives: 'Внешние накопители',
+    audio: 'Аудиосистемы',
+    smart_home: 'Умный дом',
+    wearables: 'Носимые устройства',
+    other: 'Другое'
   };
   return names[categoryKey] || categoryKey || 'Категория';
 }
@@ -9796,7 +9853,7 @@ function calculateMatchScore(product, type) {
 function getRecommendationBadge(product, type) {
   switch (type) {
     case 'popular':
-      return product.rating >= 4.8 ? '🔥 Топ' : product.rating >= 4.5 ? '🔥 Популярно' : '';
+      return product.rating >= 4.8 ? '🔥 Отличный рейтинг' : product.rating >= 4.5 ? '🔥 Хороший рейтинг' : '';
     case 'trending':
       return '📈 Тренд';
     case 'bestValue':

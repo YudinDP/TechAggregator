@@ -2191,3 +2191,34 @@
 [data-theme='dark'] .learn-lesson-header__hint {
   color: #a5b4fc;
 }
+
+[data-theme='dark'] #priceHistoryResult table th,
+[data-theme='dark'] #priceHistoryResult table td,
+[data-theme='dark'] #priceHistoryListContainer table th,
+[data-theme='dark'] #priceHistoryListContainer table td {
+    color: #e2e8f0 !important;          /* Светлый текст вместо чёрного */
+    background-color: #111827 !important; /* Явный тёмный фон ячейки */
+    border-color: #374151 !important;   /* Тёмные границы */
+}
+
+/* 2. Поля ввода в форме добавления записи: тёмный фон + светлый текст */
+[data-theme='dark'] #priceHistoryFormContainer input,
+[data-theme='dark'] #priceHistoryFormContainer textarea,
+[data-theme='dark'] #priceHistoryFormContainer select {
+    background-color: #1f2937 !important; /* Тёмно-серый фон полей */
+    color: #f8fafc !important;            /* Белый/светлый текст */
+    border: 1px solid #4b5563 !important; /* Тёмная обводка */
+}
+
+/* 3. Подсказки (placeholder) внутри полей ввода */
+[data-theme='dark'] #priceHistoryFormContainer input::placeholder,
+[data-theme='dark'] #priceHistoryFormContainer textarea::placeholder {
+    color: #9ca3af !important;            /* Серый цвет подсказок */
+}
+
+/* 4. Кнопки внутри формы (на случай, если они тоже сливаются с фоном) */
+[data-theme='dark'] #priceHistoryFormContainer button {
+    background-color: #2563eb !important;
+    color: #ffffff !important;
+    border-color: #1d4ed8 !important;
+}
